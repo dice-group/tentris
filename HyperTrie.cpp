@@ -5,4 +5,3 @@
 #include "HyperTrie.hpp"
 
 
-HyperTrie::HyperTrie(uint8_t depth) : depth(depth) {}

@@ -27,7 +27,6 @@ private:
     int64_t leafcount;
 public:
 
-
     void add(std::vector<uint64_t> coords, T value) {
         if (coords.size() != this->depth) {
             throw "coords size() must be equal to depth.";

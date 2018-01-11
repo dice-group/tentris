@@ -14,5 +14,9 @@ int main() {
     std::vector<uint64_t> coords3{1, 2, 2};
     std::cout << trie.get(coords3) << std::endl;
 
+    auto x = new u_int64_t[6];
+    std::cout << "\n" <<
+              sizeof(std::vector<double>) << " " <<
+              sizeof(u_int64_t[3]) << std::endl;
     return 0;
 }
