@@ -12,6 +12,7 @@
 #include <variant>
 #include <unordered_map>
 #include "boost/variant.hpp"
+#include "PosCalc.hpp"
 
 
 using std::vector;
@@ -68,7 +69,7 @@ private:
      * @param value The sub-hypertrie or T to be set.
      * @return Optional Difference between old and new value if this-> depth is 1.
      */
-    optional<T> setChild(uint8_t &pos, u_int64_t key_part, optional<variant<HyperTrie *, T>> &value) {
+    optional<T> setChild(uint8_t pos, uint64_t key_part, optional<variant<HyperTrie *, T>> &value) {
         auto edge = get_or_create_edges(pos);
         if (this->depth > 1) {
             if (not value) {
@@ -95,7 +96,7 @@ private:
      * @param key_part The key_part identifing the child.
      * @return Optional the child if it exists. If this->depth is 1 the child is of value T otherwise it is a HyperTrie.
      */
-    optional<variant<HyperTrie *, T>> getChild(uint8_t pos, u_int64_t key_part) {
+    optional<variant<HyperTrie *, T>> getChild(uint8_t pos, uint64_t key_part) {
         optional<map<uint64_t, variant<HyperTrie *, T>> *> edges_ = get_edges(pos);
         if (edges_)
             return {(*edges_)[key_part]}; // TODO: does optional(nullptr) form a nullopt?
@@ -103,7 +104,7 @@ private:
             return {};
     }
 
-    void delChild(uint8_t &pos, u_int64_t key_part) {
+    void delChild(uint8_t &pos, uint64_t key_part) {
         optional<map<uint64_t, variant<HyperTrie *, T>> *> edges_ = get_edges(pos);
         if (edges_); // TODO: implement delete
     }
@@ -128,23 +129,38 @@ public:
 
 private:
 
-    /**
-     *
-     * @param coords
-     * @param newValue
-     * @param oldValue
-     * @param leafSumDiff
-     * @param finished_subtries
-     * @param pos_diff
-     * @param previous_pos
-     */
-    void _set(vector<uint64_t> &coords, T &newValue, optional<T> &oldValue, T &leafSumDiff,
-              std::unordered_map<std::vector<bool>, HyperTrie *> &finished_subtries, std::vector<u_int8_t> &pos_diff,
-              vector<bool> &previous_pos) {
+    void set_rek(vector<uint64_t> &coords, T &newValue, bool hasOldValue, T &leafSumDiff,
+                 std::unordered_map<std::vector<bool>, HyperTrie *> &finished_subtries,
+                 PosCalc *pos_calc) {
         this->leafsum += leafSumDiff;
-        this->leafcount += 1 ? not oldValue : 0;
+        this->leafcount += not hasOldValue;
 
-        finished_subtries[previous_pos] = this;
+        finished_subtries[pos_calc->removed_positions] = this;
+
+        // subtrie has only one position left: insert value
+        if (pos_calc->subkey_length == 1) {
+            uint64_t key_part = coords[pos_calc->subkey_to_key_pos(0)];
+
+            optional<variant<HyperTrie *, T>> value_ = optional < variant<HyperTrie *, T>>
+            { variant<HyperTrie *, T>{newValue}};
+
+            this->setChild(0, key_part, value_);
+        } else {
+            for (uint8_t pos : pos_calc->subkey_to_key) {
+                uint64_t key_part = coords[pos];
+                PosCalc *const next_pos_calc = pos_calc->use(pos);
+                auto finished_child = finished_subtries.find(next_pos_calc->removed_positions);
+
+                optional<variant<HyperTrie *, T>> child_ = getChild(pos_calc->key_to_subkey_pos(pos), key_part);
+                if (not child_) {
+                    if (finished_child != finished_child.end()) {
+                        //this->setChild()
+                    }
+                }
+
+            }
+
+        }
 
 
     }
@@ -153,11 +169,15 @@ public:
     void set(vector<uint64_t> &coords, T &value) {
         optional<variant<HyperTrie *, T>> oldValue_ = get(coords);
         optional < T > oldValue = optional < T > {std::get<T>(*oldValue_)} ? oldValue_ : optional < T > {};
+
         T leafsumDiff = value ? oldValue : value - std::get<T>(*oldValue);
+
         std::unordered_map<std::vector<bool>, HyperTrie *> finished_subtries{};
-        vector<bool> previous_pos{coords.size()};
-        std::vector<u_int8_t> pos_diff{coords.size()};
-        _set(coords, value, oldValue, leafsumDiff, finished_subtries, pos_diff);
+
+        vector<bool> subkey_mask(coords.size());
+        PosCalc *pos_calc = PosCalc::getInstance(subkey_mask);
+
+        set_rek(coords, value, bool(oldValue), leafsumDiff, finished_subtries, pos_calc);
     }
 
     void del(vector<uint64_t> &coords) {
