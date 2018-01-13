@@ -12,7 +12,6 @@
 #include <variant>
 #include <unordered_map>
 #include "boost/variant.hpp"
-#include "HyperTrie.hpp"
 
 using std::vector;
 using std::map;
@@ -22,10 +21,6 @@ using std::map;
  * And the other way around.
  */
 class PosCalc {
-    template<typename T>
-    friend
-    class HyperTrie;
-
     /**
      * Holds all instances.
      */
@@ -39,6 +34,7 @@ class PosCalc {
     explicit PosCalc(const uint8_t key_length, uint8_t subkey_length) : key_length(key_length),
                                                                         subkey_length(subkey_length) {}
 
+public:
     /**
      * Length of superkeys.
      */
@@ -49,22 +45,31 @@ class PosCalc {
      */
     uint8_t subkey_length;
 
-    /**
-     * Cache for PosCalcs of subkeys that are 1 shorter.
-     */
-    vector<PosCalc *> next_pos_calcs = vector<PosCalc *>(key_length);
-
+private:
     /**
      * Stores for superkey positions to which subkey positions they map.
      */
     vector<uint8_t> key_to_subkey = vector<uint8_t>(key_length);
 
 public:
+
     /**
      * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
      */
     vector<uint8_t> subkey_to_key = vector<uint8_t>(subkey_length);
 
+    /**
+     * removed_positions bit vector of positions removed from superkey to subkey.
+     */
+    vector<bool> removed_positions = vector<bool>(key_length);
+
+private:
+    /**
+     * Cache for PosCalcs of subkeys that are 1 shorter.
+     */
+    vector<PosCalc *> next_pos_calcs = vector<PosCalc *>(key_length);
+
+public:
     /**
      * Convert a superkey position to a subkey key position.
      * @param key_pos superkey position
@@ -126,6 +131,8 @@ public:
             uint8_t offset = 0;
 
             for (uint8_t key_pos = 0; key_pos < key_length; key_pos++) {
+                instance->removed_positions[key_pos] = removed_positions[key_pos];
+
                 if (removed_positions[key_pos]) {
                     offset++;
                 } else {
