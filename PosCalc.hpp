@@ -11,7 +11,6 @@
 #include <vector>
 #include <variant>
 #include <unordered_map>
-#include <stdint-gcc.h>
 #include "boost/variant.hpp"
 #include "HyperTrie.hpp"
 
@@ -34,37 +33,45 @@ class PosCalc {
 
     /**
      * Private construcor.
-     * @param key_length length of superkeys.
+     * @param key_length  length of superkeys.
+     * @param subkey_length length of subkeys.
      */
-    explicit PosCalc(const uint8_t &key_length) : key_length(key_length) {}
+    explicit PosCalc(const uint8_t key_length, uint8_t subkey_length) : key_length(key_length),
+                                                                        subkey_length(subkey_length) {}
 
     /**
      * Length of superkeys.
      */
     uint8_t key_length;
+
     /**
-     * Bitmask for position of the superkeys that are already used and now gone in the subkey.
+     * Length of subkeys.
      */
-    vector<bool> used_positions = vector<bool>(key_length);
-    /**
-     * Difference between the superkeys's and subkeys's key position.
-     */
-    vector<uint8_t> super_to_sub_diff = vector<uint8_t>(key_length);
+    uint8_t subkey_length;
 
     /**
      * Cache for PosCalcs of subkeys that are 1 shorter.
      */
     vector<PosCalc *> next_pos_calcs = vector<PosCalc *>(key_length);
 
+    /**
+     * Stores for superkey positions to which subkey positions they map.
+     */
+    vector<uint8_t> key_to_subkey = vector<uint8_t>(key_length);
+
 public:
+    /**
+     * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
+     */
+    vector<uint8_t> subkey_to_key = vector<uint8_t>(subkey_length);
 
     /**
      * Convert a superkey position to a subkey key position.
      * @param key_pos superkey position
      * @return subkey position
      */
-    inline uint8_t key_to_trie_pos(const uint8_t key_pos) const {
-        return key_pos - super_to_sub_diff[key_pos];
+    inline uint8_t key_to_subkey_pos(const uint8_t key_pos) const {
+        return key_to_subkey[key_pos];
     }
 
     /**
@@ -72,8 +79,8 @@ public:
      * @param subkey_pos subkey position
      * @return superkey position
      */
-    inline uint8_t trie_to_key_pos(const uint8_t subkey_pos) const {
-        return subkey_pos + super_to_sub_diff[subkey_pos];
+    inline uint8_t subkey_to_key_pos(const uint8_t subkey_pos) const {
+        return subkey_to_key[subkey_pos];
     }
 
     /**
@@ -81,12 +88,15 @@ public:
      * @param key_pos position of superkey to be removed.
      * @return PosCalc like this but without position key_pos.
      */
-    inline PosCalc *used(const uint8_t key_pos) {
+    inline PosCalc *use(const uint8_t key_pos) {
         PosCalc *child = next_pos_calcs.at(key_pos);
         if (child == nullptr) {
-            vector<bool> next_used_pos = this->used_positions;
-            next_used_pos[key_pos] = 1;
-            child = getInstance(next_used_pos);
+            vector<bool> used_pos_mask(this->key_length, true);
+            for (uint8_t subkey_pos : this->subkey_to_key)
+                used_pos_mask[subkey_pos] = false;
+            used_pos_mask[key_pos] = true;
+
+            child = getInstance(used_pos_mask);
             next_pos_calcs[key_pos] = child;
         }
         return child;
@@ -94,26 +104,40 @@ public:
 
     /**
      * Get an instance for a vector of used positions.
-     * @param used_pos bit vector o used positions.
+     * @param removed_positions bit vector of positions removed from superkey to subkey.
      * @return an instance
      */
-    static PosCalc *getInstance(const vector<bool> &used_pos) {
-        auto instance_ = instances.find(used_pos);
+    static PosCalc *getInstance(const vector<bool> &removed_positions) {
+        auto instance_ = instances.find(removed_positions);
         if (instance_ != instances.end()) {
+            // if an instance already exists return it
             return instance_->second;
         } else {
-            PosCalc *instance = new PosCalc(uint8_t(used_pos.size()));
+            // else create it and store it for reuse
+            uint8_t key_length = uint8_t(removed_positions.size());
 
-            for (uint8_t key_pos = 0; key_pos < used_pos.size(); key_pos++) {
+            uint8_t subkey_length = 0;
+            for (bool removed_pos : removed_positions) {
+                subkey_length += not removed_pos;
+            }
 
-                if (used_pos[key_pos]) {
-                    instance->used_positions[key_pos] = true;
-                    for (uint8_t i = key_pos; i < instance->key_length; i++) {
-                        instance->super_to_sub_diff[i] += 1;
-                    }
+            PosCalc *instance = new PosCalc(key_length, subkey_length);
+
+            uint8_t offset = 0;
+
+            for (uint8_t key_pos = 0; key_pos < key_length; key_pos++) {
+                if (removed_positions[key_pos]) {
+                    offset++;
+                } else {
+                    const uint8_t subkey_pos = key_pos - offset;
+
+                    instance->key_to_subkey[key_pos] = subkey_pos;
+                    instance->subkey_to_key[subkey_pos] = key_pos;
+
                 }
             }
-            instances.insert_or_assign(used_pos, instance);
+
+            instances.insert_or_assign(removed_positions, instance);
             return instance;
         }
     }
