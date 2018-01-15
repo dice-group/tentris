@@ -4,4 +4,14 @@ project(libsparsetensor)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # enable C++17 standard
 
-add_executable(libsparsetensor main.cpp HyperTrie.cpp HyperTrie.hpp Trie.cpp Trie.hpp PosCalc.hpp tests/TestPosCalc.cpp)
+find_package(Boost)
+IF (Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIR})
+endif ()
+
+
+add_executable(libsparsetensor main.cpp HyperTrie.hpp Trie.cpp Trie.hpp PosCalc.hpp)
+
+add_executable(testhypertrie tests/TestHyperTrie.cpp HyperTrie.hpp)
+
+add_executable(testposcalc tests/TestPosCalc.cpp PosCalc.hpp)
