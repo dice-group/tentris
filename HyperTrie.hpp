@@ -29,9 +29,9 @@ public:
 private:
     uint8_t depth;
     uint8_t total;
-    map<uint64_t, variant<HyperTrie *, T>> *edges_by_pos[];
     T leafsum;
     uint64_t leafcount;
+    map<uint64_t, variant<HyperTrie *, T>> *edges_by_pos[];
 
     /**
      * Get edges map by pos. If the map doesn't exist so far it is created.
@@ -57,7 +57,7 @@ private:
         auto edges = this->edges_by_pos[pos];
         // if the map for pos doesn't exist create it.
         if (edges == nullptr)
-            return {};
+            return std::nullopt;
         else
             return {edges};
     }
@@ -84,10 +84,14 @@ private:
             auto old_value_ = (*edge).find(key_part);
             (*edge)[key_part] = *value;
 
-            if (not old_value_)
+            if (old_value_ == (*edge).end())
                 return *value;
-            else
-                return {*value - std::get<T>(*old_value_)};
+            else {
+                T new_value = std::get<T>(*value);
+                T old_value = std::get<T>(old_value_->second);
+                T value_diff = new_value - old_value;
+                return {value_diff};
+            }
         }
     }
 
@@ -99,10 +103,14 @@ private:
      */
     optional<variant<HyperTrie *, T>> getChild(uint8_t pos, uint64_t key_part) {
         optional<map<uint64_t, variant<HyperTrie *, T>> *> edges_ = get_edges(pos);
-        if (edges_)
-            return {(*edges_)[key_part]}; // TODO: does optional(nullptr) form a nullopt?
-        else
-            return {};
+        if (edges_) {
+            map<uint64_t, variant<HyperTrie *, T>> *edges = *edges_;
+            auto child_ = edges->find(key_part); // TODO: fails here
+            if (child_ != edges->end()) {
+                return {child_->second};
+            }
+        }
+        return std::nullopt;
     }
 
     void delChild(uint8_t &pos, uint64_t key_part) {
@@ -154,16 +162,19 @@ private:
 
                 optional<variant<HyperTrie *, T>> child_ = getChild(pos_calc->key_to_subkey_pos(pos), key_part);
                 if (not child_) {
-                    if (finished_child != finished_child.end()) {
-                        this->setChild(pos_calc->key_to_subkey_pos(pos), key_part, optional < variant<HyperTrie *, T>>
-                        { *finished_child });
+                    if (finished_child != finished_subtries.end()) {
+                        variant<HyperTrie *, T> value{finished_child->second};
+                        optional<variant<HyperTrie *, T>> value_{value};
+                        this->setChild(pos_calc->key_to_subkey_pos(pos), key_part, value_);
                     } else {
-                        HyperTrie *child = std::get<HyperTrie *>(
-                                this->setChild(pos_calc->key_to_subkey_pos(pos), key_part, {}));
+                        optional<variant<HyperTrie *, T>> value_ = std::nullopt;
+                        variant<HyperTrie *, T> new_child = this->setChild(pos_calc->key_to_subkey_pos(pos), key_part,
+                                                                           value_);
+                        HyperTrie *child = std::get<HyperTrie *>(new_child);
                         child->set_rek(coords, newValue, hasOldValue, leafSumDiff, finished_subtries, next_pos_calc);
                     }
                 } else {
-                    if (child_) {
+                    if (finished_child != finished_subtries.end()) {
                         HyperTrie *child = std::get<HyperTrie *>(*child_);
                         child->set_rek(coords, newValue, hasOldValue, leafSumDiff, finished_subtries, next_pos_calc);
                     }
@@ -175,20 +186,25 @@ private:
 public:
     void set(vector<uint64_t> &coords, T &value) {
         optional<variant<HyperTrie *, T>> oldValue_ = get(coords);
-        optional < T > oldValue = optional < T > {std::get<T>(*oldValue_)} ? oldValue_ : optional < T > {};
+        bool hasOldValue = false;
+        T oldValue;
+        if (oldValue_) {
+            hasOldValue = true;
+            T oldValue = std::get<T>(*oldValue_);
+        }
 
-        T leafsumDiff = value ? oldValue : value - std::get<T>(*oldValue);
+        T leafsumDiff = value ? hasOldValue : value - oldValue;
 
         std::unordered_map<std::vector<bool>, HyperTrie *> finished_subtries{};
 
         vector<bool> subkey_mask(coords.size());
         PosCalc *pos_calc = PosCalc::getInstance(subkey_mask);
 
-        set_rek(coords, value, bool(oldValue), leafsumDiff, finished_subtries, pos_calc);
+        set_rek(coords, value, hasOldValue, leafsumDiff, finished_subtries, pos_calc);
     }
 
     void del(vector<uint64_t> &coords) {
-
+        throw "Not yet implemented.";
     }
 
 };
