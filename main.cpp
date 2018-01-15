@@ -3,6 +3,8 @@
 #include "Trie.hpp"
 
 int main() {
+    int *abc[3];
+    
     std::cout << "Hello, World!" << std::endl;
     Trie<int> trie{3};
     std::vector<uint64_t> coords{1, 2, 3};

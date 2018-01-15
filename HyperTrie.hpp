@@ -28,10 +28,10 @@ public:
 
 private:
     uint8_t depth;
-    uint8_t total;
     T leafsum;
     uint64_t leafcount;
-    map<uint64_t, variant<HyperTrie *, T>> *edges_by_pos[];
+    vector<map<uint64_t, variant<HyperTrie *, T>> *> edges_by_pos = vector<map<uint64_t, variant<HyperTrie *, T>> *>(depth);
+    // TODO: must get smaller
 
     /**
      * Get edges map by pos. If the map doesn't exist so far it is created.
