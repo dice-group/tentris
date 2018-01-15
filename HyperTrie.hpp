@@ -54,7 +54,7 @@ private:
      * @return optional if it exists: a map that maps the used key_parts at pos of a key to sub-hypertries or T entries
      */
     optional<map<uint64_t, variant<HyperTrie *, T>> *> get_edges(uint8_t pos) noexcept {
-        auto edges = this->edges_by_pos[pos];
+        map<uint64_t, variant<HyperTrie *, T>> *edges = this->edges_by_pos[pos];
         // if the map for pos doesn't exist create it.
         if (edges == nullptr)
             return std::nullopt;
