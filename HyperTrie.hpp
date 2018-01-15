@@ -67,26 +67,27 @@ private:
      * @param pos The key position where the child should be added.
      * @param key_part The key_part to be used at the key position pos.
      * @param value The sub-hypertrie or T to be set.
-     * @return Optional Difference between old and new value if this-> depth is 1.
+     * @return Optional Difference between old and new value if this-> depth is 1. TODO!
      */
-    optional<T> setChild(uint8_t pos, uint64_t key_part, optional<variant<HyperTrie *, T>> &value) {
+    variant<HyperTrie *, T> setChild(uint8_t pos, uint64_t key_part, optional<variant<HyperTrie *, T>> &value) {
         auto edge = get_or_create_edges(pos);
         if (this->depth > 1) {
             if (not value) {
                 variant<HyperTrie *, T> child{new HyperTrie(this->depth - uint8_t(1))};
                 (*edge)[key_part] = child;
+                return child;
             } else {
                 (*edge)[key_part] = *value;
+                return *value;
             }
-            return std::nullopt;
         } else {
-            auto old_value = (*edge)[key_part];
+            auto old_value_ = (*edge).find(key_part);
             (*edge)[key_part] = *value;
 
-            if (old_value == nullptr)
+            if (not old_value_)
                 return *value;
             else
-                return *value - std::get<T>(old_value);
+                return {*value - std::get<T>(*old_value_)};
         }
     }
 
@@ -154,15 +155,21 @@ private:
                 optional<variant<HyperTrie *, T>> child_ = getChild(pos_calc->key_to_subkey_pos(pos), key_part);
                 if (not child_) {
                     if (finished_child != finished_child.end()) {
-                        //this->setChild()
+                        this->setChild(pos_calc->key_to_subkey_pos(pos), key_part, optional < variant<HyperTrie *, T>>
+                        { *finished_child });
+                    } else {
+                        HyperTrie *child = std::get<HyperTrie *>(
+                                this->setChild(pos_calc->key_to_subkey_pos(pos), key_part, {}));
+                        child->set_rek(coords, newValue, hasOldValue, leafSumDiff, finished_subtries, next_pos_calc);
+                    }
+                } else {
+                    if (child_) {
+                        HyperTrie *child = std::get<HyperTrie *>(*child_);
+                        child->set_rek(coords, newValue, hasOldValue, leafSumDiff, finished_subtries, next_pos_calc);
                     }
                 }
-
             }
-
         }
-
-
     }
 
 public:
