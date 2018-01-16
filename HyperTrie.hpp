@@ -11,6 +11,7 @@
 #include <vector>
 #include <variant>
 #include <unordered_map>
+#include <iostream>
 #include "boost/variant.hpp"
 #include "PosCalc.hpp"
 
@@ -28,10 +29,10 @@ public:
 
 private:
     uint8_t depth;
-    T leafsum;
-    uint64_t leafcount;
-    vector<map<uint64_t, variant<HyperTrie *, T>> *> edges_by_pos = vector<map<uint64_t, variant<HyperTrie *, T>> *>(depth);
-    // TODO: must get smaller
+    T leafsum = 0;
+    uint64_t leafcount = 0;
+    vector<map<uint64_t, variant<HyperTrie *, T>> *> edges_by_pos =
+            vector<map<uint64_t, variant<HyperTrie *, T>> *>(depth);
 
     /**
      * Get edges map by pos. If the map doesn't exist so far it is created.
@@ -128,12 +129,14 @@ public:
             if (child_) {
                 if (pos != coords.size() - 1)
                     current_trie = std::get<HyperTrie *>(*child_);
-                else
-                    return std::get<T>(*child_);
+                else {
+                    std::cout << std::get<1>(*child_) << std::endl;
+                    return {*child_};
+                }
             } else
-                return {};
+                return std::nullopt;
         }
-        return {}; // TODO: remove
+        return std::nullopt; // TODO: remove
     }
 
 private:
@@ -174,7 +177,7 @@ private:
                         child->set_rek(coords, newValue, hasOldValue, leafSumDiff, finished_subtries, next_pos_calc);
                     }
                 } else {
-                    if (finished_child != finished_subtries.end()) {
+                    if (finished_child == finished_subtries.end()) {
                         HyperTrie *child = std::get<HyperTrie *>(*child_);
                         child->set_rek(coords, newValue, hasOldValue, leafSumDiff, finished_subtries, next_pos_calc);
                     }
@@ -190,10 +193,10 @@ public:
         T oldValue;
         if (oldValue_) {
             hasOldValue = true;
-            T oldValue = std::get<T>(*oldValue_);
+            oldValue = std::get<T>(*oldValue_);
         }
 
-        T leafsumDiff = value ? hasOldValue : value - oldValue;
+        T leafsumDiff = hasOldValue ? (value - oldValue) : value;
 
         std::unordered_map<std::vector<bool>, HyperTrie *> finished_subtries{};
 
