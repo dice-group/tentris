@@ -82,6 +82,23 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
         }
     }
 
+    BOOST_AUTO_TEST_CASE(test_read_empty_key) {
+        vector<uint64_t> key{5, 10, 8};
+        short value = 1;
+
+        HyperTrie<short> trie{uint8_t(key.size())};
+
+        trie.set(key, value);
+
+        vector<uint64_t> empty_key{};
+        optional<variant<HyperTrie<short> *, short>> this_trie_ = trie.get(empty_key);
+
+        BOOST_CHECK(this_trie_);
+
+        HyperTrie<short> *this_trie = std::get<HyperTrie<short> *>(*this_trie_);
+        BOOST_CHECK_EQUAL(this_trie, &trie);
+    }
+
     BOOST_AUTO_TEST_CASE(test_mult_write_read4) {
         // data
         vector<vector<uint64_t>> keys{
