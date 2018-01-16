@@ -18,9 +18,20 @@ T MapTensor::get(vector<uint64_t> key) {
 
 template<typename T>
 void MapTensor::set(std::vector<uint64_t> key, T value) {
-    if (value != T{}) {
-        this->entries[key] = value;
+    auto old_value_ = this->entries.find(key);
+    if (old_value_ != this->entries.end()) {
+        this->sum += value - old_value_->second;
+        if (value != T{}) {
+            old_value_->second = value;
+        } else {
+            this->entries.erase(key);
+            this->nnz -= 1;
+        }
     } else {
-        this->entries.erase(key);
+        if (value != T{}) {
+            this->entries[key] = value;
+            this->sum += value;
+            this->nnz += 1;
+        }
     }
 }
