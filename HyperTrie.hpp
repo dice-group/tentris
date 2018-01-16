@@ -26,10 +26,13 @@ class HyperTrie {
 public:
     HyperTrie(uint8_t depth);
 
-private:
     uint8_t depth;
+
     T leafsum = 0;
+
     uint64_t leafcount = 0;
+
+private:
     vector<map<uint64_t, variant<HyperTrie *, T>> *> edges_by_pos =
             vector<map<uint64_t, variant<HyperTrie *, T>> *>(depth);
 
