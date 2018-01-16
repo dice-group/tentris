@@ -11,7 +11,6 @@
 #include <vector>
 #include <variant>
 #include <unordered_map>
-#include <iostream>
 #include "boost/variant.hpp"
 #include "PosCalc.hpp"
 
@@ -130,7 +129,6 @@ public:
                 if (pos != coords.size() - 1)
                     current_trie = std::get<HyperTrie *>(*child_);
                 else {
-                    std::cout << std::get<1>(*child_) << std::endl;
                     return {*child_};
                 }
             } else
