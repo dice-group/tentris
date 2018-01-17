@@ -1,4 +1,4 @@
-#include "../PosCalc.hpp"
+#include "../hypertrie/PosCalc.hpp"
 
 #define BOOST_TEST_MODULE LibSparseTensorTest
 

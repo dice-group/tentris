@@ -1,4 +1,4 @@
-#include "../HyperTrie.hpp"
+#include "../hypertrie/HyperTrie.hpp"
 
 #define BOOST_TEST_MODULE LibSparseTensorTest
 
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
         HyperTrie<short> trie{key_length};
 
         // load data
-        for (int i = 0; i < keys.size(); ++i) {
+        for (unsigned int i = 0; i < keys.size(); ++i) {
             vector<uint64_t> &key = keys[i];
             short &value = values[i];
 
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
         }
 
         // validate
-        for (int i = 0; i < keys.size(); ++i) {
+        for (unsigned int i = 0; i < keys.size(); ++i) {
             vector<uint64_t> &key = keys[i];
             short &value = values[i];
 
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
         HyperTrie<short> trie{key_length};
 
         // load data
-        for (int i = 0; i < keys.size(); ++i) {
+        for (unsigned int i = 0; i < keys.size(); ++i) {
             vector<uint64_t> &key = keys[i];
             short &value = values[i];
 

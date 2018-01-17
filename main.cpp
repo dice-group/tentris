@@ -1,5 +1,5 @@
 #include <iostream>
-#include "HyperTrie.hpp"
+#include "hypertrie/HyperTrie.hpp"
 #include "Trie.hpp"
 
 int main() {

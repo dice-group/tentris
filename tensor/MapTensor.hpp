@@ -9,13 +9,15 @@
 #include "Tensor.hpp"
 
 template<typename T>
-class MapTensor : Tensor {
+class MapTensor : public Tensor<T> {
+    std::map<std::vector<uint64_t>, T> entries{};
 public:
-    MapTensor(uint8_t ndim, const vector<uint64_t> &shape);
+    using Tensor<T>::Tensor;
 
-    T get(vector<uint64_t> key);
 
-    void set(std::vector<uint64_t> key, T value);
+    T get(vector<uint64_t> &key);
+
+    void set(std::vector<uint64_t> &key, T &value);
 };
 
 
