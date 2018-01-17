@@ -18,10 +18,12 @@ IF (Boost_FOUND)
 endif ()
 
 
-add_executable(libsparsetensor main.cpp hypertrie/HyperTrie.hpp Trie.cpp Trie.hpp hypertrie/PosCalc.hpp tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp)
+add_executable(libsparsetensor main.cpp hypertrie/HyperTrie.hpp Trie.cpp Trie.hpp hypertrie/PosCalc.hpp tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp tensor/HyperTrieTensor.hpp)
 
 add_executable(testhypertrie tests/TestHyperTrie.cpp hypertrie/HyperTrie.hpp)
 
 add_executable(testposcalc tests/TestPosCalc.cpp hypertrie/PosCalc.hpp)
 
-add_executable(testmaptensor tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp tests/TestMapTensor.cpp)
+add_executable(testmaptensor tests/TestMapTensor.cpp tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp)
+
+add_executable(testhypertrietensor tests/TestHyperTrieTensor.cpp tensor/Tensor.hpp tensor/HyperTrieTensor.hpp util.hpp)
