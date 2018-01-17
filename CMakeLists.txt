@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.9)
 project(libsparsetensor)
 
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
-endif()
+endif ()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -18,8 +18,10 @@ IF (Boost_FOUND)
 endif ()
 
 
-add_executable(libsparsetensor main.cpp hypertrie/HyperTrie.hpp Trie.cpp Trie.hpp hypertrie/PosCalc.hpp tensor/Tensor.hpp tensor/MapTensor.cpp tensor/MapTensor.hpp util.cpp util.hpp)
+add_executable(libsparsetensor main.cpp hypertrie/HyperTrie.hpp Trie.cpp Trie.hpp hypertrie/PosCalc.hpp tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp)
 
 add_executable(testhypertrie tests/TestHyperTrie.cpp hypertrie/HyperTrie.hpp)
 
 add_executable(testposcalc tests/TestPosCalc.cpp hypertrie/PosCalc.hpp)
+
+add_executable(testmaptensor tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp tests/TestMapTensor.cpp)
