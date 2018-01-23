@@ -13,6 +13,7 @@
 using std::unordered_set;
 using std::unordered_map;
 using std::vector;
+using std::set;
 
 template<typename T>
 class UndirectedGraph {
@@ -24,6 +25,16 @@ private:
     unordered_map<T, unordered_set<T >> edges{};
 
 public:
+    void addFullGraph(const set<T> &nodes) { // TODO: test
+        auto node_a = nodes.begin();
+        for (; node_a != nodes.end(); node_a++) {
+            auto node_b = node_a;
+            for (; node_b != nodes.end(); node_b++) {
+                addEdge(*node_a, node_b);
+            }
+        }
+    }
+
     void addEdge(T x, T y) {
         nodes.insert(x);
         unordered_set<T> &adjacent_nodes_x = edges[x];

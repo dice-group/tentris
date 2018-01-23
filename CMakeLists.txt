@@ -20,7 +20,7 @@ endif ()
 
 add_executable(libsparsetensor main.cpp hypertrie/HyperTrie.hpp Trie.cpp Trie.hpp hypertrie/PosCalc.hpp tensor/Tensor.hpp tensor/MapTensor.hpp util.hpp tensor/HyperTrieTensor.hpp einsum/Einsum.hpp einsum/Subscript.hpp einsum/operator/Operator.hpp einsum/operator/Einsum.hpp einsum/operator/CrossProduct.hpp einsum/util/UndirectedGraph.hpp)
 
-add_executable(testhypertrie tests/TestHyperTrie.cpp hypertrie/HyperTrie.hpp tests/TestUndirectedGraph.cpp)
+add_executable(testhypertrie tests/TestHyperTrie.cpp hypertrie/HyperTrie.hpp)
 
 add_executable(testposcalc tests/TestPosCalc.cpp hypertrie/PosCalc.hpp)
 
