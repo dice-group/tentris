@@ -35,7 +35,7 @@ private:
 
 public:
     /**
-     * Adds a complete graph between the given nodes.
+     * Adds all edges between the given nodes (complete graph).
      * @param nodes nodes to span the complete graph.
      */
     void addCompleteGraph(const set<T> &nodes) {
@@ -79,7 +79,7 @@ public:
 
         unordered_set<unordered_set<T>> connected_components{};
 
-        do {
+        while (not unfinished_nodes.empty()) {
             unordered_set<T> connected_component{};
 
             T first_node = *unfinished_nodes.begin();
@@ -101,7 +101,7 @@ public:
             }
 
             connected_components.emplace(connected_component);
-        } while (not unfinished_nodes.empty());
+        }
 
         return connected_components;
     }
