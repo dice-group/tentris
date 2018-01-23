@@ -1,4 +1,4 @@
-#include "../einsum/util/UndirectedGraph.hpp"
+#include "einsum/util/UndirectedGraph.hpp"
 
 #define BOOST_TEST_MODULE LibSparseTensorTest
 

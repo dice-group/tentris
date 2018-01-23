@@ -1,4 +1,4 @@
-#include "../tensor/HyperTrieTensor.hpp"
+#include "tensor/HyperTrieTensor.hpp"
 
 #define BOOST_TEST_MODULE LibSparseTensorTest
 

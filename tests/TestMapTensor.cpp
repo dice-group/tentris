@@ -1,4 +1,4 @@
-#include "../tensor/MapTensor.hpp"
+#include "tensor/MapTensor.hpp"
 
 #define BOOST_TEST_MODULE LibSparseTensorTest
 
