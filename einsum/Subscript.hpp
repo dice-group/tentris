@@ -17,6 +17,7 @@ using std::vector;
 using std::tuple;
 
 class Subscript {
+public:
     typedef uint8_t label_t;
     typedef uint8_t op_pos_t;
     typedef uint8_t label_pos_t;
@@ -40,7 +41,7 @@ private:
      */
     static vector<label_t>
     normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
-                         const vector<label_t> &raw_labels) const;
+                         const vector<label_t> &raw_labels);
 
     void init(vector<vector<label_t>> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
 
@@ -70,10 +71,10 @@ public:
 };
 
 
-static vector<Subscript::label_t>
+vector<Subscript::label_t>
 Subscript::normalizeLabelVector(unordered_map<Subscript::label_t, Subscript::label_t> &raw_to_norm_label,
                                 Subscript::label_t &next_norm_label,
-                                const vector<Subscript::label_t> &raw_labels) const {
+                                const vector<Subscript::label_t> &raw_labels) {
     vector<label_t> norm_operand_labels(raw_labels.size());
 
     label_pos_t label_pos = 0;
@@ -81,7 +82,7 @@ Subscript::normalizeLabelVector(unordered_map<Subscript::label_t, Subscript::lab
         // check if raw label is already mapped to a normed label
         auto norm_label_ = raw_to_norm_label.find(raw_label);
         label_t norm_label;
-        if (norm_label_ == raw_to_norm_label.end()) {
+        if (norm_label_ != raw_to_norm_label.end()) {
             norm_label = norm_label_->second;
         } else {
             // otherwise map it
@@ -94,7 +95,7 @@ Subscript::normalizeLabelVector(unordered_map<Subscript::label_t, Subscript::lab
     return norm_operand_labels;
 }
 
-static tuple<vector<vector<Subscript::label_t >>, vector<Subscript::label_t>, uint8_t>
+tuple<vector<vector<Subscript::label_t >>, vector<Subscript::label_t>, uint8_t>
 Subscript::normalizeRawSubscripts(vector<vector<Subscript::label_t>> &raw_operand_subscripts,
                                   vector<Subscript::label_t> &raw_result_subscript) {
     unordered_map<label_t, label_t> raw_to_norm_label{};
@@ -134,8 +135,9 @@ void Subscript::init
     // operands_labels
     // distinct_operands_labels
     for (op_pos_t op_pos = 0; op_pos < operand_subscripts.size(); ++op_pos) {
-        operands_labels[op_pos] = operand_subscripts[op_pos];
-        set<label_t> distict_labels(operand_subscripts.begin(), operand_subscripts.end());
+        vector<label_t> &reference = operand_subscripts[op_pos];
+        operands_labels[op_pos] = reference;
+        set<label_t> distict_labels(reference.begin(), reference.end());
         distinct_operands_labels[op_pos] = distict_labels;
     }
 

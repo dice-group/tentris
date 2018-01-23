@@ -29,3 +29,5 @@ add_executable(testmaptensor tests/TestMapTensor.cpp tensor/Tensor.hpp tensor/Ma
 add_executable(testhypertrietensor tests/TestHyperTrieTensor.cpp tensor/Tensor.hpp tensor/HyperTrieTensor.hpp util.hpp)
 
 add_executable(testundirectedgraph einsum/util/UndirectedGraph.hpp tests/TestUndirectedGraph.cpp util.hpp)
+
+add_executable(testsubscript einsum/Subscript.hpp einsum/util/UndirectedGraph.hpp tests/TestSubScript.cpp util.hpp)
