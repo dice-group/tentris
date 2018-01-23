@@ -17,6 +17,7 @@ BOOST_AUTO_TEST_SUITE(TestSubscript)
                 {3, 0}
         };
         Subscript sc{raw_op_sc, raw_res_sc};
+        std::cout << sc << std::endl;
 
 
     }

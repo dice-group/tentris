@@ -16,7 +16,13 @@ using std::map;
 using std::vector;
 using std::tuple;
 
+class Subscript;
+
+std::ostream &operator<<(std::ostream &out, Subscript &subscript);
+
 class Subscript {
+    friend std::ostream &operator<<(std::ostream &out, Subscript &tensor);
+
 public:
     typedef uint8_t label_t;
     typedef uint8_t op_pos_t;
@@ -185,5 +191,13 @@ void Subscript::init
 
 }
 
+std::ostream &operator<<(std::ostream &out, Subscript &subscript) {
+    out << "<Subscript: "
+        << "all_labels=" << subscript.all_labels
+        << ", "
+        << "result_labels=" << subscript.result_labels
+        << ">";
+    return out;
+}
 
 #endif //LIBSPARSETENSOR_SUBSCRIPT_HPP

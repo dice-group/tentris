@@ -13,6 +13,8 @@
 
 using std::string;
 using std::vector;
+using std::set;
+using std::unordered_set;
 using std::ostream;
 using std::cout;
 using std::endl;
@@ -22,18 +24,75 @@ using std::endl;
  * source: http://www.cplusplus.com/forum/beginner/104130/
  * @tparam TElem Type of std::vector's elements
  * @param os stream to write to
- * @param vec vector to be printed
+ * @param elements vector to be printed
  * @return input stream for chaining
  */
 template<typename TElem>
-std::ostream &operator<<(std::ostream &os, const std::vector<TElem> &vec) {
-    typename vector<TElem>::const_iterator iter_begin = vec.begin();
-    typename vector<TElem>::const_iterator iter_end = vec.end();
-    os << "(";
+ostream &operator<<(ostream &os, const vector<TElem> &elements) {
+    typename vector<TElem>::const_iterator iter_begin = elements.begin();
+    typename vector<TElem>::const_iterator iter_end = elements.end();
+    os << "[";
     for (auto iter = iter_begin; iter != iter_end; ++iter) {
         cout << ((iter != iter_begin) ? ", " : "") << *iter;
     }
-    os << ")";
+    os << "]";
+    return os;
+}
+
+ostream &operator<<(ostream &os, const vector<uint8_t> &elements) {
+    typename vector<uint8_t>::const_iterator iter_begin = elements.begin();
+    typename vector<uint8_t>::const_iterator iter_end = elements.end();
+    os << "[";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        cout << ((iter != iter_begin) ? ", " : "") << long(*iter);
+    }
+    os << "]";
+    return os;
+}
+
+template<typename TElem>
+std::ostream &operator<<(ostream &os, const set<TElem> &elements) {
+    typename set<TElem>::const_iterator iter_begin = elements.begin();
+    typename set<TElem>::const_iterator iter_end = elements.end();
+    os << "{";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        cout << ((iter != iter_begin) ? ", " : "") << *iter;
+    }
+    os << "}";
+    return os;
+}
+
+std::ostream &operator<<(ostream &os, const set<uint8_t> &elements) {
+    typename set<uint8_t>::const_iterator iter_begin = elements.begin();
+    typename set<uint8_t>::const_iterator iter_end = elements.end();
+    os << "{";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        cout << ((iter != iter_begin) ? ", " : "") << long(*iter);
+    }
+    os << "}";
+    return os;
+}
+
+template<typename TElem>
+std::ostream &operator<<(ostream &os, const unordered_set<TElem> &elements) {
+    typename unordered_set<TElem>::const_iterator iter_begin = elements.begin();
+    typename unordered_set<TElem>::const_iterator iter_end = elements.end();
+    os << "{";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        cout << ((iter != iter_begin) ? ", " : "") << *iter;
+    }
+    os << "}";
+    return os;
+}
+
+std::ostream &operator<<(ostream &os, const unordered_set<uint8_t> &elements) {
+    typename unordered_set<uint8_t>::const_iterator iter_begin = elements.begin();
+    typename unordered_set<uint8_t>::const_iterator iter_end = elements.end();
+    os << "{";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        cout << ((iter != iter_begin) ? ", " : "") << long(*iter);
+    }
+    os << "}";
     return os;
 }
 
@@ -51,8 +110,7 @@ namespace std {
     };
 
     // Code from https://stackoverflow.com/a/7115547
-    namespace
-    {
+    namespace {
 
         // Code from boost
         // Reciprocal of the golden ratio helps spread entropy
@@ -60,39 +118,32 @@ namespace std {
         // See Mike Seymour in magic-numbers-in-boosthash-combine:
         //     http://stackoverflow.com/questions/4948780
 
-        template <class T>
-        inline void hash_combine(std::size_t& seed, T const& v)
-        {
-            seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+        template<class T>
+        inline void hash_combine(std::size_t &seed, T const &v) {
+            seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         }
 
         // Recursive template code derived from Matthieu M.
-        template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
-        struct HashValueImpl
-        {
-            static void apply(size_t& seed, Tuple const& tuple)
-            {
-                HashValueImpl<Tuple, Index-1>::apply(seed, tuple);
+        template<class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
+        struct HashValueImpl {
+            static void apply(size_t &seed, Tuple const &tuple) {
+                HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
                 hash_combine(seed, std::get<Index>(tuple));
             }
         };
 
-        template <class Tuple>
-        struct HashValueImpl<Tuple,0>
-        {
-            static void apply(size_t& seed, Tuple const& tuple)
-            {
+        template<class Tuple>
+        struct HashValueImpl<Tuple, 0> {
+            static void apply(size_t &seed, Tuple const &tuple) {
                 hash_combine(seed, std::get<0>(tuple));
             }
         };
     }
 
-    template <typename ... TT>
-    struct hash<std::tuple<TT...>>
-    {
+    template<typename ... TT>
+    struct hash<std::tuple<TT...>> {
         size_t
-        operator()(std::tuple<TT...> const& tt) const
-        {
+        operator()(std::tuple<TT...> const &tt) const {
             size_t seed = 0;
             HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
             return seed;
