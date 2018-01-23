@@ -7,40 +7,53 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
+#include "../../util.hpp"
 
+using std::unordered_set;
+using std::unordered_map;
+using std::vector;
+
+template<typename T>
 class UndirectedGraph {
 public:
     UndirectedGraph() {}
 
 private:
-    std::unordered_set<uint8_t> nodes{};
-    std::unordered_map<uint8_t, std::unordered_set<uint8_t >> edges{};
+    unordered_set<T> nodes{};
+    unordered_map<T, unordered_set<T >> edges{};
 
-    void addEdge(uint8_t x, uint8_t y) {
+public:
+    void addEdge(T x, T y) {
         nodes.insert(x);
-        std::unordered_set<uint8_t> &adjacent_nodes = edges[x];
-        adjacent_nodes.insert(y);
+        unordered_set<T> &adjacent_nodes_x = edges[x];
+        adjacent_nodes_x.insert(y);
+
+        nodes.insert(y);
+        unordered_set<T> &adjacent_nodes_y = edges[y];
+        adjacent_nodes_y.insert(x);
     }
 
-    std::unordered_set<std::unordered_set<uint8_t>> getConnectedComponents() {
-        std::unordered_set<uint8_t> unfinished_nodes{this->nodes};
+    unordered_set<unordered_set<T>> getConnectedComponents() {
+        unordered_set<T> unfinished_nodes{this->nodes};
 
-        std::unordered_set<uint8_t> open_nodes{};
+        unordered_set<T> open_nodes{};
 
-        std::unordered_set<std::unordered_set<uint8_t>> connected_components{};
+        unordered_set<unordered_set<T>> connected_components{};
 
-        while (not unfinished_nodes.empty()) {
-            std::unordered_set<uint8_t> connected_component{};
+        do {
+            unordered_set<T> connected_component{};
 
-            uint8_t first_node = *unfinished_nodes.begin();
+            T first_node = *unfinished_nodes.begin();
             open_nodes.insert(first_node);
             connected_component.insert(first_node);
             unfinished_nodes.erase(first_node);
 
-            for (uint8_t node = *open_nodes.begin(); not open_nodes.empty(); node = *open_nodes.begin()) {
+            while (not open_nodes.empty()) {
+                T node = *open_nodes.begin();
                 open_nodes.erase(node);
-                const std::unordered_set<uint8_t> &adjacent_nodes = edges[node];
-                for (uint8_t adj_node : adjacent_nodes) {
+                const unordered_set<T> &adjacent_nodes = edges[node];
+                for (T adj_node : adjacent_nodes) {
                     if (unfinished_nodes.count(adj_node)) {
                         connected_component.insert(adj_node);
                         open_nodes.insert(adj_node);
@@ -50,8 +63,8 @@ private:
             }
 
             connected_components.emplace(connected_component);
-        }
-        while (not unfinished_nodes.empty());
+        } while (not unfinished_nodes.empty());
+
         return connected_components;
     }
 
