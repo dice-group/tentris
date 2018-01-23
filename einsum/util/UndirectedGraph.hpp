@@ -1,7 +1,3 @@
-//
-// Created by me on 17.01.18.
-//
-
 #ifndef LIBSPARSETENSOR_UNDIRECTEDGRAPH_HPP
 #define LIBSPARSETENSOR_UNDIRECTEDGRAPH_HPP
 
@@ -15,37 +11,68 @@ using std::unordered_map;
 using std::vector;
 using std::set;
 
+/**
+ * Simple undirected Graph implementation.
+ * @tparam T type of the nodes.
+ */
 template<typename T>
 class UndirectedGraph {
 public:
-    UndirectedGraph() {}
+    /**
+     * New empty UndirectedGraph.
+     */
+    UndirectedGraph() = default;
 
 private:
+    /**
+     * Set of all nodes.
+     */
     unordered_set<T> nodes{};
+    /**
+     * Set of all directed edges. (a,a)-edged are allowed.
+     */
     unordered_map<T, unordered_set<T >> edges{};
 
 public:
-    void addFullGraph(const set<T> &nodes) { // TODO: test
+    /**
+     * Adds a complete graph between the given nodes.
+     * @param nodes nodes to span the complete graph.
+     */
+    void addCompleteGraph(const set<T> &nodes) {
+        // add all combinations
         auto node_a = nodes.begin();
         for (; node_a != nodes.end(); node_a++) {
             auto node_b = node_a;
             for (; node_b != nodes.end(); node_b++) {
-                addEdge(*node_a, node_b);
+                addEdge(*node_a, *node_b);
             }
         }
     }
 
-    void addEdge(T x, T y) {
-        nodes.insert(x);
-        unordered_set<T> &adjacent_nodes_x = edges[x];
-        adjacent_nodes_x.insert(y);
+    /**
+     * Add a undirected edge between two nodes.
+     * @param node_a first node
+     * @param node_b second node
+     */
+    void addEdge(T node_a, T node_b) {
+        // insert edge from a to b
+        nodes.insert(node_a);
+        unordered_set<T> &adjacent_nodes_x = edges[node_a];
+        adjacent_nodes_x.insert(node_b);
 
-        nodes.insert(y);
-        unordered_set<T> &adjacent_nodes_y = edges[y];
-        adjacent_nodes_y.insert(x);
+        // insert edge from b to a
+        nodes.insert(node_b);
+        unordered_set<T> &adjacent_nodes_y = edges[node_b];
+        adjacent_nodes_y.insert(node_a);
     }
 
+    /**
+     * Get all connected components e.g. all sets of nodes that are reachable form each other.
+     * @return set of connected components.
+     */
     unordered_set<unordered_set<T>> getConnectedComponents() {
+        // this is basically a breadth first search
+        // see: https://en.wikipedia.org/wiki/Breadth-first_search
         unordered_set<T> unfinished_nodes{this->nodes};
 
         unordered_set<T> open_nodes{};

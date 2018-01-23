@@ -175,7 +175,7 @@ void Subscript::init
 
     // label_dependency_graph
     for (const auto &labels :distinct_operands_labels) {
-        label_dependency_graph.addFullGraph(labels.second);
+        label_dependency_graph.addCompleteGraph(labels.second);
     }
 
     // independent_label_subsets
