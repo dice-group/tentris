@@ -106,7 +106,13 @@ public:
         return connected_components;
     }
 
-
+    /**
+     * Resets the graph to an empty graph.
+     */
+    void clear() {
+        nodes.clear();
+        edges.clear();
+    }
 };
 
 
