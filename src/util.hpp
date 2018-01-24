@@ -15,6 +15,8 @@ using std::string;
 using std::vector;
 using std::set;
 using std::unordered_set;
+using std::map;
+using std::unordered_map;
 using std::ostream;
 using std::cout;
 using std::endl;
@@ -33,9 +35,14 @@ ostream &operator<<(ostream &os, const vector<TElem> &elements) {
     typename vector<TElem>::const_iterator iter_end = elements.end();
     os << "[";
     for (auto iter = iter_begin; iter != iter_end; ++iter) {
-        cout << ((iter != iter_begin) ? ", " : "") << *iter;
+        os << ((iter != iter_begin) ? ", " : "") << *iter;
     }
     os << "]";
+    return os;
+}
+
+std::ostream &operator<<(ostream &os, const uint8_t &element) {
+        os << long(element);
     return os;
 }
 
@@ -56,22 +63,22 @@ std::ostream &operator<<(ostream &os, const set<TElem> &elements) {
     typename set<TElem>::const_iterator iter_end = elements.end();
     os << "{";
     for (auto iter = iter_begin; iter != iter_end; ++iter) {
-        cout << ((iter != iter_begin) ? ", " : "") << *iter;
+        os << ((iter != iter_begin) ? ", " : "") << *iter;
     }
     os << "}";
     return os;
 }
 
-std::ostream &operator<<(ostream &os, const set<uint8_t> &elements) {
-    typename set<uint8_t>::const_iterator iter_begin = elements.begin();
-    typename set<uint8_t>::const_iterator iter_end = elements.end();
-    os << "{";
-    for (auto iter = iter_begin; iter != iter_end; ++iter) {
-        cout << ((iter != iter_begin) ? ", " : "") << long(*iter);
-    }
-    os << "}";
-    return os;
-}
+//std::ostream &operator<<(ostream &os, const set<uint8_t> &elements) {
+//    typename set<uint8_t>::const_iterator iter_begin = elements.begin();
+//    typename set<uint8_t>::const_iterator iter_end = elements.end();
+//    os << "{";
+//    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+//        cout << ((iter != iter_begin) ? ", " : "") << long(*iter);
+//    }
+//    os << "}";
+//    return os;
+//}
 
 template<typename TElem>
 std::ostream &operator<<(ostream &os, const unordered_set<TElem> &elements) {
@@ -85,12 +92,25 @@ std::ostream &operator<<(ostream &os, const unordered_set<TElem> &elements) {
     return os;
 }
 
-std::ostream &operator<<(ostream &os, const unordered_set<uint8_t> &elements) {
-    typename unordered_set<uint8_t>::const_iterator iter_begin = elements.begin();
-    typename unordered_set<uint8_t>::const_iterator iter_end = elements.end();
+//std::ostream &operator<<(ostream &os, const unordered_set<uint8_t> &elements) {
+//    typename unordered_set<uint8_t>::const_iterator iter_begin = elements.begin();
+//    typename unordered_set<uint8_t>::const_iterator iter_end = elements.end();
+//    os << "{";
+//    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+//        os << ((iter != iter_begin) ? ", " : "") << long(*iter);
+//    }
+//    os << "}";
+//    return os;
+//}
+
+
+template<typename V>
+std::ostream &operator<<(ostream &os, const map<uint8_t, V> &elements) {
+    typename map<uint8_t, V>::const_iterator iter_begin = elements.begin();
+    typename map<uint8_t, V>::const_iterator iter_end = elements.end();
     os << "{";
     for (auto iter = iter_begin; iter != iter_end; ++iter) {
-        cout << ((iter != iter_begin) ? ", " : "") << long(*iter);
+        os << ((iter != iter_begin) ? ", " : "") << long(iter->first) << " : " << iter->second;
     }
     os << "}";
     return os;

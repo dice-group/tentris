@@ -17,7 +17,8 @@ BOOST_AUTO_TEST_CASE(test_me) {
             { 3, 0 }
         };
         Subscript sc{ raw_op_sc, raw_res_sc };
-        std::cout << sc << std::endl;
+        uint8_t ui{5};
+        std::cout << ui << " " << sc << std::endl;
 
 
 }

@@ -196,6 +196,9 @@ std::ostream &operator<<(std::ostream &out, Subscript &subscript) {
         << "all_labels=" << subscript.all_labels
         << ", "
         << "result_labels=" << subscript.result_labels
+        << ", "
+        << "operands_labels=" << subscript.operands_labels
+
         << ">";
     return out;
 }
