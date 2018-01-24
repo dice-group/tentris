@@ -74,7 +74,47 @@ public:
     optimized(vector<vector<uint8_t>> &raw_operand_subscripts, vector<uint8_t> &raw_result_subscript) {
         return {raw_operand_subscripts, raw_result_subscript};
     }
+
+    const unordered_set<label_t> &getAll_labels() const {
+        return all_labels;
+    }
+
+    const map<op_pos_t, vector<label_t>> &getOperands_labels() const {
+        return operands_labels;
+    }
+
+    const map<op_pos_t, set<label_t>> &getDistinct_operands_labels() const {
+        return distinct_operands_labels;
+    }
+
+    const vector<label_t> &getResult_labels() const {
+        return result_labels;
+    }
+
+    const unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> &getLabel_poss_in_operand() const {
+        return label_poss_in_operand;
+    }
+
+    const unordered_map<label_t, label_pos_t> &getLabel_pos_in_result() const {
+        return label_pos_in_result;
+    }
+
+    const unordered_map<label_t, set<op_pos_t>> &getOperands_with_label() const {
+        return operands_with_label;
+    }
+
+    const UndirectedGraph<label_t> &getLabel_dependency_graph() const {
+        return label_dependency_graph;
+    }
+
+    const unordered_set<unordered_set<label_t>> &getIndependent_label_subsets() const {
+        return independent_label_subsets;
+    }
 };
+
+/**
+ * Implementations start here
+ */
 
 
 vector<Subscript::label_t>
@@ -97,6 +137,7 @@ Subscript::normalizeLabelVector(unordered_map<Subscript::label_t, Subscript::lab
         }
 
         norm_operand_labels[label_pos] = norm_label;
+        label_pos++;
     }
     return norm_operand_labels;
 }
@@ -122,15 +163,15 @@ Subscript::normalizeRawSubscripts(vector<vector<Subscript::label_t>> &raw_operan
     return {norm_operand_subscripts, norm_result_subscript, next_norm_label};
 }
 
+
 void Subscript::init
         (vector<vector<Subscript::label_t>> &raw_operand_subscripts, vector<Subscript::label_t> &raw_result_subscript) {
 
     vector<vector<label_t>> operand_subscripts;
     vector<label_t> result_subscript;
     uint8_t number_of_labels;
-    tie(operand_subscripts, raw_result_subscript, number_of_labels) = normalizeRawSubscripts(raw_operand_subscripts,
-                                                                                             raw_result_subscript);
-
+    tie(operand_subscripts, result_subscript, number_of_labels) = normalizeRawSubscripts(raw_operand_subscripts,
+                                                                                         raw_result_subscript);
     /// init fields
 
     // all_labels
@@ -192,23 +233,23 @@ void Subscript::init
 }
 
 std::ostream &operator<<(std::ostream &out, Subscript &subscript) {
-    out << "<Subscript: "
+    out << "<Subscript: \n"
         << "all_labels=" << subscript.all_labels
-        << ", \n"
-        << "operands_labels=" << subscript.operands_labels
-        << ", \n"
-        << "distinct_operands_labels=" << subscript.distinct_operands_labels
-        << ", \n"
-        << "result_labels=" << subscript.result_labels
-        << ", \n"
-        << "label_poss_in_operand=" << subscript.label_poss_in_operand
-        << ", \n"
-        << "label_pos_in_result=" << subscript.label_pos_in_result
-        << ", \n"
-        << "operands_labels=" << subscript.operands_labels
-        << ", \n"
-        << "independent_label_subsets=" << subscript.independent_label_subsets
-        << ">";
+        << ",\n\t"
+        << "operands_labels = \n\t\t" << subscript.operands_labels
+        << ",\n\t"
+        << "distinct_operands_labels = \n\t\t" << subscript.distinct_operands_labels
+        << ",\n\t"
+        << "result_labels = \n\t\t" << subscript.result_labels
+        << ",\n\t"
+        << "label_poss_in_operand = \n\t\t" << subscript.label_poss_in_operand
+        << ",\n\t"
+        << "label_pos_in_result = \n\t\t" << subscript.label_pos_in_result
+        << ",\n\t"
+        << "operands_labels = \n\t\t" << subscript.operands_labels
+        << ",\n\t"
+        << "independent_label_subsets = \n\t\t" << subscript.independent_label_subsets
+        << "\n>";
     return out;
 }
 
