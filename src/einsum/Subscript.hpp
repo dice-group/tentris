@@ -194,11 +194,20 @@ void Subscript::init
 std::ostream &operator<<(std::ostream &out, Subscript &subscript) {
     out << "<Subscript: "
         << "all_labels=" << subscript.all_labels
-        << ", "
-        << "result_labels=" << subscript.result_labels
-        << ", "
+        << ", \n"
         << "operands_labels=" << subscript.operands_labels
-
+        << ", \n"
+        << "distinct_operands_labels=" << subscript.distinct_operands_labels
+        << ", \n"
+        << "result_labels=" << subscript.result_labels
+        << ", \n"
+        << "label_poss_in_operand=" << subscript.label_poss_in_operand
+        << ", \n"
+        << "label_pos_in_result=" << subscript.label_pos_in_result
+        << ", \n"
+        << "operands_labels=" << subscript.operands_labels
+        << ", \n"
+        << "independent_label_subsets=" << subscript.independent_label_subsets
         << ">";
     return out;
 }
