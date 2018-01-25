@@ -41,44 +41,8 @@ public:
      * Type for the position of a label (uint8_t).
      */
     typedef uint8_t label_pos_t;
-private:
-    /**
-     * This function normalizes operand and result labels. Normalized means that the labels are in order of
-        first appeareance named 0,1,...
-     * @param raw_operand_subscripts vector of vectors of the operand's labels
-     * @param raw_result_subscript vector of the result's labels
-     * @return tuple of normalized operand labels, normalized result labels and the total number of different labels
-     */
-    static tuple<vector<vector<label_t >>, vector<label_t>, label_t>
-    normalizeRawSubscripts(vector<vector<label_t >> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
-
-    /**
-     * norms a vector of label_t
-     * @param raw_to_norm_label maps raw label_t to normed label_t, changes are written back
-     * @param next_norm_label  the next normed label_t to be used, changes are written back
-     * @param raw_labels the vector of raw labels to be normed
-     * @return a vector of normed label_t
-     */
-    static vector<label_t>
-    normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
-                         const vector<label_t> &raw_labels);
-
-    /**
-     * Parses the subscript and writes the result to this' fields. Labels may or may not be optimized.
-     * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
-     * @param [in] raw_result_subscript vector of the result's.
-     */
-    void init(vector<vector<label_t>> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
-
-public:
-
-    Subscript(vector<vector<uint8_t>> &raw_operand_subscripts, vector<uint8_t> &raw_result_subscript) {
-        init(raw_operand_subscripts, raw_result_subscript);
-    }
 
 private:
-    Subscript() {}
-
     unordered_set<label_t> all_labels{};
     map<op_pos_t, vector<label_t>> operands_labels{};
     map<op_pos_t, set<label_t>> distinct_operands_labels{};
@@ -93,6 +57,28 @@ private:
     label_t next_label{};
     op_pos_t number_of_native_operands{};
 
+public:
+    /**
+     * Parses the subscript. Labels may or may not be optimized.
+     * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
+     * @param [in] raw_result_subscript vector of the result's.
+     */
+    Subscript(vector<vector<uint8_t>> &raw_operand_subscripts, vector<uint8_t> &raw_result_subscript) {
+        init(raw_operand_subscripts, raw_result_subscript);
+    }
+
+private:
+    /**
+     * Empty constructor. The fields are initialized but not filled with data.
+     */
+    Subscript() {}
+
+    /**
+     * Parses the subscript and writes the result to this' fields. Labels may or may not be optimized.
+     * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
+     * @param [in] raw_result_subscript vector of the result's.
+     */
+    void init(vector<vector<label_t>> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
 
 public:
     /**
@@ -210,6 +196,28 @@ public:
         return number_of_native_operands;
     }
 
+private:
+    /**
+     * This function normalizes operand and result labels. Normalized means that the labels are in order of
+        first appeareance named 0,1,...
+     * @param raw_operand_subscripts vector of vectors of the operand's labels
+     * @param raw_result_subscript vector of the result's labels
+     * @return tuple of normalized operand labels, normalized result labels and the total number of different labels
+     */
+    static tuple<vector<vector<label_t >>, vector<label_t>, label_t>
+    normalizeRawSubscripts(vector<vector<label_t >> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
+
+    /**
+     * norms a vector of label_t
+     * @param raw_to_norm_label maps raw label_t to normed label_t, changes are written back
+     * @param next_norm_label  the next normed label_t to be used, changes are written back
+     * @param raw_labels the vector of raw labels to be normed
+     * @return a vector of normed label_t
+     */
+    static vector<label_t>
+    normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
+                         const vector<label_t> &raw_labels);
+
     /**
      * Calculates the label_poss_in_operand field using:
      * - operands_labels
@@ -218,14 +226,34 @@ public:
      */
     static void calcLabelPossInOperand(Subscript &sc);
 
+    /**
+     * Calculates the label_pos_in_result field using:
+     * - result_labels
+     * @param sc Subscript to be updated.
+     */
     static void calcLabelPosInResult(Subscript &sc);
 
+    /**
+     * Calculates the operands_with_label field using:
+     * - all_labels
+     * - distinct_operands_labels
+     * @param sc Subscript to be updated.
+     */
     static void calcOperandsWithLabel(Subscript &sc);
 
+    /**
+     * Calculates the label_dependency_graph field using:
+     * - distinct_operands_labels
+     * @param sc Subscript to be updated.
+     */
     static void calcLabelDependencyGraph(Subscript &sc);
 
+    /**
+     * Calculates the independent_label_subsets field using:
+     * - label_dependency_graph
+     * @param sc Subscript to be updated.
+     */
     static void calcIndependentLabelSubsets(Subscript &sc);
-
 };
 
 /*
@@ -425,26 +453,6 @@ Subscript Subscript::optimize() {
     return (*this);
 }
 
-void Subscript::calcOperandsWithLabel(Subscript &sc) {
-    sc.operands_with_label.clear();
-    for (label_t label : sc.all_labels) {
-        set<op_pos_t> operand_poss{};
-        for (op_pos_t op_id = 0; op_id < size(sc.distinct_operands_labels); ++op_id) {
-            if (sc.distinct_operands_labels[op_id].count(label)) {
-                operand_poss.insert(op_id);
-            }
-        }
-        sc.operands_with_label[label] = operand_poss;
-    }
-}
-
-void Subscript::calcLabelPosInResult(Subscript &sc) {
-    for (label_pos_t label_pos = 0; label_pos < sc.result_labels.size(); ++label_pos) {
-        label_t label = sc.result_labels[label_pos];
-        sc.label_pos_in_result[label] = label_pos;
-    }
-}
-
 void Subscript::calcLabelPossInOperand(Subscript &sc) {
     sc.label_poss_in_operand.clear();
 
@@ -462,12 +470,36 @@ void Subscript::calcLabelPossInOperand(Subscript &sc) {
     }
 }
 
+
+void Subscript::calcOperandsWithLabel(Subscript &sc) {
+    sc.operands_with_label.clear();
+    for (label_t label : sc.all_labels) {
+        set<op_pos_t> operand_poss{};
+        for (op_pos_t op_id = 0; op_id < size(sc.distinct_operands_labels); ++op_id) {
+            if (sc.distinct_operands_labels[op_id].count(label)) {
+                operand_poss.insert(op_id);
+            }
+        }
+        sc.operands_with_label[label] = operand_poss;
+    }
+}
+
+
+void Subscript::calcLabelPosInResult(Subscript &sc) {
+    for (label_pos_t label_pos = 0; label_pos < sc.result_labels.size(); ++label_pos) {
+        label_t label = sc.result_labels[label_pos];
+        sc.label_pos_in_result[label] = label_pos;
+    }
+}
+
+
 void Subscript::calcLabelDependencyGraph(Subscript &sc) {
     sc.label_dependency_graph.clear();
     for (const auto &labels :sc.distinct_operands_labels) {
         sc.label_dependency_graph.addCompleteGraph(labels.second);
     }
 }
+
 
 void Subscript::calcIndependentLabelSubsets(Subscript &sc) {
     sc.independent_label_subsets.clear();
