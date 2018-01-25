@@ -1,7 +1,3 @@
-//
-// Created by me on 1/9/18.
-//
-
 #ifndef LIBSPARSETENSOR_HYPERTRIE_HPP
 #define LIBSPARSETENSOR_HYPERTRIE_HPP
 

@@ -1,7 +1,3 @@
-//
-// Created by me on 11.01.18.
-//
-
 #ifndef LIBSPARSETENSOR_POSCALC_HPP
 #define LIBSPARSETENSOR_POSCALC_HPP
 

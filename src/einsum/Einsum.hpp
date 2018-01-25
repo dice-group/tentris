@@ -10,14 +10,14 @@
 typedef std::vector<uint8_t> raw_subscript;
 
 template<typename T>
-MapTensor<T> *einsum(vector<HyperTrieTensor<T>> operands,
-                     vector<raw_subscript> raw_operand_subscripts, raw_subscript raw_result_subscript) {
+Tensor<T> *einsum(vector<HyperTrieTensor<T>> operands,
+                  vector<raw_subscript> raw_operand_subscripts, raw_subscript raw_result_subscript) {
 
-    Subscript subscript = Subscript::optimize(raw_operand_subscripts, raw_result_subscript);
+    Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript}.optimize();
 
-    Operator operator_tree = Operator::buildOperatorGraph(subscript, operands);
+    Operator operator_tree = Operator<T>::buildOperatorGraph(subscript, operands);
 
-    MapTensor<T> *result = operator_tree.getResult();
+    Tensor<T> *result = operator_tree.getResult(operands);
 
     return result;
 }

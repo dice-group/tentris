@@ -7,19 +7,22 @@
 
 
 #include "../Subscript.hpp"
-#include "../../tensor/MapTensor.hpp"
 #include "../../tensor/HyperTrieTensor.hpp"
 #include <vector>
 
 template<typename T>
 
 class Operator {
+public:
+    Operator(Subscript &subscript) : subscript(subscript) {}
 
 public:
 
+    Subscript subscript;
+
     static Operator buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor<T>> &vector);
 
-    MapTensor<T> *getResult();
+    Tensor<T> *getResult(vector<HyperTrieTensor<T>> tensors);
 };
 
 

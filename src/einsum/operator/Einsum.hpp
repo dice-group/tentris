@@ -1,15 +1,20 @@
-//
-// Created by me on 17.01.18.
-//
-
 #ifndef LIBSPARSETENSOR_EINSUM_HPP
 #define LIBSPARSETENSOR_EINSUM_HPP
 
 
+#include <tensor/MapTensor.hpp>
 #include "Operator.hpp"
+#include "CrossProduct.hpp"
 
-class Einsum : public Operator {
+template<typename T>
+class Einsum : public Operator<T> {
+    friend class CrossProduct;
 
+    explicit Einsum(Subscript &subscript) : Operator(subscript) {}
+
+
+public:
+    MapTensor<T> *getResult(vector<Tensor<T>> tensors);
 };
 
 

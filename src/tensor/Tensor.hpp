@@ -1,7 +1,3 @@
-//
-// Created by me on 1/16/18.
-//
-
 #ifndef LIBSPARSETENSOR_TENSOR_HPP
 #define LIBSPARSETENSOR_TENSOR_HPP
 
@@ -14,6 +10,10 @@ using std::vector;
 
 template<typename T>
 class Tensor {
+private:
+public:
+    Tensor() {}
+
 public:
     uint8_t ndim;
     uint64_t nnz{};
@@ -25,6 +25,8 @@ public:
     T get(vector<uint64_t> &key);
 
     void set(std::vector<uint64_t> &key, T &value);
+
+    bool isZero();
 
 //    ostream &operator<<(ostream &os) {
 //        os << "<Tensor: shape=" << this->shape << ", nnz=" << this->nnz << ", sum=" << this->sum << ">";

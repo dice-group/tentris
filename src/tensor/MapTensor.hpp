@@ -1,7 +1,3 @@
-//
-// Created by me on 1/16/18.
-//
-
 #ifndef LIBSPARSETENSOR_MAPTENSOR_HPP
 #define LIBSPARSETENSOR_MAPTENSOR_HPP
 
