@@ -13,7 +13,7 @@ template<typename T>
 MapTensor<T> *einsum(vector<HyperTrieTensor<T>> operands,
                      vector<raw_subscript> raw_operand_subscripts, raw_subscript raw_result_subscript) {
 
-    Subscript subscript = Subscript::optimized(raw_operand_subscripts, raw_result_subscript);
+    Subscript subscript = Subscript::optimize(raw_operand_subscripts, raw_result_subscript);
 
     Operator operator_tree = Operator::buildOperatorGraph(subscript, operands);
 

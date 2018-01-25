@@ -20,12 +20,26 @@ class Subscript;
 
 std::ostream &operator<<(std::ostream &out, Subscript &subscript);
 
+/**
+ * Representation of the subscript of a expression in einstein summation convention.
+ * This provides also Subscript::optimize() brackets out all independently computable parts and resulting in a
+ * cross product of the bracketed parts.
+ */
 class Subscript {
     friend std::ostream &operator<<(std::ostream &out, Subscript &tensor);
 
 public:
+    /**
+     * Type for labels (uint8_t).
+     */
     typedef uint8_t label_t;
+    /**
+     * Type for the position of a operand (uint8_t).
+     */
     typedef uint8_t op_pos_t;
+    /**
+     * Type for the position of a label (uint8_t).
+     */
     typedef uint8_t label_pos_t;
 private:
     /**
@@ -35,7 +49,7 @@ private:
      * @param raw_result_subscript vector of the result's labels
      * @return tuple of normalized operand labels, normalized result labels and the total number of different labels
      */
-    static tuple<vector<vector<label_t >>, vector<label_t>, uint8_t>
+    static tuple<vector<vector<label_t >>, vector<label_t>, label_t>
     normalizeRawSubscripts(vector<vector<label_t >> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
 
     /**
@@ -49,6 +63,11 @@ private:
     normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
                          const vector<label_t> &raw_labels);
 
+    /**
+     * Parses the subscript and writes the result to this' fields. Labels may or may not be optimized.
+     * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
+     * @param [in] raw_result_subscript vector of the result's.
+     */
     void init(vector<vector<label_t>> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
 
 public:
@@ -71,162 +90,123 @@ private:
     unordered_set<unordered_set<label_t>> independent_label_subsets{};
     map<op_pos_t, Subscript> sub_subscripts{};
     op_pos_t next_operand_pos{};
-    label_pos_t next_label_pos{};
+    label_t next_label{};
     op_pos_t number_of_native_operands{};
 
 
 public:
-    static Subscript
-    optimized(vector<vector<uint8_t>> &raw_operand_subscripts, vector<uint8_t> &raw_result_subscript) {
-        Subscript sc{raw_operand_subscripts, raw_result_subscript};
-        // if (size(sc.independent_label_subsets) > 1)
-        for (const unordered_set<label_t> &label_subset : sc.independent_label_subsets) {
-
-            Subscript sub_sc{};
-
-            /// all_labels
-            sub_sc.all_labels = unordered_set<label_t> {label_subset};
-
-            /// operands_labels
-            /// distinct_operands_labels
-            for (op_pos_t op_pos = 0; op_pos < sc.operands_labels.size(); ++op_pos) { // iterate all operands
-                vector<label_t> &operand = sc.operands_labels[op_pos];
-
-                // write out all labels from label_subset
-                vector<label_t> sub_operand_labels{};
-                set<label_t> sub_distinct_operand_labels{};
-                for (auto label_ = begin(operand); label_ != end(operand);) {
-                    if (label_subset.count(*label_)) {
-                        sub_operand_labels.push_back(*label_);
-                        sub_distinct_operand_labels.insert(*label_);
-                        // and delete them from original subscript
-                        label_ = operand.erase(label_);
-                    } else {
-                        ++label_;
-                    }
-                }
-                // if there were labels add them to operands_labels
-                if (not sub_distinct_operand_labels.empty()) {
-                    sub_sc.operands_labels[op_pos] = sub_operand_labels;
-                    sub_sc.distinct_operands_labels[op_pos] = sub_distinct_operand_labels;
-                }
-            }
-            // remove operands that got empty from operands_labels
-            for (auto it = begin(sc.operands_labels); it != end(sc.operands_labels);) {
-                if (it->second.empty()) {
-                    it = sc.operands_labels.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-            // remove operands that got empty from distinct_operands_labels
-            for (auto it = begin(sc.distinct_operands_labels); it != end(sc.distinct_operands_labels);) {
-                if (it->second.empty()) {
-                    it = sc.distinct_operands_labels.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-
-            /// number_of_native_operands
-            sub_sc.number_of_native_operands = sub_sc.operands_labels.size();
-
-            /// sub_sc result_labels
-            for (label_t label : sc.result_labels) {
-                if (label_subset.count(label)) {
-                    sub_sc.result_labels.push_back(label);
-                }
-            }
-
-            /// add new operand to sc
-            sc.operands_labels[sc.next_operand_pos] = sub_sc.result_labels;
-            sc.distinct_operands_labels[sc.next_operand_pos] = set<label_t>(begin(sub_sc.result_labels),
-                                                                            end(sub_sc.result_labels));
-
-
-            /// next_operand_pos
-            sc.next_operand_pos++;
-            sub_sc.next_operand_pos = sc.next_operand_pos;
-
-
-            /// label_poss_in_operand
-            calc_label_poss_in_operand(sc);
-            calc_label_poss_in_operand(sub_sc);
-
-            /// label_pos_in_result
-            calc_label_pos_in_result(sub_sc);
-
-            /// operands_with_label
-            calc_operands_with_label(sc);
-            calc_operands_with_label(sub_sc);
-
-            /// label_dependency_graph
-            calc_label_dependency_graph(sc);
-            calc_label_dependency_graph(sub_sc);
-
-            /// independent_label_subsets
-            calc_independent_label_subsets(sc);
-            calc_independent_label_subsets(sub_sc);
-
-            sc.sub_subscripts.insert_or_assign(sc.next_operand_pos - 1, sub_sc);
-        }
-        return sc;
-    }
+    /**
+     * This provides brackets out all independently computable parts and resulting in a cross product of the bracketed parts.
+     * @return this instance
+     */
+    Subscript optimize();
 
     /**
-     * Getters
-     *
+     * A set of all labels used in this subscript. Labels from bracketed expressions are not included.
+     * @return unordered_set of labels.
      */
-
-    const unordered_set<label_t> &getAll_labels() const {
+    const unordered_set<label_t> &getAllLabels() const {
         return all_labels;
     }
 
-    const map<op_pos_t, vector<label_t>> &getOperands_labels() const {
+    /**
+     * Stores the labels of the operands.
+     * @return Map from operand position to a vector holding it's labels in order.
+     */
+    const map<op_pos_t, vector<label_t>> &getOperandsLabels() const {
         return operands_labels;
     }
 
-    const map<op_pos_t, set<label_t>> &getDistinct_operands_labels() const {
+    /**
+     * Stores the disctinct labels of the operands.
+     * @return Map from operand position to a set holding it's labels.
+     */
+    const map<op_pos_t, set<label_t>> &getDistinctOperandsLabels() const {
         return distinct_operands_labels;
     }
 
-    const vector<label_t> &getResult_labels() const {
+    /**
+     * The result labels.
+     * @return A vector holding the result labels in order.
+     */
+    const vector<label_t> &getResultLabels() const {
         return result_labels;
     }
 
-    const unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> &getLabel_poss_in_operand() const {
+    /**
+     * Stores a mapping from operand position and label to the positions where that label is stored in this operand.
+     * @return A map from (operand position, label) to a vector of label positions
+     */
+    const unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> &getLabelPossInOperand() const {
         return label_poss_in_operand;
     }
 
-    const unordered_map<label_t, label_pos_t> &getLabel_pos_in_result() const {
+    /**
+     * Stores a mapping from label to its position in the result.
+     * @return A map from a label to a label positions
+     */
+    const unordered_map<label_t, label_pos_t> &getLabelPosInResult() const {
         return label_pos_in_result;
     }
 
-    const unordered_map<label_t, set<op_pos_t>> &getOperands_with_label() const {
+    /**
+     * Stores which label is in what operands.
+     * @return A map from a label to a set of operand positions.
+     */
+    const unordered_map<label_t, set<op_pos_t>> &getOperandsWithLabel() const {
         return operands_with_label;
     }
 
-    const UndirectedGraph<label_t> &getLabel_dependency_graph() const {
+    /**
+     * A label dependency graph is defined like:
+     * - It has a node for every label.
+     * - The "dependency" of the labels are represented by the edges. A edge is between two nodes if the corresponding labels occur together in at least one operand subscript.
+     * The reason why this is interesting is that unconnected sub-graphs (independent node sets) are sets of labels that can be evaluated independent of the others. The full result can later be calculated by a simple cross-product.
+     * @return
+     */
+    const UndirectedGraph<label_t> &getLabelDependencyGraph() const {
         return label_dependency_graph;
     }
 
-    const unordered_set<unordered_set<label_t>> &getIndependent_label_subsets() const {
+    /**
+     * These sets of labels that are independently of each other computable.
+     * @return sets of mutually independent label set
+     */
+    const unordered_set<unordered_set<label_t>> &getIndependentLabelSubsets() const {
         return independent_label_subsets;
     }
 
-    const map<op_pos_t, Subscript> &getSub_subscripts() const {
+    /**
+     * A map holding all Subscript s that were bracketed out by Subscript::optimize() .
+     * @return A map from operand position to sub Subscript.
+     */
+    const map<op_pos_t, Subscript> &getSubSubscripts() const {
         return sub_subscripts;
     }
 
-    op_pos_t getNext_operand_pos() const {
+    /**
+     * Next free position where a new operand could be.
+     * Note: adding additional operands is currently not directly supported and happens only internally when Subscript::optimize() is called.
+     * @return next free operand position.
+     */
+    op_pos_t getNextOperandPos() const {
         return next_operand_pos;
     }
 
-    label_pos_t getNext_label_pos() const {
-        return next_label_pos;
+    /**
+     * Next unused label.
+     * Note: Changing or adding labels is currently not supported.
+     * @return next unsed Label or total number of  used labels.
+     */
+    label_t getNextLabel() const {
+        return next_label;
     }
 
-    op_pos_t getNumber_of_native_operands() const {
+    /**
+     * Number of used native operands (not operands that were created by bracketing out independent label subsets).
+     * @return number of used native operands.
+     */
+    op_pos_t getNumberOfNativeOperands() const {
         return number_of_native_operands;
     }
 
@@ -236,19 +216,19 @@ public:
      * - distinct_operands_labels
      * @param sc Subscript to be updated.
      */
-    static void calc_label_poss_in_operand(Subscript &sc);
+    static void calcLabelPossInOperand(Subscript &sc);
 
-    static void calc_label_pos_in_result(Subscript &sc);
+    static void calcLabelPosInResult(Subscript &sc);
 
-    static void calc_operands_with_label(Subscript &sc);
+    static void calcOperandsWithLabel(Subscript &sc);
 
-    static void calc_label_dependency_graph(Subscript &sc);
+    static void calcLabelDependencyGraph(Subscript &sc);
 
-    static void calc_independent_label_subsets(Subscript &sc);
+    static void calcIndependentLabelSubsets(Subscript &sc);
 
 };
 
-/**
+/*
  * Implementations start here
  */
 
@@ -264,7 +244,7 @@ Subscript::normalizeLabelVector(unordered_map<Subscript::label_t, Subscript::lab
         // check if raw label is already mapped to a normed label
         auto norm_label_ = raw_to_norm_label.find(raw_label);
         label_t norm_label;
-        if (norm_label_ != raw_to_norm_label.end()) {
+        if (norm_label_ != end(raw_to_norm_label)) {
             norm_label = norm_label_->second;
         } else {
             // otherwise map it
@@ -278,7 +258,7 @@ Subscript::normalizeLabelVector(unordered_map<Subscript::label_t, Subscript::lab
     return norm_operand_labels;
 }
 
-tuple<vector<vector<Subscript::label_t >>, vector<Subscript::label_t>, uint8_t>
+tuple<vector<vector<Subscript::label_t >>, vector<Subscript::label_t>, Subscript::label_t>
 Subscript::normalizeRawSubscripts(vector<vector<Subscript::label_t>> &raw_operand_subscripts,
                                   vector<Subscript::label_t> &raw_result_subscript) {
     unordered_map<label_t, label_t> raw_to_norm_label{};
@@ -306,12 +286,12 @@ void Subscript::init
     vector<vector<label_t>> operand_subscripts;
     vector<label_t> result_subscript;
     // next_label_pos
-    tie(operand_subscripts, result_subscript, next_label_pos) = normalizeRawSubscripts(raw_operand_subscripts,
-                                                                                       raw_result_subscript);
+    tie(operand_subscripts, result_subscript, next_label) = normalizeRawSubscripts(raw_operand_subscripts,
+                                                                                   raw_result_subscript);
     /// init fields
 
     // all_labels
-    for (label_t label = 0; label < next_label_pos; ++label) {
+    for (label_t label = 0; label < next_label; ++label) {
         all_labels.insert(label);
     }
 
@@ -333,24 +313,119 @@ void Subscript::init
     result_labels = result_subscript;
 
     // label_poss_in_operand
-    calc_label_poss_in_operand(*this);
+    calcLabelPossInOperand(*this);
 
     // label_pos_in_result
-    calc_label_pos_in_result(*this);
+    calcLabelPosInResult(*this);
 
     // operands_with_label
-    calc_operands_with_label(*this);
+    calcOperandsWithLabel(*this);
 
     // label_dependency_graph
-    calc_label_dependency_graph(*this);
+    calcLabelDependencyGraph(*this);
 
     // independent_label_subsets
-    calc_independent_label_subsets(*this);
+    calcIndependentLabelSubsets(*this);
 
 
 }
 
-void Subscript::calc_operands_with_label(Subscript &sc) {
+Subscript Subscript::optimize() {
+    // if (size((*this).independent_label_subsets) > 1)
+    for (const unordered_set<label_t> &label_subset : (*this).independent_label_subsets) {
+
+        Subscript sub_sc{};
+
+        /// all_labels
+        sub_sc.all_labels = unordered_set<label_t> {label_subset};
+
+        /// operands_labels
+        /// distinct_operands_labels
+        for (op_pos_t op_pos = 0; op_pos < (*this).operands_labels.size(); ++op_pos) { // iterate all operands
+            vector<label_t> &operand = (*this).operands_labels[op_pos];
+
+            // write out all labels from label_subset
+            vector<label_t> sub_operand_labels{};
+            set<label_t> sub_distinct_operand_labels{};
+            for (auto label_ = begin(operand); label_ != end(operand);) {
+                if (label_subset.count(*label_)) {
+                    sub_operand_labels.push_back(*label_);
+                    sub_distinct_operand_labels.insert(*label_);
+                    // and delete them from original subscript
+                    label_ = operand.erase(label_);
+                } else {
+                    ++label_;
+                }
+            }
+            // if there were labels add them to operands_labels
+            if (not sub_distinct_operand_labels.empty()) {
+                sub_sc.operands_labels[op_pos] = sub_operand_labels;
+                sub_sc.distinct_operands_labels[op_pos] = sub_distinct_operand_labels;
+            }
+        }
+        // remove operands that got empty from operands_labels
+        for (auto it = begin((*this).operands_labels); it != end((*this).operands_labels);) {
+            if (it->second.empty()) {
+                it = (*this).operands_labels.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        // remove operands that got empty from distinct_operands_labels
+        for (auto it = begin((*this).distinct_operands_labels); it != end((*this).distinct_operands_labels);) {
+            if (it->second.empty()) {
+                it = (*this).distinct_operands_labels.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        /// number_of_native_operands
+        sub_sc.number_of_native_operands = sub_sc.operands_labels.size();
+
+        /// sub_sc result_labels
+        for (label_t label : (*this).result_labels) {
+            if (label_subset.count(label)) {
+                sub_sc.result_labels.push_back(label);
+            }
+        }
+
+        /// add new operand to sc
+        (*this).operands_labels[(*this).next_operand_pos] = sub_sc.result_labels;
+        (*this).distinct_operands_labels[(*this).next_operand_pos] = set<label_t>(begin(sub_sc.result_labels),
+                                                                                  end(sub_sc.result_labels));
+
+
+        /// next_operand_pos
+        (*this).next_operand_pos++;
+        sub_sc.next_operand_pos = (*this).next_operand_pos;
+
+
+        /// label_poss_in_operand
+        calcLabelPossInOperand(*this);
+        calcLabelPossInOperand(sub_sc);
+
+        /// label_pos_in_result
+        calcLabelPosInResult(sub_sc);
+
+        /// operands_with_label
+        calcOperandsWithLabel(*this);
+        calcOperandsWithLabel(sub_sc);
+
+        /// label_dependency_graph
+        calcLabelDependencyGraph(*this);
+        calcLabelDependencyGraph(sub_sc);
+
+        /// independent_label_subsets
+        calcIndependentLabelSubsets(*this);
+        calcIndependentLabelSubsets(sub_sc);
+
+        (*this).sub_subscripts.insert_or_assign((*this).next_operand_pos - 1, sub_sc);
+    }
+    return (*this);
+}
+
+void Subscript::calcOperandsWithLabel(Subscript &sc) {
     sc.operands_with_label.clear();
     for (label_t label : sc.all_labels) {
         set<op_pos_t> operand_poss{};
@@ -363,14 +438,14 @@ void Subscript::calc_operands_with_label(Subscript &sc) {
     }
 }
 
-void Subscript::calc_label_pos_in_result(Subscript &sc) {
+void Subscript::calcLabelPosInResult(Subscript &sc) {
     for (label_pos_t label_pos = 0; label_pos < sc.result_labels.size(); ++label_pos) {
         label_t label = sc.result_labels[label_pos];
         sc.label_pos_in_result[label] = label_pos;
     }
 }
 
-void Subscript::calc_label_poss_in_operand(Subscript &sc) {
+void Subscript::calcLabelPossInOperand(Subscript &sc) {
     sc.label_poss_in_operand.clear();
 
     for (op_pos_t op_id = 0; op_id < sc.operands_labels.size(); ++op_id) {
@@ -385,6 +460,18 @@ void Subscript::calc_label_poss_in_operand(Subscript &sc) {
             sc.label_poss_in_operand[{op_id, label}] = label_poss;
         }
     }
+}
+
+void Subscript::calcLabelDependencyGraph(Subscript &sc) {
+    sc.label_dependency_graph.clear();
+    for (const auto &labels :sc.distinct_operands_labels) {
+        sc.label_dependency_graph.addCompleteGraph(labels.second);
+    }
+}
+
+void Subscript::calcIndependentLabelSubsets(Subscript &sc) {
+    sc.independent_label_subsets.clear();
+    sc.independent_label_subsets = sc.label_dependency_graph.getConnectedComponents();
 }
 
 std::ostream &operator<<(std::ostream &out, Subscript &subscript) {
@@ -408,16 +495,5 @@ std::ostream &operator<<(std::ostream &out, Subscript &subscript) {
     return out;
 }
 
-void Subscript::calc_label_dependency_graph(Subscript &sc) {
-    sc.label_dependency_graph.clear();
-    for (const auto &labels :sc.distinct_operands_labels) {
-        sc.label_dependency_graph.addCompleteGraph(labels.second);
-    }
-}
-
-void Subscript::calc_independent_label_subsets(Subscript &sc) {
-    sc.independent_label_subsets.clear();
-    sc.independent_label_subsets = sc.label_dependency_graph.getConnectedComponents();
-}
 
 #endif //LIBSPARSETENSOR_SUBSCRIPT_HPP

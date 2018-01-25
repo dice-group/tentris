@@ -26,19 +26,19 @@ BOOST_AUTO_TEST_SUITE(TestSubscript)
 
         // check normed labels
         auto all_labels = std::unordered_set<Subscript::label_t>{0, 1, 2, 3};
-        BOOST_CHECK(sc.getAll_labels() == all_labels);
+        BOOST_CHECK(sc.getAllLabels() == all_labels);
 
         vector<Subscript::label_t> op_labels0{0, 1, 2};
-        BOOST_CHECK(op_labels0 == sc.getOperands_labels().at(0));
+        BOOST_CHECK(op_labels0 == sc.getOperandsLabels().at(0));
 
         vector<Subscript::label_t> op_labels1{2, 1, 0, 1};
-        BOOST_CHECK(op_labels1 == sc.getOperands_labels().at(1));
+        BOOST_CHECK(op_labels1 == sc.getOperandsLabels().at(1));
 
         vector<Subscript::label_t> op_labels2{3};
-        BOOST_CHECK(op_labels2 == sc.getOperands_labels().at(2));
+        BOOST_CHECK(op_labels2 == sc.getOperandsLabels().at(2));
 
         vector<Subscript::label_t> res_labels{0, 3};
-        BOOST_CHECK(res_labels == sc.getResult_labels());
+        BOOST_CHECK(res_labels == sc.getResultLabels());
     }
 
     BOOST_AUTO_TEST_CASE(optimize) {
@@ -51,11 +51,11 @@ BOOST_AUTO_TEST_SUITE(TestSubscript)
 
         vector<Subscript::label_t> raw_res_sc{3, 0};
 
-        Subscript opt_sc = Subscript::optimized(raw_op_sc, raw_res_sc);
+        Subscript opt_sc = Subscript{raw_op_sc, raw_res_sc}.optimize();
 
         std::cout << opt_sc << std::endl;
 
-        for (auto entry : opt_sc.getSub_subscripts()) {
+        for (auto entry : opt_sc.getSubSubscripts()) {
             std::cout << entry.second << std::endl;
         }
 
