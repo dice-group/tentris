@@ -14,8 +14,9 @@ std::ostream &operator<<(std::ostream &out, MapTensor<T> &tensor);
 template<typename T>
 class MapTensor : public Tensor<T> {
     std::map<std::vector<uint64_t>, T> entries{};
-public:
     using Tensor<T>::Tensor;
+public:
+
 
 
     T get(vector<uint64_t> &key) {
