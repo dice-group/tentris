@@ -41,5 +41,25 @@ BOOST_AUTO_TEST_SUITE(TestSubscript)
         BOOST_CHECK(res_labels == sc.getResult_labels());
     }
 
+    BOOST_AUTO_TEST_CASE(optimize) {
+        // data
+        vector<vector<Subscript::label_t >> raw_op_sc{
+                {3, 2, 1},
+                {1, 2, 3, 2},
+                {0}
+        };
+
+        vector<Subscript::label_t> raw_res_sc{3, 0};
+
+        Subscript opt_sc = Subscript::optimized(raw_op_sc, raw_res_sc);
+
+        std::cout << opt_sc << std::endl;
+
+        for (auto entry : opt_sc.getSub_subscripts()) {
+            std::cout << entry.second << std::endl;
+        }
+
+    }
+
 
 BOOST_AUTO_TEST_SUITE_END()

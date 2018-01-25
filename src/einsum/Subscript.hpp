@@ -79,7 +79,7 @@ public:
     static Subscript
     optimized(vector<vector<uint8_t>> &raw_operand_subscripts, vector<uint8_t> &raw_result_subscript) {
         Subscript sc{raw_operand_subscripts, raw_result_subscript};
-
+        // if (size(sc.independent_label_subsets) > 1)
         for (const unordered_set<label_t> &label_subset : sc.independent_label_subsets) {
 
             Subscript sub_sc{};
@@ -170,14 +170,13 @@ public:
 
             sc.sub_subscripts.insert_or_assign(sc.next_operand_pos - 1, sub_sc);
         }
-        return {raw_operand_subscripts, raw_result_subscript};
+        return sc;
     }
 
     /**
      * Getters
      *
      */
-    //
 
     const unordered_set<label_t> &getAll_labels() const {
         return all_labels;
@@ -213,6 +212,22 @@ public:
 
     const unordered_set<unordered_set<label_t>> &getIndependent_label_subsets() const {
         return independent_label_subsets;
+    }
+
+    const map<op_pos_t, Subscript> &getSub_subscripts() const {
+        return sub_subscripts;
+    }
+
+    op_pos_t getNext_operand_pos() const {
+        return next_operand_pos;
+    }
+
+    label_pos_t getNext_label_pos() const {
+        return next_label_pos;
+    }
+
+    op_pos_t getNumber_of_native_operands() const {
+        return number_of_native_operands;
     }
 
     /**
