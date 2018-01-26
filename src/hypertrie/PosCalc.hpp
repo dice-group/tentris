@@ -17,6 +17,10 @@ using std::map;
  * And the other way around.
  */
 class PosCalc {
+public:
+    typedef uint8_t key_pos_t;
+    typedef vector<bool> subkey_mask_t;
+private:
     /**
      * Holds all instances.
      */
@@ -27,37 +31,37 @@ class PosCalc {
      * @param key_length  length of superkeys.
      * @param subkey_length length of subkeys.
      */
-    explicit PosCalc(const uint8_t key_length, uint8_t subkey_length) : key_length(key_length),
-                                                                        subkey_length(subkey_length) {}
+    explicit PosCalc(const key_pos_t key_length, uint8_t subkey_length) : key_length(key_length),
+                                                                          subkey_length(subkey_length) {}
 
 public:
     /**
      * Length of superkeys.
      */
-    uint8_t key_length;
+    key_pos_t key_length;
 
     /**
      * Length of subkeys.
      */
-    uint8_t subkey_length;
+    key_pos_t subkey_length;
 
 private:
     /**
      * Stores for superkey positions to which subkey positions they map.
      */
-    vector<uint8_t> key_to_subkey = vector<uint8_t>(key_length);
+    vector<key_pos_t> key_to_subkey = vector<key_pos_t>(key_length);
 
 public:
 
     /**
      * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
      */
-    vector<uint8_t> subkey_to_key = vector<uint8_t>(subkey_length);
+    vector<key_pos_t> subkey_to_key = vector<key_pos_t>(subkey_length);
 
     /**
      * removed_positions bit vector of positions removed from superkey to subkey.
      */
-    vector<bool> removed_positions = vector<bool>(key_length);
+    subkey_mask_t removed_positions = subkey_mask_t(key_length);
 
 private:
     /**
@@ -71,7 +75,7 @@ public:
      * @param key_pos superkey position
      * @return subkey position
      */
-    inline uint8_t key_to_subkey_pos(const uint8_t key_pos) const {
+    inline key_pos_t key_to_subkey_pos(const key_pos_t key_pos) const {
         return key_to_subkey[key_pos];
     }
 
@@ -80,7 +84,7 @@ public:
      * @param subkey_pos subkey position
      * @return superkey position
      */
-    inline uint8_t subkey_to_key_pos(const uint8_t subkey_pos) const {
+    inline key_pos_t subkey_to_key_pos(const key_pos_t subkey_pos) const {
         return subkey_to_key[subkey_pos];
     }
 
@@ -89,7 +93,7 @@ public:
      * @param key_pos position of superkey to be removed.
      * @return PosCalc like this but without position key_pos.
      */
-    inline PosCalc *use(const uint8_t key_pos) {
+    inline PosCalc *use(const key_pos_t key_pos) {
         PosCalc *child = next_pos_calcs.at(key_pos);
         if (child == nullptr) {
             vector<bool> used_pos_mask(this->key_length, true);

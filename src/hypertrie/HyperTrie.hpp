@@ -19,12 +19,16 @@ using std::optional;
 template<typename T>
 class HyperTrie {
 public:
-    explicit HyperTrie(uint8_t depth);
+    typedef uint64_t key_part_t;
+    typedef PosCalc::key_pos_t key_pos_t;
+    typedef PosCalc::subkey_mask_t subkey_mask_t;
+
+    HyperTrie(key_pos_t depth) : depth(depth) {}
 
     /**
      * Depth is the length of the keys.
      */
-    uint8_t depth;
+    key_pos_t depth;
 
     /**
      * Sum of all entries.
@@ -41,15 +45,15 @@ private:
      * edges_by_pos: subkey_pos -> edges;<br/>
      * edges: key_part -> subtrie OR value
      */
-    vector<map<uint64_t, variant<HyperTrie *, T>> *> edges_by_pos =
-            vector<map<uint64_t, variant<HyperTrie *, T>> *>(depth);
+    vector<map<key_part_t, variant<HyperTrie *, T>> *> edges_by_pos =
+            vector<map<key_part_t, variant<HyperTrie *, T>> *>(depth);
 
     /**
      * Get a pointer to the edges map by subkey_pos. If the map doesn't exist so far it is created.
      * @param subkey_pos position of the next coordinate. MUST be in range [0,self->depth).
      * @return a pointer to a map that maps the used key_parts at subkey_pos of a subkey to sub-hypertries or T entries.
      */
-    map<uint64_t, variant<HyperTrie *, T>> *getOrCreateEdges(uint8_t subkey_pos) noexcept {
+    map<key_part_t, variant<HyperTrie *, T>> *getOrCreateEdges(key_pos_t subkey_pos) noexcept {
         auto edges = this->edges_by_pos[subkey_pos];
         // if the map for subkey_pos doesn't exist create it.
         if (edges == nullptr) {
@@ -64,8 +68,8 @@ private:
      * @param subkey_pos position of the next coordinate. MUST be in range [0,self->depth).
      * @return optional if it exists: a map that maps the used key_parts at pos of a key to sub-hypertries or T entries
      */
-    optional<map<uint64_t, variant<HyperTrie *, T>> *> getEdges(uint8_t subkey_pos) noexcept {
-        map<uint64_t, variant<HyperTrie *, T>> *edges = this->edges_by_pos[subkey_pos];
+    optional<map<key_part_t, variant<HyperTrie *, T>> *> getEdges(key_pos_t subkey_pos) noexcept {
+        map<key_part_t, variant<HyperTrie *, T>> *edges = this->edges_by_pos[subkey_pos];
         // if the map for subkey_pos doesn't exist create it.
         if (edges == nullptr)
             return std::nullopt;
@@ -80,7 +84,7 @@ private:
      * @param value The sub-hypertrie or T to be set.
      * @return Optional Difference between old and new value if this-> depth is 1. TODO!
      */
-    variant<HyperTrie *, T> setChild(uint8_t pos, uint64_t key_part, optional<variant<HyperTrie *, T>> &value) {
+    variant<HyperTrie *, T> setChild(key_pos_t pos, key_part_t key_part, optional<variant<HyperTrie *, T>> &value) {
         auto edge = getOrCreateEdges(pos);
 
         // depth > 1 means it is an inner node. So a sub-HyperTrie is added not a T value.
@@ -121,8 +125,8 @@ private:
      * @param key_part The key_part identifing the child.
      * @return Optional the child if it exists. If this->depth is 1 the child is of value T otherwise it is a HyperTrie.
      */
-    optional<variant<HyperTrie *, T>> getChild(uint8_t subkey_pos, uint64_t key_part) {
-        optional<map<uint64_t, variant<HyperTrie *, T>> *> edges_ = getEdges(subkey_pos);
+    optional<variant<HyperTrie *, T>> getChild(key_pos_t subkey_pos, key_part_t key_part) {
+        optional<map<key_part_t, variant<HyperTrie *, T>> *> edges_ = getEdges(subkey_pos);
         // check if HyperTrie is emtpy.
         if (edges_) {
             map<uint64_t, variant<HyperTrie *, T>> *edges = *edges_;
@@ -137,8 +141,8 @@ private:
         return std::nullopt;
     }
 
-    void delChild(uint8_t &pos, uint64_t key_part) {
-        optional<map<uint64_t, variant<HyperTrie *, T>> *> edges_ = getEdges(pos);
+    void delChild(key_pos_t &pos, key_part_t key_part) {
+        optional<map<key_part_t, variant<HyperTrie *, T>> *> edges_ = getEdges(pos);
         throw "Not yet implemented.";
     }
 
@@ -149,11 +153,11 @@ public:
      * @param key Vector of uint64 coordinates.
      * @return a SubTrie or a value depending on the length of the key.
      */
-    optional<variant<HyperTrie *, T>> get(vector<uint64_t> &key) {
+    optional<variant<HyperTrie *, T>> get(vector<key_part_t> &key) {
         // TODO: optimize access order
         HyperTrie *current_trie = this;
-        for (uint8_t pos = 0; pos < key.size(); pos++) {
-            const optional<variant<HyperTrie *, T>> &child_ = current_trie->getChild(uint8_t(0), key[pos]);
+        for (key_pos_t pos = 0; pos < key.size(); pos++) {
+            const optional<variant<HyperTrie *, T>> &child_ = current_trie->getChild(0, key[pos]);
             // child exists
             if (child_) {
                 if (pos != key.size() - 1) { // leaf
@@ -178,8 +182,8 @@ private:
      * @param finished_subtries map of finished sub HyperTries
      * @param pos_calc PosCalc object for the current sub HyperTrie
      */
-    void set_rek(vector<uint64_t> &key, T &new_value, bool has_old_value, T &value_diff,
-                 std::unordered_map<std::vector<bool>, HyperTrie *> &finished_subtries, PosCalc *pos_calc) {
+    void set_rek(vector<key_part_t> &key, T &new_value, bool has_old_value, T &value_diff,
+                 std::unordered_map<subkey_mask_t, HyperTrie *> &finished_subtries, PosCalc *pos_calc) {
         // update this node
         this->leafsum += value_diff;
         this->leafcount += not has_old_value;
@@ -189,7 +193,7 @@ private:
 
         // subtrie has only one position left: insert value
         if (pos_calc->subkey_length == 1) {
-            uint64_t key_part = key[pos_calc->subkey_to_key_pos(0)];
+            key_part_t key_part = key[pos_calc->subkey_to_key_pos(0)];
 
             optional<variant<HyperTrie *, T>> value_ = optional < variant<HyperTrie *, T>>
             { variant<HyperTrie *, T>{new_value}};
@@ -197,8 +201,8 @@ private:
             this->setChild(0, key_part, value_);
         } else { // depth > 1 -> inner node
             // a child must be set or updated for every subkey_pos available.
-            for (uint8_t key_pos : pos_calc->subkey_to_key) {
-                uint64_t key_part = key[key_pos];
+            for (key_pos_t key_pos : pos_calc->subkey_to_key) {
+                key_part_t key_part = key[key_pos];
 
                 // get pos_calc for next child and check if it was already updated earlier.
                 PosCalc *const next_pos_calc = pos_calc->use(key_pos);
@@ -244,7 +248,7 @@ public:
      * @param key key to the value
      * @param value value to be set
      */
-    void set(vector<uint64_t> &key, T &value) {
+    void set(vector<key_part_t> &key, T &value) {
         if (key.size() != this->depth) {
             throw "Key length must match HyperTrie->depth";
         }
@@ -265,25 +269,21 @@ public:
         T value_diff = has_old_value ? (value - oldValue) : value;
 
         // cache for already created sub HyperTries.
-        std::unordered_map<std::vector<bool>, HyperTrie *> finished_subtries{};
+        std::unordered_map<subkey_mask_t, HyperTrie *> finished_subtries{};
 
         // get pos_calc for this.
-        vector<bool> subkey_mask(key.size());
+        subkey_mask_t subkey_mask(key.size());
         PosCalc *pos_calc = PosCalc::getInstance(subkey_mask);
 
         // store key recursively
         set_rek(key, value, has_old_value, value_diff, finished_subtries, pos_calc);
     }
 
-    void del(vector<uint64_t> &coords) {
+    void del(vector<key_part_t> &coords) {
         throw "Not yet implemented.";
     }
 
 };
-
-
-template<typename T>
-HyperTrie<T>::HyperTrie(uint8_t depth) : depth(depth) {}
 
 
 #endif //LIBSPARSETENSOR_HYPERTRIE_HPP

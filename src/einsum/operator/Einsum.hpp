@@ -36,7 +36,7 @@ public:
     void rekEinsum(vector<Tensor<T>> &operands, vector<uint64_t> &result_key, PlanStep &last_step,
                    label_t &last_label);
 
-    void matchKeys(vector<Tensor<T>> &vector, <unnamed> &key, PlanStep step, label_t label);
+    void matchKeys(vector<Tensor<T>> &operands, vector<uint64_t> &key, PlanStep &step, label_t &label);
 };
 
 template<typename T>
@@ -59,7 +59,7 @@ void Einsum<T>::rekEinsum(vector<Tensor<T>> &operands, vector<uint64_t> &result_
 }
 
 template<typename T>
-void Einsum<T>::matchKeys(vector<Tensor<T>> &vector, vector <uint64_t> &key, PlanStep step, label_t label) {
+void Einsum<T>::matchKeys(vector<Tensor<T>> &operands, vector<uint64_t> &key, PlanStep &step, label_t &label) {
 
 }
 
