@@ -6,9 +6,11 @@
 #include <map>
 #include <vector>
 #include <variant>
+#include <optional>
 #include <unordered_map>
 #include "boost/variant.hpp"
 #include "PosCalc.hpp"
+#include <limits>
 
 
 using std::vector;
@@ -155,6 +157,7 @@ public:
      * @param key Vector of uint64 coordinates.
      * @return a SubTrie or a value depending on the length of the key.
      */
+    [[deprecated]]
     optional<variant<HyperTrie *, T>> get(vector<key_part_t> &key) {
         // TODO: 0
         // implement optional<key_part_t> for range queries
@@ -175,6 +178,58 @@ public:
         }
         // if key is empty return this
         return {variant<HyperTrie *, T>{current_trie}};
+    }
+
+    /**
+     * Get an value or SubTrie by a key.
+     * @param key Vector of optional uint64 key_parts. If a key_pos is an std::nullopt the key_part for that position is not set resulting in a slice.
+     * @return a SubTrie or a value depending if the key contains slices..
+     */
+    optional<variant<HyperTrie *, T>> get(vector<std::optional<key_part_t>> &key) {
+        // extract non_slice_key_parts
+        map<key_pos_t, key_part_t> non_slice_key_parts{};
+        for (key_pos_t key_pos = 0; key_pos < size(key); ++key_pos) {
+            if (key[key_pos]) {
+                non_slice_key_parts[key_pos] = *key[key_pos];
+            }
+        }
+
+        if (non_slice_key_parts.empty()) {
+            return {{this}};
+        } else {
+            // get child while there are non slice parts in the key.
+            HyperTrie *result = this;
+            while (not non_slice_key_parts.empty()) {
+
+                // find key_pos with minimal cardinality position
+                // todo: this can be precomputed and cached for every possible cardinality order.
+                size_t min_card = std::numeric_limits<size_t>::max();
+                key_pos_t min_card_key_pos = 0;
+                for (const auto &key_pos_and_part_ : non_slice_key_parts) {
+                    const key_pos_t key_pos = key_pos_and_part_.first;
+                    size_t card = result->edges_by_pos.at(key_pos)->size();
+                    if (card < min_card) {
+                        min_card = card;
+                        min_card_key_pos = key_pos;
+                    }
+                }
+
+                // get the child at the key_pos with minimal cardinality
+                const optional<variant<HyperTrie *, T>> &child =
+                        result->getChild(min_card_key_pos, non_slice_key_parts[min_card_key_pos]);
+
+                // check if there is actually a child
+                if (child) {
+                    // depth = 1 -> return value
+                    if (result->depth == 1) {
+                        return {{*child}};
+                    } else { // else it is a HyperTrie
+                        result = std::get<HyperTrie *>(*child);
+                    }
+                }
+            }
+            return {{result}};
+        }
     }
 
 private:
