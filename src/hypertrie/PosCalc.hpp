@@ -149,6 +149,16 @@ public:
         }
     }
 
+    /**
+     * Get an instance for a empty vector of used positions of given length.
+     * @param removed_positions length of the empty vector.
+     * @return an instance
+     */
+    static PosCalc *getInstance(const size_t &length) {
+        subkey_mask_t keymask(length);
+        return getInstance(keymask);
+    }
+
 };
 
 

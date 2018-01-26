@@ -18,10 +18,12 @@ using std::variant;
 using std::map;
 using std::optional;
 
+class HyperTrie::MatchKeyPosIterator;
+
 template<typename T>
 class HyperTrie {
 public:
-    friend class MatchKeyPosIterator;
+    friend class HyperTrie::MatchKeyPosIterator;
 
     typedef uint64_t key_part_t;
     typedef PosCalc::key_pos_t key_pos_t;
@@ -176,7 +178,7 @@ public:
             } else
                 return std::nullopt;
         }
-        // if key is empty return this
+        // if subkey is empty return this
         return {variant<HyperTrie *, T>{current_trie}};
     }
 
@@ -197,22 +199,13 @@ public:
         if (non_slice_key_parts.empty()) {
             return {{this}};
         } else {
-            // get child while there are non slice parts in the key.
+            // get child while there are non slice parts in the subkey.
             HyperTrie *result = this;
             while (not non_slice_key_parts.empty()) {
 
                 // find key_pos with minimal cardinality position
                 // todo: this can be precomputed and cached for every possible cardinality order.
-                size_t min_card = std::numeric_limits<size_t>::max();
-                key_pos_t min_card_key_pos = 0;
-                for (const auto &key_pos_and_part_ : non_slice_key_parts) {
-                    const key_pos_t key_pos = key_pos_and_part_.first;
-                    size_t card = result->edges_by_pos.at(key_pos)->size();
-                    if (card < min_card) {
-                        min_card = card;
-                        min_card_key_pos = key_pos;
-                    }
-                }
+                key_pos_t min_card_key_pos = getMinCardKeyPos(non_slice_key_parts, result);
 
                 // get the child at the key_pos with minimal cardinality
                 const optional<variant<HyperTrie *, T>> &child =
@@ -230,6 +223,40 @@ public:
             }
             return {{result}};
         }
+    }
+
+    key_pos_t getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts, const HyperTrie *result) const {
+        size_t min_card = ::std::numeric_limits<unsigned long>::max();
+        key_pos_t min_card_key_pos = 0;
+        for (const auto &key_pos_and_part_ : non_slice_key_parts) {
+            const key_pos_t key_pos = key_pos_and_part_.first;
+            size_t card = result->edges_by_pos.at(key_pos)->size();
+            if (card < min_card) {
+                min_card = card;
+                min_card_key_pos = key_pos;
+            }
+        }
+        return min_card_key_pos;
+    }
+
+    /**
+     * TODO: unsafe!
+     * @return
+     */
+    key_pos_t getMinCardKeyPos() const {
+
+        size_t min_card = ::std::numeric_limits<unsigned long>::max();
+        key_pos_t min_card_key_pos = 0;
+
+        for (size_t key_pos = 0; key_pos < edges_by_pos.size(); ++key_pos) {
+            map<key_part_t, variant<HyperTrie *, T>> *edge = edges_by_pos.at(key_pos);
+            size_t card = edge->size();
+            if (card < min_card) {
+                min_card = card;
+                min_card_key_pos = key_pos;
+            }
+        }
+        return min_card_key_pos;
     }
 
 private:
@@ -312,7 +339,7 @@ public:
         if (key.size() != this->depth) {
             throw "Key length must match HyperTrie->depth";
         }
-        // check if there is already another value for this key.
+        // check if there is already another value for this subkey.
         optional<variant<HyperTrie *, T>> oldValue_ = get(key);
         bool has_old_value = false;
         T oldValue;
@@ -335,7 +362,7 @@ public:
         subkey_mask_t subkey_mask(key.size());
         PosCalc *pos_calc = PosCalc::getInstance(subkey_mask);
 
-        // store key recursively
+        // store subkey recursively
         set_rek(key, value, has_old_value, value_diff, finished_subtries, pos_calc);
     }
 
@@ -357,25 +384,83 @@ namespace HyperTrie {
             std::tuple<key_part_t, vector<variant<HyperTrie *, T>>>> {
     public:
 
-        MatchKeyPosIterator(const HyperTrie *&hyperTrie, const vector<key_pos_t> &key_poss) : hyperTrie(
-                hyperTrie), key_poss(key_poss) {
+        MatchKeyPosIterator(const HyperTrie *&hyperTrie, const vector<key_pos_t> &key_poss) {
+
             if (hyperTrie->empty()) {
                 end = true;
             } else {
+                const key_pos_t min_card_key_pos = hyperTrie->getMinCardKeyPos();
 
+                // init key_poss
+                bool seen_key_pos = false;
+                for (const key_pos_t &key_pos : key_poss)
+                    if (key_pos != min_card_key_pos)
+                        if (not seen_key_pos)
+                            this->key_poss.push_back(key_pos);
+                        else
+                            this->key_poss.push_back(key_pos - 1);
+                    else
+                        seen_key_pos = true;
+
+                // init subkey
+                for (int i = 0; i < this->key_poss.size(); ++i) {
+                    this->subkey.push_back({});
+                }
+
+                // get iterator to iterate the sub-HyperTries or values by the min-card position.
+                map<key_part_t, variant<HyperTrie *, T>> *edges = hyperTrie->edges_by_pos.at(min_card_key_pos);
+                this->child_it = edges->begin();
+                this->child_it_end = edges->end();
+                (*this)++;
             }
         }
 
     private:
-        const HyperTrie *hyperTrie;
-        const vector<key_pos_t> key_poss;
+        map<key_part_t, variant<HyperTrie *, T>>::iterator child_it;
+        map<key_part_t, variant<HyperTrie *, T>>::iterator child_it_end;
         key_part_t key_part{};
         bool end{};
+        vector<key_pos_t> key_poss{};
+        vector<std::optional<key_part_t>> subkey{};
+
+    public:
+        key_part_t *first = &key_part;
+        variant<HyperTrie *, T> *second;
+
 
     public:
 
         MatchKeyPosIterator &operator++() {
-            // TODO: 2
+            if (child_it == child_it_end) { // end reached.
+                end = true;
+            } else { // end not yet at end
+                do {
+                    // get next key_part
+                    key_part = child_it->first;
+                    // get next result for min-card position
+                    variant<HyperTrie *, T> &child = child_it->second;
+                    if (subkey.size() == 0) {
+                        second = &child;
+                        break;
+                    } else {
+                        // write the key_part to the relevant positions of the subkey
+                        for (const key_pos_t &key_pos : key_poss) {
+                            subkey[key_pos] = key_part;
+                        }
+
+                        // check if the same key_part exists also for the other relevant key_pos
+                        optional<variant<HyperTrie *, T>> &result = std::get<HyperTrie *>(child)->get(subkey);
+                        if (result) {
+                            second = &(*result);
+                            break;
+                        } else {
+                            continue;
+                        }
+                    }
+                    child_it++;
+                } while (child_it != child_it_end);
+            }
+            child_it++;
             return *this;
         }
 
