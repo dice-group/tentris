@@ -19,6 +19,8 @@ using std::optional;
 template<typename T>
 class HyperTrie {
 public:
+    friend class MatchKeyPosIterator;
+
     typedef uint64_t key_part_t;
     typedef PosCalc::key_pos_t key_pos_t;
     typedef PosCalc::subkey_mask_t subkey_mask_t;
@@ -154,6 +156,9 @@ public:
      * @return a SubTrie or a value depending on the length of the key.
      */
     optional<variant<HyperTrie *, T>> get(vector<key_part_t> &key) {
+        // TODO: 0
+        // implement optional<key_part_t> for range queries
+        // TODO: 1
         // TODO: optimize access order
         HyperTrie *current_trie = this;
         for (key_pos_t pos = 0; pos < key.size(); pos++) {
@@ -283,6 +288,64 @@ public:
         throw "Not yet implemented.";
     }
 
+    inline bool empty() const noexcept {
+        return leafcount == 0;
+    }
+
+};
+
+namespace HyperTrie {
+    using std::tuple;
+
+    template<typename T>
+    class MatchKeyPosIterator : public std::iterator<std::input_iterator_tag,
+            std::tuple<key_part_t, vector<variant<HyperTrie *, T>>>> {
+    public:
+
+        MatchKeyPosIterator(const HyperTrie *&hyperTrie, const vector<key_pos_t> &key_poss) : hyperTrie(
+                hyperTrie), key_poss(key_poss) {
+            if (hyperTrie->empty()) {
+                end = true;
+            } else {
+
+            }
+        }
+
+    private:
+        const HyperTrie *hyperTrie;
+        const vector<key_pos_t> key_poss;
+        key_part_t key_part{};
+        bool end{};
+
+    public:
+
+        MatchKeyPosIterator &operator++() {
+            // TODO: 2
+            return *this;
+        }
+
+        MatchKeyPosIterator operator++(int) {
+            MatchKeyPosIterator it_copy{*this};
+            operator++();
+            return it_copy;
+        }
+
+        bool operator==(const MatchKeyPosIterator &rhs) const {
+            // TODO: does this make sense?
+            if (rhs.end && end)
+                return true;
+            else
+                return key_part == rhs.key_part;
+        }
+
+        bool operator!=(const MatchKeyPosIterator &rhs) const {
+            // TODO: does this make sense?
+            if (rhs.end != end)
+                return true;
+            else
+                return key_part != rhs.key_part;
+        }
+    };
 };
 
 
