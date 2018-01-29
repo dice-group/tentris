@@ -49,7 +49,7 @@ private:
     vector<label_t> result_labels{};
     unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operand{};
     unordered_map<label_t, label_pos_t> label_pos_in_result{};
-    unordered_map<label_t, set<op_pos_t>> operands_with_label{};
+    unordered_map<label_t, vector<op_pos_t>> operands_with_label{};
     UndirectedGraph<label_t> label_dependency_graph{};
     unordered_set<unordered_set<label_t>> independent_label_subsets{};
     map<op_pos_t, Subscript> sub_subscripts{};
@@ -139,7 +139,7 @@ public:
      * Stores which label is in what operands.
      * @return A map from a label to a set of operand positions.
      */
-    const unordered_map<label_t, set<op_pos_t>> &getOperandsWithLabel() const {
+    const unordered_map<label_t, vector<op_pos_t>> &getOperandsWithLabel() const {
         return operands_with_label;
     }
 
@@ -365,7 +365,7 @@ Subscript Subscript::optimize() {
         Subscript sub_sc{};
 
         /// all_labels
-        sub_sc.all_labels = unordered_set<label_t> {label_subset};
+        sub_sc.all_labels = unordered_set<label_t>{label_subset};
 
         /// operands_labels
         /// distinct_operands_labels
@@ -474,10 +474,10 @@ void Subscript::calcLabelPossInOperand(Subscript &sc) {
 void Subscript::calcOperandsWithLabel(Subscript &sc) {
     sc.operands_with_label.clear();
     for (label_t label : sc.all_labels) {
-        set<op_pos_t> operand_poss{};
+        vector<op_pos_t> operand_poss{};
         for (op_pos_t op_id = 0; op_id < size(sc.distinct_operands_labels); ++op_id) {
             if (sc.distinct_operands_labels[op_id].count(label)) {
-                operand_poss.insert(op_id);
+                operand_poss.push_back(op_id);
             }
         }
         sc.operands_with_label[label] = operand_poss;

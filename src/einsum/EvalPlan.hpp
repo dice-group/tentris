@@ -36,7 +36,7 @@ public:
 
 class PlanStep {
 
-    unordered_map<label_t, set<op_pos_t>> *operands_with_label;
+    unordered_map<label_t, vector<op_pos_t>> *operands_with_label;
     unordered_map<label_t, label_pos_t> *label_pos_in_result;
     unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> *label_poss_in_operand;
 public:
@@ -45,7 +45,7 @@ public:
      * @param label label to find the operands for
      * @return operands using the label
      */
-    const set<op_pos_t> &operandsWithLabel(const label_t &label) const {
+    const vector<op_pos_t> &operandsWithLabel(const label_t &label) const {
         return operands_with_label->at(label);
     }
 
