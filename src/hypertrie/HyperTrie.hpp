@@ -167,7 +167,7 @@ public:
 //[[deprecated]]
     optional<variant<HyperTrie<T> *, T>> get(vector<key_part_t> &key) {
         vector<std::optional<key_part_t>> intern_key(this->depth);
-        for (key_pos_t key_pos; key_pos < key.size(); ++key_pos) {
+        for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
             intern_key[key_pos] = {key[key_pos]};
         }
         return get(intern_key);

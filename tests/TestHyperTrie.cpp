@@ -240,5 +240,50 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
 
     }
 
+    BOOST_AUTO_TEST_CASE(all_slices) {
+        // data
+        vector<vector<uint64_t>> keys{
+                vector<uint64_t>{0, 10, 8, 2},
+                vector<uint64_t>{0, 11, 8, 2},
+                vector<uint64_t>{1, 10, 8, 2},
+                vector<uint64_t>{2, 10, 8, 1},
+                vector<uint64_t>{2, 10, 8, 2}
+        };
+
+        vector<short> values{
+                1,
+                1,
+                3,
+                1,
+                1
+        };
+
+        uint8_t key_length = 4;
+
+        // init
+        HyperTrie<short> trie{key_length};
+
+        // load data
+        for (unsigned int i = 0; i < keys.size(); ++i) {
+            vector<uint64_t> &key = keys[i];
+            short &value = values[i];
+
+            trie.set(key, value);
+        }
+
+        // get identity
+        vector<uint64_t> key = vector<uint64_t>{};
+        const optional<variant<HyperTrie<short> *, short>> &safed_value__ = trie.get(key);
+
+        BOOST_CHECK(safed_value__);
+
+        HyperTrie<short> * safed_value = std::get<HyperTrie<short> *>(*safed_value__);
+
+        BOOST_CHECK_EQUAL(safed_value, &trie);
+
+    }
+
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
