@@ -40,14 +40,14 @@ public:
      */
     key_pos_t depth{};
 
-/**
- * Sum of all entries.
- */
+    /**
+     * Sum of all entries.
+     */
     T leafsum{};
 
-/**
- * Number of entries.
- */
+    /**
+     * Number of entries.
+     */
     uint64_t leafcount{};
 
 private:
@@ -220,7 +220,7 @@ public:
                         posCalc = posCalc->use(min_card_key_pos);
                     }
                 } else {
-                    throw "There is something fishy here.";
+                    return std::nullopt;
                 }
             }
             return {variant<HyperTrie<T> *, T>{result}};
