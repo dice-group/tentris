@@ -75,7 +75,7 @@ public:
      * @param key_pos superkey position
      * @return subkey position
      */
-    inline key_pos_t key_to_subkey_pos(const key_pos_t key_pos) const {
+    inline key_pos_t key_to_subkey_pos(key_pos_t key_pos) const {
         return key_to_subkey[key_pos];
     }
 
@@ -84,7 +84,7 @@ public:
      * @param subkey_pos subkey position
      * @return superkey position
      */
-    inline key_pos_t subkey_to_key_pos(const key_pos_t subkey_pos) const {
+    inline key_pos_t subkey_to_key_pos(key_pos_t subkey_pos) const {
         return subkey_to_key[subkey_pos];
     }
 
