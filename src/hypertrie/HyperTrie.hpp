@@ -416,7 +416,9 @@ public:
             // get iterator to iterate the sub-HyperTries or values by the min-card position.
             map<key_part_t, variant<HyperTrie<T> *, T>> *edges = hyperTrie->edges_by_pos.at(min_card_key_pos);
             this->child_it = edges->begin();
+            edges->lower_bound()
             this->child_it_end = edges->end();
+            this->size = edges->size();
             (*this)++;
         }
     }
@@ -426,6 +428,7 @@ private:
     typename map<key_part_t, variant<HyperTrie<T> *, T>>::iterator child_it_end;
     key_part_t key_part{};
     bool end{};
+    size_t size{};
     vector<key_pos_t> key_poss{};
     vector<std::optional<key_part_t>> subkey{};
 
@@ -435,6 +438,10 @@ public:
 
 
 public:
+
+    size_t getSize() const {
+        return size;
+    }
 
     HyperTrieMatchKeyPosIterator &operator++() {
         if (child_it == child_it_end) { // end reached.
@@ -468,6 +475,10 @@ public:
         }
         child_it++;
         return *this;
+    }
+
+    void lower_bound (T low){
+        child_it.lower
     }
 
     HyperTrieMatchKeyPosIterator operator++(int) {
