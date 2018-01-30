@@ -26,7 +26,8 @@ private:
 
 public:
     template<typename T>
-    tuple<PlanStep, label_t> nextStep(vector<Tensor<T>> &operands, PlanStep &last_step, label_t &last_label) {
+    tuple<PlanStep, label_t>
+    nextStep(const vector<variant<Tensor<T> *, T>> &operands, const PlanStep &last_step, const label_t &last_label) {
         // TODO: implement
         return nullptr;
     }

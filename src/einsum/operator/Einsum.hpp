@@ -4,6 +4,7 @@
 
 #include <tensor/MapTensor.hpp>
 #include <einsum/EvalPlan.hpp>
+#include <hypertrie/HyperTrieJoinIterator.hpp>
 #include "Operator.hpp"
 #include "CrossProduct.hpp"
 
@@ -26,17 +27,16 @@ private:
 
 
 public:
-    void rekEinsum(vector<Tensor<T>> operands);
+    void rekEinsum(vector<Tensor<T>> &operands);
 
     MapTensor<T> *getResult(vector<Tensor<T>> tensors) {
         rekEinsum(tensors);
         return nullptr;
     }
 
-    void rekEinsum(vector<Tensor<T>> &operands, vector<uint64_t> &result_key, PlanStep &last_step,
-                   label_t &last_label);
+    void rekEinsum(const vector<variant<Tensor<T> *, T>> &operands, const vector<uint64_t> &result_key,
+                   PlanStep &last_step, label_t &last_label);
 
-    void matchKeys(vector<Tensor<T>> &operands, vector<uint64_t> &key, PlanStep &step, label_t &label);
 };
 
 template<typename T>
@@ -46,23 +46,16 @@ void Einsum<T>::rekEinsum(vector<Tensor<T>> &operands) {
 }
 
 template<typename T>
-void Einsum<T>::rekEinsum(vector<variant<Tensor<T> *, T>> &operands, vector<uint64_t> &result_key, PlanStep &last_step,
-                          label_t &last_label) {
+void Einsum<T>::rekEinsum(const vector<variant<Tensor<T> *, T>> &operands, const vector<uint64_t> &result_key,
+                          PlanStep &last_step, label_t &last_label) {
     PlanStep step;
     label_t label;
-    std::tie(step, label) = plan.nextStep(operands, last_step, last_label);
+    const auto &[step, label] = plan.nextStep(operands, last_step, last_label);
 
-    for (tuple<vector<variant<Tensor<T> *, T>>, vector<uint64_t >> operands_and_key : matchKeys(operands, result_key,
-                                                                                                step, label)) {
-        rekEinsum(std::get<0>(operands_and_key), std::get<1>(operands_and_key), step, label);
+    for (const auto &[next_operands, next_result_key] : HyperTrieJoin{operands, step, label, result_key}) {
+        rekEinsum(next_operands, next_result_key, step, label);
     }
 
 }
-
-template<typename T>
-void Einsum<T>::matchKeys(vector<Tensor<T>> &operands, vector<uint64_t> &key, PlanStep &step, label_t &label) {
-
-}
-
 
 #endif //LIBSPARSETENSOR_EINSUM_HPP

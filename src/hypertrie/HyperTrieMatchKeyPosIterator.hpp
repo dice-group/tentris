@@ -12,15 +12,53 @@
 
 using std::variant;
 using Subscript::label_pos_t;
+using Subscript::label_t;
+
 
 template<typename T>
-class HyperTrieMatchKeyPosView {
-    HyperTrie<T> *hyperTrie;
-    const vector<label_pos_t> label_poss;
+class HyperTrieMatchKeyPosIterator;
+
+template<typename T>
+class HyperTrieDiagonal {
 
 public:
-    HyperTrieMatchKeyPosView(HyperTrie<T> *hyperTrie, vector<label_pos_t> &label_poss) : hyperTrie(hyperTrie),
-                                                                                         label_poss(label_poss) {}
+    HyperTrieDiagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> &label_poss) : hyperTrie(hyperTrie),
+                                                                                  label_poss(label_poss) {
+        key_pos_t min_card_key_pos = hyperTrie->getMinCardKeyPos();
+        estimated_cardinality = hyperTrie->getCard(min_card_key_pos);
+
+
+    }
+
+    ~HyperTrieDiagonal() = default {
+        delete iter;
+    }
+
+    HyperTrieMatchKeyPosIterator *iter;
+    HyperTrie<T> *hyperTrie;
+    const vector<label_pos_t> label_poss;
+    size_t estimated_cardinality{};
+
+    size_t estimCard() const noexcept {
+        return estimated_cardinality;
+    }
+
+    label_t min() {
+        return {};
+    }
+
+    label_t max() {
+        return {};
+    }
+
+
+    HyperTrieMatchKeyPosIterator lower_bound(key_part_t min_key) {
+        return HyperTrieMatchKeyPosIterator(<#initializer#>, std::vector());
+    }
+
+    HyperTrieMatchKeyPosIterator upper_bound(key_part_t max_key) {
+        return HyperTrieMatchKeyPosIterator(<#initializer#>, std::vector());
+    }
 };
 
 template<typename T>
@@ -35,7 +73,8 @@ public:
         if (hyperTrie->empty()) {
             end = true;
         } else {
-            const key_pos_t min_card_key_pos = hyperTrie->getMinCardKeyPos();
+            key_pos_t min_card_key_pos = hyperTrie->getMinCardKeyPos();
+
 
             // init key_poss
             bool seen_key_pos = false;

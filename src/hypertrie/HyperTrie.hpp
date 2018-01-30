@@ -21,8 +21,8 @@ using std::tuple;
 
 
 typedef uint64_t key_part_t;
-typedef PosCalc::key_pos_t key_pos_t;
-typedef PosCalc::subkey_mask_t subkey_mask_t;
+using PosCalc::key_pos_t;
+using PosCalc::subkey_mask_t;
 
 template<typename T>
 class HyperTrieMatchKeyPosIterator;
@@ -243,18 +243,27 @@ public:
         return min_card_key_pos;
     }
 
+    /**
+     * Unsafe! Check first that hyperTrie is not empty.<br/>
+     * Looksup the number of children at the given Position.
+     * @param key_pos position to check amount of children.
+     * @return number of children for given position.
+     */
+    inline size_t getCard(key_pos_t key_pos) {
+        return edges_by_pos.at(key_pos)->size();
+    }
+
 /**
- * TODO: unsafe!
+ * TODO: unsafe! Check first if hypertrie is not empty!
  * @return
  */
-    key_pos_t getMinCardKeyPos() const {
+    key_pos_t getMinCardKeyPos() {
 
         size_t min_card = ::std::numeric_limits<unsigned long>::max();
         key_pos_t min_card_key_pos = 0;
 
-        for (size_t key_pos = 0; key_pos < edges_by_pos.size(); ++key_pos) {
-            map<key_part_t, variant<HyperTrie<T> *, T>> *edge = edges_by_pos.at(key_pos);
-            size_t card = edge->size();
+        for (key_pos_t key_pos = 0; key_pos < edges_by_pos.size(); ++key_pos) {
+            size_t card = getCard(key_pos);
             if (card < min_card) {
                 min_card = card;
                 min_card_key_pos = key_pos;
@@ -262,6 +271,7 @@ public:
         }
         return min_card_key_pos;
     }
+
 
 private:
 
@@ -381,9 +391,6 @@ public:
     }
 
 };
-
-
-
 
 
 #endif //LIBSPARSETENSOR_HYPERTRIE_HPP
