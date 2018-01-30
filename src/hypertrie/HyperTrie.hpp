@@ -21,11 +21,13 @@ using std::tuple;
 
 
 typedef uint64_t key_part_t;
+#define KEY_PART_MAX (UINT64_MAX)
+#define KEY_PART_MIN (UINT64_MIN)
 using PosCalc::key_pos_t;
 using PosCalc::subkey_mask_t;
 
 template<typename T>
-class HyperTrieMatchKeyPosIterator;
+class HyperTrieDiagonal;
 
 template<typename T>
 class HyperTrie {
@@ -232,7 +234,7 @@ public:
      * @param key_pos key position.
      * @return samllest key at given position or the maximum key_part_t value if no entry is in this HyperTrie.
      */
-    inline key_part_t getMinKeyPart(key_pos_t key_pos) {
+    inline key_part_t getMinKeyPart(key_pos_t key_pos){
         const std::optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> &edges_ = getEdges(key_pos);
         if (edges_) {
             map<key_part_t, variant<HyperTrie<T> *, T>> *edges = (*edges_);
@@ -290,7 +292,7 @@ public:
  * TODO: unsafe! Check first if hypertrie is not empty!
  * @return
  */
-    key_pos_t getMinCardKeyPos() {
+    key_pos_t getMinCardKeyPos() const {
 
         size_t min_card = ::std::numeric_limits<unsigned long>::max();
         key_pos_t min_card_key_pos = 0;

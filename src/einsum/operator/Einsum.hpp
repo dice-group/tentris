@@ -4,7 +4,7 @@
 
 #include <tensor/MapTensor.hpp>
 #include <einsum/EvalPlan.hpp>
-#include <hypertrie/HyperTrieJoinIterator.hpp>
+#include <hypertrie/HyperTrieJoin.hpp>
 #include "Operator.hpp"
 #include "CrossProduct.hpp"
 
