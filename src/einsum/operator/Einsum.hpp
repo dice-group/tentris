@@ -46,13 +46,14 @@ void Einsum<T>::rekEinsum(vector<Tensor<T>> &operands) {
 }
 
 template<typename T>
-void Einsum<T>::rekEinsum(vector<Tensor<T>> &operands, vector<uint64_t> &result_key, PlanStep &last_step,
+void Einsum<T>::rekEinsum(vector<variant<Tensor<T> *, T>> &operands, vector<uint64_t> &result_key, PlanStep &last_step,
                           label_t &last_label) {
     PlanStep step;
     label_t label;
     std::tie(step, label) = plan.nextStep(operands, last_step, last_label);
 
-    for (tuple<vector<Tensor<T>>, vector<uint64_t >> operands_and_key : matchKeys(operands, result_key, step, label)) {
+    for (tuple<vector<variant<Tensor<T> *, T>>, vector<uint64_t >> operands_and_key : matchKeys(operands, result_key,
+                                                                                                step, label)) {
         rekEinsum(std::get<0>(operands_and_key), std::get<1>(operands_and_key), step, label);
     }
 
