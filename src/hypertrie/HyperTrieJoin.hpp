@@ -81,38 +81,42 @@ public:
             result_pos = *result_pos_;
         }
 
-        hyperTrieJoinIterator = new iterator(hyper_trie_views, it_begin, it_end, min_card_op_pos,
-                                             has_result_pos,
-                                             result_pos, operands, result_key);
+        iter = new iterator(hyper_trie_views, it_begin, it_end, min_card_op_pos,
+                            has_result_pos,
+                            result_pos, operands, result_key);
+        iter_end = new iterator(iter->it_end);
     }
 
     ~HyperTrieJoin() = default {
-        delete hyperTrieJoinIterator;
+        delete iter;
     }
 
-    iterator *hyperTrieJoinIterator;
+    iterator *iter;
+    iterator iter_end;
 
 
     iterator &begin() {
-        return *hyperTrieJoinIterator;
+        return *iter;
     }
 
-    iterator &end();
+    iterator &end() {
+        return iter_end;
+    }
 
     class iterator {
-        iterator() : it_begin(HyperTrieDiagonal::end()),
-                     it_begin(HyperTrieDiagonal::end()),
-                     operands({}),
-                     result_key({}),
-                     ended(true) {}
+        iterator(HyperTrieDiagonal::iterator it_end) : it_begin(it_end),
+                                                       it_end(it_end),
+                                                       operands({}),
+                                                       result_key({}),
+                                                       ended(true) {}
 
         inline static iterator ended_instance{};
     public:
 
         iterator(
                 const map<op_pos_t, HyperTrieDiagonal> &hyper_trie_views,
-                const HyperTrieDiagonal &it_begin,
-                const HyperTrieDiagonal &it_end,
+                const HyperTrieDiagonal::iterator &it_begin,
+                const HyperTrieDiagonal::iterator &it_end,
                 const op_pos_t it_ops_pos,
                 bool in_result,
                 label_pos_t result_pos,
@@ -194,32 +198,24 @@ public:
         }
 
         bool operator==(const iterator &rhs) const {
-            if (rhs.end && end)
+            if (rhs.ended && ended)
                 return true;
             else
                 return current_key_part == rhs.current_key_part;
         }
 
         bool operator!=(const iterator &rhs) const {
-            if (rhs.end != end)
+            if (rhs.ended != ended)
                 return true;
             else
                 return current_key_part != rhs.current_key_part;
         }
 
-
-        static iterator &end() {
-            return ended_instance;
+        iterator end() {
+            return {it_end};
         }
-
     };
 };
-
-
-template<typename T>
-iterator &HyperTrieJoin<T>::end() {
-    return iterator::end();
-}
 
 
 #endif //LIBSPARSETENSOR_JOINITERATOR_HPP
