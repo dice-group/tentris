@@ -48,7 +48,8 @@ public:
         for (op_pos_t op_pos : op_poss) {
 
             // gernerate view
-            HyperTrieDiagonal view{std::get<HyperTrie<T> *>(operands[op_pos]), planStep.labelPossInOperand(op_pos, label)};
+            HyperTrieDiagonal view{std::get<HyperTrie<T> *>(operands[op_pos]),
+                                   planStep.labelPossInOperand(op_pos, label)};
             hyper_trie_views[op_pos] = view;
 
             if (min_card > view.estimCard()) {
@@ -62,7 +63,7 @@ public:
         hyper_trie_views.erase(min_card_op_);
 
         HyperTrieDiagonal min_card_op{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
-                                             planStep.labelPossInOperand(min_card_op_pos, label)};
+                                      planStep.labelPossInOperand(min_card_op_pos, label)};
 
         HyperTrieMatchKeyPosIterator it_begin = min_card_op.lower_bound(min_key);
         HyperTrieMatchKeyPosIterator it_end = min_card_op.upper_bound(max_key);
@@ -157,12 +158,10 @@ public:
             for (const auto &
                 [op_pos, other_view] : hyper_trie_views) {
 
-                const auto &operand_result = other_view.find(current_key_part);
+                const optional<variant<HyperTrie<T> *, T>> &other_operand = other_view.find(current_key_part);
 
                 if (operand_result) {
-                    const auto &
-                    [equal_key_part, sub_hyper_trie] = *operand_result;
-                    new_operands[op_pos] = sub_hyper_trie;
+                    new_operands[op_pos] = *operand_result;
                 } else {
                     match = false;
                     break;

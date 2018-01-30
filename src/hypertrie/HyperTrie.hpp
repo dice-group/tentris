@@ -165,7 +165,7 @@ public:
  * @return a SubTrie or a value depending on the length of the key.
  */
 //[[deprecated]]
-    optional<variant<HyperTrie<T> *, T>> get(vector<key_part_t> &key) {
+    optional<variant<HyperTrie<T> *, T>> get(const vector<key_part_t> &key) {
         vector<std::optional<key_part_t>> intern_key(this->depth);
         for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
             intern_key[key_pos] = {key[key_pos]};
@@ -227,20 +227,36 @@ public:
         }
     }
 
-    key_pos_t
-    getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts, const HyperTrie<T> *result,
-                     const PosCalc *posCalc) const {
-        size_t min_card = ::std::numeric_limits<unsigned long>::max();
-        key_pos_t min_card_key_pos = 0;
-        for (const auto &key_pos_and_part_ : non_slice_key_parts) {
-            const key_pos_t key_pos = key_pos_and_part_.first;
-            size_t card = result->edges_by_pos.at(posCalc->key_to_subkey_pos(key_pos))->size();
-            if (card < min_card) {
-                min_card = card;
-                min_card_key_pos = key_pos;
+    /**
+     * Returns the smallest key that is used at the given position.
+     * @param key_pos key position.
+     * @return samllest key at given position or the maximum key_part_t value if no entry is in this HyperTrie.
+     */
+    inline key_part_t getMinKeyPart(key_pos_t key_pos) {
+        const std::optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> &edges_ = getEdges(key_pos);
+        if (edges_) {
+            map<key_part_t, variant<HyperTrie<T> *, T>> *edges = (*edges_);
+            if (not edges->empty()) {
+                return edges->begin()->first;
             }
         }
-        return min_card_key_pos;
+        return std::numeric_limits<key_part_t>::max();
+    }
+
+    /**
+     * Returns the largest key that is used at the given position.
+     * @param key_pos key position.
+     * @return largest key at given position or the minimum key_part_t value if no entry is in this HyperTrie.
+     */
+    inline key_part_t getMaxKeyPart(key_pos_t key_pos) {
+        const std::optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> &edges_ = getEdges(key_pos);
+        if (edges_) {
+            map<key_part_t, variant<HyperTrie<T> *, T>> *edges = (*edges_);
+            if (not edges->empty()) {
+                return edges->rbegin()->first;
+            }
+        }
+        return std::numeric_limits<key_part_t>::min();
     }
 
     /**
@@ -249,9 +265,26 @@ public:
      * @param key_pos position to check amount of children.
      * @return number of children for given position.
      */
-    inline size_t getCard(key_pos_t key_pos) {
+    inline size_t getCard(key_pos_t key_pos) const {
         return edges_by_pos.at(key_pos)->size();
     }
+
+    key_pos_t
+    getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts, const HyperTrie<T> *result,
+                     const PosCalc *posCalc) const {
+        size_t min_card = ::std::numeric_limits<size_t>::max();
+        key_pos_t min_card_key_pos = 0;
+        for (const auto &
+            [key_pos, key_part] : non_slice_key_parts) {
+            size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
+            if (card < min_card) {
+                min_card = card;
+                min_card_key_pos = key_pos;
+            }
+        }
+        return min_card_key_pos;
+    }
+
 
 /**
  * TODO: unsafe! Check first if hypertrie is not empty!

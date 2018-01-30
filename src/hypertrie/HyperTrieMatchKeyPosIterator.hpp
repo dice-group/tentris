@@ -6,11 +6,13 @@
 #define TEST_HYPERTRIEMATCHKEYPOSITERATOR_HPP
 
 #import <cstdint>
-#import <variant>
 #import "HyperTrie.hpp"
 #import "../einsum/Subscript.hpp"
+#import <variant>
+#import <tuple>
 
 using std::variant;
+using std::tuple;
 using Subscript::label_pos_t;
 using Subscript::label_t;
 
@@ -24,10 +26,7 @@ class HyperTrieDiagonal {
 public:
     HyperTrieDiagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> &label_poss) : hyperTrie(hyperTrie),
                                                                                   label_poss(label_poss) {
-        key_pos_t min_card_key_pos = hyperTrie->getMinCardKeyPos();
-        estimated_cardinality = hyperTrie->getCard(min_card_key_pos);
-
-
+        min_card_key_pos = hyperTrie->getMinCardKeyPos();
     }
 
     ~HyperTrieDiagonal() = default {
@@ -36,19 +35,27 @@ public:
 
     HyperTrieMatchKeyPosIterator *iter;
     HyperTrie<T> *hyperTrie;
+    key_pos_t min_card_key_pos{};
     const vector<label_pos_t> label_poss;
-    size_t estimated_cardinality{};
 
-    size_t estimCard() const noexcept {
-        return estimated_cardinality;
+    size_t estimCard() {
+        return hyperTrie->getCard(min_card_key_pos);
     }
 
-    label_t min() {
-        return {};
+    key_part_t min() {
+        return hyperTrie->getMinKeyPart(min_card_key_pos);
     }
 
-    label_t max() {
-        return {};
+    key_part_t max() {
+        return hyperTrie->getMaxKeyPart(min_card_key_pos);;
+    }
+
+    optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) {
+        // TODO: make real key
+        const vector<key_part_t> &key = vector<key_part_t>{key_part};
+
+        return hyperTrie->get(key);;
+
     }
 
 
