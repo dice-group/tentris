@@ -8,6 +8,7 @@ BOOST_AUTO_TEST_SUITE(TestPosCalc)
 
 
     BOOST_AUTO_TEST_CASE(every_different_instance_must_exist_only_once) {
+        using namespace sparsetensor::hypertrie;
         vector<bool> vec1 = vector<bool>(3);
 
         PosCalc *inst000 = PosCalc::getInstance(vec1);
@@ -24,6 +25,7 @@ BOOST_AUTO_TEST_SUITE(TestPosCalc)
     }
 
     BOOST_AUTO_TEST_CASE(check_values) {
+        using namespace sparsetensor::hypertrie;
         vector<bool> vec1 = vector<bool>(3);
 
         PosCalc *inst000 = PosCalc::getInstance(vec1);

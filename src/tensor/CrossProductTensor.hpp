@@ -5,28 +5,30 @@
 #include "Tensor.hpp"
 #include "MapTensor.hpp"
 
-template<typename T>
-class CrossProductTensor : public Tensor<T> {
-public:
-    CrossProductTensor(const vector<tuple<MapTensor *, Subscript>> &inputs) : inputs(inputs) {
-        // TODO: initialize fields
-    }
+namespace sparsetensor::tensor {
 
-private:
-    vector<tuple<MapTensor *, Subscript>> inputs;
-    vector<Tensor<T>> tensor;
+    template<typename T>
+    class CrossProductTensor : public Tensor<T> {
+    public:
+        CrossProductTensor(const vector<tuple<MapTensor *, Subscript>> &inputs) : inputs(inputs) {
+            // TODO: initialize fields
+        }
 
-public:
-    T get(vector<uint64_t> &key) {
-        return {};
-    }
+    private:
+        vector<tuple<MapTensor *, Subscript>> inputs;
+        vector<Tensor<T>> tensor;
 
-    void set(std::vector<uint64_t> &key, T &value) {
-        throw "Set not supported by CrossProductTensor.";
-    }
+    public:
+        T get(vector<uint64_t> &key) {
+            return {};
+        }
 
-    static CrossProductTensor *getZero(vector<uint64_t> shape);
-};
+        void set(std::vector<uint64_t> &key, T &value) {
+            throw "Set not supported by CrossProductTensor.";
+        }
 
+        static CrossProductTensor *getZero(vector<uint64_t> shape);
+    };
 
+}
 #endif //LIBSPARSETENSOR_CROSSPRODUCTTENSOR_HPP

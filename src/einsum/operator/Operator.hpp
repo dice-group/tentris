@@ -10,20 +10,28 @@
 #include "../../tensor/HyperTrieTensor.hpp"
 #include <vector>
 
-template<typename T>
+namespace sparsetensor::einsum::Operator {
 
-class Operator {
-public:
-    Operator(Subscript &subscript) : subscript(subscript) {}
 
-public:
+    template<typename T>
 
-    Subscript subscript;
+    class Operator {
+    public:
+        Operator(Subscript &subscript) : subscript(subscript) {}
 
-    static Operator buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor<T>> &vector);
+    public:
 
-    Tensor<T> *getResult(vector<HyperTrieTensor<T>> tensors);
-};
+        Subscript subscript;
+
+        static Operator buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor < T>>
+
+        &vector);
+
+        Tensor <T> *getResult(vector<HyperTrieTensor < T>>
+
+        tensors);
+    };
+}
 
 
 #endif //LIBSPARSETENSOR_OPERATOR_HPP

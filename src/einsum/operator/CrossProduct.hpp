@@ -9,32 +9,36 @@
 
 using std::vector
 
-template<typename T>
-class CrossProduct : public Operator<T> {
-protected:
-    CrossProduct(Subscript &subscript) : Operator(subscript) {
-        for (auto &sub_subscript_ : subscript.getSubSubscripts()) {
-            predecessors.push_back({sub_subscript_.second});
-        }
-    }
+namespace sparsetensor::einsum::Operator {
 
-    vector<Einsum> predecessors{};
-
-public:
-    CrossProductTensor<T> *getResult(vector<Tensor<T>> tensors) {
-        vector<tuple<MapTensor *, Subscript>> predecessor_results{};
-        // TODO: make parallel
-        for (int i = 0; i < size(predecessors); ++i) {
-            predecessor_results.push_back({predecessors[i].getResult(), predecessors[i].subscript});
-            if (predecessor_results[i].second.isZero()) {
-                // TODO: determine shape
-                // TODO: when parallel -> cancel all other threads.
-                return CrossProductTensor::getZero(vector<uint64_t>{});
+    template<typename T>
+    class CrossProduct : public Operator<T> {
+    protected:
+        CrossProduct(Subscript &subscript) : Operator(subscript) {
+            for (auto &sub_subscript_ : subscript.getSubSubscripts()) {
+                predecessors.push_back({sub_subscript_.second});
             }
         }
-        return new CrossProductTensor<T>(predecessor_results);
-    }
-};
 
+        vector<Einsum> predecessors{};
+
+    public:
+        CrossProductTensor <T> *getResult(vector<Tensor < T>>
+
+        tensors) {
+            vector<tuple<MapTensor *, Subscript>> predecessor_results{};
+            // TODO: make parallel
+            for (int i = 0; i < size(predecessors); ++i) {
+                predecessor_results.push_back({predecessors[i].getResult(), predecessors[i].subscript});
+                if (predecessor_results[i].second.isZero()) {
+                    // TODO: determine shape
+                    // TODO: when parallel -> cancel all other threads.
+                    return CrossProductTensor::getZero(vector<uint64_t>{});
+                }
+            }
+            return new CrossProductTensor<T>(predecessor_results);
+        }
+    };
+}
 
 #endif //LIBSPARSETENSOR_CROSSPRODUCT_HPP

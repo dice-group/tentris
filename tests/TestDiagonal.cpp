@@ -5,7 +5,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include <optional>
 
-BOOST_AUTO_TEST_SUITE(HyperTrieMatchKeyPosIterator)
+BOOST_AUTO_TEST_SUITE(HyperTrieDiagonal)
 
     // TODO: implement Tests
 

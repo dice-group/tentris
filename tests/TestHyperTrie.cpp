@@ -8,6 +8,7 @@
 BOOST_AUTO_TEST_SUITE(TestHyperTrie)
 
     BOOST_AUTO_TEST_CASE(test_single_write_read) {
+        using namespace sparsetensor::hypertrie;
         vector<uint64_t> key{5, 10, 8};
         short value = 1;
 
@@ -24,6 +25,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
     }
 
     BOOST_AUTO_TEST_CASE(test_double_write_read0) {
+        using namespace sparsetensor::hypertrie;
         // data
         vector<uint64_t> key{4, 10, 8};
         short value1 = 3;
@@ -39,13 +41,14 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
         // validate
         optional<variant<HyperTrie<short> *, short>> safed_value__ = trie.get(key);
 
-        BOOST_CHECK(safed_value__);
+        BOOST_CHECK(bool(safed_value__));
 
         short safed_value = std::get<short>(*safed_value__);
         BOOST_CHECK_EQUAL(safed_value, value2);
     }
 
     BOOST_AUTO_TEST_CASE(test_mult_write_read1) {
+        using namespace sparsetensor::hypertrie;
         // data
         vector<vector<uint64_t>> keys{
                 vector<uint64_t>{0, 10, 8},
@@ -77,13 +80,14 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
 
             BOOST_CHECK(safed_value__);
 
-            short safed_value = std::get<short>(*safed_value__);
+            short safed_value = ::std::get<short>(*safed_value__);
 
             BOOST_CHECK_EQUAL(safed_value, value);
         }
     }
 
     BOOST_AUTO_TEST_CASE(test_read_empty_key) {
+        using namespace sparsetensor::hypertrie;
         vector<uint64_t> key{5, 10, 8};
         short value = 1;
 
@@ -101,6 +105,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
     }
 
     BOOST_AUTO_TEST_CASE(test_mult_write_read4) {
+        using namespace sparsetensor::hypertrie;
         // data
         vector<vector<uint64_t>> keys{
                 vector<uint64_t>{0, 10, 8, 2},
@@ -138,6 +143,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
     }
 
     BOOST_AUTO_TEST_CASE(test_multi_level_read) {
+        using namespace sparsetensor::hypertrie;
         // data
         vector<vector<uint64_t>> keys{
                 vector<uint64_t>{0, 10, 8, 2},
@@ -206,6 +212,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
     }
 
     BOOST_AUTO_TEST_CASE(sum) {
+        using namespace sparsetensor::hypertrie;
         // data
         vector<vector<uint64_t>> keys{
                 vector<uint64_t>{0, 10, 8, 2},
@@ -241,6 +248,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrie)
     }
 
     BOOST_AUTO_TEST_CASE(all_slices) {
+        using namespace sparsetensor::hypertrie;
         // data
         vector<vector<uint64_t>> keys{
                 vector<uint64_t>{0, 10, 8, 2},

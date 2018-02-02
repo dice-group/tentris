@@ -9,6 +9,7 @@ BOOST_AUTO_TEST_SUITE(TestHyperTrieTensor)
 
 
     BOOST_AUTO_TEST_CASE(write_read_delete_read) {
+        using namespace sparsetensor::tensor;
         HyperTrieTensor<int> tensor{vector<uint64_t>{3, 3, 3}};
         std::cout << tensor << std::endl;
 

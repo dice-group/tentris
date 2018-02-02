@@ -8,6 +8,7 @@ BOOST_AUTO_TEST_SUITE(TestUndirectedGraph)
 
 
     BOOST_AUTO_TEST_CASE(addEdge) {
+        using namespace ::sparsetensor::einsum::util;
         UndirectedGraph<uint8_t> graph{};
 
         graph.addEdge(1, 1);
@@ -26,6 +27,7 @@ BOOST_AUTO_TEST_SUITE(TestUndirectedGraph)
     }
 
     BOOST_AUTO_TEST_CASE(addFullGraph) {
+        using namespace ::sparsetensor::einsum::util;
         UndirectedGraph<uint8_t> graph{};
 
         graph.addCompleteGraph({1, 2, 3});
