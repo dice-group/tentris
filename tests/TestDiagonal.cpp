@@ -7,7 +7,9 @@
 
 BOOST_AUTO_TEST_SUITE(HyperTrieDiagonal)
 
-    // TODO: implement Tests
+    BOOST_AUTO_TEST_CASE(simple_call) {
+
+    }
 
 
 BOOST_AUTO_TEST_SUITE_END()

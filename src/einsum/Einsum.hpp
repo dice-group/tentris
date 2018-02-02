@@ -7,23 +7,27 @@
 #include "Subscript.hpp"
 #include "operator/Operator.hpp"
 
+using sparsetensor::tensor::Tensor;
+using sparsetensor::tensor::HyperTrieTensor;
+using sparsetensor::einsum::Operator::Operator;
+
 namespace sparsetensor::einsum {
 
 
     template<typename T>
-    Tensor <T> *einsum(vector<HyperTrieTensor< T>> operands,
-    vector<raw_subscript> raw_operand_subscripts, raw_subscript
-    raw_result_subscript) {
+    Tensor<T> *einsum(vector<HyperTrieTensor<T>> operands,
+                      vector<raw_subscript> raw_operand_subscripts, raw_subscript
+                      raw_result_subscript) {
 
-    Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript}.optimize();
+        Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript}.optimize();
 
-    Operator operator_tree = Operator<T>::buildOperatorGraph(subscript, operands);
+        Operator::Operator<T> operator_tree = Operator::Operator<T>::buildOperatorGraph(subscript, operands);
 
-    Tensor <T> *result = operator_tree.getResult(operands);
+        Tensor<T> *result = operator_tree.getResult(operands);
 
-    return
-    result;
-}
+        return
+                result;
+    }
 }
 
 #endif //LIBSPARSETENSOR_EINSUM_HPP

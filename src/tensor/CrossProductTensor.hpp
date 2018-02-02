@@ -1,16 +1,19 @@
 #ifndef LIBSPARSETENSOR_CROSSPRODUCTTENSOR_HPP
 #define LIBSPARSETENSOR_CROSSPRODUCTTENSOR_HPP
 
-#include <einsum/Subscript.hpp>
+#include "../einsum/Subscript.hpp"
 #include "Tensor.hpp"
 #include "MapTensor.hpp"
+
+using sparsetensor::einsum::Subscript;
+
 
 namespace sparsetensor::tensor {
 
     template<typename T>
     class CrossProductTensor : public Tensor<T> {
     public:
-        CrossProductTensor(const vector<tuple<MapTensor *, Subscript>> &inputs) : inputs(inputs) {
+        explicit CrossProductTensor(const vector<tuple<MapTensor *, Subscript>> &inputs) : inputs(inputs) {
             // TODO: initialize fields
         }
 

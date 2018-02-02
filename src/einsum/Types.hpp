@@ -10,17 +10,17 @@ namespace sparsetensor::einsum {
 /**
      * Type for labels (uint8_t).
      */
-    typedef uint8_t label_t;
+    using label_t = uint8_t;
 /**
  * Type for the position of a operand (uint8_t).
  */
-    typedef uint8_t op_pos_t;
+    using op_pos_t=uint8_t ;
 /**
  * Type for the position of a label (uint8_t).
  */
-    typedef uint8_t label_pos_t;
+    using  label_pos_t = uint8_t ;
 
-    typedef std::vector<uint8_t> raw_subscript;
+    using raw_subscript = ::std::vector<uint8_t> ;
 }
 
 #endif //SPARSETENSOR_EINSUM_TYPES_HPP

@@ -31,10 +31,10 @@ namespace sparsetensor::hypertrie {
     class Join {
 
     public:
-        class iterator;
+        class Iterator;
 
         Join(const vector<variant<HyperTrie<T> *, T>> &operands, const PlanStep &planStep, label_t label,
-                      const vector<uint64_t> &result_key) {
+             const vector<uint64_t> &result_key) {
             // positions in operands
             const vector<op_pos_t> &op_poss = planStep.operandsWithLabel(label);
 
@@ -44,13 +44,13 @@ namespace sparsetensor::hypertrie {
             key_part_t min_key = numeric_limits<key_part_t>::min();
             key_part_t max_key = numeric_limits<key_part_t>::max();
 
-            map<op_pos_t, Diagonal> hyper_trie_views{};
+            map<op_pos_t, Diagonal<T>> hyper_trie_views{};
 
             for (op_pos_t op_pos : op_poss) {
 
                 // gernerate view
                 Diagonal view{std::get<HyperTrie<T> *>(operands[op_pos]),
-                                       planStep.labelPossInOperand(op_pos, label)};
+                              planStep.labelPossInOperand(op_pos, label)};
                 hyper_trie_views[op_pos] = view;
 
                 if (min_card > view.estimCard()) {
@@ -60,11 +60,11 @@ namespace sparsetensor::hypertrie {
                 min_key = (view.min() > min_key) ? view.min() : min_key;
                 max_key = (view.max() < max_key) ? view.max() : max_key;
             }
-            map<op_pos_t, Diagonal>::iterator min_card_op_ = hyper_trie_views.find(min_card_op_pos);
+            typename map<op_pos_t, Diagonal<T>>::iterator min_card_op_ = hyper_trie_views.find(min_card_op_pos);
             hyper_trie_views.erase(min_card_op_);
 
             Diagonal min_card_op{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
-                                          planStep.labelPossInOperand(min_card_op_pos, label)};
+                                 planStep.labelPossInOperand(min_card_op_pos, label)};
             min_card_op.setLowerBound(min_key);
             min_card_op.setUpperBound(max_key);
             auto & [it_begin, it_end] = min_card_op.getIterator();
@@ -79,42 +79,44 @@ namespace sparsetensor::hypertrie {
                 result_pos = *result_pos_;
             }
 
-            iter = new iterator(hyper_trie_views, it_begin, it_end, min_card_op_pos,
+            iter = new Iterator(hyper_trie_views, it_begin, it_end, min_card_op_pos,
                                 has_result_pos,
                                 result_pos, operands, result_key);
-            iter_end = new iterator(iter->it_end);
+            iter_end = new Iterator(iter->it_end);
         }
 
-        ~Join() = default {
+        ~Join() {
             delete iter;
         }
 
-        iterator *iter;
-        iterator iter_end;
+        Iterator *iter;
+        Iterator iter_end;
 
 
-        iterator &begin() {
+        Iterator &begin() {
             return *iter;
         }
 
-        iterator &end() {
+        Iterator &end() {
             return iter_end;
         }
 
-        class iterator {
-            iterator(Diagonal::iterator it_end) : it_begin(it_end),
-                                                           it_end(it_end),
-                                                           operands({}),
-                                                           result_key({}),
-                                                           ended(true) {}
+        class Iterator {
+            using diag_it_t = typename Diagonal<T>::Iterator;
 
-            inline static iterator ended_instance{};
+            Iterator(diag_it_t it_end) : it_begin(it_end),
+                                         it_end(it_end),
+                                         operands({}),
+                                         result_key({}),
+                                         ended(true) {}
+
+            inline static Iterator ended_instance{};
         public:
 
-            iterator(
-                    const map<op_pos_t, Diagonal> &hyper_trie_views,
-                    const Diagonal::iterator &it_begin,
-                    const Diagonal::iterator &it_end,
+            Iterator(
+                    const map<op_pos_t, Diagonal<T>> &hyper_trie_views,
+                    const diag_it_t &it_begin,
+                    const diag_it_t &it_end,
                     const op_pos_t it_ops_pos,
                     bool in_result,
                     label_pos_t result_pos,
@@ -127,9 +129,9 @@ namespace sparsetensor::hypertrie {
 
         private:
 
-            const map<op_pos_t, Diagonal> hyper_trie_views{};
-            Diagonal::iterator it_begin;
-            Diagonal::iterator it_end;
+            const map<op_pos_t, Diagonal<T>> hyper_trie_views{};
+            diag_it_t it_begin;
+            diag_it_t it_end;
             const op_pos_t it_ops_pos{};
 
             key_part_t current_key_part{};
@@ -147,22 +149,21 @@ namespace sparsetensor::hypertrie {
 
         public:
 
-            iterator &operator++() {
+            Iterator &operator++() {
                 bool match{};
 
                 while (it_begin == it_end) {
 
                     match = true;
 
-                    auto & [current_key_part, it_operand] = *it_begin;
+                    auto &[current_key_part, it_operand] = *it_begin;
 
-                    for (const auto &
-                        [op_pos, other_view] : hyper_trie_views) {
+                    for (const auto &[op_pos, other_view] : hyper_trie_views) {
 
                         const optional<variant<HyperTrie<T> *, T>> &other_operand = other_view.find(current_key_part);
 
-                        if (operand_result) {
-                            new_operands[op_pos] = *operand_result;
+                        if (other_operand) {
+                            new_operands[op_pos] = *other_operand;
                         } else {
                             match = false;
                             break;
@@ -184,8 +185,8 @@ namespace sparsetensor::hypertrie {
                 return *this;
             }
 
-            iterator operator++(int) {
-                iterator it_copy{*this};
+            Iterator operator++(int) {
+                Iterator it_copy{*this};
                 operator++();
                 return it_copy;
             }
@@ -195,21 +196,21 @@ namespace sparsetensor::hypertrie {
                                                                                    {new_key}};
             }
 
-            bool operator==(const iterator &rhs) const {
+            bool operator==(const Iterator &rhs) const {
                 if (rhs.ended && ended)
                     return true;
                 else
                     return current_key_part == rhs.current_key_part;
             }
 
-            bool operator!=(const iterator &rhs) const {
+            bool operator!=(const Iterator &rhs) const {
                 if (rhs.ended != ended)
                     return true;
                 else
                     return current_key_part != rhs.current_key_part;
             }
 
-            iterator end() {
+            Iterator end() {
                 return {it_end};
             }
         };

@@ -11,13 +11,15 @@
 namespace sparsetensor::hypertrie {
 
 // TODO: document
-    typedef uint8_t key_pos_t;
+    using key_pos_t = ::uint8_t;
 
-    typedef std::vector<bool> subkey_mask_t;
+    using subkey_mask_t = ::std::vector<bool>;
 
-    typedef uint64_t key_part_t;
+    using key_part_t = ::uint64_t;
+
 #define KEY_PART_MAX (UINT64_MAX)
-#define KEY_PART_MIN (UINT64_MIN)
+
+#define KEY_PART_MIN (0)
 }
 
 #endif //SPARSETENSOR_HYPERTRIE_TYPES_HPP

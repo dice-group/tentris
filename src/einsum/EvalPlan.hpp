@@ -2,47 +2,36 @@
 #define TEST_EVALPLAN_HPP
 
 
-#include <hypertrie/PosCalc.hpp>
+#include "../hypertrie/PosCalc.hpp"
 #include "Subscript.hpp"
-#include "tensor/Tensor.hpp"
 #include <optional>
+#include <variant>
+#include "Types.hpp"
+#include "../tensor/Tensor.hpp"
 
 using std::optional;
-
-using Subscript::label_t;
-using Subscript::label_pos_t;
-using Subscript::op_pos_t;
+using sparsetensor::tensor::Tensor;
+using std::variant;
 
 namespace sparsetensor::einsum {
 
-    class PlanStep;
-
-
-    class EvalPlan {
-    public:
-        EvalPlan(const Subscript &subscript) : subscript(subscript) {}
-
-    private:
-
-        Subscript subscript;
+    class PlanStep {
 
     public:
-        template<typename T>
-        tuple<PlanStep, label_t>
-        nextStep(const vector<variant<Tensor < T> *, T>>
+        PlanStep() : operands_with_label(nullptr), label_pos_in_result(nullptr),
+                     label_poss_in_operand(nullptr) {}
 
-        &operands,
-        const PlanStep &last_step,
-        const label_t &last_label
-        ) {
-            // TODO: implement
-            return nullptr;
+        PlanStep(unordered_map<label_t, vector<op_pos_t>> *operands_with_label,
+                 unordered_map<label_t, label_pos_t> *label_pos_in_result,
+                 unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> *label_poss_in_operand)
+                : operands_with_label(operands_with_label), label_pos_in_result(label_pos_in_result),
+                  label_poss_in_operand(label_poss_in_operand) {}
+
+        virtual ~PlanStep() {
+
         }
 
-
-    };
-
-    class PlanStep {
+    private:
 
         unordered_map<label_t, vector<op_pos_t>> *operands_with_label;
         unordered_map<label_t, label_pos_t> *label_pos_in_result;
@@ -63,7 +52,7 @@ namespace sparsetensor::einsum {
          */
         const std::optional<label_pos_t> labelPosInResult(const label_t &label) const noexcept {
             auto res_pos_ = label_pos_in_result->find(label);
-            if (res_pos_ != end(label_pos_in_result)) {
+            if (res_pos_ != end(*label_pos_in_result)) {
                 return {res_pos_->second};
             } else {
                 return std::nullopt;
@@ -79,6 +68,28 @@ namespace sparsetensor::einsum {
             return label_poss_in_operand->at({op_pos, label});
         }
     };
+
+
+    class EvalPlan {
+    public:
+        EvalPlan(const Subscript &subscript) : subscript(subscript) {}
+
+    private:
+
+        Subscript subscript;
+
+    public:
+        template<typename T>
+        tuple<PlanStep, label_t>
+        nextStep(const vector<variant<Tensor<T> *, T>> &operands, const PlanStep &last_step,
+                 const label_t &last_label) {
+            // TODO: implement
+            return {};
+        }
+
+
+    };
+
 
 }
 #endif //TEST_EVALPLAN_HPP

@@ -5,9 +5,11 @@
 #include "Operator.hpp"
 #include "Einsum.hpp"
 #include <vector>
-#include <tensor/CrossProductTensor.hpp>
+#include "../../tensor/CrossProductTensor.hpp"
 
-using std::vector
+using std::vector;
+
+using sparsetensor::tensor::CrossProductTensor;
 
 namespace sparsetensor::einsum::Operator {
 
