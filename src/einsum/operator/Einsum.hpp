@@ -6,7 +6,6 @@
 #include "../../einsum/EvalPlan.hpp"
 #include "../../hypertrie/Join.hpp"
 #include "Operator.hpp"
-#include "CrossProduct.hpp"
 
 #include <numeric>
 
@@ -44,20 +43,20 @@ namespace sparsetensor::einsum::operators {
         void rekEinsum(const vector<variant<Tensor<T> *, T>> &operands, const vector<uint64_t> &result_key,
                        PlanStep &step, label_t &label) {
             if (not step.all_done) {
-                Join<T> join{operands, step, label, result_key};
+                Join<T> join{static_cast<const vector<variant<HyperTrie<T> *, T>> &>(operands), step, label, result_key};
                 for (const auto &[next_operands, next_result_key] : join) {
                     const auto &[next_step, next_label] = plan.nextStep(operands, step, label);
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
                 }
             } else {
-                result[result_key] = std::accumulate(operands.begin(), operands.end());
+                result[result_key] += std::accumulate(operands.begin(), operands.end());
             }
         }
 
 
         Tensor<T> *getResult(const vector<variant<Tensor<T> *, T>> &tensors) override {
             rekEinsum(tensors);
-            return nullptr;
+            return result;
         }
     };
 

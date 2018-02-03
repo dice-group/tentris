@@ -29,18 +29,22 @@ namespace sparsetensor::einsum::operators {
 
     public:
         Tensor<T> *getResult(const vector<variant<Tensor<T> *, T>> &tensors) override {
-            vector<tuple<variant<Tensor<T> *, T>, Subscript>> predecessor_results{};
+            // TODO: calc shape
+            vector<uint64_t> shape{};
+
+            vector<Tensor<T> *> predecessor_results(predecessors.size());
             // TODO: make parallel
+            // get results from all predecessors
             for (int i = 0; i < size(predecessors); ++i) {
-                predecessor_results.push_back({predecessors[i].getResult(), predecessors[i].subscript});
-                if (predecessor_results[i].second.isZero()) {
+                Operator<T> &predecessor = predecessors[i];
+                predecessor_results[i] = predecessor.getResult(tensors[i]);
+                if (predecessor_results[i]->nnz = 0) {
                     // TODO: determine shape
                     // TODO: when parallel -> cancel all other threads.
-                    return CrossProductTensor<T>::getZero(vector<uint64_t>{});
+                    return new CrossProductTensor<T>(shape);
                 }
             }
-            vector<uint64_t> shape{}; // TODO: calc shape
-            return new CrossProductTensor<T>(predecessor_results, shape);
+            return new CrossProductTensor<T>(predecessor_results, subscript);
         }
     };
 }
