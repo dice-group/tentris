@@ -1,13 +1,14 @@
+#include <gtest/gtest.h>
+
 #include "einsum/Einsum.hpp"
 
-#define BOOST_TEST_MODULE LibSparseTensorTest
 
-#include <boost/test/included/unit_test.hpp>
+TEST(TestEinsum, simple_call) {
+    //einsum(vector<HyperTrieTensor<int>>{}, vector<raw_subscript>{}, raw_subscript{});
+}
 
-BOOST_AUTO_TEST_SUITE(TestEinsum)
 
-    BOOST_AUTO_TEST_CASE(simple_call) {
-        //einsum(vector<HyperTrieTensor<int>>{}, vector<raw_subscript>{}, raw_subscript{});
-    }
-
-BOOST_AUTO_TEST_SUITE_END()
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
