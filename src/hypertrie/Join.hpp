@@ -90,7 +90,7 @@ namespace sparsetensor::hypertrie {
         }
 
         Iterator *iter;
-        Iterator iter_end;
+        Iterator *iter_end;
 
 
         Iterator &begin() {
@@ -98,7 +98,7 @@ namespace sparsetensor::hypertrie {
         }
 
         Iterator &end() {
-            return iter_end;
+            return *iter_end;
         }
 
         class Iterator {

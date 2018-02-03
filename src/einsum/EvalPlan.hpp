@@ -31,6 +31,8 @@ namespace sparsetensor::einsum {
 
         }
 
+        bool all_done = true;
+
     private:
 
         unordered_map<label_t, vector<op_pos_t>> *operands_with_label;

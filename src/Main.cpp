@@ -1,5 +1,4 @@
-//#include "Diagonal.hpp"
-#include "hypertrie/Join.hpp"
+#include "einsum/operator/Einsum.hpp"
 
 int main()
 {

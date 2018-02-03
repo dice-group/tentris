@@ -5,30 +5,30 @@
 #include <cstdint>
 #include <vector>
 #include <map>
+#include <ostream>
 
 using std::vector;
 
 namespace sparsetensor::tensor {
     template<typename T>
     class Tensor {
-    private:
     public:
-        Tensor() {}
-
-    public:
-        uint8_t ndim;
+        uint8_t ndim{};
         uint64_t nnz{};
         T sum{};
         vector<uint64_t> shape;
 
-        Tensor(vector<uint64_t> shape) : ndim(uint8_t(shape.size())), shape(shape) {}
+        explicit Tensor(const vector<uint64_t> &shape) : ndim(uint8_t(shape.size())), shape(shape) {}
 
-        T get(vector<uint64_t> &key);
+        virtual T get(vector<uint64_t> &key) =0;
 
-        void set(std::vector<uint64_t> &key, T &value);
+        virtual void set(std::vector<uint64_t> &key, T &value) =0;
 
-        bool isZero();
-
+        bool isZero() {
+            if (nnz == 0) {
+                return true;
+            }
+        }
     };
 
 }

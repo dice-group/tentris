@@ -3,9 +3,12 @@
 
 #include "../einsum/Subscript.hpp"
 #include "Tensor.hpp"
-#include "MapTensor.hpp"
+#include <tuple>
 
 using sparsetensor::einsum::Subscript;
+//using sparsetensor::tensor::Tensor;
+using std::tuple;
+using std::vector;
 
 
 namespace sparsetensor::tensor {
@@ -13,20 +16,20 @@ namespace sparsetensor::tensor {
     template<typename T>
     class CrossProductTensor : public Tensor<T> {
     public:
-        explicit CrossProductTensor(const vector<tuple<MapTensor *, Subscript>> &inputs) : inputs(inputs) {
+        explicit CrossProductTensor(typename vector<tuple<Tensor<T> *, Subscript>> &inputs) : inputs(inputs) {
             // TODO: initialize fields
         }
 
     private:
-        vector<tuple<MapTensor *, Subscript>> inputs;
+        typename vector<tuple<Tensor<T> *, Subscript>> inputs;
         vector<Tensor<T>> tensor;
 
     public:
-        T get(vector<uint64_t> &key) {
+        virtual T get(vector<uint64_t> &key) override {
             return {};
         }
 
-        void set(std::vector<uint64_t> &key, T &value) {
+        virtual void set(std::vector<uint64_t> &key, T &value) override {
             throw "Set not supported by CrossProductTensor.";
         }
 

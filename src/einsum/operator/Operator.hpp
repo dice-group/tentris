@@ -17,7 +17,6 @@ namespace sparsetensor::einsum::Operator {
 
 
     template<typename T>
-
     class Operator {
     public:
         Operator(Subscript &subscript) : subscript(subscript) {}
@@ -26,9 +25,11 @@ namespace sparsetensor::einsum::Operator {
 
         Subscript subscript;
 
-        static Operator buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor<T>> &vector);
+        static Operator buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor<T>> &vector) {
+            return nullptr;
+        }
 
-        Tensor<T> *getResult(vector<HyperTrieTensor<T>> tensors);
+        virtual Tensor<T> *getResult(vector<Tensor<T>> tensors);
     };
 }
 

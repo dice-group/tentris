@@ -2,31 +2,21 @@
 #define LIBSPARSETENSOR_MAPTENSOR_HPP
 
 
+#include <ostream>
 #include "Tensor.hpp"
-#include "util/ExtendContainerPrint.hpp"
+#include "../util/ExtendContainerPrint.hpp"
 
 namespace sparsetensor::tensor {
-    template<typename T>
-    class MapTensor;
-}
-
-template<typename T>
-std::ostream &operator<<(std::ostream &out, sparsetensor::tensor::MapTensor<T> &tensor);
-
-namespace sparsetensor::tensor {
-
 
     template<typename T>
     class MapTensor : public Tensor<T> {
-        friend ::std::ostream &::operator<<<>(::std::ostream &out, ::sparsetensor::tensor::MapTensor<T> &tensor);
-
         using Tensor<T>::Tensor;
         std::map<std::vector<uint64_t>, T> entries{};
 
     public:
 
 
-        T get(vector<uint64_t> &key) {
+        inline T get(vector<uint64_t> &key) override {
             auto entry_ = this->entries.find(key);
 
             if (entry_ != this->entries.end()) {
@@ -36,7 +26,7 @@ namespace sparsetensor::tensor {
             }
         }
 
-        void set(std::vector<uint64_t> &key, T &value) {
+        inline void set(std::vector<uint64_t> &key, T &value) override {
             auto old_value_ = this->entries.find(key);
             // old value exists
             if (old_value_ != this->entries.end()) { // new value is not zero
@@ -59,16 +49,12 @@ namespace sparsetensor::tensor {
             }
         }
 
-        friend std::ostream &operator<<<>(std::ostream &out, MapTensor<T> &tensor);
-
+        friend ostream &operator<<(ostream &out, MapTensor<T> &tensor) {
+            out << "<Tensor: shape=" << tensor.shape << ", nnz=" << tensor.nnz << ", sum=" << tensor.sum << ">";
+            return out;
+        }
     };
+};
 
-}
-
-template<typename T>
-std::ostream &operator<<(std::ostream &out, sparsetensor::tensor::MapTensor<T> &tensor) {
-    out << "<Tensor: shape=" << tensor.shape << ", nnz=" << tensor.nnz << ", sum=" << tensor.sum << ">";
-    return out;
-}
 
 #endif //LIBSPARSETENSOR_MAPTENSOR_HPP

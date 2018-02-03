@@ -8,19 +8,23 @@
 #include "Operator.hpp"
 #include "CrossProduct.hpp"
 
+#include <numeric>
+
+
 using sparsetensor::tensor::Tensor;
 using sparsetensor::tensor::HyperTrieTensor;
 using sparsetensor::tensor::MapTensor;
+using sparsetensor::hypertrie::Join;
 
 
 namespace sparsetensor::einsum::Operator {
 
     template<typename T>
-    class Einsum : public Operator<T> {
+    class Einsum : public Operator::Operator<T> {
         friend class CrossProduct;
 
     public:
-        Einsum(Subscript &subscript) : Operator(subscript), plan(EvalPlan{subscript}),
+        Einsum(Subscript &subscript) : Operator::Operator<T>{subscript}, plan(EvalPlan{subscript}),
                                        result(new MapTensor<T>(vector<uint64_t>{})) {}
 
     private:
@@ -60,14 +64,18 @@ namespace sparsetensor::einsum::Operator {
                               PlanStep
                               &last_step,
                               label_t &last_label) {
-        PlanStep step;
-        label_t label;
-        const auto &[step, label] = plan.nextStep(operands, last_step, last_label);
+        const auto &
+        [step, label] = plan.nextStep(operands, last_step, last_label);
 
-        for (const auto &[next_operands, next_result_key] : HyperTrieJoin{operands, step, label, result_key}) {
-            rekEinsum(next_operands, next_result_key, step, label);
+        if (not step.all_done) {
+            Join<T> join{operands, step, label, result_key};
+            for (const auto &
+                [next_operands, next_result_key] : join) {
+                rekEinsum(next_operands, next_result_key, step, label);
+            }
+        } else {
+            result[result_key] = std::accumulate(operands.begin(), operands.end());
         }
-
     }
 }
 #endif //LIBSPARSETENSOR_EINSUM_HPP

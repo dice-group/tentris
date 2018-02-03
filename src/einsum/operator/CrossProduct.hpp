@@ -3,13 +3,15 @@
 
 
 #include "Operator.hpp"
-#include "Einsum.hpp"
 #include <vector>
+#include <tuple>
 #include "../../tensor/CrossProductTensor.hpp"
 
 using std::vector;
+using std::tuple;
 
 using sparsetensor::tensor::CrossProductTensor;
+
 
 namespace sparsetensor::einsum::Operator {
 
@@ -22,20 +24,18 @@ namespace sparsetensor::einsum::Operator {
             }
         }
 
-        vector<Einsum> predecessors{};
+        vector<Operator::Operator<T>> predecessors{};
 
     public:
-        CrossProductTensor <T> *getResult(vector<Tensor < T>>
-
-        tensors) {
-            vector<tuple<MapTensor *, Subscript>> predecessor_results{};
+        virtual Tensor<T> *getResult(vector<Tensor<T>> tensors) override {
+            vector<tuple<Tensor<T> *, Subscript>> predecessor_results{};
             // TODO: make parallel
             for (int i = 0; i < size(predecessors); ++i) {
                 predecessor_results.push_back({predecessors[i].getResult(), predecessors[i].subscript});
                 if (predecessor_results[i].second.isZero()) {
                     // TODO: determine shape
                     // TODO: when parallel -> cancel all other threads.
-                    return CrossProductTensor::getZero(vector<uint64_t>{});
+                    return CrossProductTensor<T>::getZero(vector<uint64_t>{});
                 }
             }
             return new CrossProductTensor<T>(predecessor_results);
