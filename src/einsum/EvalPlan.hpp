@@ -1,5 +1,5 @@
-#ifndef TEST_EVALPLAN_HPP
-#define TEST_EVALPLAN_HPP
+#ifndef SPARSETENSOR_EINSUM_EVALPLAN_HPP
+#define SPARSETENSOR_EINSUM_EVALPLAN_HPP
 
 
 #include "../hypertrie/PosCalc.hpp"
@@ -82,9 +82,14 @@ namespace sparsetensor::einsum {
 
     public:
         template<typename T>
-        tuple<PlanStep, label_t>
-        nextStep(const vector<variant<Tensor<T> *, T>> &operands, const PlanStep &last_step,
-                 const label_t &last_label) {
+        tuple<PlanStep, label_t> nextStep(const vector<variant<Tensor<T> *, T>> &operands, const PlanStep &last_step,
+                                          const label_t &last_label) {
+            // TODO: implement
+            return {};
+        }
+
+        template<typename T>
+        tuple<PlanStep, label_t> firstStep(const vector<variant<Tensor<T> *, T>> &operands) {
             // TODO: implement
             return {};
         }
@@ -94,4 +99,4 @@ namespace sparsetensor::einsum {
 
 
 }
-#endif //TEST_EVALPLAN_HPP
+#endif //SPARSETENSOR_EINSUM_EVALPLAN_HPP

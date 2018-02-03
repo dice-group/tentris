@@ -1,5 +1,5 @@
-#ifndef LIBSPARSETENSOR_EINSUM_HPP
-#define LIBSPARSETENSOR_EINSUM_HPP
+#ifndef SPARSETENSOR_EINSUM_EINSUM_HPP
+#define SPARSETENSOR_EINSUM_EINSUM_HPP
 
 
 #include "../tensor/HyperTrieTensor.hpp"
@@ -9,7 +9,7 @@
 
 using sparsetensor::tensor::Tensor;
 using sparsetensor::tensor::HyperTrieTensor;
-using sparsetensor::einsum::Operator::Operator;
+using sparsetensor::einsum::operators::Operator;
 
 namespace sparsetensor::einsum {
 
@@ -21,7 +21,7 @@ namespace sparsetensor::einsum {
 
         Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript}.optimize();
 
-        Operator::Operator<T> operator_tree = Operator::Operator<T>::buildOperatorGraph(subscript, operands);
+        operators::Operator<T> operator_tree = operators::Operator<T>::buildOperatorGraph(subscript, operands);
 
         Tensor<T> *result = operator_tree.getResult(operands);
 
@@ -30,4 +30,4 @@ namespace sparsetensor::einsum {
     }
 }
 
-#endif //LIBSPARSETENSOR_EINSUM_HPP
+#endif //SPARSETENSOR_EINSUM_EINSUM_HPP

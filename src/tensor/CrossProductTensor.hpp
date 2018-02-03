@@ -6,22 +6,21 @@
 #include <tuple>
 
 using sparsetensor::einsum::Subscript;
-//using sparsetensor::tensor::Tensor;
 using std::tuple;
 using std::vector;
 
 
 namespace sparsetensor::tensor {
-
     template<typename T>
     class CrossProductTensor : public Tensor<T> {
     public:
-        explicit CrossProductTensor(typename vector<tuple<Tensor<T> *, Subscript>> &inputs) : inputs(inputs) {
+        CrossProductTensor(vector<tuple<Tensor<T> *, Subscript>> &inputs, vector<uint64_t> shape)
+                : Tensor<T>{shape}, inputs(inputs) {
             // TODO: initialize fields
         }
 
     private:
-        typename vector<tuple<Tensor<T> *, Subscript>> inputs;
+        vector<tuple<Tensor<T> *, Subscript>> inputs;
         vector<Tensor<T>> tensor;
 
     public:
@@ -33,7 +32,9 @@ namespace sparsetensor::tensor {
             throw "Set not supported by CrossProductTensor.";
         }
 
-        static CrossProductTensor *getZero(vector<uint64_t> shape);
+        static CrossProductTensor *getZero(vector<uint64_t> shape) {
+            return nullptr;
+        }
     };
 
 }

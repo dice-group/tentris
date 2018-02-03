@@ -1,9 +1,5 @@
-//
-// Created by me on 17.01.18.
-//
-
-#ifndef LIBSPARSETENSOR_OPERATOR_HPP
-#define LIBSPARSETENSOR_OPERATOR_HPP
+#ifndef SPARSETENSOR_EINSUM_OPERATOR_OPERATOR_HPP
+#define SPARSETENSOR_EINSUM_OPERATOR_OPERATOR_HPP
 
 
 #include "../Subscript.hpp"
@@ -13,25 +9,28 @@
 using sparsetensor::tensor::Tensor;
 using sparsetensor::tensor::HyperTrieTensor;
 
-namespace sparsetensor::einsum::Operator {
+namespace sparsetensor::einsum::operators {
 
 
     template<typename T>
     class Operator {
     public:
-        Operator(Subscript &subscript) : subscript(subscript) {}
+        explicit Operator(const Subscript &subscript) : subscript(subscript) {}
 
     public:
 
         Subscript subscript;
 
-        static Operator buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor<T>> &vector) {
+        static Operator<T> buildOperatorGraph(Subscript &subscript, std::vector<HyperTrieTensor<T>> &vector) {
             return nullptr;
         }
 
-        virtual Tensor<T> *getResult(vector<Tensor<T>> tensors);
+        virtual Tensor<T> *getResult(const vector<variant<Tensor<T> *, T>> &tensors){
+            throw "getResult() must be implemented by inheriting Class.";
+        };
+
     };
 }
 
 
-#endif //LIBSPARSETENSOR_OPERATOR_HPP
+#endif //SPARSETENSOR_EINSUM_OPERATOR_OPERATOR_HPP

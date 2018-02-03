@@ -1,5 +1,5 @@
-#ifndef LIBSPARSETENSOR_CROSSPRODUCT_HPP
-#define LIBSPARSETENSOR_CROSSPRODUCT_HPP
+#ifndef SPARSETENSOR_EINSUM_OPERATOR_CROSSPRODUCT_HPP
+#define SPARSETENSOR_EINSUM_OPERATOR_CROSSPRODUCT_HPP
 
 
 #include "Operator.hpp"
@@ -11,24 +11,25 @@ using std::vector;
 using std::tuple;
 
 using sparsetensor::tensor::CrossProductTensor;
+using sparsetensor::einsum::operators::Operator;
 
 
-namespace sparsetensor::einsum::Operator {
+namespace sparsetensor::einsum::operators {
 
     template<typename T>
     class CrossProduct : public Operator<T> {
     protected:
-        CrossProduct(Subscript &subscript) : Operator(subscript) {
+        explicit CrossProduct(Subscript &subscript) : Operator<T>{subscript} {
             for (auto &sub_subscript_ : subscript.getSubSubscripts()) {
                 predecessors.push_back({sub_subscript_.second});
             }
         }
 
-        vector<Operator::Operator<T>> predecessors{};
+        vector<Operator<T>> predecessors{};
 
     public:
-        virtual Tensor<T> *getResult(vector<Tensor<T>> tensors) override {
-            vector<tuple<Tensor<T> *, Subscript>> predecessor_results{};
+        Tensor<T> *getResult(const vector<variant<Tensor<T> *, T>> &tensors) override {
+            vector<tuple<variant<Tensor<T> *, T>, Subscript>> predecessor_results{};
             // TODO: make parallel
             for (int i = 0; i < size(predecessors); ++i) {
                 predecessor_results.push_back({predecessors[i].getResult(), predecessors[i].subscript});
@@ -38,9 +39,10 @@ namespace sparsetensor::einsum::Operator {
                     return CrossProductTensor<T>::getZero(vector<uint64_t>{});
                 }
             }
-            return new CrossProductTensor<T>(predecessor_results);
+            vector<uint64_t> shape{}; // TODO: calc shape
+            return new CrossProductTensor<T>(predecessor_results, shape);
         }
     };
 }
 
-#endif //LIBSPARSETENSOR_CROSSPRODUCT_HPP
+#endif //SPARSETENSOR_EINSUM_OPERATOR_CROSSPRODUCT_HPP

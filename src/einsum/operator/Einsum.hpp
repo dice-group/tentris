@@ -1,5 +1,5 @@
-#ifndef LIBSPARSETENSOR_EINSUM_HPP
-#define LIBSPARSETENSOR_EINSUM_HPP
+#ifndef SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
+#define SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
 
 
 #include "../../tensor/MapTensor.hpp"
@@ -17,65 +17,50 @@ using sparsetensor::tensor::MapTensor;
 using sparsetensor::hypertrie::Join;
 
 
-namespace sparsetensor::einsum::Operator {
+namespace sparsetensor::einsum::operators {
 
     template<typename T>
-    class Einsum : public Operator::Operator<T> {
-        friend class CrossProduct;
+    class Einsum : public Operator<T> {
 
     public:
-        Einsum(Subscript &subscript) : Operator::Operator<T>{subscript}, plan(EvalPlan{subscript}),
+        Einsum(Subscript &subscript) : Operator<T>{subscript},
+                                       plan(EvalPlan{subscript}),
                                        result(new MapTensor<T>(vector<uint64_t>{})) {}
 
     private:
-        EvalPlan plan{subscript};
+        EvalPlan plan;
 
-        MapTensor<T> *result = new MapTensor<T>(vector<uint64_t>{}); // TODO: use correct shape
+        MapTensor<T> *result; // TODO: use correct shape
 
 
     public:
-        void rekEinsum(vector<Tensor<T>> &operands);
+        void rekEinsum(const vector<variant<Tensor<T> *, T>> &operands) {
+            vector<uint64_t> result_key = vector<uint64_t>(this->result->ndim);
+            const auto &[step, label] = plan.firstStep(operands);
+            rekEinsum(operands, result_key, step, label);
+        }
 
-        MapTensor<T> *getResult(vector<Tensor<T>>
 
-                                tensors) {
+        void rekEinsum(const vector<variant<Tensor<T> *, T>> &operands, const vector<uint64_t> &result_key,
+                       PlanStep &step, label_t &label) {
+            if (not step.all_done) {
+                Join<T> join{operands, step, label, result_key};
+                for (const auto &[next_operands, next_result_key] : join) {
+                    const auto &[next_step, next_label] = plan.nextStep(operands, step, label);
+                    rekEinsum(next_operands, next_result_key, next_step, next_label);
+                }
+            } else {
+                result[result_key] = std::accumulate(operands.begin(), operands.end());
+            }
+        }
+
+
+        Tensor<T> *getResult(const vector<variant<Tensor<T> *, T>> &tensors) override {
             rekEinsum(tensors);
             return nullptr;
         }
-
-        void rekEinsum(const vector<variant<Tensor<T> *, T>> &operands,
-                       const vector<uint64_t> &result_key,
-                       PlanStep
-                       &last_step,
-                       label_t &last_label
-        );
-
     };
 
-    template<typename T>
-    void Einsum<T>::rekEinsum(vector<Tensor<T>> &operands) {
-        vector<uint64_t> result_key = vector<uint64_t>(this->result->ndim);
 
-    }
-
-    template<typename T>
-    void Einsum<T>::rekEinsum(const vector<variant<Tensor<T> *, T>> &operands,
-                              const vector<uint64_t> &result_key,
-                              PlanStep
-                              &last_step,
-                              label_t &last_label) {
-        const auto &
-        [step, label] = plan.nextStep(operands, last_step, last_label);
-
-        if (not step.all_done) {
-            Join<T> join{operands, step, label, result_key};
-            for (const auto &
-                [next_operands, next_result_key] : join) {
-                rekEinsum(next_operands, next_result_key, step, label);
-            }
-        } else {
-            result[result_key] = std::accumulate(operands.begin(), operands.end());
-        }
-    }
 }
-#endif //LIBSPARSETENSOR_EINSUM_HPP
+#endif //SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
