@@ -2,12 +2,15 @@
 #define LIBSPARSETENSOR_TENSOR_HPP
 
 
+#include "Types.hpp"
 #include <cstdint>
 #include <vector>
 #include <map>
 #include <ostream>
+#include <tuple>
 
 using std::vector;
+using std::tuple;
 
 namespace sparsetensor::tensor {
     template<typename T>
@@ -17,31 +20,47 @@ namespace sparsetensor::tensor {
         uint8_t ndim{};
         uint64_t nnz{};
         T sum{};
-        vector<uint64_t> shape;
+        shape_t shape;
 
-        explicit Tensor(const vector<uint64_t> &shape = vector<uint64_t>{}) : ndim(uint8_t(shape.size())),
-                                                                              shape(shape) {}
+        // todo: Copy-constructor
+
+        explicit Tensor(const shape_t &shape = shape_t{}) : ndim(uint8_t(shape.size())),
+                                                            shape(shape) {}
 
     protected:
-        void setShape(const vector<uint64_t> &shape) {
+        void setShape(const shape_t &shape) {
             ndim = uint8_t(shape.size());
             this->shape.clear();
             this->shape = shape;
         }
 
     public:
-        virtual T get(vector<uint64_t> &key) =0;
+        virtual T get(const Key_t &key) =0;
 
-        virtual void set(std::vector<uint64_t> &key, T &value) =0;
+        virtual void set(const Key_t &key, const T &value) =0;
 
         bool isZero() {
-            if (nnz == 0) {
-                return true;
-            }
+            return nnz == 0;
         }
+
+        class Iterator {
+        public:
+            virtual Iterator &operator++() {};
+
+            virtual Iterator operator++(int) {};
+
+            virtual tuple<Key_t, T> operator*() {};
+
+            virtual bool operator==(const Iterator &rhs) const {};
+
+            virtual bool operator!=(const Iterator &rhs) const {};
+        };
+
+        virtual Iterator begin() = 0;
+
+        virtual Iterator end() = 0;
     };
 
-    class Iterator;
 
 }
 #endif //LIBSPARSETENSOR_TENSOR_HPP
