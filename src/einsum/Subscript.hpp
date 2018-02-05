@@ -56,7 +56,7 @@ namespace sparsetensor::einsum {
          * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
          * @param [in] raw_result_subscript vector of the result's.
          */
-        Subscript(vector<vector<uint8_t>> &raw_operand_subscripts, vector<uint8_t> &raw_result_subscript) {
+        Subscript(const vector<vector<uint8_t>> raw_operand_subscripts, const vector<uint8_t> raw_result_subscript) {
             init(raw_operand_subscripts, raw_result_subscript);
         }
 
@@ -71,7 +71,7 @@ namespace sparsetensor::einsum {
          * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
          * @param [in] raw_result_subscript vector of the result's.
          */
-        void init(vector<vector<label_t>> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
+        void init(const vector<vector<label_t>> &raw_operand_subscripts, const vector<label_t> &raw_result_subscript);
 
     public:
         /**
@@ -198,7 +198,7 @@ namespace sparsetensor::einsum {
          * @return tuple of normalized operand labels, normalized result labels and the total number of different labels
          */
         static tuple<vector<vector<label_t >>, vector<label_t>, label_t>
-        normalizeRawSubscripts(vector<vector<label_t >> &raw_operand_subscripts, vector<label_t> &raw_result_subscript);
+        normalizeRawSubscripts(const vector<vector<label_t >> &raw_operand_subscripts, const vector<label_t> &raw_result_subscript);
 
         /**
          * norms a vector of label_t
@@ -280,8 +280,8 @@ namespace sparsetensor::einsum {
     }
 
     tuple<vector<vector<label_t >>, vector<label_t>, label_t>
-    Subscript::normalizeRawSubscripts(vector<vector<label_t>> &raw_operand_subscripts,
-                                      vector<label_t> &raw_result_subscript) {
+    Subscript::normalizeRawSubscripts(const vector<vector<label_t>> &raw_operand_subscripts,
+                                      const vector<label_t> &raw_result_subscript) {
         unordered_map<label_t, label_t> raw_to_norm_label{};
         label_t next_norm_label = 0;
 
@@ -302,8 +302,8 @@ namespace sparsetensor::einsum {
 
 
     void Subscript::init
-            (vector<vector<label_t>> &raw_operand_subscripts,
-             vector<label_t> &raw_result_subscript) {
+            (const vector<vector<label_t>> &raw_operand_subscripts,
+             const vector<label_t> &raw_result_subscript) {
 
         vector<vector<label_t>> operand_subscripts;
         vector<label_t> result_subscript;

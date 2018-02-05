@@ -19,14 +19,19 @@ namespace sparsetensor::tensor {
 
     template<typename T>
     class MapTensor : public Tensor<T, MapTensor> {
-        using Tensor<T, MapTensor>::Tensor;
 
+    public:
+        MapTensor():Tensor<T, MapTensor>{}  {}
+
+        MapTensor(const shape_t &shape) : Tensor<T, MapTensor>{shape} {}
+
+    private:
         friend class Iterator<T, MapTensor>;
 
         map<Key_t, T> entries{};
 
     public:
-        inline T get(const Key_t &key) override {
+        inline T get(const Key_t key) override {
             auto entry_ = this->entries.find(key);
 
             if (entry_ != this->entries.end()) {
@@ -36,7 +41,7 @@ namespace sparsetensor::tensor {
             }
         }
 
-        inline void set(const Key_t &key, const T &value) override {
+        inline void set(const Key_t key, const T value) override {
             auto old_value_ = this->entries.find(key);
             // old value exists
             if (old_value_ != this->entries.end()) { // new value is not zero
@@ -87,16 +92,16 @@ namespace sparsetensor::tensor {
                 entries_iter((not is_end) ? map_tensor.entries.cbegin() : map_tensor.entries.cend()),
                 entries_iter_end(map_tensor.entries.cend()) {}
 
-        Iterator(const Iterator &other) : entries_iter(other.entries_iter),
+        Iterator(const Iterator<T, MapTensor> &other) : entries_iter(other.entries_iter),
                                           entries_iter_end(other.entries_iter_end) {}
 
-        Iterator &operator++() {
+        Iterator<T, MapTensor> &operator++() {
             if (entries_iter != entries_iter_end)
                 ++entries_iter;
             return *this;
         }
 
-        Iterator operator++(int i) {
+        Iterator<T, MapTensor> operator++(int i) {
             operator++();
             return *this;
         }
@@ -107,7 +112,11 @@ namespace sparsetensor::tensor {
             return {key, value};
         }
 
-        bool operator!=(const Iterator &rhs) const {
+        bool operator==(const Iterator<T, MapTensor> &rhs) const {
+            return rhs.entries_iter != this->entries_iter;
+        }
+
+        bool operator!=(const Iterator<T, MapTensor> &rhs) const {
             return rhs.entries_iter != this->entries_iter;
         }
     };

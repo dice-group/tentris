@@ -33,15 +33,15 @@ namespace sparsetensor::tensor {
 
     protected:
         void setShape(const shape_t &shape) {
-            ndim = uint8_t(shape.size());
+            this->ndim = uint8_t(shape.size());
             this->shape.clear();
             this->shape = shape;
         }
 
     public:
-        virtual T get(const Key_t &key) =0;
+        virtual T get(const Key_t key) =0;
 
-        virtual void set(const Key_t &key, const T &value) =0;
+        virtual void set(const Key_t key, const T value) =0;
 
         bool isZero() {
             return nnz == 0;
@@ -60,6 +60,8 @@ namespace sparsetensor::tensor {
         tuple<Key_t, T> operator*();
 
         Iterator<T, TensorImpl> &operator++();
+
+        bool operator==(const Iterator<T, TensorImpl> &rhs) const;
 
         bool operator!=(const Iterator<T, TensorImpl> &rhs) const;
     };
