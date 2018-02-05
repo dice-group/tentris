@@ -71,7 +71,7 @@ namespace sparsetensor::tensor {
         }
 
         Iterator<T, MapTensor> end() {
-            return Iterator<T, MapTensor>{*this, entries.cend()};
+            return Iterator<T, MapTensor>{*this, true};
         }
     };
 
@@ -83,18 +83,12 @@ namespace sparsetensor::tensor {
         T value{};
 
     public:
-        explicit Iterator(const MapTensor<T> &map_tensor) :
-                entries_iter(map_tensor.entries.cbegin()),
-                entries_iter_end(map_tensor.entries.cend()) {}
-
-        Iterator(const MapTensor<T> &map_tensor,
-                 const typename map<Key_t, T>::const_iterator &entries_iter) :
-                entries_iter(entries_iter),
+        explicit Iterator(const MapTensor<T> &map_tensor, bool is_end = false) :
+                entries_iter((not is_end) ? map_tensor.entries.cbegin() : map_tensor.entries.cend()),
                 entries_iter_end(map_tensor.entries.cend()) {}
 
         Iterator(const Iterator &other) : entries_iter(other.entries_iter),
                                           entries_iter_end(other.entries_iter_end) {}
-
 
         Iterator &operator++() {
             if (entries_iter != entries_iter_end)
