@@ -6,9 +6,11 @@
 #include <cstdint>
 #include <map>
 #include <vector>
+#include "../tensor/Types.hpp"
 
 using std::vector;
 using std::map;
+using sparsetensor::tensor::key_pos_t;
 
 namespace sparsetensor::hypertrie {
 

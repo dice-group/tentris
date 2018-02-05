@@ -4,6 +4,7 @@
 
 #include "PosCalc.hpp"
 #include "Types.hpp"
+#include "../tensor/Types.hpp"
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -18,6 +19,9 @@ using std::variant;
 using std::map;
 using std::optional;
 using std::tuple;
+using sparsetensor::tensor::key_pos_t;
+using sparsetensor::tensor::key_part_t;
+using sparsetensor::tensor::Key_t;
 
 
 namespace sparsetensor::hypertrie {
@@ -29,6 +33,7 @@ namespace sparsetensor::hypertrie {
     template<typename T>
     class HyperTrie {
         friend class Diagonal<T>;
+
     public:
 
 
@@ -163,7 +168,7 @@ namespace sparsetensor::hypertrie {
          * @param key Vector of uint64 coordinates.
          * @return a SubTrie or a value depending on the length of the key.
          */
-        optional<variant<HyperTrie<T> *, T>> get(const vector<key_part_t> &key) {
+        optional<variant<HyperTrie<T> *, T>> get(const Key_t &key) {
             vector<std::optional<key_part_t>> intern_key(this->depth);
             for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
                 intern_key[key_pos] = {key[key_pos]};
@@ -315,7 +320,7 @@ namespace sparsetensor::hypertrie {
          * @param finished_subtries map of finished sub HyperTries
          * @param pos_calc PosCalc object for the current sub HyperTrie
          */
-        void set_rek(vector<key_part_t> &key, T &new_value, bool has_old_value, T &value_diff,
+        void set_rek(Key_t &key, T &new_value, bool has_old_value, T &value_diff,
                      std::unordered_map<subkey_mask_t, HyperTrie<T> *> &finished_subtries, PosCalc *pos_calc) {
             // update this node
             this->leafsum += value_diff;
@@ -383,7 +388,7 @@ namespace sparsetensor::hypertrie {
          * @param key key to the value
          * @param value value to be set
          */
-        void set(vector<key_part_t> &key, T &value) {
+        void set(Key_t &key, T &value) {
             if (key.size() != this->depth) {
                 throw "Key length must match HyperTrie->depth";
             }
@@ -414,7 +419,7 @@ namespace sparsetensor::hypertrie {
             set_rek(key, value, has_old_value, value_diff, finished_subtries, pos_calc);
         }
 
-        void del(vector<key_part_t> &coords) {
+        void del(Key_t &coords) {
             throw "Not yet implemented.";
         }
 

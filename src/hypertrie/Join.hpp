@@ -4,6 +4,7 @@
 #include "HyperTrie.hpp"
 #include "Diagonal.hpp"
 #include "../einsum/EvalPlan.hpp"
+#include "../tensor/Types.hpp"
 #include <iterator>
 #include <tuple>
 #include <variant>
@@ -19,6 +20,9 @@ using std::input_iterator_tag;
 using ::sparsetensor::einsum::label_t;
 using ::sparsetensor::einsum::op_pos_t;
 using ::sparsetensor::einsum::PlanStep;
+using sparsetensor::einsum::label_pos_t;
+using sparsetensor::tensor::key_pos_t;
+using sparsetensor::tensor::key_part_t;
 
 
 namespace sparsetensor::hypertrie {
@@ -41,8 +45,8 @@ namespace sparsetensor::hypertrie {
             // collect data about operands
             op_pos_t min_card_op_pos = 0;
             size_t min_card = numeric_limits<size_t>::max();
-            key_part_t min_key = numeric_limits<key_part_t>::min();
-            key_part_t max_key = numeric_limits<key_part_t>::max();
+            key_part_t min_key = KEY_PART_MIN;
+            key_part_t max_key = KEY_PART_MAX;
 
             map<op_pos_t, Diagonal<T>> hyper_trie_views{};
 

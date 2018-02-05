@@ -17,6 +17,8 @@ using ::std::optional;
 using ::std::tuple;
 using ::std::vector;
 using sparsetensor::einsum::label_pos_t;
+using sparsetensor::tensor::key_pos_t;
+using sparsetensor::tensor::key_part_t;
 
 namespace sparsetensor::hypertrie {
 
