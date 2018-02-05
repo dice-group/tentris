@@ -12,8 +12,16 @@ using std::map;
 namespace sparsetensor::tensor {
 
     template<typename T>
-    class MapTensor : public Tensor<T> {
-        using Tensor<T>::Tensor;
+    class MapTensor;
+
+    template<typename T>
+    class Iterator<T, MapTensor>;
+
+    template<typename T>
+    class MapTensor : public Tensor<T, MapTensor> {
+        using Tensor<T, MapTensor>::Tensor;
+
+        friend class Iterator<T, MapTensor>;
 
         map<Key_t, T> entries{};
 
@@ -52,63 +60,67 @@ namespace sparsetensor::tensor {
         }
 
         friend ostream &operator<<(ostream &out, MapTensor<T> &tensor) {
-            out << "<MapTensor: shape=" << tensor.shape << ", ndmin=" << tensor.ndim  << ", nnz=" << tensor.nnz << ", sum=" << tensor.sum << ">";
+            out << "<MapTensor: shape=" << tensor.shape << ", ndmin=" << tensor.ndim << ", nnz=" << tensor.nnz
+                << ", sum=" << tensor.sum << ">";
             return out;
         }
 
-        class Iterator : public Tensor<T>::Iterator {
-            typename map<Key_t, T>::const_iterator entries_iter;
-            typename map<Key_t, T>::const_iterator entries_iter_end;
-            Key_t key{};
-            T value{};
 
-        public:
-            explicit Iterator(const MapTensor<T> &map_tensor) :
-                    entries_iter(map_tensor.entries.cbegin()),
-                    entries_iter_end(map_tensor.entries.cend()) {}
-
-            Iterator(const MapTensor<T> &map_tensor,
-                     const typename map<Key_t, T>::const_iterator &entries_iter) :
-                    entries_iter(entries_iter),
-                    entries_iter_end(map_tensor.entries.cend()) {}
-
-            Iterator(const Iterator &other) : entries_iter(other.entries_iter),
-                                              entries_iter_end(other.entries_iter_end) {}
-
-
-            typename Tensor<T>::Iterator &operator++() override {
-                if (entries_iter != entries_iter_end)
-                    ++entries_iter;
-                return *this;
-            }
-
-            typename Tensor<T>::Iterator operator++(int i) override {
-                operator++();
-                return *this;
-            }
-
-            virtual tuple<Key_t, T> operator*() override {
-                const auto &[key, value] = *entries_iter;
-                return {key, value};
-            }
-
-            bool operator==(const typename Tensor<T>::Iterator &rhs) const override {
-                return static_cast<const Iterator &>(rhs).entries_iter == this->entries_iter;
-            }
-
-            bool operator!=(const typename Tensor<T>::Iterator &rhs) const override {
-                return static_cast<const Iterator &>(rhs).entries_iter != this->entries_iter;
-            }
-        };
-
-        typename Tensor<T>::Iterator begin() override {
-            return Iterator{*this};
+        Iterator<T, MapTensor> begin() {
+            return Iterator<T, MapTensor>{*this};
         }
 
-        typename Tensor<T>::Iterator end() override {
-            return Iterator{*this, entries.cbegin()};
+        Iterator<T, MapTensor> end()  {
+            return Iterator<T, MapTensor>{*this, entries.cbegin()};
         }
     };
+
+    template<typename T>
+    class Iterator<T, MapTensor> {
+        typename map<Key_t, T>::const_iterator entries_iter;
+        typename map<Key_t, T>::const_iterator entries_iter_end;
+        Key_t key{};
+        T value{};
+
+    public:
+        explicit Iterator(const MapTensor<T> &map_tensor) :
+                entries_iter(map_tensor.entries.cbegin()),
+                entries_iter_end(map_tensor.entries.cend()) {}
+
+        Iterator(const MapTensor<T> &map_tensor,
+                 const typename map<Key_t, T>::const_iterator &entries_iter) :
+                entries_iter(entries_iter),
+                entries_iter_end(map_tensor.entries.cend()) {}
+
+        Iterator(const Iterator &other) : entries_iter(other.entries_iter),
+                                          entries_iter_end(other.entries_iter_end) {}
+
+
+        Iterator &operator++() {
+            if (entries_iter != entries_iter_end)
+                ++entries_iter;
+            return *this;
+        }
+
+        Iterator operator++(int i) {
+            operator++();
+            return *this;
+        }
+
+        tuple<Key_t, T> operator*() {
+            const auto &
+            [key, value] = *entries_iter;
+            return {key, value};
+        }
+
+        bool operator!=(const Iterator &rhs) const {
+            return rhs.entries_iter != this->entries_iter;
+        }
+    };
+
+
+
+
 };
 
 

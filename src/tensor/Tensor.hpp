@@ -13,7 +13,11 @@ using std::vector;
 using std::tuple;
 
 namespace sparsetensor::tensor {
-    template<typename T>
+
+    template<typename T, template <typename >class TensorImpl>
+    class Iterator;
+
+    template<typename T, template <typename >class TensorImpl>
     class Tensor {
 
     public:
@@ -43,22 +47,21 @@ namespace sparsetensor::tensor {
             return nnz == 0;
         }
 
-        class Iterator {
-        public:
-            virtual Iterator &operator++() {};
+        Iterator<T, TensorImpl> begin();
 
-            virtual Iterator operator++(int) {};
+        Iterator<T, TensorImpl> end();
+    };
 
-            virtual tuple<Key_t, T> operator*() {};
+    template<typename T, template <typename >class TensorImpl>
+    class Iterator {
+        static_assert(std::is_base_of<Tensor<T, TensorImpl>, TensorImpl<T>>::value, "TensorImpl not derived from Tensor");
+    public:
 
-            virtual bool operator==(const Iterator &rhs) const {};
+        tuple<Key_t, T> operator*();
 
-            virtual bool operator!=(const Iterator &rhs) const {};
-        };
+        Iterator<T, TensorImpl> &operator++();
 
-        virtual Iterator begin() = 0;
-
-        virtual Iterator end() = 0;
+        bool operator!=(const Iterator<T, TensorImpl> &rhs) const;
     };
 
 

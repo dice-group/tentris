@@ -1,4 +1,3 @@
-#include "einsum/operator/Einsum.hpp"
 
 #include <tuple>
 #include <type_traits>
@@ -29,7 +28,6 @@ public:
     Iterator<SubContainer> begin();
 
     Iterator<SubContainer> end();
-
 };
 
 class ContImpl;
@@ -69,6 +67,6 @@ public:
 int main() {
     ContImpl cont{};
     for (auto &entry : cont) {
-        //
+        // Iterator<ContImpl>::operator++() is called.
     }
 }
