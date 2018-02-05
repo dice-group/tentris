@@ -70,8 +70,8 @@ namespace sparsetensor::tensor {
             return Iterator<T, MapTensor>{*this};
         }
 
-        Iterator<T, MapTensor> end()  {
-            return Iterator<T, MapTensor>{*this, entries.cbegin()};
+        Iterator<T, MapTensor> end() {
+            return Iterator<T, MapTensor>{*this, entries.cend()};
         }
     };
 
@@ -117,8 +117,6 @@ namespace sparsetensor::tensor {
             return rhs.entries_iter != this->entries_iter;
         }
     };
-
-
 
 
 };

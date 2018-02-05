@@ -191,7 +191,7 @@ TEST(TestMapTensor, zero_dim_write_read_delete_read) {
 TEST(TestMapTensor, test_iterator) {
     using namespace sparsetensor::tensor;
     // data
-    vector<Key_t> keys{
+    set<Key_t> keys{
             {0, 10, 8,  2},
             {2, 5,  10, 9},
             {1, 0,  10, 5},
@@ -215,7 +215,7 @@ TEST(TestMapTensor, test_iterator) {
     // validate
     for (const auto &[key, saved_value] :tensor) {
         std::cout << key << std::endl;
-        // ASSERT_TRUE(std::find(keys.begin(), keys.end(), key) != keys.end());
+        ASSERT_TRUE(keys.count(key));
         ASSERT_EQ(value, saved_value);
     }
 }
