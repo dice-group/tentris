@@ -5,6 +5,8 @@
 #include "../einsum/Types.hpp"
 #include "../hypertrie/Types.hpp"
 #include "Tensor.hpp"
+#include "MapTensor.hpp"
+#include "HyperTrieTensor.hpp"
 #include <tuple>
 
 
@@ -18,23 +20,26 @@ using std::vector;
 
 namespace sparsetensor::tensor {
 
-    template<typename T, template<typename> class InputTensor>
+    template<typename T>
     class CrossProductTensor;
 
-    template<typename T, template<typename> class InputTensor>
-    class Iterator<T, CrossProductTensor<T, InputTensor>>;
+    template<typename T>
+    class Iterator<T, CrossProductTensor>;
 
     /**
      * A Tensor that represents a cross product defined by a fitting subscript of several input tensors.
      * @tparam T
      */
-    template<typename T, template<typename> class InputTensor>
+    template<typename T>
     class CrossProductTensor : public Tensor<T, CrossProductTensor> {
-        friend class Iterator<T, CrossProductTensor<T, InputTensor<T>>>;
+        friend class Iterator<T, CrossProductTensor>;
+
         /**
          * Pointers to the Tensors that shall be inputed into this cross product.
          */
-        vector<InputTensor<T> *> input_tensors{};
+        vector<HyperTrieTensor<T> *>
+
+                input_tensors{};
         /**
          * a Mapping tensor_input_pos -> (input_label_pos -> result_label_pos).
          */
@@ -52,8 +57,13 @@ namespace sparsetensor::tensor {
          * @param input_tensors tensors to cross
          * @param subscript mapping of the crossing
          */
-        CrossProductTensor(vector<InputTensor<T> *> &input_tensors, Subscript &subscript)
-                : Tensor<T, CrossProductTensor>{} {
+        CrossProductTensor(vector<HyperTrieTensor<T> *
+        > &input_tensors,
+                           Subscript &subscript
+        )
+                :
+
+                Tensor<T, CrossProductTensor>{} {
             // todo: calc shape
             shape_t shape{};
             this->setShape(shape);
@@ -68,7 +78,7 @@ namespace sparsetensor::tensor {
             }
 
             // check if any input is zero
-            for (const InputTensor<T> *&input : input_tensors) {
+            for (const HyperTrieTensor<T> *&input : input_tensors) {
                 if (input->nnz == 0) {
                     return;
                 }
@@ -77,7 +87,7 @@ namespace sparsetensor::tensor {
             // sort input_tensors into tensors and scalars
             for (size_t i = 0; i < input_tensors.size(); ++i) {
                 const vector<label_t> &labels = operands_labels.at(op_pos_t(i));
-                InputTensor<T> *&input = input_tensors[i];
+                HyperTrieTensor<T> *&input = input_tensors[i];
                 this->input_tensors.push_back(input);
 
                 // translate key_pos in input to output key_pos
@@ -91,7 +101,7 @@ namespace sparsetensor::tensor {
 
             // initialize Tensor properties
             this->nnz = 1;
-            for (const InputTensor<T> *&tensor_input: this->input_tensors) {
+            for (const HyperTrieTensor<T> *&tensor_input: this->input_tensors) {
                 this->nnz *= tensor_input->nnz;
                 this->sum *= tensor_input->sum; // todo: is that true?
             }
@@ -117,19 +127,19 @@ namespace sparsetensor::tensor {
             return new CrossProductTensor(shape);
         }
 
-        Iterator<T, CrossProductTensor<T, InputTensor>> begin() {
+        Iterator<T, CrossProductTensor> begin() {
             return Iterator<T, CrossProductTensor>(*this);
         }
 
-        Iterator<T, CrossProductTensor<T, InputTensor<T>>> end() {
-            return Iterator<T, CrossProductTensor<T, InputTensor<T>>>(*this, this->nnz);
+        Iterator<T, CrossProductTensor> end() {
+            return Iterator<T, CrossProductTensor>(*this, this->nnz);
         }
     };
 
-    template<typename T, template<typename> class InputTensor>
-    class Iterator<T, CrossProductTensor<T, InputTensor<T>>> {
+    template<typename T>
+    class Iterator<T, CrossProductTensor> {
     public:
-        Iterator(CrossProductTensor<T, InputTensor<T>> &container, uint64_t id = 0) :
+        Iterator(CrossProductTensor<T> &container, uint64_t id = 0) :
                 container(container),
                 id(id),
                 end_id(container.nnz),
@@ -153,7 +163,7 @@ namespace sparsetensor::tensor {
         /**
          * Reference to the iterated CrossProductTensor.
          */
-        CrossProductTensor<T, InputTensor<T>> &container;
+        CrossProductTensor<T> &container;
         /**
          * id of the current entry from container.
          */
@@ -165,7 +175,7 @@ namespace sparsetensor::tensor {
         /**
          * Iterators for the containers inputs.
          */
-        vector<Iterator<T, InputTensor<T>>> input_iters{};
+        vector<Iterator<T, HyperTrieTensor>> input_iters{};
 
         Key_t key;
         T value{};
@@ -176,7 +186,7 @@ namespace sparsetensor::tensor {
                 id++;
 
                 for (int i = 0; i < input_iters.size(); ++i) {
-                    Iterator<T, InputTensor<T>> &input_iter = input_iters[i];
+                    Iterator<T, HyperTrieTensor> &input_iter = input_iters[i];
 
                     ++input_iter;
                     if (input_iter == container.input_tensors[i]->end()) {
@@ -208,8 +218,9 @@ namespace sparsetensor::tensor {
             // input-to-output key
             auto poss_in_result_ = container.posss_in_result.cbegin();
             // iterate inputs
-            for (Iterator<T, InputTensor<T>> input_iter : input_iters) {
-                const auto &[input_key, input_value] = *input_iter;
+            for (Iterator<T, HyperTrieTensor> input_iter : input_iters) {
+                const auto &
+                [input_key, input_value] = *input_iter;
                 // set the value
                 value *= input_value;
                 // set key at right positions

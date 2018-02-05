@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-
+#include "tensor/MapTensor.hpp"
 #include "tensor/CrossProductTensor.hpp"
 #include "tensor/Types.hpp"
 
