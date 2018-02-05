@@ -12,7 +12,6 @@ using sparsetensor::einsum::Subscript;
 using sparsetensor::einsum::label_pos_t;
 using sparsetensor::einsum::label_t;
 using sparsetensor::einsum::op_pos_t;
-using sparsetensor::hypertrie::key_part_t;
 using std::tuple;
 using std::vector;
 
@@ -29,7 +28,7 @@ namespace sparsetensor::tensor {
          * Construct empty CrossProductTensor.
          * @param shape shape of the tensor to be created.
          */
-        explicit CrossProductTensor(const vector<uint64_t> shape)
+        explicit CrossProductTensor(const shape_t shape)
                 : Tensor<T>{shape} {}
 
         /**
@@ -40,8 +39,8 @@ namespace sparsetensor::tensor {
         CrossProductTensor(vector<Tensor<T> *> &input_tensors, Subscript &subscript)
                 : Tensor<T>{} {
             // todo: calc shape
-            vector<uint64_t> shape{};
-            setShape(shape);
+            shape_t shape{};
+            this->setShape(shape);
 
 
             const map<op_pos_t, vector<label_t>> &operands_labels = subscript.getOperandsLabels();
@@ -61,7 +60,7 @@ namespace sparsetensor::tensor {
 
             // sort input_tensors into tensors and scalars
             for (size_t i = 0; i < input_tensors.size(); ++i) {
-                auto & [op_id, labels] = operands_labels[i];
+                const vector<label_t> &labels = operands_labels.at(op_pos_t(i));
                 Tensor<T> *&input = input_tensors[i];
                 this->input_tensors.push_back(input);
 
@@ -75,10 +74,10 @@ namespace sparsetensor::tensor {
             }
 
             // initialize Tensor properties
-            nnz = 1;
+            this->nnz = 1;
             for (const Tensor<T> *&tensor_input: this->input_tensors) {
-                nnz *= tensor_input->nnz;
-                sum *= tensor_input->sum; // todo: is that true?
+                this->nnz *= tensor_input->nnz;
+                this->sum *= tensor_input->sum; // todo: is that true?
             }
         }
 
@@ -95,11 +94,11 @@ namespace sparsetensor::tensor {
 
     public:
 
-        T get(vector<uint64_t> &key) override {
+        T get(Key_t &key) override {
             throw "Not yet implemented.";
         }
 
-        void set(std::vector<key_part_t> &key, T &value) override {
+        void set(Key_t &key, T &value) override {
             throw "Set not supported by CrossProductTensor.";
         }
 
@@ -108,17 +107,31 @@ namespace sparsetensor::tensor {
          * @param shape shape of the tensor
          * @return new empty CrossProductTensor
          */
-        static CrossProductTensor *getZero(const vector<key_part_t> &shape) {
+        static CrossProductTensor *getZero(const shape_t &shape) {
             return new CrossProductTensor(shape);
         }
 
-        friend class Iterator {
+        class Iterator : public Tensor<T>::Iterator {
         public:
-            Iterator(CrossProductTensor<T> &container, uint64_t id = 0) : id(id), container(container) {
+            Iterator(CrossProductTensor<T> &container, uint64_t id = 0) :
+                    container(container),
+                    id(id),
+                    end_id(container.nnz),
+                    key(Key_t(container.ndim)) {
                 for (const auto &input : container.input_tensors) {
-                    input_iters.push_back(input.begin());
+                    input_iters.push_back(input->begin());
                 }
             }
+
+            /**
+             * Copy-Constructor
+             * @param other Iterator to be copied
+             */
+            Iterator(const Iterator &other) :
+                    container(other.container),
+                    id(other.id),
+                    end_id(other.end_id),
+                    key(other.key) {}
 
         private:
             /**
@@ -128,28 +141,29 @@ namespace sparsetensor::tensor {
             /**
              * id of the current entry from container.
              */
-            uint64_t id = 0;
+            uint64_t id;
             /**
              * end id of container.end().
              */
-            uint64_t end_id = container.nnz;
+            uint64_t end_id;
             /**
              * Iterators for the containers inputs.
              */
-            vector<Tensor<T>::Iterator> input_iters{};
+            vector<typename Tensor<T>::Iterator> input_iters{};
 
-            vector<key_part_t> key = vector<key_part_t>(container.ndim);
+            vector<key_part_t> key;
             T value{};
 
-            Iterator &operator++() {
+        public:
+            typename Tensor<T>::Iterator &operator++() override {
                 if (id != end_id) {
                     id++;
 
                     for (int i = 0; i < input_iters.size(); ++i) {
-                        const Tensor<T>::Iterator &input_iter = input_iters[i];
+                        typename Tensor<T>::Iterator &input_iter = input_iters[i];
 
-                        input_iter++;
-                        if (iter == container.input_tensors.end()) {
+                        ++input_iter;
+                        if (input_iter == container.input_tensors[i]->end()) {
                             if (i == input_iters.size() - 1) {
                                 // last iterator shall be flipped back it means the end is reached.
                                 // should never be reached.
@@ -157,56 +171,61 @@ namespace sparsetensor::tensor {
                                 break;
                             }
                             // todo: sort the zero-dim tensors to the end to avoid unnecessary tensor.begin() calls
-                            inputs[i] = container.input_tensors.begin();
+                            input_iters[i] = container.input_tensors[i]->begin();
                         } else {
                             break;
                         }
                     }
-                    return *this;
                 }
-
+                return *this;
             }
 
-            tuple<vector<uint64_t>, T> operator*() {
+            typename Tensor<T>::Iterator operator++(int) override {
+                operator++();
+                return *this;
+            }
+
+            tuple<Key_t, T> operator*() override {
                 // reset the value
                 value = 1;
 
                 // input-to-output key
                 auto poss_in_result_ = container.posss_in_result.cbegin();
-
+                container.input_tensors[0];
                 // iterate inputs
-                for (const auto &
-                [input_key, input_value] : container.input_tensors) {
+                for (typename Tensor<T>::Iterator input_iter : input_iters) {
+                    const auto &
+                    [input_key, input_value] = *input_iter;
                     // set the value
                     value *= input_value;
                     // set key at right positions
                     const vector<label_pos_t> &poss_in_result = *poss_in_result_;
                     for (int j = 0; j < input_key.size(); ++j) {
                         const label_pos_t &pos_in_result = poss_in_result[j];
-                        const key_part_t key_part = &input_key[j];
+                        const key_part_t &key_part = input_key[j];
                         key[pos_in_result] = key_part;
                     }
-                    poss_in_result_++;
+                    ++poss_in_result_;
                 }
 
                 return {key, value};
             }
 
-            bool operator==(const Iterator &rhs) const {
-                return rhs.id == id;
+            bool operator==(const typename Tensor<T>::Iterator &rhs) const override {
+                return static_cast<const Iterator &>(rhs).id == id;
             }
 
-            bool operator!=(const Iterator &rhs) const {
-                return rhs.id != id;
+            bool operator!=(const typename Tensor<T>::Iterator &rhs) const override {
+                return static_cast<const Iterator &>(rhs).id != id;
             }
         };
 
-        Iterator begin() {
+        typename Tensor<T>::Iterator begin() override {
             return Iterator(*this);
         }
 
-        Iterator end() {
-            return Iterator(*this);
+        typename Tensor<T>::Iterator end() override {
+            return Iterator(*this, this->nnz);
         }
     };
 

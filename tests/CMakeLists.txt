@@ -12,6 +12,7 @@ link_libraries(
         pthread
 )
 
+add_executable(TestCrossProductTensor TestCrossProductTensor.cpp)
 add_executable(TestDiagonal TestDiagonal.cpp)
 add_executable(TestEinsum TestEinsum.cpp)
 add_executable(TestHyperTrie TestHyperTrie.cpp)
