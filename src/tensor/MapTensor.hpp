@@ -31,7 +31,7 @@ namespace sparsetensor::tensor {
         map<Key_t, T> entries{};
 
     public:
-        inline T get(const Key_t key) override {
+        inline T get(const Key_t key) const override {
             auto entry_ = this->entries.find(key);
 
             if (entry_ != this->entries.end()) {

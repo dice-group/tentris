@@ -37,7 +37,7 @@ namespace sparsetensor::hypertrie {
     public:
 
 
-        HyperTrie(key_pos_t depth) : depth(depth) {}
+        HyperTrie(const key_pos_t depth) : depth(depth) {}
 
         /**
          * Depth is the length of the keys.
@@ -67,7 +67,7 @@ namespace sparsetensor::hypertrie {
          * @param subkey_pos position of the next coordinate. MUST be in range [0,self->depth).
          * @return a pointer to a map that maps the used key_parts at subkey_pos of a subkey to sub-hypertries or T entries.
          */
-        map<key_part_t, variant<HyperTrie<T> *, T>> *getOrCreateEdges(key_pos_t subkey_pos) noexcept {
+        map<key_part_t, variant<HyperTrie<T> *, T>> *getOrCreateEdges(const key_pos_t subkey_pos) noexcept {
             auto edges = this->edges_by_pos[subkey_pos];
             // if the map for subkey_pos doesn't exist create it.
             if (edges == nullptr) {
@@ -82,7 +82,7 @@ namespace sparsetensor::hypertrie {
          * @param subkey_pos position of the next coordinate. MUST be in range [0,self->depth).
          * @return optional if it exists: a map that maps the used key_parts at pos of a key to sub-hypertries or T entries
          */
-        optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> getEdges(key_pos_t subkey_pos) {
+        optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> getEdges(const key_pos_t subkey_pos) {
             map<key_part_t, variant<HyperTrie<T> *, T>> *edges = this->edges_by_pos.at(subkey_pos);
             // if the map for subkey_pos doesn't exist create it.
             if (edges == nullptr)
@@ -99,7 +99,7 @@ namespace sparsetensor::hypertrie {
          * @return Optional Difference between old and new value if this-> depth is 1. TODO!
          */
         variant<HyperTrie<T> *, T>
-        setChild(key_pos_t pos, key_part_t key_part, optional<variant<HyperTrie<T> *, T>> &value) {
+        setChild(const key_pos_t pos, const key_part_t key_part, const optional<variant<HyperTrie<T> *, T>> &value) {
             auto edge = getOrCreateEdges(pos);
 
             // depth > 1 means it is an inner node. So a sub-HyperTrie is added not a T value.
@@ -140,7 +140,7 @@ namespace sparsetensor::hypertrie {
          * @param key_part The key_part identifing the child.
          * @return Optional the child if it exists. If this->depth is 1 the child is of value T otherwise it is a HyperTrie.
          */
-        optional<variant<HyperTrie<T> *, T>> getChild(key_pos_t subkey_pos, key_part_t key_part) {
+        optional<variant<HyperTrie<T> *, T>> getChild(const key_pos_t subkey_pos, const key_part_t key_part) {
             optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> edges_ = getEdges(subkey_pos);
             // check if HyperTrie is emtpy.
             if (edges_) {
@@ -156,7 +156,7 @@ namespace sparsetensor::hypertrie {
             return std::nullopt;
         }
 
-        void delChild(key_pos_t &pos, key_part_t key_part) {
+        void delChild(const key_pos_t pos, const key_part_t key_part) {
             optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> edges_ = getEdges(pos);
             throw "Not yet implemented.";
         }
@@ -181,7 +181,7 @@ namespace sparsetensor::hypertrie {
          * @param key Vector of optional uint64 key_parts. If a key_pos is an std::nullopt the key_part for that position is not set resulting in a slice.
          * @return a SubTrie or a value depending if the key contains slices..
          */
-        optional<variant<HyperTrie<T> *, T>> get(vector<std::optional<key_part_t>> &key) {
+        optional<variant<HyperTrie<T> *, T>> get(const vector<std::optional<key_part_t>> key) {
             // extract non_slice_key_parts
             map<key_pos_t, key_part_t> non_slice_key_parts{};
             for (key_pos_t key_pos = 0; key_pos < size(key); ++key_pos) {
@@ -235,7 +235,7 @@ namespace sparsetensor::hypertrie {
          * @param key_pos key position.
          * @return samllest key at given position or the maximum key_part_t value if no entry is in this HyperTrie.
          */
-        inline key_part_t getMinKeyPart(key_pos_t key_pos) {
+        inline key_part_t getMinKeyPart(const key_pos_t key_pos) {
             const std::optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> &edges_ = getEdges(key_pos);
             if (edges_) {
                 map<key_part_t, variant<HyperTrie<T> *, T>> *edges = (*edges_);
@@ -251,7 +251,7 @@ namespace sparsetensor::hypertrie {
          * @param key_pos key position.
          * @return largest key at given position or the minimum key_part_t value if no entry is in this HyperTrie.
          */
-        inline key_part_t getMaxKeyPart(key_pos_t key_pos) {
+        inline key_part_t getMaxKeyPart(const key_pos_t key_pos) {
             const std::optional<map<key_part_t, variant<HyperTrie<T> *, T>> *> &edges_ = getEdges(key_pos);
             if (edges_) {
                 map<key_part_t, variant<HyperTrie<T> *, T>> *edges = (*edges_);
@@ -273,9 +273,10 @@ namespace sparsetensor::hypertrie {
         }
 
         key_pos_t
-        getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts, const HyperTrie<T> *result,
+        getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts,
+                         const HyperTrie<T> *result,
                          const PosCalc *posCalc) const {
-            size_t min_card = ::std::numeric_limits<size_t>::max();
+            size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
             for (const auto &
                 [key_pos, key_part] : non_slice_key_parts) {
@@ -295,7 +296,7 @@ namespace sparsetensor::hypertrie {
          */
         key_pos_t getMinCardKeyPos() const {
 
-            size_t min_card = ::std::numeric_limits<unsigned long>::max();
+            size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
 
             for (key_pos_t key_pos = 0; key_pos < edges_by_pos.size(); ++key_pos) {
@@ -320,7 +321,7 @@ namespace sparsetensor::hypertrie {
          * @param finished_subtries map of finished sub HyperTries
          * @param pos_calc PosCalc object for the current sub HyperTrie
          */
-        void set_rek(Key_t &key, T &new_value, bool has_old_value, T &value_diff,
+        void set_rek(const Key_t &key, const T &new_value, const bool &has_old_value, const T &value_diff,
                      std::unordered_map<subkey_mask_t, HyperTrie<T> *> &finished_subtries, PosCalc *pos_calc) {
             // update this node
             this->leafsum += value_diff;
@@ -343,7 +344,7 @@ namespace sparsetensor::hypertrie {
                     key_part_t key_part = key[key_pos];
 
                     // get pos_calc for next child and check if it was already updated earlier.
-                    PosCalc *const next_pos_calc = pos_calc->use(key_pos);
+                    PosCalc *next_pos_calc = pos_calc->use(key_pos);
                     auto finished_child = finished_subtries.find(next_pos_calc->removed_positions);
 
                     // get the child at the current position.
@@ -388,7 +389,7 @@ namespace sparsetensor::hypertrie {
          * @param key key to the value
          * @param value value to be set
          */
-        void set(Key_t &key, T &value) {
+        void set(const Key_t key, const T value) {
             if (key.size() != this->depth) {
                 throw "Key length must match HyperTrie->depth";
             }
@@ -419,7 +420,7 @@ namespace sparsetensor::hypertrie {
             set_rek(key, value, has_old_value, value_diff, finished_subtries, pos_calc);
         }
 
-        void del(Key_t &coords) {
+        void del(const Key_t coords) {
             throw "Not yet implemented.";
         }
 

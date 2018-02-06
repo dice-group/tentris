@@ -39,7 +39,7 @@ namespace sparsetensor::tensor {
         }
 
     public:
-        virtual T get(const Key_t key) =0;
+        virtual T get(const Key_t key) const =0;
 
         virtual void set(const Key_t key, const T value) =0;
 

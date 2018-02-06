@@ -93,7 +93,7 @@ namespace sparsetensor::hypertrie {
          * @param key_pos position of superkey to be removed.
          * @return PosCalc like this but without position key_pos.
          */
-        inline PosCalc *use(const key_pos_t key_pos) {
+        inline PosCalc *use(const key_pos_t &key_pos) {
             PosCalc *child = next_pos_calcs.at(key_pos);
             if (child == nullptr) {
                 vector<bool> used_pos_mask(this->key_length, true);

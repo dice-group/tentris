@@ -58,9 +58,6 @@ namespace sparsetensor::tensor {
          */
         CrossProductTensor(const vector<MapTensor<T> *> &input_tensors, const Subscript &subscript)
                 : Tensor<T, CrossProductTensor>{} {
-            // todo: calc shape
-//            const shape_t &vector = calcShape<T, MapTensor>(input_tensors, subscript);
-//            shape_t shape{3,3,3};
             this->setShape(calcShape<T, MapTensor>(input_tensors, subscript));
 
 
@@ -103,7 +100,7 @@ namespace sparsetensor::tensor {
         }
 
 
-        virtual T get(const Key_t key) override {
+        virtual T get(const Key_t key) const override {
             throw "Not yet implemented.";
         }
 

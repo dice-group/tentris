@@ -5,10 +5,10 @@
 
 TEST(TestHyperTrieTensor, write_read_delete_read) {
     using namespace sparsetensor::tensor;
-    HyperTrieTensor<int> tensor{vector<uint64_t>{3, 3, 3}};
+    HyperTrieTensor<int> tensor{{3, 3, 3}};
     std::cout << tensor << std::endl;
 
-    vector<uint64_t> coord{1, 1, 1};
+    Key_t coord{1, 1, 1};
     int value{4};
     tensor.set(coord, value);
     std::cout << tensor << std::endl;

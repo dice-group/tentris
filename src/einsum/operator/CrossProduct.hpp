@@ -2,7 +2,7 @@
 #define SPARSETENSOR_EINSUM_OPERATOR_CROSSPRODUCT_HPP
 
 
-#include "Operator.hpp"
+#include "Einsum.hpp"
 #include <vector>
 #include <tuple>
 #include "../../tensor/CrossProductTensor.hpp"
@@ -11,37 +11,39 @@ using std::vector;
 using std::tuple;
 
 using sparsetensor::tensor::CrossProductTensor;
-using sparsetensor::einsum::operators::Operator;
+using sparsetensor::tensor::MapTensor;
 
 
 namespace sparsetensor::einsum::operators {
 
     template<typename T>
-    class CrossProduct : public Operator<T> {
-    protected:
-        explicit CrossProduct(Subscript &subscript) : Operator<T>{subscript} {
-            for (auto &sub_subscript_ : subscript.getSubSubscripts()) {
-                predecessors.push_back({sub_subscript_.second});
+    class CrossProduct {
+        const Subscript &subscript;
+        vector<Einsum<T>> predecessors{};
+    public:
+        explicit CrossProduct(const Subscript &subscript) :
+                subscript(subscript) {
+            const map<op_pos_t, Subscript> &sub_subscripts = subscript.getSubSubscripts();
+            predecessors.resize(sub_subscripts.size());
+            for (const auto &
+            [op_id, sub_subscript] : sub_subscripts) {
+                predecessors.push_back({sub_subscript});
             }
         }
 
-        vector<Operator<T>> predecessors{};
+        CrossProductTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
+            shape_t result_shape = calcShape<T, HyperTrieTensor>(operands, subscript);
 
-    public:
-        Tensor<T> *getResult(const vector<variant<Tensor<T> *, T>> &tensors) override {
-            // TODO: calc shape
-            vector<uint64_t> shape{};
-
-            vector<Tensor<T> *> predecessor_results(predecessors.size());
+            vector<MapTensor<T> *> predecessor_results(predecessors.size());
             // TODO: make parallel
             // get results from all predecessors
             for (int i = 0; i < size(predecessors); ++i) {
-                Operator<T> &predecessor = predecessors[i];
-                predecessor_results[i] = predecessor.getResult(tensors[i]);
+                Einsum<T> &predecessor = predecessors.at(i);
+                predecessor_results[i] = predecessor.getResult(operands);
+
                 if (predecessor_results[i]->nnz = 0) {
-                    // TODO: determine shape
                     // TODO: when parallel -> cancel all other threads.
-                    return new CrossProductTensor<T>(shape);
+                    return new CrossProductTensor<T>(result_shape);
                 }
             }
             return new CrossProductTensor<T>(predecessor_results, subscript);

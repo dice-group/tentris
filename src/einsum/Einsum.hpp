@@ -3,30 +3,30 @@
 
 
 #include "../tensor/HyperTrieTensor.hpp"
-#include "../tensor/MapTensor.hpp"
+#include "../tensor/CrossProductTensor.hpp"
 #include "Subscript.hpp"
-#include "operator/Operator.hpp"
+#include "operator/CrossProduct.hpp"
 
 using sparsetensor::tensor::Tensor;
 using sparsetensor::tensor::HyperTrieTensor;
-using sparsetensor::einsum::operators::Operator;
+using sparsetensor::tensor::CrossProductTensor;
+using sparsetensor::einsum::operators::CrossProduct;
 
 namespace sparsetensor::einsum {
 
 
     template<typename T>
-    Tensor<T> *einsum(vector<HyperTrieTensor<T>> operands,
-                      vector<raw_subscript> raw_operand_subscripts, raw_subscript
-                      raw_result_subscript) {
+    CrossProductTensor<T> *einsum(const vector<HyperTrieTensor<T> *> operands,
+                                  const vector<raw_subscript> raw_operand_subscripts,
+                                  const raw_subscript raw_result_subscript) {
 
         Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript}.optimize();
 
-        operators::Operator<T> operator_tree = operators::Operator<T>::buildOperatorGraph(subscript, operands);
+        CrossProduct<T> operator_tree{subscript};
 
-        Tensor<T> *result = operator_tree.getResult(operands);
+        CrossProductTensor<T> *result = operator_tree.getResult(operands);
 
-        return
-                result;
+        return result;
     }
 }
 
