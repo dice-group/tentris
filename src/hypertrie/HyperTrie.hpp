@@ -272,6 +272,14 @@ namespace sparsetensor::hypertrie {
             return edges_by_pos.at(key_pos)->size();
         }
 
+        inline vector<size_t> getCards(const vector<key_pos_t> &key_poss) const {
+            vector<size_t> cards(key_poss.size());
+            for (int i = 0; i < key_poss.size(); ++i) {
+                cards[i] = getCard(key_poss.at(i));
+            }
+            return cards;
+        }
+
         key_pos_t
         getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts,
                          const HyperTrie<T> *result,
