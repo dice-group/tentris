@@ -4,11 +4,12 @@
 #include "../einsum/Subscript.hpp"
 #include "../einsum/Types.hpp"
 #include "../hypertrie/Types.hpp"
+#include "../einsum/ShapeCalc.hpp"
 #include "Tensor.hpp"
 #include "MapTensor.hpp"
 #include <tuple>
 
-
+using sparsetensor::einsum::calcShape;
 using sparsetensor::einsum::Subscript;
 using sparsetensor::einsum::label_pos_t;
 using sparsetensor::einsum::label_t;
@@ -32,6 +33,7 @@ namespace sparsetensor::tensor {
     template<typename T>
     class CrossProductTensor : public Tensor<T, CrossProductTensor> {
         friend class Iterator<T, CrossProductTensor>;
+
     public:
         /**
          * Pointers to the Tensors that shall be inputed into this cross product.
@@ -57,8 +59,9 @@ namespace sparsetensor::tensor {
         CrossProductTensor(const vector<MapTensor<T> *> &input_tensors, const Subscript &subscript)
                 : Tensor<T, CrossProductTensor>{} {
             // todo: calc shape
-            shape_t shape{3,3,3};
-            this->setShape(shape);
+//            const shape_t &vector = calcShape<T, MapTensor>(input_tensors, subscript);
+//            shape_t shape{3,3,3};
+            this->setShape(calcShape<T, MapTensor>(input_tensors, subscript));
 
 
             const map<op_pos_t, vector<label_t>> &operands_labels = subscript.getOperandsLabels();
@@ -172,8 +175,8 @@ namespace sparsetensor::tensor {
 
     public:
         Iterator<T, CrossProductTensor> &operator++() {
+            id++;
             if (id != end_id) {
-                id++;
 
                 for (int i = 0; i < input_iters.size(); ++i) {
                     Iterator<T, MapTensor> &input_iter = input_iters[i];
@@ -226,11 +229,11 @@ namespace sparsetensor::tensor {
             return {key, value};
         }
 
-        bool operator==(const Iterator &rhs) const {
+        bool operator==(const Iterator<T, CrossProductTensor> &rhs) const {
             return rhs.id == id;
         }
 
-        bool operator!=(const Iterator &rhs) const {
+        bool operator!=(const Iterator<T, CrossProductTensor> &rhs) const {
             return rhs.id != id;
         }
     };

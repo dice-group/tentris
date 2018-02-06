@@ -113,7 +113,7 @@ namespace sparsetensor::tensor {
         }
 
         bool operator==(const Iterator<T, MapTensor> &rhs) const {
-            return rhs.entries_iter != this->entries_iter;
+            return rhs.entries_iter == this->entries_iter;
         }
 
         bool operator!=(const Iterator<T, MapTensor> &rhs) const {
