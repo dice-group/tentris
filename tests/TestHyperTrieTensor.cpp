@@ -24,6 +24,18 @@ TEST(TestHyperTrieTensor, write_read_delete_read) {
     ASSERT_EQ(retrieved_value, zero);
 }
 
+TEST(TestHyperTrieTensor, scalar) {
+    using namespace sparsetensor::tensor;
+
+    HyperTrieTensor<int> scalar{{}};
+    int value = 5;
+    scalar.set({}, 5);
+
+    int saved_value = scalar.get({});
+
+    ASSERT_EQ(saved_value, value);
+}
+
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -21,10 +21,10 @@ namespace sparsetensor::tensor {
     public:
 
         explicit HyperTrieTensor(const shape_t &shape) : Tensor<T, HyperTrieTensor>{shape},
-                                                                  trie(new HyperTrie<T>(uint8_t(shape.size()))) {}
+                                                         trie(new HyperTrie<T>(uint8_t(shape.size()))) {}
 
         HyperTrieTensor(const shape_t &shape, HyperTrie<T> *trie) : Tensor<T, HyperTrieTensor>{shape},
-                                                                             trie(trie) {}
+                                                                    trie(trie) {}
 
         virtual ~HyperTrieTensor() {
             delete trie;
@@ -36,22 +36,40 @@ namespace sparsetensor::tensor {
 
 
         virtual T get(const Key_t key) const override {
-            const optional<variant<HyperTrie<T> *, T>> &value_ = trie->get(key);
-            if (value_) {
-                return std::get<T>(*value_);
+            if (trie->depth > 0) {
+                const optional<variant<HyperTrie<T> *, T>> &value_ = trie->get(key);
+                if (value_) {
+                    return std::get<T>(*value_);
+                } else {
+                    return {};
+                }
             } else {
-                return {};
+                if (key != Key_t{})
+                    throw "Scalars must be accessed with an empty key.";
+                return trie->leafsum;
             }
         }
 
         virtual void set(const Key_t key, const T value) override {
             if (value != T{}) {
-                trie->set(key, value);
-            } else { // new value is zero
-                trie->del(key);
+                if (trie->depth > 0) { // ndim >= 1 -> tensor
+                    trie->set(key, value);
+                } else { // ndmin == 1 -> scalar
+                    if (key != Key_t{})
+                        throw "Scalars must be accessed with an empty key.";
+                    trie->leafcount = 1;
+                    trie->leafsum = value;
+                }
+            } else {
+                if (trie->depth != 0) { // ndim >= 1 -> tensor
+                    trie->del(key);
+                } else {
+                    if (key != Key_t{})
+                        throw "Scalars must be accessed with an empty key.";
+                    trie->leafcount = 0;
+                    trie->leafsum = value;
+                }
             }
-            this->nnz = trie->leafcount;
-            this->sum = trie->leafsum;
         }
 
         friend ostream &operator<<(ostream &out, HyperTrieTensor<T> &tensor) {
