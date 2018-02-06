@@ -31,12 +31,12 @@ namespace sparsetensor::einsum::operators {
         }
 
         void rekEinsum(const vector<HyperTrieTensor<T> *> &operands) {
-            vector<variant<HyperTrieTensor<T> *, T>> variant_operands{};
+            vector<variant<HyperTrie<T> *, T>> hypertrie_operands{};
             for (const HyperTrieTensor<T> *&operand : operands) {
                 if (operand->ndim == 0) {
-                    variant_operands.push_back(variant<HyperTrieTensor<T> *, T>{operand->get({})});
+                    hypertrie_operands.push_back({operand->trie});
                 } else {
-                    variant_operands.push_back(variant<HyperTrieTensor<T> *, T>{operand});
+                    hypertrie_operands.push_back({operand});
                 }
             }
 
@@ -47,10 +47,10 @@ namespace sparsetensor::einsum::operators {
         }
 
 
-        void rekEinsum(const vector<variant<HyperTrieTensor<T> *, T>> &operands, const Key_t &result_key,
+        void rekEinsum(const vector<variant<HyperTrie<T> *, T>> &operands, const Key_t &result_key,
                        PlanStep &step, label_t &label) {
             if (not step.all_done) {
-                Join<T> join{static_cast<const vector<variant<HyperTrie<T> *, T>> &>(operands), step, label, result_key};
+                Join<T> join{operands, step, label, result_key};
                 // TODO: parallelize
                 for (const auto &[next_operands, next_result_key] : join) {
                     const auto &[next_step, next_label] = plan.nextStep(operands, step, label);

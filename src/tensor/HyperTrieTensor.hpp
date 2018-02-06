@@ -14,10 +14,15 @@
 using std::vector;
 using sparsetensor::hypertrie::HyperTrie;
 
+namespace sparsetensor::einsum::operators{
+    class Einsum;
+}
+
 namespace sparsetensor::tensor {
 
     template<typename T>
     class HyperTrieTensor : public Tensor<T, HyperTrieTensor> {
+    friend class sparsetensor::einsum::operators::Einsum;
     public:
 
         explicit HyperTrieTensor(const shape_t &shape) : Tensor<T, HyperTrieTensor>{shape},
