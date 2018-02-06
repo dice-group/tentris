@@ -107,6 +107,10 @@ namespace sparsetensor::einsum::util {
             return connected_components;
         }
 
+        unordered_set neighbors(const T node) const{
+            return edges.at(node);
+        }
+
         /**
          * Resets the graph to an empty graph.
          */
@@ -114,6 +118,22 @@ namespace sparsetensor::einsum::util {
             nodes.clear();
             edges.clear();
         }
+
+        /**
+         * Iterator of the nodes.
+         * @return Node iterator
+         */
+        typename unordered_set<T>::const_iterator cbegin() const {
+            return nodes.begin();
+        };
+
+        /**
+         * End of nodes Iterator.
+         * @return iterator end
+         */
+        typename unordered_set<T>::const_iterator cend() const {
+            return nodes.end();
+        };
     };
 
 }
