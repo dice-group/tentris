@@ -15,8 +15,6 @@ TEST(EvalPlan, simple_call) {
     tensor_a.set({2, 0}, 11);
     tensor_a.set({3, 0}, 5);
 
-//    const vector<variant<HyperTrie<int> *, int>> input_tensors = {&tensor_a};
-
     vector<raw_subscript> op_sc{{0, 1}};
     raw_subscript res_sc{};
 
