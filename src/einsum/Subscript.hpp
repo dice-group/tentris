@@ -471,12 +471,13 @@ namespace sparsetensor::einsum {
     }
 
 
-    unordered_map<label_t, vector<op_pos_t>> Subscript::calcOperandsWithLabel(const unordered_set<label_t> &all_labels,
-                                                                              const map<op_pos_t, vector<label_t>> &operands_labels) {
+    unordered_map<label_t, vector<op_pos_t>> Subscript::calcOperandsWithLabel(
+            const unordered_set<label_t> &all_labels,
+            const map<op_pos_t, vector<label_t>> &operands_labels) {
         unordered_map<label_t, vector<op_pos_t>> operands_with_label{};
-        for (op_pos_t op_id = 0; op_id < size(operands_labels); ++op_id) {
+
+        for (const auto &[op_id, op_labels] : operands_labels){
             for (label_t label : all_labels) {
-                const vector<label_t> &op_labels = operands_labels.at(op_id);
 
                 // if op labels contains current label
                 if (std::find(op_labels.cbegin(), op_labels.cend(), label) == op_labels.cend()) {
