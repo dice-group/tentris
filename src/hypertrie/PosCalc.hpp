@@ -1,5 +1,5 @@
-#ifndef LIBSPARSETENSOR_POSCALC_HPP
-#define LIBSPARSETENSOR_POSCALC_HPP
+#ifndef SPARSETENSOR_HYPERTRIE_POSCALC_HPP
+#define SPARSETENSOR_HYPERTRIE_POSCALC_HPP
 
 
 #include "Types.hpp"
@@ -13,7 +13,6 @@ using std::map;
 using sparsetensor::tensor::key_pos_t;
 
 namespace sparsetensor::hypertrie {
-
 
     /**
      * Provides translation between position in superkeys with subkeys. (1,2,4) for example is a subkey of (1,2,3,4).
@@ -177,4 +176,4 @@ namespace sparsetensor::hypertrie {
 }
 
 
-#endif //LIBSPARSETENSOR_POSCALC_HPP
+#endif //SPARSETENSOR_HYPERTRIE_POSCALC_HPP
