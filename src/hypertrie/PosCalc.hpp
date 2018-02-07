@@ -23,7 +23,7 @@ namespace sparsetensor::hypertrie {
          * Holds all instances.
          */
         inline static map<vector<bool>, PosCalc *> instances{};
-
+    public:
         /**
          * Length of superkeys.
          */
@@ -33,7 +33,7 @@ namespace sparsetensor::hypertrie {
          * Length of subkeys.
          */
         const key_pos_t subkey_length;
-
+    private:
         /**
          * Stores for superkey positions to which subkey positions they map.
          */

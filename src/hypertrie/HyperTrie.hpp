@@ -37,7 +37,7 @@ namespace sparsetensor::hypertrie {
     public:
 
 
-        HyperTrie(const key_pos_t depth) : depth(depth) {}
+        explicit HyperTrie(const key_pos_t depth) : depth(depth) {}
 
         /**
          * Depth is the length of the keys.
@@ -175,6 +175,7 @@ namespace sparsetensor::hypertrie {
             }
             return get(intern_key);
         }
+
 
         /**
          * Get an value or SubTrie by a key.
