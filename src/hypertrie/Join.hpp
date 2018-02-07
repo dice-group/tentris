@@ -53,7 +53,7 @@ namespace sparsetensor::hypertrie {
             for (op_pos_t op_pos : op_poss) {
 
                 // gernerate view
-                Diagonal view{std::get<HyperTrie<T> *>(operands[op_pos]),
+                Diagonal<T> view{std::get<HyperTrie<T> *>(operands[op_pos]),
                               planStep.labelPossInOperand(op_pos, label)};
                 hyper_trie_views[op_pos] = view;
 
@@ -67,7 +67,7 @@ namespace sparsetensor::hypertrie {
             typename map<op_pos_t, Diagonal<T>>::iterator min_card_op_ = hyper_trie_views.find(min_card_op_pos);
             hyper_trie_views.erase(min_card_op_);
 
-            Diagonal min_card_op{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
+            Diagonal<T> min_card_op{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
                                  planStep.labelPossInOperand(min_card_op_pos, label)};
             min_card_op.setLowerBound(min_key);
             min_card_op.setUpperBound(max_key);
@@ -108,14 +108,14 @@ namespace sparsetensor::hypertrie {
         class Iterator {
             using diag_it_t = typename Diagonal<T>::Iterator;
 
+            inline static Iterator ended_instance{};
+
+        public:
             Iterator(diag_it_t it_end) : it_begin(it_end),
                                          it_end(it_end),
                                          operands({}),
                                          result_key({}),
                                          ended(true) {}
-
-            inline static Iterator ended_instance{};
-        public:
 
             Iterator(
                     const map<op_pos_t, Diagonal<T>> &hyper_trie_views,

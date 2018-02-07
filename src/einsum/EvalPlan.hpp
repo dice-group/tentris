@@ -29,8 +29,9 @@ namespace sparsetensor::einsum {
         const unordered_map<label_t, label_pos_t> &label_pos_in_result;
         unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operand;
         const EvalPlan *plan;
-        bool all_done = true;
     public:
+        bool all_done = true;
+
         PlanStep(const PlanStep &plan_step) :
                 label_candidates(plan_step.label_candidates),
                 processed_labels(plan_step.processed_labels),

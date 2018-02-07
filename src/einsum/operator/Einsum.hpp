@@ -8,6 +8,7 @@
 
 #include <numeric>
 #include "../ShapeCalc.hpp"
+#include <algorithm>
 
 
 using sparsetensor::tensor::Tensor;
@@ -30,7 +31,7 @@ namespace sparsetensor::einsum::operators {
                    subscript({}),
                    result(nullptr) {}
 
-        explicit Einsum(const Subscript &subscript) : plan(EvalPlan{subscript}), subscript(subscript) {
+        Einsum(const Subscript &subscript) : plan(EvalPlan{subscript}), subscript(subscript) {
 
         }
 
@@ -53,18 +54,17 @@ namespace sparsetensor::einsum::operators {
 
 
         void rekEinsum(const vector<variant<HyperTrie<T> *, T>> &operands, const Key_t &result_key,
-                       PlanStep &step, label_t &label) {
+                       PlanStep &step, const label_t &label) {
             if (not step.all_done) {
                 Join<T> join{operands, step, label, result_key};
                 // TODO: parallelize
                 for (const auto &
                 [next_operands, next_result_key] : join) {
-                    const auto &
-                    [next_step, next_label] = plan.nextStep<T>(operands, step, label);
+                    auto &&[next_step, next_label] = plan.nextStep<T>(operands, step, label);
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
                 }
             } else {
-                result[result_key] += std::accumulate(operands.begin(), operands.end());
+                result->set(result_key, result->get(result_key) + std::accumulate(operands.begin(), operands.end(), std::multiplies<T>()));
             }
         }
 
