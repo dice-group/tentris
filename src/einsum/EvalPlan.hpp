@@ -12,95 +12,13 @@
 #include <algorithm>
 
 using std::optional;
-using sparsetensor::tensor::Tensor;
+using sparsetensor::hypertrie::HyperTrie;
 using std::variant;
 using std::vector;
 
 namespace sparsetensor::einsum {
 
-    class PlanStep;
-
-    class EvalPlan {
-        friend class PlanStep;
-
-        const Subscript &subscript;
-        const UndirectedGraph label_dependency_graph;
-        PlanStep initial_step;
-    public:
-        EvalPlan(const Subscript &subscript) :
-                subscript(subscript),
-                label_dependency_graph(subscript.getLabelDependencyGraph()),
-                initial_step({}, {}, subscript.getOperandsLabels(), *this) {}
-
-        template<typename T>
-        tuple<PlanStep, label_t> nextStep(const vector<variant<HyperTrie<T> *, T>> &operands, const PlanStep &last_step,
-                                          const label_t &last_label) {
-            // TODO: implement
-            return {};
-        }
-
-        template<typename T>
-        tuple<PlanStep &, label_t> firstStep(const vector<variant<HyperTrie<T> *, T>> &operands) {
-
-            return {};
-        }
-
-        template<typename T>
-        uint64_t calcCard(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep step, const label_t &label) {
-            const std::vector<op_pos_t> &op_ids = step.operandsWithLabel(label);
-            vector<size_t> dim_cardinalities(op_ids.size(), SIZE_MAX);
-            vector<size_t> operand_cardinalities(op_ids.size(), SIZE_MAX);
-
-            size_t min_dim_cardinality = SIZE_MAX;
-            for (int i = 0; i < op_ids.size(); ++i) {
-                const op_pos_t &op_id = op_ids.at(i);
-                const HyperTrie<T> *&operand = std::get<HyperTrie<T> *>(operands.at(i));
-                const vector<size_t> cards = operand->getCards(step.labelPossInOperand(op_id, label));
-
-                const size_t &dim_cardinality = *std::min_element(cards.cbegin(), cards.cend());
-                if (dim_cardinality == 0)
-                    return 0;
-                if (dim_cardinality < min_dim_cardinality)
-                    min_dim_cardinality = dim_cardinality;
-                dim_cardinalities[i] = dim_cardinality;
-                operand_cardinalities[i] = operand->leafcount;
-            }
-
-            return min_dim_cardinality
-                   * std::accumulate(operand_cardinalities.cbegin(), operand_cardinalities.cend(), 1,
-                                     std::multiplies<size_t>())
-                   / std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
-                                     std::multiplies<size_t>());
-        }
-
-
-        template<typename T>
-        label_t calcBestLabel(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep step,
-                              unordered_set<label_t> label_candidates) {
-            if (label_candidates.size() == 0) {
-                throw "Label candidates must never be empty.";
-            } else if (label_candidates.size() == 1) {
-                return *label_candidates.begin();
-            } else {
-                label_t best_label{};
-                uint64_t best_cardinality = UINT64_MAX;
-
-                for (const label_t &label  : label_candidates) {
-                    uint64_t cardinality = calcCard(operands, step, label);
-                    if (cardinality < best_cardinality) {
-                        best_cardinality = cardinality;
-                        best_label = label;
-                    }
-                    if (cardinality == 0) {
-                        return label;
-                    }
-                }
-                return best_label;
-            }
-        }
-
-
-    };
+    class EvalPlan;
 
     class PlanStep {
         friend class EvalPlan;
@@ -110,21 +28,25 @@ namespace sparsetensor::einsum {
         unordered_map<label_t, vector<op_pos_t>> operands_with_label;
         const unordered_map<label_t, label_pos_t> &label_pos_in_result;
         unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operand;
-        const EvalPlan &plan;
+        const EvalPlan *plan;
         bool all_done = true;
-
-        PlanStep(unordered_set<label_t> label_candidates,
-                 unordered_set<label_t> processed_labels,
-                 map<op_pos_t, vector<label_t>> operands_labels,
-                 const EvalPlan &plan)
-                : label_candidates(label_candidates),
-                  operands_with_label(Subscript::calcOperandsWithLabel(label_candidates, operands_labels)),
-                  label_pos_in_result(plan.subscript.getLabelPosInResult()),
-                  label_poss_in_operand(Subscript::calcLabelPossInOperand(operands_labels)),
-                  plan(plan),
-                  all_done(label_candidates.empty()) {}
-
     public:
+        PlanStep(const PlanStep &plan_step) :
+                label_candidates(plan_step.label_candidates),
+                processed_labels(plan_step.processed_labels),
+                operands_with_label(plan_step.operands_with_label),
+                label_pos_in_result(plan_step.label_pos_in_result),
+                label_poss_in_operand(plan_step.label_poss_in_operand),
+                plan(plan_step.plan),
+                all_done(plan_step.all_done) {}
+
+        PlanStep(const EvalPlan *plan);
+
+
+        explicit PlanStep(unordered_set<label_t> label_candidates,
+                          unordered_set<label_t> processed_labels,
+                          map<op_pos_t, vector<label_t>> operands_labels,
+                          const EvalPlan *plan);
 
 
         /**
@@ -159,37 +81,155 @@ namespace sparsetensor::einsum {
         }
 
     private:
-        map<op_pos_t, vector<label_t>> calcNextOperandsLabels(const unordered_set<label_t> &processed_labels) {
-            map<op_pos_t, vector<label_t>> operands_labels{};
-            for (const auto &
-                [op_id, labels] : this->plan.subscript.getOperandsLabels()) {
-                vector<label_t> reduced_labels{};
-
-                for (const label_t &label : labels)
-                    if (not processed_labels.count(label))
-                        reduced_labels.push_back(label);
-
-                operands_labels.insert(op_id, reduced_labels);
-            }
-            return operands_labels;
-        }
+        map<op_pos_t, vector<label_t>> calcNextOperandsLabels(const unordered_set<label_t> &processed_labels);
 
     public:
-        PlanStep getNextStep(label_t label) {
-            unordered_set<label_t> processed_labels{this->processed_labels};
-            processed_labels.insert(label);
-
-            unordered_set<label_t> label_candidates{this->label_candidates};
-            label_candidates.erase(label);
-            unordered_set<label_t> neighbors = plan.label_dependency_graph.neighbors(label);
-            neighbors.erase(processed_labels.cbegin(), processed_labels.cend());
-            label_candidates.insert(neighbors.cbegin(), neighbors.cend());
-
-            map<op_pos_t, vector<label_t>> operands_labels = calcNextOperandsLabels(processed_labels);
-
-            return PlanStep(label_candidates, processed_labels, operands_labels, plan);
-        }
+        PlanStep getNextStep(label_t label);
     };
+
+    class EvalPlan {
+        friend class PlanStep;
+
+        const Subscript &subscript;
+        const UndirectedGraph<label_t> label_dependency_graph;
+    public:
+        EvalPlan(const Subscript &subscript = Subscript{}) :
+                subscript(subscript),
+                label_dependency_graph(subscript.getLabelDependencyGraph()) {}
+
+
+        template<typename T>
+        tuple<PlanStep, label_t> nextStep(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &last_step,
+                                          const label_t &last_label) {
+            if (last_step.all_done) {
+                throw "nextStep should not be called on 'last_step' with all_done = true";
+            }
+            const PlanStep &next_step = last_step.getNextStep(last_label);
+            label_t min_card_label = calcMinCardLabel<T>(operands, next_step, next_step.label_candidates);
+            return {next_step, min_card_label};
+        }
+
+        template<typename T>
+        tuple<PlanStep &, label_t> firstStep(const vector<variant<HyperTrie<T> *, T>> &operands) {
+            // todo: make initial_step a pointer and cache it
+            PlanStep initial_step{this}; // todo: something is not right here
+            unordered_set<label_t> label_candidates = subscript.getLabelDependencyGraph().getNodes();
+            if (label_candidates.empty()) {
+                return {initial_step, {}};
+            }
+            label_t min_card_label = calcMinCardLabel<T>(operands, initial_step, label_candidates);
+            initial_step.label_candidates = {min_card_label};
+            return {initial_step, min_card_label};
+        }
+
+        template<typename T>
+        uint64_t calcCard(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep step, const label_t &label) {
+            const std::vector<op_pos_t> &op_ids = step.operandsWithLabel(label);
+            vector<size_t> dim_cardinalities(op_ids.size(), SIZE_MAX);
+            vector<size_t> operand_cardinalities(op_ids.size(), SIZE_MAX);
+
+            size_t min_dim_cardinality = SIZE_MAX;
+            for (size_t i = 0; i < op_ids.size(); ++i) {
+                const op_pos_t &op_id = op_ids.at(i);
+                const HyperTrie<T> *&operand = std::get<HyperTrie<T> *>(operands.at(i));
+                const vector<size_t> cards = operand->getCards(step.labelPossInOperand(op_id, label));
+
+                const size_t &dim_cardinality = *std::min_element(cards.cbegin(), cards.cend());
+                if (dim_cardinality == 0)
+                    return 0;
+                if (dim_cardinality < min_dim_cardinality)
+                    min_dim_cardinality = dim_cardinality;
+                dim_cardinalities[i] = dim_cardinality;
+                operand_cardinalities[i] = operand->leafcount;
+            }
+
+            // see: A. Swami and K. B. Schiefer, “On the estimation of join result sizes,” in International Conference on Extending Database Technology, 1994, pp. 287–300. (290-291)
+            return min_dim_cardinality
+                   * std::accumulate(operand_cardinalities.cbegin(), operand_cardinalities.cend(), 1,
+                                     std::multiplies<size_t>())
+                   / std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
+                                     std::multiplies<size_t>());
+        }
+
+
+        template<typename T>
+        label_t calcMinCardLabel(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep step,
+                                 unordered_set<label_t> label_candidates) {
+            if (label_candidates.size() == 0) {
+                throw "Label candidates must never be empty.";
+            } else if (label_candidates.size() == 1) {
+                return *label_candidates.begin();
+            } else {
+                label_t best_label{};
+                uint64_t best_cardinality = UINT64_MAX;
+
+                // find the label with the lowest cardinality
+                for (const label_t &label  : label_candidates) {
+                    uint64_t cardinality = calcCard<T>(operands, step, label);
+                    if (cardinality < best_cardinality) {
+                        best_cardinality = cardinality;
+                        best_label = label;
+                    }
+                    if (cardinality == 0) {
+                        return label;
+                    }
+                }
+                return best_label;
+            }
+        }
+
+
+    };
+
+    PlanStep::PlanStep(unordered_set<label_t> label_candidates, unordered_set<label_t> processed_labels,
+                       map<op_pos_t, vector<label_t>> operands_labels, const EvalPlan *plan)
+            : label_candidates(label_candidates),
+              processed_labels(processed_labels),
+              operands_with_label(Subscript::calcOperandsWithLabel(label_candidates, operands_labels)),
+              label_pos_in_result(plan->subscript.getLabelPosInResult()),
+              label_poss_in_operand(Subscript::calcLabelPossInOperand(operands_labels)),
+              plan(plan),
+              all_done(label_candidates.empty()) {}
+
+    PlanStep::PlanStep(const EvalPlan *plan)
+            : label_candidates(plan->subscript.getAllLabels()),
+              processed_labels({}),
+              operands_with_label(plan->subscript.getOperandsWithLabel()),
+              label_pos_in_result(plan->subscript.getLabelPosInResult()),
+              label_poss_in_operand(plan->subscript.getLabelPossInOperand()),
+              plan(plan),
+              all_done(plan->subscript.getAllLabels().empty()) {}
+
+    map<op_pos_t, vector<label_t>> PlanStep::calcNextOperandsLabels(const unordered_set<label_t> &processed_labels) {
+        map<op_pos_t, vector<label_t>> operands_labels{};
+        for (const auto &
+            [op_id, labels] : this->plan->subscript.getOperandsLabels()) {
+            vector<label_t> reduced_labels{};
+
+            for (const label_t &label : labels)
+                if (not processed_labels.count(label))
+                    reduced_labels.push_back(label);
+
+            operands_labels.insert({op_id, reduced_labels});
+        }
+        return operands_labels;
+    }
+
+    PlanStep PlanStep::getNextStep(label_t label) {
+        unordered_set<label_t> processed_labels{this->processed_labels};
+        processed_labels.insert(label);
+
+        unordered_set<label_t> label_candidates{this->label_candidates};
+        label_candidates.erase(label);
+        unordered_set<label_t> neighbors = plan->label_dependency_graph.neighbors(label);
+        neighbors.erase(processed_labels.cbegin(), processed_labels.cend());
+        label_candidates.insert(neighbors.cbegin(), neighbors.cend());
+
+        map<op_pos_t, vector<label_t>> operands_labels = calcNextOperandsLabels(processed_labels);
+
+        return PlanStep(label_candidates, processed_labels, operands_labels, plan);
+    }
+
 
 }
 #endif //SPARSETENSOR_EINSUM_EVALPLAN_HPP

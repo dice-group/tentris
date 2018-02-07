@@ -61,11 +61,12 @@ namespace sparsetensor::einsum {
             init(raw_operand_subscripts, raw_result_subscript);
         }
 
-    private:
         /**
          * Empty constructor. The fields are initialized but not filled with data.
          */
         Subscript() {}
+
+    private:
 
         /**
          * Parses the subscript and writes the result to this' fields. Labels may or may not be optimized.

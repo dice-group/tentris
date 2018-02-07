@@ -26,24 +26,29 @@ namespace sparsetensor::einsum::operators {
 
         MapTensor<T> *result;
     public:
-        Einsum(const Subscript &subscript) : plan(EvalPlan{subscript}), subscript(subscript) {
+        Einsum() : plan({}),
+                   subscript({}),
+                   result(nullptr) {}
+
+        explicit Einsum(const Subscript &subscript) : plan(EvalPlan{subscript}), subscript(subscript) {
 
         }
 
         void rekEinsum(const vector<HyperTrieTensor<T> *> &operands) {
             vector<variant<HyperTrie<T> *, T>> hypertrie_operands{};
-            for (const HyperTrieTensor<T> *&operand : operands) {
+            for (HyperTrieTensor<T> *operand : operands) {
                 if (operand->ndim == 0) {
-                    hypertrie_operands.push_back({operand->trie});
+                    hypertrie_operands.push_back({operand->trie->leafsum});
                 } else {
-                    hypertrie_operands.push_back({operand});
+                    hypertrie_operands.push_back({operand->trie});
                 }
             }
 
             Key_t result_key = Key_t(this->result->ndim);
-            const auto &[step, label] = plan.firstStep(operands);
+            const auto &
+            [step, label] = plan.firstStep(hypertrie_operands);
 
-            rekEinsum(operands, result_key, step, label);
+            rekEinsum(hypertrie_operands, result_key, step, label);
         }
 
 
@@ -52,8 +57,10 @@ namespace sparsetensor::einsum::operators {
             if (not step.all_done) {
                 Join<T> join{operands, step, label, result_key};
                 // TODO: parallelize
-                for (const auto &[next_operands, next_result_key] : join) {
-                    const auto &[next_step, next_label] = plan.nextStep(operands, step, label);
+                for (const auto &
+                [next_operands, next_result_key] : join) {
+                    const auto &
+                    [next_step, next_label] = plan.nextStep<T>(operands, step, label);
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
                 }
             } else {

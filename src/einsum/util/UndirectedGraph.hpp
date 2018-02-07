@@ -107,8 +107,12 @@ namespace sparsetensor::einsum::util {
             return connected_components;
         }
 
-        unordered_set neighbors(const T node) const{
+        unordered_set<T> neighbors(const T node) const {
             return edges.at(node);
+        }
+
+        unordered_set<T> getNodes() const {
+            return nodes;
         }
 
         /**
@@ -118,6 +122,7 @@ namespace sparsetensor::einsum::util {
             nodes.clear();
             edges.clear();
         }
+
 
         /**
          * Iterator of the nodes.

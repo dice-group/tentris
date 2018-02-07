@@ -10,19 +10,19 @@ using sparsetensor::einsum::einsum;
 TEST(TestEinsum, simple_call) {
     shape_t shape{2, 2};
 
-    HyperTrieTensor tensor_0{shape};
+    HyperTrieTensor<int> tensor_0{shape};
     tensor_0.set({0, 0}, 1);
     tensor_0.set({0, 1}, 2);
     tensor_0.set({1, 0}, 3);
     tensor_0.set({1, 1}, 5);
 
-    HyperTrieTensor tensor_1{shape};
+    HyperTrieTensor<int> tensor_1{shape};
     tensor_1.set({0, 0}, 7);
     tensor_1.set({0, 1}, 11);
     tensor_1.set({1, 0}, 13);
     tensor_1.set({1, 1}, 17);
 
-    vector<HyperTrieTensor *> operands{&tensor_0, &tensor_1};
+    vector<HyperTrieTensor<int> *> operands{&tensor_0, &tensor_1};
 
     vector<raw_subscript> op_sc{{0, 1},
                                 {1, 2}};
