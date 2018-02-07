@@ -33,9 +33,15 @@ namespace sparsetensor::hypertrie {
  */
     template<typename T>
     class Join {
-
     public:
         class Iterator;
+
+    private:
+
+        Iterator *iter;
+        Iterator *iter_end;
+    public:
+
 
         Join(const vector<variant<HyperTrie<T> *, T>> &operands, const PlanStep &planStep, label_t label,
              const vector<uint64_t> &result_key) {
@@ -54,8 +60,8 @@ namespace sparsetensor::hypertrie {
 
                 // gernerate view
                 Diagonal<T> view{std::get<HyperTrie<T> *>(operands[op_pos]),
-                              planStep.labelPossInOperand(op_pos, label)};
-                hyper_trie_views[op_pos] = view;
+                                 planStep.labelPossInOperand(op_pos, label)};
+                hyper_trie_views.insert({op_pos, view});
 
                 if (min_card > view.estimCard()) {
                     min_card = view.estimCard();
@@ -68,10 +74,10 @@ namespace sparsetensor::hypertrie {
             hyper_trie_views.erase(min_card_op_);
 
             Diagonal<T> min_card_op{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
-                                 planStep.labelPossInOperand(min_card_op_pos, label)};
+                                    planStep.labelPossInOperand(min_card_op_pos, label)};
             min_card_op.setLowerBound(min_key);
             min_card_op.setUpperBound(max_key);
-            auto & [it_begin, it_end] = min_card_op.getIterator();
+            auto && [it_begin, it_end] = min_card_op.getIterator();
 
 
             // position in result
@@ -93,9 +99,6 @@ namespace sparsetensor::hypertrie {
             delete iter;
         }
 
-        Iterator *iter;
-        Iterator *iter_end;
-
 
         Iterator &begin() {
             return *iter;
@@ -106,7 +109,26 @@ namespace sparsetensor::hypertrie {
         }
 
         class Iterator {
+            friend class Join<T>;
             using diag_it_t = typename Diagonal<T>::Iterator;
+
+            const map<op_pos_t, Diagonal<T>> hyper_trie_views{};
+            diag_it_t it_begin;
+            diag_it_t it_end;
+            const op_pos_t it_ops_pos{};
+
+            key_part_t current_key_part{};
+
+            const bool in_result{};
+            const label_pos_t result_pos{};
+
+            const vector<variant<HyperTrie<T> *, T>> operands;
+            const vector<uint64_t> &result_key;
+
+            bool ended = false;
+
+            vector<variant<HyperTrie<T> *, T>> new_operands = vector<variant<HyperTrie<T> *, T>>(operands.size());
+            vector<uint64_t> new_key = vector<uint64_t>(result_key.size());
 
             inline static Iterator ended_instance{};
 
@@ -131,25 +153,7 @@ namespace sparsetensor::hypertrie {
                       result_key(result_key) {}
 
 
-        private:
 
-            const map<op_pos_t, Diagonal<T>> hyper_trie_views{};
-            diag_it_t it_begin;
-            diag_it_t it_end;
-            const op_pos_t it_ops_pos{};
-
-            key_part_t current_key_part{};
-
-            const bool in_result{};
-            const label_pos_t result_pos{};
-
-            const vector<variant<HyperTrie<T> *, T>> operands;
-            const vector<uint64_t> &result_key;
-
-            bool ended = false;
-
-            vector<variant<HyperTrie<T> *, T>> new_operands = vector<variant<HyperTrie<T> *, T>>(operands.size());
-            vector<uint64_t> new_key = vector<uint64_t>(result_key.size());
 
         public:
 
@@ -160,11 +164,11 @@ namespace sparsetensor::hypertrie {
 
                     match = true;
 
-                    auto &[current_key_part, it_operand] = *it_begin;
+                    auto && [current_key_part, it_operand] = *it_begin;
 
-                    for (const auto &[op_pos, other_view] : hyper_trie_views) {
+                    for (const auto &&[op_pos, other_view] : hyper_trie_views) {
 
-                        const optional<variant<HyperTrie<T> *, T>> &other_operand = other_view.find(current_key_part);
+                        optional<variant<HyperTrie<T> *, T>> other_operand = other_view.find(current_key_part);
 
                         if (other_operand) {
                             new_operands[op_pos] = *other_operand;

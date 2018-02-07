@@ -3,10 +3,10 @@
 
 
 #include "Types.hpp"
+#include "../tensor/Types.hpp"
 #include <cstdint>
 #include <map>
 #include <vector>
-#include "../tensor/Types.hpp"
 
 using std::vector;
 using std::map;
@@ -20,54 +20,52 @@ namespace sparsetensor::hypertrie {
      * And the other way around.
      */
     class PosCalc {
-    private:
         /**
          * Holds all instances.
          */
         inline static map<vector<bool>, PosCalc *> instances{};
 
         /**
-         * Private construcor.
-         * @param key_length  length of superkeys.
-         * @param subkey_length length of subkeys.
-         */
-        explicit PosCalc(const key_pos_t key_length, uint8_t subkey_length) : key_length(key_length),
-                                                                              subkey_length(subkey_length) {}
-
-    public:
-        /**
          * Length of superkeys.
          */
-        key_pos_t key_length;
+        const key_pos_t key_length;
 
         /**
          * Length of subkeys.
          */
-        key_pos_t subkey_length;
+        const key_pos_t subkey_length;
 
-    private:
         /**
          * Stores for superkey positions to which subkey positions they map.
          */
-        vector<key_pos_t> key_to_subkey = vector<key_pos_t>(key_length);
-
-    public:
+        vector<key_pos_t> key_to_subkey;
 
         /**
          * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
          */
-        vector<key_pos_t> subkey_to_key = vector<key_pos_t>(subkey_length);
+        vector<key_pos_t> subkey_to_key;
 
         /**
          * removed_positions bit vector of positions removed from superkey to subkey.
          */
-        subkey_mask_t removed_positions = subkey_mask_t(key_length);
+        subkey_mask_t removed_positions;
 
-    private:
         /**
          * Cache for PosCalcs of subkeys that are 1 shorter.
          */
-        vector<PosCalc *> next_pos_calcs = vector<PosCalc *>(key_length);
+        vector<PosCalc *> next_pos_calcs;
+
+        /**
+             * Private construcor.
+             * @param key_length  length of superkeys.
+             * @param subkey_length length of subkeys.
+             */
+        PosCalc(key_pos_t key_length, key_pos_t subkey_length) : key_length(key_length),
+                                                                 subkey_length(subkey_length),
+                                                                 key_to_subkey(vector<key_pos_t>(key_length)),
+                                                                 subkey_to_key(vector<key_pos_t>(subkey_length)),
+                                                                 removed_positions(subkey_mask_t(key_length)),
+                                                                 next_pos_calcs(vector<PosCalc *>(key_length)) {}
 
     public:
         /**
@@ -86,6 +84,22 @@ namespace sparsetensor::hypertrie {
          */
         inline key_pos_t subkey_to_key_pos(key_pos_t subkey_pos) const {
             return subkey_to_key[subkey_pos];
+        }
+
+        /**
+         * Get all keypositions that this subkey contains.
+         * @return vector of key positions.
+         */
+        inline const vector<key_pos_t> &getKeyPoss() const {
+            return subkey_to_key;
+        }
+
+        /**
+         * bit vector of positions removed from superkey to subkey.
+         * @return bit vector
+         */
+        inline const subkey_mask_t &getSubKeyMask() const {
+            return removed_positions;
         }
 
         /**

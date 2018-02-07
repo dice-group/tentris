@@ -336,7 +336,7 @@ namespace sparsetensor::hypertrie {
             this->leafcount += not has_old_value;
 
             // add it to the finished ( means updated ) nodes.
-            finished_subtries[pos_calc->removed_positions] = this;
+            finished_subtries[pos_calc->getSubKeyMask()] = this;
 
             // subtrie has only one position left: insert value
             if (pos_calc->subkey_length == 1) {
@@ -348,12 +348,12 @@ namespace sparsetensor::hypertrie {
                 this->setChild(0, key_part, value_);
             } else { // depth > 1 -> inner node
                 // a child must be set or updated for every subkey_pos available.
-                for (key_pos_t key_pos : pos_calc->subkey_to_key) {
+                for (const key_pos_t key_pos : pos_calc->getKeyPoss()) {
                     key_part_t key_part = key[key_pos];
 
                     // get pos_calc for next child and check if it was already updated earlier.
                     PosCalc *next_pos_calc = pos_calc->use(key_pos);
-                    auto finished_child = finished_subtries.find(next_pos_calc->removed_positions);
+                    auto finished_child = finished_subtries.find(next_pos_calc->getSubKeyMask());
 
                     // get the child at the current position.
                     optional<variant<HyperTrie<T> *, T>> child_ = getChild(pos_calc->key_to_subkey_pos(key_pos),

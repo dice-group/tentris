@@ -64,7 +64,11 @@ namespace sparsetensor::einsum::operators {
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
                 }
             } else {
-                result->set(result_key, result->get(result_key) + std::accumulate(operands.begin(), operands.end(), std::multiplies<T>()));
+                T result_value = 1;
+                for (auto &&operand : operands) {
+                    result_value *= std::get<T>(operand);
+                }
+                result->set(result_key, result->get(result_key) + result_value);
             }
         }
 

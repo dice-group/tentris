@@ -25,9 +25,16 @@ namespace sparsetensor::hypertrie {
     template<typename T>
     class Diagonal {
     public:
+
+        HyperTrie<T> *hyperTrie;
+        key_pos_t min_card_key_pos{};
+        const vector<label_pos_t> label_poss;
+        key_part_t min_key = KEY_PART_MIN;
+        key_part_t max_key = KEY_PART_MAX;
+
         class Iterator;
 
-        Diagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> &label_poss) : hyperTrie(hyperTrie),
+        Diagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> label_poss) : hyperTrie(hyperTrie),
                                                                              label_poss(label_poss) {
             min_card_key_pos = hyperTrie->getMinCardKeyPos();
         }
@@ -35,12 +42,6 @@ namespace sparsetensor::hypertrie {
         ~Diagonal() {
             //delete iter;
         }
-
-        HyperTrie<T> *hyperTrie;
-        key_pos_t min_card_key_pos{};
-        const vector<label_pos_t> label_poss;
-        key_part_t min_key = KEY_PART_MIN;
-        key_part_t max_key = KEY_PART_MAX;
 
 
         size_t estimCard() {
@@ -161,7 +162,7 @@ namespace sparsetensor::hypertrie {
                         }
 
                         // check if the same current_key_part exists also for the other relevant key_pos
-                        optional<variant<HyperTrie<T> *, T>> &result = std::get<HyperTrie<T> *>(child)->get(subkey);
+                        optional<variant<HyperTrie<T> *, T>> &&result = std::get<HyperTrie<T> *>(child)->get(subkey);
                         if (result) {
                             current_sub_trie = *result;
                             iter++;

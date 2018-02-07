@@ -132,7 +132,7 @@ namespace sparsetensor::einsum {
             size_t min_dim_cardinality = SIZE_MAX;
             for (size_t i = 0; i < op_ids.size(); ++i) {
                 const op_pos_t &op_id = op_ids.at(i);
-                const HyperTrie<T> *&operand = std::get<HyperTrie<T> *>(operands.at(i));
+                const HyperTrie<T> *operand = std::get<HyperTrie<T> *>(operands.at(i));
                 const vector<size_t> cards = operand->getCards(step.labelPossInOperand(op_id, label));
 
                 const size_t &dim_cardinality = *std::min_element(cards.cbegin(), cards.cend());
