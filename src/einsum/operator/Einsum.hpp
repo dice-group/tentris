@@ -58,7 +58,7 @@ namespace sparsetensor::einsum::operators {
                 Join<T> join{operands, step, label, result_key};
                 // TODO: parallelize
                 for (const auto &[next_operands, next_result_key] : join) {
-                    auto &&[next_step, next_label] = plan.nextStep<T>(operands, step, label);
+                    auto [next_step, next_label] = plan.nextStep<T>(operands, step, label);
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
                 }
             } else {

@@ -24,7 +24,6 @@ namespace sparsetensor::einsum::operators {
         explicit CrossProduct(const Subscript &subscript) :
                 subscript(subscript) {
             const map<op_pos_t, Subscript> &sub_subscripts = subscript.getSubSubscripts();
-            predecessors.resize(sub_subscripts.size());
             for (const auto &[op_id, sub_subscript] : sub_subscripts) {
                 predecessors.push_back({sub_subscript});
             }

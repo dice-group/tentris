@@ -44,7 +44,7 @@ namespace sparsetensor::hypertrie {
 
 
         Join(const vector<variant<HyperTrie<T> *, T>> &operands, const PlanStep &planStep, label_t label,
-             const vector<uint64_t> &result_key) {
+             const Key_t &result_key) {
             // positions in operands
             const vector<op_pos_t> &op_poss = planStep.operandsWithLabel(label);
 
@@ -110,6 +110,7 @@ namespace sparsetensor::hypertrie {
 
         class Iterator {
             friend class Join<T>;
+
             using diag_it_t = typename Diagonal<T>::Iterator;
 
             const map<op_pos_t, Diagonal<T>> hyper_trie_views{};
@@ -123,40 +124,39 @@ namespace sparsetensor::hypertrie {
             const label_pos_t result_pos{};
 
             const vector<variant<HyperTrie<T> *, T>> operands;
-            const vector<uint64_t> &result_key;
+            const Key_t &result_key;
 
             bool ended = false;
 
             vector<variant<HyperTrie<T> *, T>> new_operands = vector<variant<HyperTrie<T> *, T>>(operands.size());
-            vector<uint64_t> new_key = vector<uint64_t>(result_key.size());
+            Key_t new_key;
 
-            inline static Iterator ended_instance{};
+            inline static Iterator ended_instance{}; // todo: remove?
 
         public:
             Iterator(diag_it_t it_end) : it_begin(it_end),
                                          it_end(it_end),
                                          operands(vector<variant<HyperTrie<T> *, T>>{}),
-                                         result_key(vector<uint64_t>{}) {
+                                         result_key(Key_t{}),
+                                         new_operands({}),
+                                         new_key({}) {
                 ended = true;
             }
 
-            Iterator(
-                    const map<op_pos_t, Diagonal<T>> &hyper_trie_views,
-                    const diag_it_t &it_begin,
-                    const diag_it_t &it_end,
-                    const op_pos_t it_ops_pos,
-                    bool in_result,
-                    label_pos_t result_pos,
-                    const vector<variant<HyperTrie<T> *, T>> &operands,
-                    const vector<uint64_t> &result_key)
+            Iterator(const map<op_pos_t, Diagonal<T>> &hyper_trie_views,
+                     const diag_it_t &it_begin,
+                     const diag_it_t &it_end,
+                     const op_pos_t it_ops_pos,
+                     bool in_result,
+                     label_pos_t result_pos,
+                     const vector<variant<HyperTrie<T> *, T>> &operands,
+                     const Key_t &result_key)
                     : hyper_trie_views(hyper_trie_views), it_begin(it_begin), it_end(it_end), it_ops_pos(it_ops_pos),
                       in_result(in_result), result_pos(result_pos), operands(operands),
-                      result_key(result_key) {}
+                      result_key(result_key),
+                      new_operands(vector<variant<HyperTrie<T> *, T>>(operands.size())),
+                      new_key(result_key) {}
 
-
-
-
-        public:
 
             Iterator &operator++() {
                 bool match{};
@@ -165,9 +165,11 @@ namespace sparsetensor::hypertrie {
 
                     match = true;
 
-                    const auto &[current_key_part, it_operand] = *it_begin;
+                    const auto &
+                    [current_key_part, it_operand] = *it_begin;
 
-                    for (const auto &[op_pos, other_view] : hyper_trie_views) {
+                    for (const auto &
+                        [op_pos, other_view] : hyper_trie_views) {
 
                         optional<variant<HyperTrie<T> *, T>> other_operand = other_view.find(current_key_part);
 

@@ -49,7 +49,7 @@ namespace sparsetensor::einsum {
         map<op_pos_t, Subscript> sub_subscripts{};
         op_pos_t next_operand_pos{};
         label_t next_label{};
-        op_pos_t number_of_native_operands{};
+        op_pos_t number_of_native_operands{}; // TODO: set to zero for cross product tensors
 
     public:
         /**
@@ -189,6 +189,18 @@ namespace sparsetensor::einsum {
          */
         op_pos_t getNumberOfNativeOperands() const {
             return number_of_native_operands;
+        }
+
+        size_t opPosToAbsOpPos(const op_pos_t op_pos) const {
+            size_t abs_po_pos = 0;
+            for (auto && [current_op_pos, content] : operands_labels) {
+                if (current_op_pos == op_pos) {
+                    return abs_po_pos;
+                } else {
+                    ++abs_po_pos;
+                }
+            }
+            throw "given op_pos does not exist";
         }
 
     private:
@@ -432,14 +444,14 @@ namespace sparsetensor::einsum {
 
             /// label_poss_in_operand
             this->label_poss_in_operand = calcLabelPossInOperand(this->operands_labels);
-            this->label_poss_in_operand = calcLabelPossInOperand(sub_sc.operands_labels);
+            sub_sc.label_poss_in_operand = calcLabelPossInOperand(sub_sc.operands_labels);
 
             /// label_pos_in_result
             this->label_pos_in_result = calcLabelPosInResult(this->result_labels);
 
             /// operands_with_label
-            operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
-            operands_with_label = calcOperandsWithLabel(sub_sc.all_labels, sub_sc.operands_labels);
+            this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
+            sub_sc.operands_with_label = calcOperandsWithLabel(sub_sc.all_labels, sub_sc.operands_labels);
 
             /// label_dependency_graph
             calcLabelDependencyGraph(*this);
@@ -457,9 +469,10 @@ namespace sparsetensor::einsum {
     unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>>
     Subscript::calcLabelPossInOperand(const map<op_pos_t, vector<label_t>> &operands_labels) {
 
-        unordered_map<tuple<op_pos_t, label_t>,vector<label_pos_t>> label_poss_in_operands{};
+        unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operands{};
 
-        for (const auto &[op_id, labels] : operands_labels) {
+        for (const auto &
+            [op_id, labels] : operands_labels) {
             for (size_t label_pos = 0; label_pos < labels.size(); ++label_pos) {
                 const label_t label = labels[label_pos];
 
@@ -475,7 +488,8 @@ namespace sparsetensor::einsum {
             const map<op_pos_t, vector<label_t>> &operands_labels) {
         unordered_map<label_t, vector<op_pos_t>> operands_with_label{};
 
-        for (const auto &[op_id, op_labels] : operands_labels){
+        for (const auto &
+            [op_id, op_labels] : operands_labels) {
             for (label_t label : all_labels) {
 
                 // if op labels contains current label
