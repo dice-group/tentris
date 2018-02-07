@@ -288,6 +288,32 @@ TEST(TestHyperTrie, all_slices) {
 
 }
 
+TEST(TestHyperTrie, calc_card) {
+    using namespace sparsetensor::hypertrie;
+    // data
+    vector<Key_t> keys{
+            {0, 1},
+            {0, 2},
+            {0, 3},
+    };
+
+    int value = 1;
+
+    uint8_t key_length = 2;
+
+    // init
+    HyperTrie<int> trie{key_length};
+
+    // load data
+    for (auto &&key : keys) {
+        trie.set(key, value);
+    }
+
+    ASSERT_EQ(trie.getCard(0), 1);
+
+    ASSERT_EQ(trie.getCard(1), 3);
+}
+
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
