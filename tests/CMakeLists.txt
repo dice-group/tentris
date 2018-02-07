@@ -15,6 +15,7 @@ link_libraries(
 add_executable(TestCrossProductTensor TestCrossProductTensor.cpp)
 add_executable(TestDiagonal TestDiagonal.cpp)
 add_executable(TestEinsum TestEinsum.cpp)
+add_executable(TestEvalPlan TestEvalPlan.cpp)
 add_executable(TestHyperTrie TestHyperTrie.cpp)
 add_executable(TestHyperTrieTensor TestHyperTrieTensor.cpp)
 add_executable(TestMapTensor TestMapTensor.cpp)

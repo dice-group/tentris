@@ -10,6 +10,7 @@
 #include "../tensor/Tensor.hpp"
 #include "../hypertrie/HyperTrie.hpp"
 #include <algorithm>
+#include <cmath>
 
 using std::optional;
 using sparsetensor::hypertrie::HyperTrie;
@@ -25,7 +26,7 @@ namespace sparsetensor::einsum {
 
         unordered_set<label_t> label_candidates;
         unordered_set<label_t> processed_labels;
-        unordered_map<label_t, vector<op_pos_t>> operands_with_label;
+        const unordered_map<label_t, vector<op_pos_t>> &operands_with_label;
         const unordered_map<label_t, label_pos_t> &label_pos_in_result;
         unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operand;
         const EvalPlan *plan;
@@ -105,31 +106,34 @@ namespace sparsetensor::einsum {
             if (last_step.all_done) {
                 throw "nextStep should not be called on 'last_step' with all_done = true";
             }
-            const PlanStep &next_step = last_step.getNextStep(last_label);
-            label_t min_card_label = calcMinCardLabel<T>(operands, next_step, next_step.label_candidates);
+            PlanStep next_step = last_step.getNextStep(last_label);
+            label_t min_card_label{};
+            if(not next_step.all_done)
+                min_card_label = calcMinCardLabel<T>(operands, next_step, next_step.label_candidates);
             return {next_step, min_card_label};
         }
 
         template<typename T>
-        tuple<PlanStep &, label_t> firstStep(const vector<variant<HyperTrie<T> *, T>> &operands) {
-            // todo: make initial_step a pointer and cache it
-            PlanStep initial_step{this}; // todo: something is not right here
+        tuple<PlanStep, label_t> firstStep(const vector<variant<HyperTrie<T> *, T>> &operands) {
+            // todo: make temp_initial_step a pointer and cache it
+            PlanStep temp_initial_step{this}; // todo: something is not right here
             unordered_set<label_t> label_candidates = subscript.getLabelDependencyGraph().getNodes();
             if (label_candidates.empty()) {
-                return {initial_step, {}};
+                return {temp_initial_step, {}};
             }
-            label_t min_card_label = calcMinCardLabel<T>(operands, initial_step, label_candidates);
-            initial_step.label_candidates = {min_card_label};
+            label_t min_card_label = calcMinCardLabel<T>(operands, temp_initial_step, label_candidates);
+            temp_initial_step.label_candidates = {min_card_label};
+            PlanStep initial_step{{min_card_label}, {}, subscript.getOperandsLabels(), this};
             return {initial_step, min_card_label};
         }
 
         template<typename T>
-        uint64_t calcCard(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep step, const label_t &label) {
+        float calcCard(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &step, const label_t &label) {
             const std::vector<op_pos_t> &op_ids = step.operandsWithLabel(label);
-            vector<size_t> dim_cardinalities(op_ids.size(), SIZE_MAX);
-            vector<size_t> operand_cardinalities(op_ids.size(), SIZE_MAX);
+            vector<float> dim_cardinalities(op_ids.size(), INFINITY);
+            vector<float> operand_cardinalities(op_ids.size(), INFINITY);
 
-            size_t min_dim_cardinality = SIZE_MAX;
+            float min_dim_cardinality =  INFINITY;
             for (size_t i = 0; i < op_ids.size(); ++i) {
                 const op_pos_t &op_id = op_ids.at(i);
                 const HyperTrie<T> *operand = std::get<HyperTrie<T> *>(operands.at(i));
@@ -149,24 +153,26 @@ namespace sparsetensor::einsum {
                    * std::accumulate(operand_cardinalities.cbegin(), operand_cardinalities.cend(), 1,
                                      std::multiplies<size_t>())
                    / std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
-                                     std::multiplies<size_t>());
+                                     std::multiplies<size_t>())
+                   // prefer smaller min_dim cardinality
+                    + (1 - (1 /min_dim_cardinality));
         }
 
 
         template<typename T>
-        label_t calcMinCardLabel(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep step,
-                                 unordered_set<label_t> label_candidates) {
+        label_t calcMinCardLabel(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &step,
+                                 unordered_set<label_t> &label_candidates) {
             if (label_candidates.size() == 0) {
                 throw "Label candidates must never be empty.";
             } else if (label_candidates.size() == 1) {
                 return *label_candidates.begin();
             } else {
                 label_t best_label{};
-                uint64_t best_cardinality = UINT64_MAX;
+                float best_cardinality = UINT64_MAX;
 
                 // find the label with the lowest cardinality
                 for (const label_t &label  : label_candidates) {
-                    uint64_t cardinality = calcCard<T>(operands, step, label);
+                    float cardinality = calcCard<T>(operands, step, label);
                     if (cardinality < best_cardinality) {
                         best_cardinality = cardinality;
                         best_label = label;
@@ -186,7 +192,7 @@ namespace sparsetensor::einsum {
                        map<op_pos_t, vector<label_t>> operands_labels, const EvalPlan *plan)
             : label_candidates(label_candidates),
               processed_labels(processed_labels),
-              operands_with_label(Subscript::calcOperandsWithLabel(label_candidates, operands_labels)),
+              operands_with_label(plan->subscript.getOperandsWithLabel()),
               label_pos_in_result(plan->subscript.getLabelPosInResult()),
               label_poss_in_operand(Subscript::calcLabelPossInOperand(operands_labels)),
               plan(plan),
@@ -223,12 +229,14 @@ namespace sparsetensor::einsum {
         unordered_set<label_t> label_candidates{this->label_candidates};
         label_candidates.erase(label);
         unordered_set<label_t> neighbors = plan->label_dependency_graph.neighbors(label);
-        neighbors.erase(processed_labels.cbegin(), processed_labels.cend());
+        for (auto &&processed_label : processed_labels) {
+            neighbors.erase(processed_label);
+        }
         label_candidates.insert(neighbors.cbegin(), neighbors.cend());
 
         map<op_pos_t, vector<label_t>> operands_labels = calcNextOperandsLabels(processed_labels);
 
-        return PlanStep(label_candidates, processed_labels, operands_labels, plan);
+        return PlanStep{label_candidates, processed_labels, operands_labels, plan};
     }
 
 
