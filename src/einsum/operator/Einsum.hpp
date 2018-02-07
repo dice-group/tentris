@@ -46,8 +46,7 @@ namespace sparsetensor::einsum::operators {
             }
 
             Key_t result_key = Key_t(this->result->ndim);
-            const auto &
-            [step, label] = plan.firstStep(hypertrie_operands);
+            auto [step, label] = plan.firstStep(hypertrie_operands);
 
             rekEinsum(hypertrie_operands, result_key, step, label);
         }

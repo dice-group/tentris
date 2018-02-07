@@ -26,16 +26,17 @@ namespace sparsetensor::hypertrie {
     class Diagonal {
     public:
 
+
+        class Iterator;
         HyperTrie<T> *hyperTrie;
         key_pos_t min_card_key_pos{};
         const vector<label_pos_t> label_poss;
         key_part_t min_key = KEY_PART_MIN;
+
         key_part_t max_key = KEY_PART_MAX;
 
-        class Iterator;
-
         Diagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> label_poss) : hyperTrie(hyperTrie),
-                                                                             label_poss(label_poss) {
+                                                                            label_poss(label_poss) {
             min_card_key_pos = hyperTrie->getMinCardKeyPos();
         }
 
@@ -56,8 +57,8 @@ namespace sparsetensor::hypertrie {
             return hyperTrie->getMaxKeyPart(min_card_key_pos);;
         }
 
-        optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) {
-            const vector<optional<key_part_t>> &key = vector<optional<key_part_t >>(hyperTrie->depth);
+        optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) const {
+            vector<optional<key_part_t>> key(hyperTrie->depth);
             for (const auto &label_pos :label_poss) {
                 key[label_pos] = {key_part};
             }
@@ -74,7 +75,7 @@ namespace sparsetensor::hypertrie {
             this->max_key = max_key;
         }
 
-        tuple<Iterator, Iterator> getIterator() {
+        tuple<Iterator, Iterator> getIterators() {
             Iterator iter{hyperTrie, label_poss, min_card_key_pos, min_key, max_key};
             Iterator iter_end{iter.iter_end};
 
@@ -82,10 +83,9 @@ namespace sparsetensor::hypertrie {
         }
 
         class Iterator {
-        public:
+            friend class Diagonal<T>;
 
             typedef typename ::map<key_part_t, variant<HyperTrie<T> *, T>>::iterator map_iterator;
-        private:
 
             /**
              * Initializes this->key_poss by decreasing the key_pos of all key_poss after min_card_key_pos by one. This is due
@@ -152,7 +152,7 @@ namespace sparsetensor::hypertrie {
                     // get next result for min-card position
                     variant<HyperTrie<T> *, T> &child = iter->second;
                     if (subkey.size() == 0) {
-                        current_sub_trie = &child;
+                        current_sub_trie = child;
                         iter++;
                         break;
                     } else {

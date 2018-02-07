@@ -77,7 +77,7 @@ namespace sparsetensor::hypertrie {
                                     planStep.labelPossInOperand(min_card_op_pos, label)};
             min_card_op.setLowerBound(min_key);
             min_card_op.setUpperBound(max_key);
-            auto && [it_begin, it_end] = min_card_op.getIterator();
+            auto && [it_begin, it_end] = min_card_op.getIterators();
 
 
             // position in result
@@ -135,9 +135,10 @@ namespace sparsetensor::hypertrie {
         public:
             Iterator(diag_it_t it_end) : it_begin(it_end),
                                          it_end(it_end),
-                                         operands({}),
-                                         result_key({}),
-                                         ended(true) {}
+                                         operands(vector<variant<HyperTrie<T> *, T>>{}),
+                                         result_key(vector<uint64_t>{}) {
+                ended = true;
+            }
 
             Iterator(
                     const map<op_pos_t, Diagonal<T>> &hyper_trie_views,
@@ -164,9 +165,9 @@ namespace sparsetensor::hypertrie {
 
                     match = true;
 
-                    auto && [current_key_part, it_operand] = *it_begin;
+                    const auto &[current_key_part, it_operand] = *it_begin;
 
-                    for (const auto &&[op_pos, other_view] : hyper_trie_views) {
+                    for (const auto &[op_pos, other_view] : hyper_trie_views) {
 
                         optional<variant<HyperTrie<T> *, T>> other_operand = other_view.find(current_key_part);
 
