@@ -12,6 +12,9 @@
 #include <optional>
 #include <unordered_map>
 #include <limits>
+#include <ostream>
+
+using std::ostream;
 
 
 using std::vector;
@@ -35,8 +38,6 @@ namespace sparsetensor::hypertrie {
         friend class Diagonal<T>;
 
     public:
-        typedef typename ::map<key_part_t, variant<HyperTrie<T> *, T>>::const_iterator const_key_pos_iter_t;
-
 
         explicit HyperTrie(const key_pos_t depth) : depth(depth) {}
 
@@ -438,21 +439,36 @@ namespace sparsetensor::hypertrie {
             return leafcount == 0;
         }
 
-        const_key_pos_iter_t cbegin(key_pos_t key_pos = 0) {
+        typename map<key_part_t, variant<HyperTrie<T> *, T>>::iterator begin(key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->begin();
+        }
+
+        typename map<key_part_t, variant<HyperTrie<T> *, T>>::const_iterator cbegin(key_pos_t key_pos = 0) {
             return this->edges_by_pos.at(key_pos)->cbegin();
         }
 
-        const_key_pos_iter_t lower_bound(key_part_t min_key_part = KEY_PART_MIN, key_pos_t key_pos = 0) {
+        typename map<key_part_t, variant<HyperTrie<T> *, T>>::iterator
+        lower_bound(key_part_t min_key_part = KEY_PART_MIN, key_pos_t key_pos = 0) {
             return this->edges_by_pos.at(key_pos)->lower_bound(min_key_part);
 
         }
 
-        const_key_pos_iter_t cend(key_pos_t key_pos = 0) {
+        typename map<key_part_t, variant<HyperTrie<T> *, T>>::iterator end(key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->end();
+        }
+
+        typename map<key_part_t, variant<HyperTrie<T> *, T>>::const_iterator cend(key_pos_t key_pos = 0) {
             return this->edges_by_pos.at(key_pos)->cend();
         }
 
-        const_key_pos_iter_t upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
-            return this->edges_by_pos.at(key_pos)->lower_bound(max_key_part);
+        typename map<key_part_t, variant<HyperTrie<T> *, T>>::iterator
+        upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->upper_bound(max_key_part);
+        }
+
+        friend ostream &operator<<(ostream &out, HyperTrie<T> &trie) {
+            out << "<HyperTrie: depth=" << int(trie.depth) << ", leafcount=" << int(trie.leafcount) << ", leafsum=" << int(trie.leafsum) << ">";
+            return out;
         }
 
     };

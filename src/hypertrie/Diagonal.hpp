@@ -9,6 +9,7 @@
 #include <optional>
 #include <tuple>
 #include <vector>
+#include <algorithm>
 
 
 using std::variant;
@@ -18,7 +19,6 @@ using std::vector;
 using sparsetensor::einsum::label_pos_t;
 using sparsetensor::tensor::key_pos_t;
 using sparsetensor::tensor::key_part_t;
-using sparsetensor::hypertrie::HyperTrie::const_key_pos_iter_t;
 
 namespace sparsetensor::hypertrie {
 
@@ -28,7 +28,6 @@ namespace sparsetensor::hypertrie {
      */
     template<typename T>
     class Diagonal {
-        class Iterator;
 
         /**
          * Pointer to the hypertrie that is diagonalized.
@@ -58,6 +57,7 @@ namespace sparsetensor::hypertrie {
         size_t estimated_card = SIZE_MAX;
 
     public:
+        class Iterator;
 
         explicit Diagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> key_poss) :
                 hypertrie(hyperTrie),
@@ -97,7 +97,7 @@ namespace sparsetensor::hypertrie {
          * @param key_part binding for key_poss
          * @return a optional Hypertrie or value variant
          */
-        std::optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) const {
+        optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) const {
             if (key_part < this->min_key_part || key_part > this->max_key_part) {
                 return std::nullopt;
             }
@@ -130,7 +130,7 @@ namespace sparsetensor::hypertrie {
          * Constant Iterator over key_part bindings and variants of subhypertries or values.
          * @return const iterator
          */
-        Iterator cbegin() const {
+        Iterator begin() const {
             return Iterator{*this};
         }
 
@@ -138,7 +138,7 @@ namespace sparsetensor::hypertrie {
          * Constant Iterator end over key_part bindings and variants of subhypertries or values.
          * @return end of const iterator
          */
-        Iterator cend() const {
+        Iterator end() const {
             return Iterator{*this, true};
         }
 
@@ -148,7 +148,7 @@ namespace sparsetensor::hypertrie {
             /**
              * key pos iterator over the hypertrie -> subhypertrie = *hypertrie_iter
              */
-            const_key_pos_iter_t hypertrie_iter;
+            typename map<key_part_t, variant<HyperTrie<T> *, T>>::iterator hypertrie_iter;
 
             /**
              * max key_part candidate
@@ -166,7 +166,7 @@ namespace sparsetensor::hypertrie {
             /**
              * Subkey to query the subhypertie
              */
-            vector<std::optional<key_part_t>> subkey{};
+            vector<optional<key_part_t>> subkey;
 
             /**
              * the current keypart to be returned
@@ -175,7 +175,7 @@ namespace sparsetensor::hypertrie {
             /**
              * the current subsubhypertrie to be returned
              */
-            variant<HyperTrie<T> *, T> *current_subsubhypertrie;
+            variant<HyperTrie<T> *, T> current_subsubhypertrie{T{}};
 
             /**
              * Assume you've got a subtrie where a key_part_t at min_card_key_pos was resolved. Then this calculates the
@@ -203,41 +203,44 @@ namespace sparsetensor::hypertrie {
             Iterator(const Diagonal<T> &diagonal,
                      const bool ended = false) :
                     key_poss_in_subkey(calcKeyPossInSubkey(diagonal.key_poss, diagonal.min_card_key_pos)),
+                    subkey(vector<optional<key_part_t>>(diagonal.key_poss.size() - 1)),
                     hypertrie_iter(diagonal.hypertrie->lower_bound(diagonal.min_key_part, diagonal.min_card_key_pos)),
-                    max_key_part(diagonal.max_key_part) {
+                    max_key_part(diagonal.max_key_part){
                 this->ended = ended;
+                if (not ended)
+                    this->current_key_part = diagonal.min_key_part;
+                else
+                    this->current_key_part = std::max(diagonal.max_key_part, diagonal.max_key_part + 1);
                 operator++();
             }
 
 
-        public:
-
             Iterator &operator++() {
                 if (not ended) {
-                    auto & [current_key_part, current_subsubhypertrie] = *hypertrie_iter;
-                    while (current_key_part <= max_key_part) {
+                    while (this->current_key_part < max_key_part) {
+                        auto & [current_key_part, current_subhypertrie] = *(this->hypertrie_iter);
                         if (subkey.size() == 0) { // there is no subkey ( = diagonal along only one key_pos_t)
                             this->current_key_part = current_key_part;
-                            this->current_subsubhypertrie = &current_subsubhypertrie;
+                            this->current_subsubhypertrie = {current_subsubhypertrie};
                             ++hypertrie_iter;
                             return *this;
                         } else { // there is a subkey ( = diagonal along multiple key_pos_t's)
                             // write the current_key_part to the relevant positions of the subkey
                             for (const key_pos_t &key_pos : key_poss_in_subkey) {
-                                subkey[key_pos] = current_key_part;
+                                subkey.at(key_pos) = current_key_part;
                             }
 
                             // check if the same current_key_part exists also for the other relevant key_pos
-                            const optional<variant<HyperTrie<T> *, T>> &subsubhypertrie =
-                                    std::get<HyperTrie<T> *>(current_subsubhypertrie)->get(subkey);
+                            optional<variant<HyperTrie<T> *, T>> subsubhypertrie =
+                                    std::get<HyperTrie<T> *>(current_subhypertrie)->get(subkey);
 
                             ++hypertrie_iter;
+                            this->current_key_part = current_key_part;
                             if (subsubhypertrie) {
-                                this->current_key_part = current_key_part;
-                                this->current_subsubhypertrie = &(*subsubhypertrie);
+//                                std::cout << std::get<T>(*subsubhypertrie) <<std::endl;
+                                this->current_subsubhypertrie = {*subsubhypertrie};
                                 return *this;
                             } else {
-                                [current_key_part, current_subsubhypertrie] = *hypertrie_iter;
                                 continue;
                             }
                         }
@@ -253,8 +256,8 @@ namespace sparsetensor::hypertrie {
                 return *this;
             }
 
-            tuple<key_part_t, variant<HyperTrie<T> *, T>> operator*() {
-                return {current_key_part, *current_subsubhypertrie};
+            tuple<key_part_t &, variant<HyperTrie<T> *, T> &> operator*() {
+                return {current_key_part, current_subsubhypertrie};
             }
 
             bool operator==(const Iterator &rhs) const {
@@ -273,10 +276,9 @@ namespace sparsetensor::hypertrie {
             }
 
             bool operator!=(const Iterator &rhs) const {
-                return not operator==(rhs);
+                return not this->operator==(rhs);
             }
         };
-
     };
 }
 
