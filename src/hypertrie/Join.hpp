@@ -92,11 +92,12 @@ namespace sparsetensor::hypertrie {
             iter = new Iterator(hyper_trie_views, it_begin, it_end, min_card_op_pos,
                                 has_result_pos,
                                 result_pos, operands, result_key);
-            iter_end = new Iterator(iter->it_end);
+            iter_end = new Iterator(iter->diag_it_end);
         }
 
         ~Join() {
             delete iter;
+            delete iter_end;
         }
 
 
@@ -113,11 +114,22 @@ namespace sparsetensor::hypertrie {
 
             using diag_it_t = typename Diagonal<T>::Iterator;
 
-            const map<op_pos_t, Diagonal<T>> hyper_trie_views{};
-            diag_it_t it_begin;
-            diag_it_t it_end;
+            /**
+             * Diagonals of the hypertries that are joined except for the one with the smallest estimated cardinality.
+             */
+            const map<op_pos_t, Diagonal<T>> diagonals{};
+            /**
+             * Iterator of the diagonal with the smallest estimated cardinality.
+             */
+            diag_it_t diag_it_begin;
+            /**
+             * Iterator END of the diagonal with the smallest estimated cardinality.
+             */
+            diag_it_t diag_it_end;
             const op_pos_t it_ops_pos{};
-
+            /**
+             * The keypart that is currently in use
+             */
             key_part_t current_key_part{};
 
             const bool in_result{};
@@ -134,8 +146,8 @@ namespace sparsetensor::hypertrie {
             inline static Iterator ended_instance{}; // todo: remove?
 
         public:
-            Iterator(diag_it_t it_end) : it_begin(it_end),
-                                         it_end(it_end),
+            Iterator(diag_it_t it_end) : diag_it_begin(it_end),
+                                         diag_it_end(it_end),
                                          operands(vector<variant<HyperTrie<T> *, T>>{}),
                                          result_key(Key_t{}),
                                          new_operands({}),
@@ -151,8 +163,13 @@ namespace sparsetensor::hypertrie {
                      label_pos_t result_pos,
                      const vector<variant<HyperTrie<T> *, T>> &operands,
                      const Key_t &result_key)
-                    : hyper_trie_views(hyper_trie_views), it_begin(it_begin), it_end(it_end), it_ops_pos(it_ops_pos),
-                      in_result(in_result), result_pos(result_pos), operands(operands),
+                    : diagonals(hyper_trie_views),
+                      diag_it_begin(it_begin),
+                      diag_it_end(it_end),
+                      it_ops_pos(it_ops_pos),
+                      in_result(in_result),
+                      result_pos(result_pos),
+                      operands(operands),
                       result_key(result_key),
                       new_operands(vector<variant<HyperTrie<T> *, T>>(operands.size())),
                       new_key(result_key) {}
@@ -161,15 +178,15 @@ namespace sparsetensor::hypertrie {
             Iterator &operator++() {
                 bool match{};
 
-                while (it_begin == it_end) {
+                while (diag_it_begin == diag_it_end) {
 
                     match = true;
 
                     const auto &
-                    [current_key_part, it_operand] = *it_begin;
+                    [current_key_part, it_operand] = *diag_it_begin;
 
                     for (const auto &
-                        [op_pos, other_view] : hyper_trie_views) {
+                        [op_pos, other_view] : diagonals) {
 
                         optional<variant<HyperTrie<T> *, T>> other_operand = other_view.find(current_key_part);
 
@@ -185,10 +202,10 @@ namespace sparsetensor::hypertrie {
                         new_operands[it_ops_pos] = it_operand;
                         if (in_result)
                             new_key[result_pos] = current_key_part;
-                        it_begin++;
+                        diag_it_begin++;
                         break;
                     } else {
-                        it_begin++;
+                        diag_it_begin++;
                         continue;
                     }
                 }
@@ -197,9 +214,8 @@ namespace sparsetensor::hypertrie {
             }
 
             Iterator operator++(int) {
-                Iterator it_copy{*this};
                 operator++();
-                return it_copy;
+                return *this;
             }
 
             tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>> operator*() {
@@ -222,7 +238,7 @@ namespace sparsetensor::hypertrie {
             }
 
             Iterator end() {
-                return {it_end};
+                return {diag_it_end};
             }
         };
     };

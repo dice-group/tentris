@@ -52,10 +52,10 @@ ostream &operator<<(ostream &os, const vector<Value> &elements) {
 //template<template<class> class SetTyp, typename Value>
 //ostream &operator<<(ostream &os, const SetTyp<Value> &elements) {
 //    auto iter_begin = begin(elements);
-//    auto iter_end = end(elements);
+//    auto hypertrie_iter_end = end(elements);
 //    os << "{";
-//    for (auto iter = iter_begin; iter != iter_end; ++iter) {
-//        os << ((iter != iter_begin) ? ", " : "") << *iter;
+//    for (auto hypertrie_iter = iter_begin; hypertrie_iter != hypertrie_iter_end; ++hypertrie_iter) {
+//        os << ((hypertrie_iter != iter_begin) ? ", " : "") << *hypertrie_iter;
 //    }
 //    os << "}";
 //    return os;
@@ -89,10 +89,10 @@ ostream &operator<<(ostream &os, const unordered_set<Value> &elements) {
 //template<template<typename, typename> class SetTyp, typename Key, typename Value>
 //ostream &operator<<(ostream &os, const SetTyp<Key, Value> &elements) {
 //    auto iter_begin = begin(elements);
-//    auto iter_end = end(elements);
+//    auto hypertrie_iter_end = end(elements);
 //    os << "{";
-//    for (auto iter = iter_begin; iter != iter_end; ++iter) {
-//        os << ((iter != iter_begin) ? ", " : "") << (*iter);
+//    for (auto hypertrie_iter = iter_begin; hypertrie_iter != hypertrie_iter_end; ++hypertrie_iter) {
+//        os << ((hypertrie_iter != iter_begin) ? ", " : "") << (*hypertrie_iter);
 //    }
 //    os << "}";
 //    return os;

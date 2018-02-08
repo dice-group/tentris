@@ -2,207 +2,278 @@
 #define SPARSETENSOR_HYPERTRIE_DIAGONAL_HPP
 
 #include "../einsum/Types.hpp"
+#include "HyperTrie.hpp"
+#include "Types.hpp"
 #include <cstdint>
 #include <variant>
 #include <optional>
 #include <tuple>
 #include <vector>
-#include "HyperTrie.hpp"
-#include "../einsum/Subscript.hpp"
-#include "Types.hpp"
 
 
-using ::std::variant;
-using ::std::optional;
-using ::std::tuple;
-using ::std::vector;
+using std::variant;
+using std::optional;
+using std::tuple;
+using std::vector;
 using sparsetensor::einsum::label_pos_t;
 using sparsetensor::tensor::key_pos_t;
 using sparsetensor::tensor::key_part_t;
+using sparsetensor::hypertrie::HyperTrie::const_key_pos_iter_t;
 
 namespace sparsetensor::hypertrie {
 
+    /**
+     * Represents a diagonal of a hypertrie. A diagonal is when one or more key_parts are resolved with the same value.
+     * @tparam T content type of the HyperTrie
+     */
     template<typename T>
     class Diagonal {
+        class Iterator;
+
+        /**
+         * Pointer to the hypertrie that is diagonalized.
+         */
+        HyperTrie<T> *hypertrie;
+        /**
+         * The key_pos_t of the hypertrie with minimal cardinality.
+         */
+        key_pos_t min_card_key_pos;
+        /**
+         * The key_pos_t's that the hypertrie is diagonalized by.
+         */
+        const vector<label_pos_t> key_poss;
+        /**
+         * minimal key part in diagonal.
+         */
+        key_part_t min_key_part = KEY_PART_MIN;
+
+        /**
+         * maximal key part in diagonal.
+         */
+        key_part_t max_key_part = KEY_PART_MAX;
+
+        /**
+         * estimated cardinality.
+         */
+        size_t estimated_card = SIZE_MAX;
+
     public:
 
-
-        class Iterator;
-        HyperTrie<T> *hyperTrie;
-        key_pos_t min_card_key_pos{};
-        const vector<label_pos_t> label_poss;
-        key_part_t min_key = KEY_PART_MIN;
-
-        key_part_t max_key = KEY_PART_MAX;
-
-        Diagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> label_poss) : hyperTrie(hyperTrie),
-                                                                            label_poss(label_poss) {
-            min_card_key_pos = hyperTrie->getMinCardKeyPos();
+        explicit Diagonal(HyperTrie<T> *hyperTrie, vector<label_pos_t> key_poss) :
+                hypertrie(hyperTrie),
+                key_poss(key_poss),
+                min_card_key_pos(hyperTrie->getMinCardKeyPos()) {
+            min_key_part = hypertrie->getMinKeyPart(min_card_key_pos);
+            max_key_part = hypertrie->getMaxKeyPart(min_card_key_pos);
+            estimated_card = hypertrie->getCard(min_card_key_pos);
         }
 
-        ~Diagonal() {
-            //delete iter;
+        /**
+         * estimated cardinality.
+         * @return estimated cardinality.
+         */
+        const size_t &estimCard() const {
+            return estimated_card;
         }
 
-
-        size_t estimCard() {
-            return hyperTrie->getCard(min_card_key_pos);
+        /**
+         * minimal key part in diagonal.
+         * @return minimal key part in diagonal.
+         */
+        const key_part_t &min() const {
+            return min_key_part;
         }
 
-        key_part_t min() {
-            return hyperTrie->getMinKeyPart(min_card_key_pos);
+        /**
+         * maximal key part in diagonal.
+         * @return maximal key part in diagonal.
+         */
+        const key_part_t &max() const {
+            return max_key_part;
         }
 
-        key_part_t max() {
-            return hyperTrie->getMaxKeyPart(min_card_key_pos);;
-        }
-
-        optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) const {
-            vector<optional<key_part_t>> key(hyperTrie->depth);
-            for (const auto &label_pos :label_poss) {
-                key[label_pos] = {key_part};
+        /**
+         * Find value for key_part binding in diagonal.
+         * @param key_part binding for key_poss
+         * @return a optional Hypertrie or value variant
+         */
+        std::optional<variant<HyperTrie<T> *, T>> find(const key_part_t &key_part) const {
+            if (key_part < this->min_key_part || key_part > this->max_key_part) {
+                return std::nullopt;
             }
 
-            return hyperTrie->get(key);
+            vector<optional<key_part_t>> key(hypertrie->depth);
+            for (const auto &label_pos :key_poss) {
+                key.at(label_pos) = {key_part};
+            }
 
+            return hypertrie->get(key);
         }
 
-        void setLowerBound(key_part_t min_key) {
-            this->min_key = min_key;
+        /**
+         * Set the lower bound for key parts.
+         * @param min_key_t lower bound for key parts
+         */
+        void setLowerBound(const key_part_t min_key_t) {
+            this->min_key_part = min_key_t;
         }
 
-        void setUpperBound(key_part_t max_key) {
-            this->max_key = max_key;
+        /**
+         * Set the upper bound for key parts.
+         * @param min_key_t lower bound for key parts
+         */
+        void setUpperBound(const key_part_t max_key_t) {
+            this->max_key_part = max_key_t;
         }
 
-        tuple<Iterator, Iterator> getIterators() {
-            Iterator iter{hyperTrie, label_poss, min_card_key_pos, min_key, max_key};
-            Iterator iter_end{iter.iter_end};
+        /**
+         * Constant Iterator over key_part bindings and variants of subhypertries or values.
+         * @return const iterator
+         */
+        Iterator cbegin() const {
+            return Iterator{*this};
+        }
 
-            return {iter, iter_end};
+        /**
+         * Constant Iterator end over key_part bindings and variants of subhypertries or values.
+         * @return end of const iterator
+         */
+        Iterator cend() const {
+            return Iterator{*this, true};
         }
 
         class Iterator {
             friend class Diagonal<T>;
 
-            typedef typename ::map<key_part_t, variant<HyperTrie<T> *, T>>::iterator map_iterator;
+            /**
+             * key pos iterator over the hypertrie -> subhypertrie = *hypertrie_iter
+             */
+            const_key_pos_iter_t hypertrie_iter;
 
             /**
-             * Initializes this->key_poss by decreasing the key_pos of all key_poss after min_card_key_pos by one. This is due
-             * to the fact that sub-HyperTries these key_poss refer to is obtained by resloving the key_pos min_card_key_pos.
-             * @param key_poss key_poss of partent
-             * @param min_card_key_pos key_pos_t that is removed in child
+             * max key_part candidate
              */
-            void
-            init_poss(const vector<key_pos_t> &key_poss, const key_pos_t &min_card_key_pos) {// init key_poss
+            const key_part_t &max_key_part;
+
+            /**
+             * If the end is reached.
+             */
+            bool ended = false;
+            /**
+             * All relevant key_pos_t in the subkey where the min card key_pos_t is already resolved.
+             */
+            vector<key_pos_t> key_poss_in_subkey;
+            /**
+             * Subkey to query the subhypertie
+             */
+            vector<std::optional<key_part_t>> subkey{};
+
+            /**
+             * the current keypart to be returned
+             */
+            key_part_t current_key_part{};
+            /**
+             * the current subsubhypertrie to be returned
+             */
+            variant<HyperTrie<T> *, T> *current_subsubhypertrie;
+
+            /**
+             * Assume you've got a subtrie where a key_part_t at min_card_key_pos was resolved. Then this calculates the
+             * new key_pos_t of the desired diagonal.
+             * @param key_poss key_poss of hypertrie
+             * @param min_card_key_pos key_pos_t in hypertrie with minimal cardinality
+             */
+            static vector<key_pos_t> calcKeyPossInSubkey(const vector<key_pos_t> &key_poss,
+                                                         const key_pos_t &min_card_key_pos) {
+                vector<key_pos_t> key_poss_in_subkey{};
                 bool seen_key_pos = false;
                 for (const key_pos_t &key_pos : key_poss)
-                    if (key_pos != min_card_key_pos)
-                        if (not seen_key_pos)
-                            this->key_poss.push_back(key_pos);
-                        else
-                            this->key_poss.push_back(key_pos_t(key_pos - 1));
-                    else
+                    if (key_pos == min_card_key_pos) {
                         seen_key_pos = true;
+                    } else {
+                        if (not seen_key_pos)
+                            key_poss_in_subkey.push_back(key_pos);
+                        else
+                            key_poss_in_subkey.push_back(key_pos - uint8_t(1));
+                    }
+                return key_poss_in_subkey;
             }
 
         public:
-            Iterator(HyperTrie<T> *&hyperTrie,
-                     const vector<key_pos_t> &key_poss,
-                     key_pos_t min_card_key_pos,
-                     key_part_t min_key_part = KEY_PART_MIN,
-                     key_part_t max_key_part = KEY_PART_MAX
-            ) {
-                init_poss(key_poss, min_card_key_pos);
-
-                // init subkey
-                subkey.resize(this->key_poss.size());
-
-                map<key_part_t, std::variant<HyperTrie<T> *, T>>
-                        *edges = hyperTrie->edges_by_pos.at(min_card_key_pos);
-                this->iter = edges->lower_bound(min_key_part);
-
-                this->iter_end = edges->upper_bound(max_key_part);
-                this->current_key_part = min_key_part;
+            Iterator(const Diagonal<T> &diagonal,
+                     const bool ended = false) :
+                    key_poss_in_subkey(calcKeyPossInSubkey(diagonal.key_poss, diagonal.min_card_key_pos)),
+                    hypertrie_iter(diagonal.hypertrie->lower_bound(diagonal.min_key_part, diagonal.min_card_key_pos)),
+                    max_key_part(diagonal.max_key_part) {
+                this->ended = ended;
                 operator++();
             }
 
-            Iterator(map_iterator iter_end) :
-                    iter(iter_end),
-                    iter_end(iter_end),
-                    end(true) {}
-
-        private:
-            map_iterator iter;
-
-            map_iterator iter_end;
-            key_part_t current_key_part{};
-            bool end{};
-            vector<key_pos_t> key_poss{};
-            vector<std::optional<key_part_t>> subkey{};
-
-            variant<HyperTrie<T> *, T> current_sub_trie{};
 
         public:
 
             Iterator &operator++() {
-                while (iter != iter_end) {
-                    // get next current_key_part
-                    current_key_part = iter->first;
-                    // get next result for min-card position
-                    variant<HyperTrie<T> *, T> &child = iter->second;
-                    if (subkey.size() == 0) {
-                        current_sub_trie = child;
-                        iter++;
-                        break;
-                    } else {
-                        // write the current_key_part to the relevant positions of the subkey
-                        for (const key_pos_t &key_pos : key_poss) {
-                            subkey[key_pos] = current_key_part;
-                        }
+                if (not ended) {
+                    auto & [current_key_part, current_subsubhypertrie] = *hypertrie_iter;
+                    while (current_key_part <= max_key_part) {
+                        if (subkey.size() == 0) { // there is no subkey ( = diagonal along only one key_pos_t)
+                            this->current_key_part = current_key_part;
+                            this->current_subsubhypertrie = &current_subsubhypertrie;
+                            ++hypertrie_iter;
+                            return *this;
+                        } else { // there is a subkey ( = diagonal along multiple key_pos_t's)
+                            // write the current_key_part to the relevant positions of the subkey
+                            for (const key_pos_t &key_pos : key_poss_in_subkey) {
+                                subkey[key_pos] = current_key_part;
+                            }
 
-                        // check if the same current_key_part exists also for the other relevant key_pos
-                        optional<variant<HyperTrie<T> *, T>> &&result = std::get<HyperTrie<T> *>(child)->get(subkey);
-                        if (result) {
-                            current_sub_trie = *result;
-                            iter++;
-                            break;
-                        } else {
-                            iter++;
-                            continue;
+                            // check if the same current_key_part exists also for the other relevant key_pos
+                            const optional<variant<HyperTrie<T> *, T>> &subsubhypertrie =
+                                    std::get<HyperTrie<T> *>(current_subsubhypertrie)->get(subkey);
+
+                            ++hypertrie_iter;
+                            if (subsubhypertrie) {
+                                this->current_key_part = current_key_part;
+                                this->current_subsubhypertrie = &(*subsubhypertrie);
+                                return *this;
+                            } else {
+                                [current_key_part, current_subsubhypertrie] = *hypertrie_iter;
+                                continue;
+                            }
                         }
                     }
-
+                    ended = true;
                 }
+
                 return *this;
             }
 
             Iterator operator++(int) {
-                Iterator it_copy{*this};
                 operator++();
-                return it_copy;
+                return *this;
             }
 
             tuple<key_part_t, variant<HyperTrie<T> *, T>> operator*() {
-                return {current_key_part, current_sub_trie};
+                return {current_key_part, *current_subsubhypertrie};
             }
 
             bool operator==(const Iterator &rhs) const {
-                if (rhs.end && end)
+                // if both ended they are equal
+                if (rhs.ended && ended)
                     return true;
-                else if (rhs.end && rhs.current_key_part <= current_key_part)
+                    // if rhs ended and lhs's key_pos is greater then rhs's
+                else if (rhs.ended && rhs.current_key_part <= current_key_part)
                     return true;
+                    // the same the other way around
+                else if (ended && current_key_part <= rhs.current_key_part)
+                    return true;
+                    // both key_parts are equal
                 else
                     return current_key_part == rhs.current_key_part;
             }
 
-            bool operator!=(const Iterator &rhs) const { // todo: check if it is right
-                if (rhs.end && end)
-                    return false;
-                else if (rhs.end && rhs.current_key_part <= current_key_part)
-                    return false;
-                else
-                    return current_key_part != rhs.current_key_part;
+            bool operator!=(const Iterator &rhs) const {
+                return not operator==(rhs);
             }
         };
 

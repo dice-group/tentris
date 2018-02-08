@@ -35,6 +35,7 @@ namespace sparsetensor::hypertrie {
         friend class Diagonal<T>;
 
     public:
+        typedef typename ::map<key_part_t, variant<HyperTrie<T> *, T>>::const_iterator const_key_pos_iter_t;
 
 
         explicit HyperTrie(const key_pos_t depth) : depth(depth) {}
@@ -343,8 +344,8 @@ namespace sparsetensor::hypertrie {
             if (pos_calc->subkey_length == 1) {
                 key_part_t key_part = key[pos_calc->subkey_to_key_pos(0)];
 
-                optional<variant<HyperTrie<T> *, T>> value_ = optional < variant<HyperTrie<T> *, T>>
-                { variant<HyperTrie<T> *, T>{new_value}};
+                optional<variant<HyperTrie<T> *, T>> value_ = optional<variant<HyperTrie<T> *, T>>
+                        {variant<HyperTrie<T> *, T>{new_value}};
 
                 this->setChild(0, key_part, value_);
             } else { // depth > 1 -> inner node
@@ -435,6 +436,23 @@ namespace sparsetensor::hypertrie {
 
         inline bool empty() const noexcept {
             return leafcount == 0;
+        }
+
+        const_key_pos_iter_t cbegin(key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->cbegin();
+        }
+
+        const_key_pos_iter_t lower_bound(key_part_t min_key_part = KEY_PART_MIN, key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->lower_bound(min_key_part);
+
+        }
+
+        const_key_pos_iter_t cend(key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->cend();
+        }
+
+        const_key_pos_iter_t upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
+            return this->edges_by_pos.at(key_pos)->lower_bound(max_key_part);
         }
 
     };
