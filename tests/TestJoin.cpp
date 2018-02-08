@@ -39,8 +39,8 @@ TEST(TestJoin, simple_call) {
 
     Join<int> join{operands, step, label, key};
 
-    typename sparsetensor::hypertrie::Join<int>::Iterator &it_begin = join.begin();
-    typename sparsetensor::hypertrie::Join<int>::Iterator &it_end = join.end();
+    typename sparsetensor::hypertrie::Join<int>::Iterator it_begin = join.begin();
+    typename sparsetensor::hypertrie::Join<int>::Iterator it_end = join.end();
 
     for(;it_begin != it_end; ++it_begin){
         auto &&[key, value] = *it_begin;

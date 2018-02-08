@@ -37,179 +37,173 @@ namespace sparsetensor::hypertrie {
         class Iterator;
 
     private:
+        const Key_t &result_key;
+        map<op_pos_t, Diagonal<T>> diagonals{};
+        Diagonal<T> *min_card_diagonal;
+        key_part_t min_key_part = KEY_PART_MIN;
+        key_part_t max_key_part = KEY_PART_MAX;
+        bool has_result_pos = false;
+        label_pos_t result_pos{};
 
-        Iterator *iter;
-        Iterator *iter_end;
     public:
 
-
-        Join(const vector<variant<HyperTrie<T> *, T>> &operands, const PlanStep &planStep, label_t label,
-             const Key_t &result_key) {
+        /**
+         * initializes this->diagonals with all diagonals except for the diagonal with minimal cardinality.
+         * @param [in] planStep
+         * @param [in] label
+         * @param [in] operands
+         * @param [in,out] min_card_op_pos returns the position of the operand with the sp
+         * @param [in,out] min_key_part returns the largest lower_bound of all diagonals
+         * @param [in,out] max_key_part returns the smallest upper_bound of all diagonals
+         */
+        void initDiagonals(const PlanStep &planStep,
+                           const label_t &label,
+                           const vector<variant<HyperTrie<T> *, T>> &operands,
+                           op_pos_t &min_card_op_pos,
+                           key_part_t &min_key_part,
+                           key_part_t &max_key_part) {
             // positions in operands
             const vector<op_pos_t> &op_poss = planStep.operandsWithLabel(label);
+            size_t min_card = SIZE_MAX;
 
-            // collect data about operands
-            op_pos_t min_card_op_pos = 0;
-            size_t min_card = numeric_limits<size_t>::max();
-            key_part_t min_key = KEY_PART_MIN;
-            key_part_t max_key = KEY_PART_MAX;
+            for (op_pos_t op_pos : op_poss) { // TODO: is this the right op_pos or do I need abs_op_pos
 
-            map<op_pos_t, Diagonal<T>> hyper_trie_views{};
+                // gernerate diagonal
+                Diagonal<T> diagonal{std::get<HyperTrie<T> *>(operands[op_pos]),
+                                     planStep.labelPossInOperand(op_pos, label)};
 
-            for (op_pos_t op_pos : op_poss) {
-
-                // gernerate view
-                Diagonal<T> view{std::get<HyperTrie<T> *>(operands[op_pos]),
-                                 planStep.labelPossInOperand(op_pos, label)};
-                hyper_trie_views.insert({op_pos, view});
-
-                if (min_card > view.estimCard()) {
-                    min_card = view.estimCard();
+                if (min_card > diagonal.estimCard()) {
+                    min_card = diagonal.estimCard();
                     min_card_op_pos = op_pos;
                 }
-                min_key = (view.min() > min_key) ? view.min() : min_key;
-                max_key = (view.max() < max_key) ? view.max() : max_key;
+                min_key_part = (diagonal.min() > min_key_part) ? diagonal.min() : min_key_part;
+                max_key_part = (diagonal.max() < max_key_part) ? diagonal.max() : max_key_part;
+
+                diagonals.insert({op_pos, diagonal});
             }
-            typename map<op_pos_t, Diagonal<T>>::iterator min_card_op_ = hyper_trie_views.find(min_card_op_pos);
-            hyper_trie_views.erase(min_card_op_);
+            typename map<op_pos_t, Diagonal<T>>::iterator min_card_diagonal = diagonals.find(min_card_op_pos);
+            diagonals.erase(min_card_diagonal);
+        }
 
-            Diagonal<T> min_card_op{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
-                                    planStep.labelPossInOperand(min_card_op_pos, label)};
-            min_card_op.setLowerBound(min_key);
-            min_card_op.setUpperBound(max_key);
-            auto && [it_begin, it_end] = min_card_op.getIterators();
+        Join(const vector<variant<HyperTrie<T> *, T>> &operands,
+             const PlanStep &planStep,
+             const label_t &label,
+             const Key_t &result_key)
+                : result_key(result_key) {
 
+
+            // get non min_card diagonals
+            op_pos_t min_card_op_pos = 0;
+            initDiagonals(planStep, label, operands, min_card_op_pos, min_key_part, max_key_part);
+
+            // get min_card diagonal
+            min_card_diagonal = new Diagonal<T>{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
+                                                planStep.labelPossInOperand(min_card_op_pos, label)};
+            min_card_diagonal->setLowerBound(min_key_part);
+            min_card_diagonal->setUpperBound(max_key_part);
 
             // position in result
             const optional<label_pos_t> &result_pos_ = planStep.labelPosInResult(label);
-            bool has_result_pos = false;
+            has_result_pos = bool(result_pos_);
             label_pos_t result_pos{};
-            if (result_pos_) {
-                has_result_pos = true;
+            if (has_result_pos = bool(result_pos_))
                 result_pos = *result_pos_;
-            }
-
-            iter = new Iterator(hyper_trie_views, it_begin, it_end, min_card_op_pos,
-                                has_result_pos,
-                                result_pos, operands, result_key);
-            iter_end = new Iterator(iter->diag_it_end);
         }
 
         ~Join() {
-            delete iter;
-            delete iter_end;
+            delete min_card_diagonal;
         }
 
 
-        Iterator &begin() {
-            return *iter;
+        Iterator begin() {
+            return Iterator{*this};
         }
 
-        Iterator &end() {
-            return *iter_end;
+        Iterator end() {
+            return Iterator{*this, true};
         }
 
         class Iterator {
             friend class Join<T>;
 
-            using diag_it_t = typename Diagonal<T>::Iterator;
-
             /**
              * Diagonals of the hypertries that are joined except for the one with the smallest estimated cardinality.
              */
-            const map<op_pos_t, Diagonal<T>> diagonals{};
+            const map<op_pos_t, Diagonal<T>> &diagonals;
             /**
              * Iterator of the diagonal with the smallest estimated cardinality.
              */
-            diag_it_t diag_it_begin;
-            /**
-             * Iterator END of the diagonal with the smallest estimated cardinality.
-             */
-            diag_it_t diag_it_end;
+            typename Diagonal<T>::Iterator min_card_diagonal_iter;
+
             const op_pos_t it_ops_pos{};
             /**
              * The keypart that is currently in use
              */
-            key_part_t current_key_part{};
+            key_part_t current_key_part;
 
-            const bool in_result{};
-            const label_pos_t result_pos{};
+            const bool &in_result;
+            const label_pos_t &result_pos;
 
             const vector<variant<HyperTrie<T> *, T>> operands;
-            const Key_t &result_key;
-
             bool ended = false;
+
+            const Key_t &result_key;
 
             vector<variant<HyperTrie<T> *, T>> new_operands = vector<variant<HyperTrie<T> *, T>>(operands.size());
             Key_t new_key;
 
-            inline static Iterator ended_instance{}; // todo: remove?
-
         public:
-            Iterator(diag_it_t it_end) : diag_it_begin(it_end),
-                                         diag_it_end(it_end),
-                                         operands(vector<variant<HyperTrie<T> *, T>>{}),
-                                         result_key(Key_t{}),
-                                         new_operands({}),
-                                         new_key({}) {
-                ended = true;
-            }
 
-            Iterator(const map<op_pos_t, Diagonal<T>> &hyper_trie_views,
-                     const diag_it_t &it_begin,
-                     const diag_it_t &it_end,
-                     const op_pos_t it_ops_pos,
-                     bool in_result,
-                     label_pos_t result_pos,
-                     const vector<variant<HyperTrie<T> *, T>> &operands,
-                     const Key_t &result_key)
-                    : diagonals(hyper_trie_views),
-                      diag_it_begin(it_begin),
-                      diag_it_end(it_end),
-                      it_ops_pos(it_ops_pos),
-                      in_result(in_result),
-                      result_pos(result_pos),
-                      operands(operands),
-                      result_key(result_key),
-                      new_operands(vector<variant<HyperTrie<T> *, T>>(operands.size())),
-                      new_key(result_key) {}
+            Iterator(const Join<T> &join,
+                     const bool ended = false) :
+                    min_card_diagonal_iter(join.min_card_diagonal->begin()),
+                    diagonals(join.diagonals),
+                    current_key_part(join.min_key_part),
+                    in_result(join.has_result_pos),
+                    result_pos(join.result_pos),
+                    result_key(join.result_key) {
+                this->ended = ended;
+                if (not ended && current_key_part > join.min_card_diagonal->max()) { // todo: remove
+                    throw "something is fishy.";
+                }
+                if (ended) {
+                    current_key_part = std::max(join.min_card_diagonal->max() + 1, KEY_PART_MAX);
+                }
+            }
 
 
             Iterator &operator++() {
-                bool match{};
+                if (not ended) {
+                    while (not min_card_diagonal_iter.hasEnded()) {
 
-                while (diag_it_begin == diag_it_end) {
+                        bool match = true;
 
-                    match = true;
+                        const auto & [current_key_part, min_card_op] = *min_card_diagonal_iter;
 
-                    const auto &
-                    [current_key_part, it_operand] = *diag_it_begin;
+                        for (auto & [op_pos, diagonal] : diagonals) {
 
-                    for (const auto &
-                        [op_pos, other_view] : diagonals) {
+                            optional<variant<HyperTrie<T> *, T>> op = diagonal.find(current_key_part);
 
-                        optional<variant<HyperTrie<T> *, T>> other_operand = other_view.find(current_key_part);
-
-                        if (other_operand) {
-                            new_operands[op_pos] = *other_operand;
-                        } else {
-                            match = false;
-                            break;
+                            if (op) {
+                                new_operands.at(op_pos) = *op; // todo: is this the right op_pos
+                            } else {
+                                ++min_card_diagonal_iter;
+                                goto continue_while;
+                            }
                         }
-                    }
 
-                    if (match) {
-                        new_operands[it_ops_pos] = it_operand;
-                        if (in_result)
+                        new_operands[it_ops_pos] = min_card_op;
+                        this->current_key_part = current_key_part;
+                        if (in_result) {
                             new_key[result_pos] = current_key_part;
-                        diag_it_begin++;
-                        break;
-                    } else {
-                        diag_it_begin++;
-                        continue;
-                    }
-                }
+                        }
+                        ++min_card_diagonal_iter;
+                        return *this;
 
+                        continue_while:;
+                    }
+                    ended = true;
+                }
                 return *this;
             }
 
@@ -219,26 +213,27 @@ namespace sparsetensor::hypertrie {
             }
 
             tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>> operator*() {
-                return tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>>{{operands},
-                                                                                   {new_key}};
+                return {{operands},
+                        {new_key}};
             }
 
             bool operator==(const Iterator &rhs) const {
+                // if both ended they are equal
                 if (rhs.ended && ended)
                     return true;
+                    // if rhs ended and lhs's key_pos is greater then rhs's
+                else if (rhs.ended && rhs.current_key_part <= current_key_part)
+                    return true;
+                    // the same the other way around
+                else if (ended && current_key_part <= rhs.current_key_part)
+                    return true;
+                    // both key_parts are equal
                 else
                     return current_key_part == rhs.current_key_part;
             }
 
             bool operator!=(const Iterator &rhs) const {
-                if (rhs.ended != ended)
-                    return true;
-                else
-                    return current_key_part != rhs.current_key_part;
-            }
-
-            Iterator end() {
-                return {diag_it_end};
+                return not this->operator==(rhs);
             }
         };
     };

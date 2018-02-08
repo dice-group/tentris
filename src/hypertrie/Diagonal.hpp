@@ -278,6 +278,10 @@ namespace sparsetensor::hypertrie {
             bool operator!=(const Iterator &rhs) const {
                 return not this->operator==(rhs);
             }
+
+            inline const bool &hasEnded() const {
+                return ended;
+            }
         };
     };
 }
