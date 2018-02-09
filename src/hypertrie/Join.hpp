@@ -139,7 +139,6 @@ namespace sparsetensor::hypertrie {
              */
             typename Diagonal<T>::Iterator min_card_diagonal_iter;
 
-            const op_pos_t it_ops_pos{};
             /**
              * The keypart that is currently in use
              */
@@ -203,7 +202,7 @@ namespace sparsetensor::hypertrie {
                             ++diagonal_;
                         }
 
-                        joined_operands.at(it_ops_pos) = min_card_op;
+                        joined_operands.at(min_card_op_pos) = min_card_op;
                         this->current_key_part = current_key_part;
                         if (in_result) {
                             joined_key.at(result_pos) = current_key_part;
