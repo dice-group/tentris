@@ -43,10 +43,10 @@ namespace sparsetensor::tensor {
 
         virtual T get(const Key_t key) const override {
             if (trie->depth > 0) {
-                const optional<variant<HyperTrie<T> *, T>> &value_ = trie->get(key);
-                if (value_) {
-                    return std::get<T>(*value_);
-                } else {
+                try{
+                const variant<HyperTrie<T> *, T> &value_ = trie->get(key);
+                    return std::get<T>(value_);
+                } catch (...){
                     return {};
                 }
             } else {

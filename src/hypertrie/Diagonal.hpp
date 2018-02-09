@@ -175,7 +175,7 @@ namespace sparsetensor::hypertrie {
             /**
              * the current subsubhypertrie to be returned
              */
-            variant<HyperTrie<T> *, T> current_subsubhypertrie{T{}};
+            variant<HyperTrie<T> *, T> *current_subsubhypertrie;
 
             /**
              * Assume you've got a subtrie where a key_part_t at min_card_key_pos was resolved. Then this calculates the
@@ -205,7 +205,8 @@ namespace sparsetensor::hypertrie {
                     key_poss_in_subkey(calcKeyPossInSubkey(diagonal.key_poss, diagonal.min_card_key_pos)),
                     subkey(vector<optional<key_part_t>>(diagonal.key_poss.size() - 1)),
                     hypertrie_iter(diagonal.hypertrie->lower_bound(diagonal.min_key_part, diagonal.min_card_key_pos)),
-                    max_key_part(diagonal.max_key_part){
+                    max_key_part(diagonal.max_key_part),
+                    current_subsubhypertrie(nullptr) {
                 this->ended = ended;
                 if (not ended)
                     this->current_key_part = diagonal.min_key_part;
@@ -218,10 +219,10 @@ namespace sparsetensor::hypertrie {
             Iterator &operator++() {
                 if (not ended) {
                     while (this->current_key_part < max_key_part) {
-                        auto & [current_key_part, current_subhypertrie] = *(this->hypertrie_iter);
+                        auto &[current_key_part, current_subhypertrie] = *(this->hypertrie_iter);
                         if (subkey.size() == 0) { // there is no subkey ( = diagonal along only one key_pos_t)
                             this->current_key_part = current_key_part;
-                            this->current_subsubhypertrie = {current_subsubhypertrie};
+                            this->current_subsubhypertrie = &current_subhypertrie;
                             ++hypertrie_iter;
                             return *this;
                         } else { // there is a subkey ( = diagonal along multiple key_pos_t's)
@@ -231,16 +232,14 @@ namespace sparsetensor::hypertrie {
                             }
 
                             // check if the same current_key_part exists also for the other relevant key_pos
-                            optional<variant<HyperTrie<T> *, T>> subsubhypertrie =
-                                    std::get<HyperTrie<T> *>(current_subhypertrie)->get(subkey);
-
                             ++hypertrie_iter;
                             this->current_key_part = current_key_part;
-                            if (subsubhypertrie) {
-//                                std::cout << std::get<T>(*subsubhypertrie) <<std::endl;
-                                this->current_subsubhypertrie = {*subsubhypertrie};
+                            try {
+                                variant<HyperTrie<T> *, T> &subsubhypertrie = std::get<HyperTrie<T> *>(current_subhypertrie)->get(subkey);
+                                this->current_subsubhypertrie = &subsubhypertrie;
                                 return *this;
-                            } else {
+                            }
+                            catch (...) {
                                 continue;
                             }
                         }
@@ -257,7 +256,7 @@ namespace sparsetensor::hypertrie {
             }
 
             tuple<key_part_t &, variant<HyperTrie<T> *, T> &> operator*() {
-                return {current_key_part, current_subsubhypertrie};
+                return {current_key_part, *current_subsubhypertrie};
             }
 
             bool operator==(const Iterator &rhs) const {
