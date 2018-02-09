@@ -144,13 +144,12 @@ namespace sparsetensor::hypertrie {
             const bool &in_result;
             const label_pos_t &result_pos;
 
-            const vector<variant<HyperTrie<T> *, T>> operands;
             bool ended = false;
 
             const Key_t &result_key;
 
-            vector<variant<HyperTrie<T> *, T>> new_operands = vector<variant<HyperTrie<T> *, T>>(operands.size());
-            Key_t new_key;
+            vector<variant<HyperTrie<T> *, T>> joined_operands;
+            Key_t joined_key;
 
         public:
 
@@ -161,7 +160,9 @@ namespace sparsetensor::hypertrie {
                     current_key_part(join.min_key_part),
                     in_result(join.has_result_pos),
                     result_pos(join.result_pos),
-                    result_key(join.result_key) {
+                    result_key(join.result_key),
+                    joined_key(join.result_key),
+                    joined_operands(vector<variant<HyperTrie<T> *, T>>(join.diagonals.size()+1)){
                 this->ended = ended;
                 if (not ended && current_key_part > join.min_card_diagonal->max()) { // todo: remove
                     throw "something is fishy.";
@@ -169,6 +170,7 @@ namespace sparsetensor::hypertrie {
                 if (ended) {
                     current_key_part = std::max(join.min_card_diagonal->max() + 1, KEY_PART_MAX);
                 }
+                operator++();
             }
 
 
@@ -185,17 +187,17 @@ namespace sparsetensor::hypertrie {
                             optional<variant<HyperTrie<T> *, T>> op = diagonal.find(current_key_part);
 
                             if (op) {
-                                new_operands.at(op_pos) = *op; // todo: is this the right op_pos
+                                joined_operands.at(op_pos) = *op; // todo: is this the right op_pos
                             } else {
                                 ++min_card_diagonal_iter;
                                 goto continue_while;
                             }
                         }
 
-                        new_operands[it_ops_pos] = min_card_op;
+                        joined_operands.at(it_ops_pos) = min_card_op;
                         this->current_key_part = current_key_part;
                         if (in_result) {
-                            new_key[result_pos] = current_key_part;
+                            joined_key.at(result_pos) = current_key_part;
                         }
                         ++min_card_diagonal_iter;
                         return *this;
@@ -213,8 +215,8 @@ namespace sparsetensor::hypertrie {
             }
 
             tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>> operator*() {
-                return {{operands},
-                        {new_key}};
+                return {{joined_operands},
+                        {joined_key}};
             }
 
             bool operator==(const Iterator &rhs) const {

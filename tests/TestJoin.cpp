@@ -35,6 +35,8 @@ TEST(TestJoin, simple_call) {
     EvalPlan plan{subscript};
     auto[step, label] = plan.firstStep(operands);
 
+    std::cout << "step: " <<label << std::endl;
+
     Key_t key(depth);
 
     Join<int> join{operands, step, label, key};
@@ -43,13 +45,13 @@ TEST(TestJoin, simple_call) {
     typename sparsetensor::hypertrie::Join<int>::Iterator it_end = join.end();
 
     for(;it_begin != it_end; ++it_begin){
-        auto &&[key, value] = *it_begin;
-        std::cout << "" <<  std::endl;
-//        std::cout << key << " : " << std::endl; // << value
+        auto &&[operands, key] = *it_begin;
+        std::cout << key <<  std::endl;
+        std::cout << *std::get<HyperTrie<int> *>(operands.at(0)) << std::endl;
+        std::cout << *std::get<HyperTrie<int> *>(operands.at(1)) << std::endl << std::endl;
+
     }
 
-    bool not_yet_fully_implemented = false;
-    ASSERT_TRUE(not_yet_fully_implemented);
 
 
 }
