@@ -37,6 +37,7 @@ namespace sparsetensor::hypertrie {
         class Iterator;
 
     private:
+        const vector<variant<HyperTrie<T> *, T>> &operands;
         const Key_t &result_key;
         map<op_pos_t, Diagonal<T>> diagonals{};
         Diagonal<T> *min_card_diagonal;
@@ -89,7 +90,8 @@ namespace sparsetensor::hypertrie {
              const PlanStep &planStep,
              const label_t &label,
              const Key_t &result_key)
-                : result_key(result_key) {
+                : result_key(result_key),
+                  operands(operands) {
 
 
             // get non min_card diagonals
@@ -162,7 +164,7 @@ namespace sparsetensor::hypertrie {
                     result_pos(join.result_pos),
                     result_key(join.result_key),
                     joined_key(join.result_key),
-                    joined_operands(vector<variant<HyperTrie<T> *, T>>(join.diagonals.size()+1)){
+                    joined_operands(join.operands){
                 this->ended = ended;
                 if (not ended && current_key_part > join.min_card_diagonal->max()) { // todo: remove
                     throw "something is fishy.";
@@ -182,7 +184,7 @@ namespace sparsetensor::hypertrie {
 
                         const auto & [current_key_part, min_card_op] = *min_card_diagonal_iter;
 
-                        for (auto & [op_pos, diagonal] : diagonals) {
+                        for (auto & [op_pos, diagonal] : diagonals) { // todo: op_pos is actually current_key_part!
 
                             optional<variant<HyperTrie<T> *, T>> op = diagonal.find(current_key_part);
 
