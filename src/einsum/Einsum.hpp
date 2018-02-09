@@ -20,7 +20,7 @@ namespace sparsetensor::einsum {
                                   const vector<raw_subscript> raw_operand_subscripts,
                                   const raw_subscript raw_result_subscript) {
 
-        Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript}.optimize();
+        Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript};
 
         CrossProduct<T> operator_tree{subscript};
 

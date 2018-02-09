@@ -19,11 +19,13 @@ namespace sparsetensor::einsum::operators {
     template<typename T>
     class CrossProduct {
         const Subscript &subscript;
+        const Subscript optimized_subscript;
         vector<Einsum<T>> predecessors{};
     public:
         explicit CrossProduct(const Subscript &subscript) :
-                subscript(subscript) {
-            const map<op_pos_t, Subscript> &sub_subscripts = subscript.getSubSubscripts();
+                subscript(subscript),
+                optimized_subscript(Subscript{subscript}.optimize()) {
+            const map<op_pos_t, Subscript> &sub_subscripts = optimized_subscript.getSubSubscripts();
             for (const auto &[op_id, sub_subscript] : sub_subscripts) {
                 predecessors.push_back({sub_subscript});
             }

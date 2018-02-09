@@ -68,6 +68,8 @@ namespace sparsetensor::einsum {
          */
         Subscript() {}
 
+        Subscript(const Subscript &subscript) = default;
+
     private:
 
         /**
@@ -378,8 +380,6 @@ namespace sparsetensor::einsum {
 
             /// operands_labels
             /// distinct_operands_labels
-//            map<op_pos_t , op_pos_t > parent_op_pos2op_pos{};
-            //vector<op_pos_t> original_op_poss{};
             for (auto & [parent_op_pos, parent_labels] : this->operands_labels) { // iterate all operands
 
                 // write out all labels from label_subset
@@ -400,7 +400,7 @@ namespace sparsetensor::einsum {
                     sub_sc.operands_labels[sub_sc.next_operand_pos] = operand_labels;
                     sub_sc.distinct_operands_labels[sub_sc.next_operand_pos] = distinct_operand_labels;
 //                    parent_op_pos2op_pos[parent_po_pos] = sub_sc.next_operand_pos++;
-                    original_op_poss.push_back(parent_op_pos);
+                    sub_sc.original_op_poss.push_back(parent_op_pos);
                     sub_sc.next_operand_pos++;
                 }
 
