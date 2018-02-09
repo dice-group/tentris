@@ -18,7 +18,7 @@ namespace sparsetensor::einsum {
             const vector<label_pos_t> &label_poss_in_op = sc.getLabelPossInOperand().at({op_pos, resultLabel});
             const label_pos_t &label_pos = label_poss_in_op.at(0);
 
-            const uint64_t &dim_size = operands.at(sc.opPosToAbsOpPos(op_pos))->shape.at(label_pos);
+            const uint64_t &dim_size = operands.at(op_pos)->shape.at(label_pos);
             result_shape.push_back(dim_size);
         }
         return result_shape;

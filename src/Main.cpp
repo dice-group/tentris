@@ -1,9 +1,12 @@
-#include "einsum/EvalPlan.hpp"
 
-#include <unordered_set>
+#include <vector>
+#include <iostream>
 
-using std::unordered_set;
+using std::vector;
 int main() {
-
+vector<int> vec{1,2,23,3,4};
+    for (const auto &item : vec) {
+        std::cout << item << std::endl;
+    }
 
 }

@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <map>
 #include <algorithm>
+#include <iterator>
 
 using std::unordered_set;
 using std::set;
@@ -38,6 +39,8 @@ namespace sparsetensor::einsum {
 
     private:
         unordered_set<label_t> all_labels{};
+        vector<op_pos_t> op_poss{};
+        vector<op_pos_t> original_op_poss{};
         map<op_pos_t, vector<label_t>> operands_labels{};
         map<op_pos_t, set<label_t>> distinct_operands_labels{};
         vector<label_t> result_labels{};
@@ -49,7 +52,6 @@ namespace sparsetensor::einsum {
         map<op_pos_t, Subscript> sub_subscripts{};
         op_pos_t next_operand_pos{};
         label_t next_label{};
-        op_pos_t number_of_native_operands{}; // TODO: set to zero for cross product tensors
 
     public:
         /**
@@ -88,6 +90,22 @@ namespace sparsetensor::einsum {
          */
         const unordered_set<label_t> &getAllLabels() const {
             return all_labels;
+        }
+
+        /**
+         * A vector of all operands' positions.
+         * @return vector of op_pos_t.
+         */
+        const vector<op_pos_t> &getOperandPoss() const {
+            return op_poss;
+        }
+
+        /**
+         * A vector of all original operands' positions.
+         * @return vector of op_pos_t.
+         */
+        const vector<op_pos_t> &getOriginalOperandPoss() const {
+            return original_op_poss;
         }
 
         /**
@@ -184,51 +202,6 @@ namespace sparsetensor::einsum {
         }
 
         /**
-         * Number of used native operands (not operands that were created by bracketing out independent label subsets).
-         * @return number of used native operands.
-         */
-        op_pos_t getNumberOfNativeOperands() const {
-            return number_of_native_operands;
-        }
-
-        size_t opPosToAbsOpPos(const op_pos_t op_pos) const {
-            size_t abs_po_pos = 0;
-            for (auto && [current_op_pos, content] : operands_labels) {
-                if (current_op_pos == op_pos) {
-                    return abs_po_pos;
-                } else {
-                    ++abs_po_pos;
-                }
-            }
-            throw "given op_pos does not exist";
-        }
-
-    private:
-        /**
-         * This function normalizes operand and result labels. Normalized means that the labels are in order of
-            first appeareance named 0,1,...
-         * @param raw_operand_subscripts vector of vectors of the operand's labels
-         * @param raw_result_subscript vector of the result's labels
-         * @return tuple of normalized operand labels, normalized result labels and the total number of different labels
-         */
-        static tuple<vector<vector<label_t >>, vector<label_t>, label_t>
-        normalizeRawSubscripts(const vector<vector<label_t >> &raw_operand_subscripts,
-                               const vector<label_t> &raw_result_subscript);
-
-        /**
-         * norms a vector of label_t
-         * @param raw_to_norm_label maps raw label_t to normed label_t, changes are written back
-         * @param next_norm_label  the next normed label_t to be used, changes are written back
-         * @param raw_labels the vector of raw labels to be normed
-         * @return a vector of normed label_t
-         */
-        static vector<label_t>
-        normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
-                             const vector<label_t> &raw_labels);
-
-    public:
-
-        /**
          * Calculates the label_poss_in_operand field using:
          * - operands_labels
          * - distinct_operands_labels
@@ -254,6 +227,29 @@ namespace sparsetensor::einsum {
                                                                               const map<op_pos_t, vector<label_t>> &operands_labels);
 
     private:
+        /**
+         * This function normalizes operand and result labels. Normalized means that the labels are in order of
+            first appeareance named 0,1,...
+         * @param raw_operand_subscripts vector of vectors of the operand's labels
+         * @param raw_result_subscript vector of the result's labels
+         * @return tuple of normalized operand labels, normalized result labels and the total number of different labels
+         */
+        static tuple<vector<vector<label_t >>, vector<label_t>, label_t>
+        normalizeRawSubscripts(const vector<vector<label_t >> &raw_operand_subscripts,
+                               const vector<label_t> &raw_result_subscript);
+
+        /**
+         * norms a vector of label_t
+         * @param raw_to_norm_label maps raw label_t to normed label_t, changes are written back
+         * @param next_norm_label  the next normed label_t to be used, changes are written back
+         * @param raw_labels the vector of raw labels to be normed
+         * @return a vector of normed label_t
+         */
+        static vector<label_t>
+        normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
+                             const vector<label_t> &raw_labels);
+
+
         /**
          * Calculates the label_dependency_graph field using:
          * - distinct_operands_labels
@@ -347,8 +343,6 @@ namespace sparsetensor::einsum {
 
         // next_operand_pos
         next_operand_pos = operands_labels.size();
-        // number_of_native_operands
-        number_of_native_operands = operands_labels.size();
 
         // result_labels
         result_labels = result_subscript;
@@ -368,12 +362,14 @@ namespace sparsetensor::einsum {
         // independent_label_subsets
         calcIndependentLabelSubsets(*this);
 
-
+        for (auto && [op_pos, labels] :this->operands_labels) {
+            op_poss.push_back(op_pos);
+        }
     }
 
     Subscript Subscript::optimize() {
         // if (size((*this).independent_label_subsets) > 1)
-        for (const unordered_set<label_t> &label_subset : (*this).independent_label_subsets) {
+        for (const unordered_set<label_t> &label_subset : this->independent_label_subsets) {
 
             Subscript sub_sc{};
 
@@ -382,28 +378,34 @@ namespace sparsetensor::einsum {
 
             /// operands_labels
             /// distinct_operands_labels
-            for (op_pos_t op_pos = 0; op_pos < (*this).operands_labels.size(); ++op_pos) { // iterate all operands
-                vector<label_t> &operand = (*this).operands_labels[op_pos];
+//            map<op_pos_t , op_pos_t > parent_op_pos2op_pos{};
+            //vector<op_pos_t> original_op_poss{};
+            for (auto & [parent_op_pos, parent_labels] : this->operands_labels) { // iterate all operands
 
                 // write out all labels from label_subset
-                vector<label_t> sub_operand_labels{};
-                set<label_t> sub_distinct_operand_labels{};
-                for (auto label_ = begin(operand); label_ != end(operand);) {
+                vector<label_t> operand_labels{};
+                set<label_t> distinct_operand_labels{};
+                for (auto label_ = begin(parent_labels); label_ != end(parent_labels);) {
                     if (label_subset.count(*label_)) {
-                        sub_operand_labels.push_back(*label_);
-                        sub_distinct_operand_labels.insert(*label_);
+                        operand_labels.push_back(*label_);
+                        distinct_operand_labels.insert(*label_);
                         // and delete them from original subscript
-                        label_ = operand.erase(label_);
-                    } else {
+                        label_ = parent_labels.erase(label_);
+                    } else{
                         ++label_;
                     }
                 }
                 // if there were labels add them to operands_labels
-                if (not sub_distinct_operand_labels.empty()) {
-                    sub_sc.operands_labels[op_pos] = sub_operand_labels;
-                    sub_sc.distinct_operands_labels[op_pos] = sub_distinct_operand_labels;
+                if (not distinct_operand_labels.empty()) {
+                    sub_sc.operands_labels[sub_sc.next_operand_pos] = operand_labels;
+                    sub_sc.distinct_operands_labels[sub_sc.next_operand_pos] = distinct_operand_labels;
+//                    parent_op_pos2op_pos[parent_po_pos] = sub_sc.next_operand_pos++;
+                    original_op_poss.push_back(parent_op_pos);
+                    sub_sc.next_operand_pos++;
                 }
+
             }
+
             // remove operands that got empty from operands_labels
             for (auto it = begin((*this).operands_labels); it != end((*this).operands_labels);) {
                 if (it->second.empty()) {
@@ -421,9 +423,6 @@ namespace sparsetensor::einsum {
                 }
             }
 
-            /// number_of_native_operands
-            sub_sc.number_of_native_operands = sub_sc.operands_labels.size();
-
             /// sub_sc result_labels
             for (label_t label : (*this).result_labels) {
                 if (label_subset.count(label)) {
@@ -432,14 +431,10 @@ namespace sparsetensor::einsum {
             }
 
             /// add new operand to sc
-            (*this).operands_labels[(*this).next_operand_pos] = sub_sc.result_labels;
-            (*this).distinct_operands_labels[(*this).next_operand_pos] = set<label_t>(begin(sub_sc.result_labels),
-                                                                                      end(sub_sc.result_labels));
-
-
-            /// next_operand_pos
-            (*this).next_operand_pos++;
-            sub_sc.next_operand_pos = (*this).next_operand_pos;
+            this->operands_labels[this->next_operand_pos] = sub_sc.result_labels;
+            this->distinct_operands_labels[this->next_operand_pos] = set<label_t>(begin(sub_sc.result_labels),
+                                                                                  end(sub_sc.result_labels));
+            this->op_poss.push_back(this->next_operand_pos);
 
 
             /// label_poss_in_operand
@@ -453,6 +448,10 @@ namespace sparsetensor::einsum {
             this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
             sub_sc.operands_with_label = calcOperandsWithLabel(sub_sc.all_labels, sub_sc.operands_labels);
 
+            for (auto && [op_pos, labels] :sub_sc.operands_labels) {
+                sub_sc.op_poss.push_back(op_pos);
+            }
+
             /// label_dependency_graph
             calcLabelDependencyGraph(*this);
             calcLabelDependencyGraph(sub_sc);
@@ -461,7 +460,10 @@ namespace sparsetensor::einsum {
             calcIndependentLabelSubsets(*this);
             calcIndependentLabelSubsets(sub_sc);
 
-            (*this).sub_subscripts.insert_or_assign((*this).next_operand_pos - 1, sub_sc);
+            this->sub_subscripts.insert_or_assign(this->next_operand_pos, sub_sc);
+
+            /// next_operand_pos
+            this->next_operand_pos++;
         }
         return (*this);
     }
@@ -502,7 +504,6 @@ namespace sparsetensor::einsum {
         }
         return operands_with_label;
     }
-
 
     unordered_map<label_t, label_pos_t> Subscript::calcLabelPosInResult(const vector<label_t> &result_labels) {
         unordered_map<label_t, label_pos_t> label_pos_in_result{};

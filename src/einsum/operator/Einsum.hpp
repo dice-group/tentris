@@ -23,10 +23,10 @@ namespace sparsetensor::einsum::operators {
     class Einsum {
         EvalPlan plan;
 
-        Subscript subscript;
-
         MapTensor<T> *result;
     public:
+        Subscript subscript;
+
         Einsum() : plan({}),
                    subscript({}),
                    result(nullptr) {}

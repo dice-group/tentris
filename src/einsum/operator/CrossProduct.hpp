@@ -29,7 +29,7 @@ namespace sparsetensor::einsum::operators {
             }
         }
 
-        CrossProductTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
+        CrossProductTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) { // todo: make this more narrow
             shape_t result_shape = calcShape<T, HyperTrieTensor>(operands, subscript);
 
             vector<MapTensor<T> *> predecessor_results(predecessors.size());
@@ -37,7 +37,11 @@ namespace sparsetensor::einsum::operators {
             // get results from all predecessors
             for (int i = 0; i < size(predecessors); ++i) {
                 Einsum<T> &predecessor = predecessors.at(i);
-                predecessor_results[i] = predecessor.getResult(operands);
+                vector<HyperTrieTensor<T> *> einsum_operands{};
+                for (const op_pos_t &op_pos : predecessor.subscript.getOriginalOperandPoss()) {
+                    einsum_operands.push_back(operands.at(op_pos));
+                }
+                predecessor_results[i] = predecessor.getResult(einsum_operands);
 
                 if (predecessor_results[i]->nnz = 0) {
                     // TODO: when parallel -> cancel all other threads.
