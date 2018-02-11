@@ -15,7 +15,6 @@
 using std::tuple;
 using std::set;
 using std::optional;
-using std::numeric_limits;
 using std::input_iterator_tag;
 using ::sparsetensor::einsum::label_t;
 using ::sparsetensor::einsum::op_pos_t;
@@ -122,7 +121,7 @@ namespace sparsetensor::hypertrie {
             return Iterator{*this, true};
         }
 
-        class Iterator {
+        class Iterator : public std::iterator<std::input_iterator_tag, tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>>>{
             friend class Join<T>;
 
             /**

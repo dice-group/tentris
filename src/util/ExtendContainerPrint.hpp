@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#include <numeric>
+#include <parallel/numeric>
 #include <set>
 #include <map>
 #include <unordered_set>

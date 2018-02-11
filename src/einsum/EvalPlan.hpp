@@ -9,7 +9,7 @@
 #include <vector>
 #include "../tensor/Tensor.hpp"
 #include "../hypertrie/HyperTrie.hpp"
-#include <algorithm>
+#include <parallel/numeric>
 #include <cmath>
 #include <ostream>
 

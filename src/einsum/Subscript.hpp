@@ -10,7 +10,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <map>
-#include <algorithm>
+#include <parallel/numeric>
 #include <iterator>
 
 using std::unordered_set;

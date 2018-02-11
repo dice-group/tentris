@@ -9,7 +9,7 @@
 #include <optional>
 #include <tuple>
 #include <vector>
-#include <algorithm>
+#include <parallel/numeric>
 
 
 using std::variant;
