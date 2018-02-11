@@ -9,6 +9,7 @@
 #include <numeric>
 #include "../ShapeCalc.hpp"
 #include <algorithm>
+#include <iostream>
 
 
 using sparsetensor::tensor::Tensor;
@@ -45,28 +46,47 @@ namespace sparsetensor::einsum::operators {
                 }
             }
 
-            Key_t result_key = Key_t(this->result->ndim);
-            auto [step, label] = plan.firstStep(hypertrie_operands);
-
+            Key_t result_key = Key_t(this->result->ndim,50);
+            auto[step, label] = plan.firstStep(hypertrie_operands);
+            std::cout << "Initial Label: " << label << std::endl;
+            std::cout << "Initial Step: " << step << std::endl;
+            std::cout << "####### start ####" << std::endl;
             rekEinsum(hypertrie_operands, result_key, step, label);
         }
 
 
         void rekEinsum(const vector<variant<HyperTrie<T> *, T>> &operands, const Key_t &result_key,
                        PlanStep &step, const label_t &label) {
+            std::cout << "Current Key: " << result_key << std::endl;
+            std::cout << "Current Label: " << label << std::endl;
+            std::cout << "Current Step: " << step << std::endl;
+            std::cout << "Current Tensors: \n";
+            for (const auto &operand : operands) {
+                if (std::holds_alternative<HyperTrie<T> *>(operand))
+                    std::cout << *std::get<HyperTrie<T> *>(operand) << "\n";
+                else
+                    std::cout << std::get<T>(operand) << "\n";
+            }
+
+            std::cout << "\n";
             if (not step.all_done) {
                 Join<T> join{operands, step, label, result_key};
                 // TODO: parallelize
-                for (const auto &[next_operands, next_result_key] : join) {
-                    auto [next_step, next_label] = plan.nextStep<T>(operands, step, label);
+                for (const auto &
+                [next_operands, next_result_key] : join) {
+                    std::cout << "####### rek ####" << label << std::endl;
+                    auto[next_step, next_label] = plan.nextStep<T>(operands, step, label);
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
                 }
             } else {
+                std::cout << "####### calc ####" << label << std::endl;
                 T result_value = 1;
                 for (auto &&operand : operands) {
                     result_value *= std::get<T>(operand);
                 }
-                result->set(result_key, result->get(result_key) + result_value);
+                const T res_val = result->get(result_key) + result_value;
+                std::cout << "## add " << result_value << "to" << result_key << "results in:" << res_val << std::endl;
+                result->set(result_key, res_val);
             }
         }
 

@@ -11,6 +11,7 @@
 #include "../hypertrie/HyperTrie.hpp"
 #include <algorithm>
 #include <cmath>
+#include <ostream>
 
 using std::optional;
 using sparsetensor::hypertrie::HyperTrie;
@@ -87,6 +88,17 @@ namespace sparsetensor::einsum {
 
     public:
         PlanStep getNextStep(label_t label);
+
+        friend ostream &operator<<(ostream &os, const PlanStep &step) {
+
+
+            os << "<PlanStep: "
+               << "label_candidates: " << step.label_candidates << ",\n processed_labels: " << step.processed_labels
+               << ",\n operands_with_label: " << step.operands_with_label << ",\n label_pos_in_result: "
+               << step.label_pos_in_result << ",\n label_poss_in_operand: " << step.label_poss_in_operand << ",\n all_done: "
+               << step.all_done << ">";
+            return os;
+        }
     };
 
     class EvalPlan {
@@ -238,7 +250,6 @@ namespace sparsetensor::einsum {
 
         return PlanStep{label_candidates, processed_labels, operands_labels, plan};
     }
-
 
 }
 #endif //SPARSETENSOR_EINSUM_EVALPLAN_HPP

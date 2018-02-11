@@ -105,7 +105,6 @@ namespace sparsetensor::hypertrie {
             // position in result
             const optional<label_pos_t> &result_pos_ = planStep.labelPosInResult(label);
             has_result_pos = bool(result_pos_);
-            label_pos_t result_pos{};
             if (has_result_pos = bool(result_pos_))
                 result_pos = *result_pos_;
         }
@@ -149,8 +148,6 @@ namespace sparsetensor::hypertrie {
 
             bool ended = false;
 
-            const Key_t &result_key;
-
             vector<variant<HyperTrie<T> *, T>> joined_operands;
             Key_t joined_key;
 
@@ -165,7 +162,6 @@ namespace sparsetensor::hypertrie {
                     current_key_part(join.min_key_part),
                     in_result(join.has_result_pos),
                     result_pos(join.result_pos),
-                    result_key(join.result_key),
                     joined_key(join.result_key),
                     joined_operands(join.operands){
                 this->ended = ended;
