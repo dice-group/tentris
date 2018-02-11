@@ -29,7 +29,9 @@ TEST(TestEinsum, simple_call) {
     raw_subscript res_sc{0, 2};
 
     CrossProductTensor<int> *const result = einsum<int>(operands, op_sc, res_sc);
-
+    for (const auto &non_zero : *result) {
+        std::cout << non_zero << std::endl;
+    }
 
 }
 

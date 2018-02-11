@@ -45,12 +45,12 @@ namespace sparsetensor::einsum::operators {
                 }
                 predecessor_results[i] = predecessor.getResult(einsum_operands);
 
-                if (predecessor_results[i]->nnz = 0) {
+                if (predecessor_results[i]->nnz == 0) {
                     // TODO: when parallel -> cancel all other threads.
                     return new CrossProductTensor<T>(result_shape);
                 }
             }
-            return new CrossProductTensor<T>(predecessor_results, subscript);
+            return new CrossProductTensor<T>(predecessor_results, optimized_subscript);
         }
     };
 }
