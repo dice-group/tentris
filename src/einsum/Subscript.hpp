@@ -436,6 +436,8 @@ namespace sparsetensor::einsum {
 
             sub_sc.calcDependentFields();
 
+            this->sub_subscripts.insert_or_assign(sub_sc_pos++, sub_sc);
+
             // remove operands that got empty from operands_labels
             for (auto it = begin(this->operands_labels); it != end(this->operands_labels);) {
                 if (it->second.empty()) {
@@ -444,24 +446,19 @@ namespace sparsetensor::einsum {
                     ++it;
                 }
             }
-
-            /// add new operand to sc
-            this->operands_labels[this->next_operand_pos] = sub_sc.result_labels;
-            this->op_poss.push_back(this->next_operand_pos);
-
-            this->sub_subscripts.insert_or_assign(sub_sc_pos++, sub_sc);
-
-            /// next_operand_pos
-            this->next_operand_pos++;
         }
+
+        /// add new operands to sc
+        for(auto &[drop, sub_sub_sc]: this->sub_subscripts){
+            this->operands_labels[this->next_operand_pos++] = sub_sub_sc.result_labels;
+        }
+
+        this->all_labels = unordered_set<label_t >(this->result_labels.begin(), this->result_labels.end());
 
         vector<op_pos_t> old_op_pos{};
-        for (const auto &
-            [op_pos, labels]:operands_labels) {
+        for (const auto &[op_pos, labels]:operands_labels) {
             old_op_pos.push_back(op_pos);
         }
-
-
         this->next_operand_pos = 0;
         for (const op_pos_t old_op_pos: old_op_pos) {
             {
@@ -559,10 +556,6 @@ namespace sparsetensor::einsum {
             op_poss.push_back(op_pos);
         return op_poss;
     }
-
-
-
-
 }
 
 std::ostream &operator<<(std::ostream &out, sparsetensor::einsum::Subscript &subscript) {

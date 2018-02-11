@@ -44,10 +44,17 @@ TEST(TestSubscript, optimize) {
     vector<vector<label_t >> raw_op_sc{
             {3, 2, 1},
             {1, 2, 3, 2},
-            {0}
+            {0},
+            { 5,6,7}
     };
 
     vector<label_t> raw_res_sc{3, 0};
+
+    // print
+    std::cout << "raw_op_labels:\n\t" << raw_op_sc << std::endl;
+
+    std::cout << "raw_res_labels:\n\t" << raw_res_sc << std::endl;
+
 
     Subscript opt_sc = Subscript{raw_op_sc, raw_res_sc}.optimize();
 
