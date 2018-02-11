@@ -71,7 +71,7 @@ namespace sparsetensor::einsum::util {
          * Get all connected components e.g. all sets of nodes that are reachable form each other.
          * @return set of connected components.
          */
-        unordered_set<unordered_set<T>> getConnectedComponents() {
+        unordered_set<unordered_set<T>> getConnectedComponents() const {
             // this is basically a breadth first search
             // see: https://en.wikipedia.org/wiki/Breadth-first_search
             unordered_set<T> unfinished_nodes{this->nodes};
@@ -91,7 +91,7 @@ namespace sparsetensor::einsum::util {
                 while (not open_nodes.empty()) {
                     T node = *open_nodes.begin();
                     open_nodes.erase(node);
-                    const unordered_set<T> &adjacent_nodes = edges[node];
+                    const unordered_set<T> &adjacent_nodes = edges.at(node);
                     for (T adj_node : adjacent_nodes) {
                         if (unfinished_nodes.count(adj_node)) {
                             connected_component.insert(adj_node);

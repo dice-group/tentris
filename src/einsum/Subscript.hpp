@@ -257,14 +257,38 @@ namespace sparsetensor::einsum {
          * - distinct_operands_labels
          * @param sc Subscript to be updated.
          */
-        static void calcLabelDependencyGraph(Subscript &sc);
+        static UndirectedGraph<label_t>
+        calcLabelDependencyGraph(const map<op_pos_t, set<label_t>> &distinct_operands_labels);
 
         /**
          * Calculates the independent_label_subsets field using:
          * - label_dependency_graph
          * @param sc Subscript to be updated.
          */
-        static void calcIndependentLabelSubsets(Subscript &sc);
+        static unordered_set<unordered_set<label_t>>
+        calcIndependentLabelSubsets(const UndirectedGraph<label_t> &independent_label_subsets);
+
+        static map<op_pos_t, set<label_t>>
+        calcDistinctOperandsLabels(const map<op_pos_t, vector<label_t>> &operands_labels);
+
+        static vector<op_pos_t> calcOperandsPoss(const map<op_pos_t, vector<label_t>> &operands_labels);
+
+        void calcDependentFields() {
+            /// calc fields
+            this->distinct_operands_labels = calcDistinctOperandsLabels(this->operands_labels);
+
+            this->label_poss_in_operand = calcLabelPossInOperand(this->operands_labels);
+
+            this->label_pos_in_result = calcLabelPosInResult(this->result_labels);
+
+            this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
+
+            this->op_poss = calcOperandsPoss(this->operands_labels);
+
+            this->label_dependency_graph = calcLabelDependencyGraph(this->distinct_operands_labels);
+
+            this->independent_label_subsets = calcIndependentLabelSubsets(this->label_dependency_graph);
+        }
     };
 
 /*
@@ -335,13 +359,13 @@ namespace sparsetensor::einsum {
         }
 
         // operands_labels
-        // distinct_operands_labels
         for (op_pos_t op_pos = 0; op_pos < operand_subscripts.size(); ++op_pos) {
-            vector<label_t> &reference = operand_subscripts[op_pos];
-            operands_labels[op_pos] = reference;
-            set<label_t> distict_labels(reference.begin(), reference.end());
-            distinct_operands_labels[op_pos] = distict_labels;
+            vector<label_t> &labels = operand_subscripts[op_pos];
+            operands_labels[op_pos] = labels;
         }
+
+
+        this->distinct_operands_labels = calcDistinctOperandsLabels(this->operands_labels);
 
         // next_operand_pos
         next_operand_pos = operands_labels.size();
@@ -358,11 +382,13 @@ namespace sparsetensor::einsum {
         // operands_with_label
         this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
 
+        this->op_poss = calcOperandsPoss(this->operands_labels);
+
         // label_dependency_graph
-        calcLabelDependencyGraph(*this);
+        this->label_dependency_graph = calcLabelDependencyGraph(this->distinct_operands_labels);
 
         // independent_label_subsets
-        calcIndependentLabelSubsets(*this);
+        this->independent_label_subsets = calcIndependentLabelSubsets(this->label_dependency_graph);
 
         for (auto && [op_pos, labels] :this->operands_labels) {
             op_poss.push_back(op_pos);
@@ -370,101 +396,84 @@ namespace sparsetensor::einsum {
     }
 
     Subscript Subscript::optimize() {
-        // if (size((*this).independent_label_subsets) > 1)
+        op_pos_t sub_sc_pos = 0;
         for (const unordered_set<label_t> &label_subset : this->independent_label_subsets) {
 
             Subscript sub_sc{};
 
-            /// all_labels
+            /// init all_labels
             sub_sc.all_labels = unordered_set<label_t>{label_subset};
 
-            /// operands_labels
-            /// distinct_operands_labels
+            /// init operands_labels
+            /// and original op_poss
             for (auto & [parent_op_pos, parent_labels] : this->operands_labels) { // iterate all operands
 
                 // write out all labels from label_subset
                 vector<label_t> operand_labels{};
-                set<label_t> distinct_operand_labels{};
                 for (auto label_ = begin(parent_labels); label_ != end(parent_labels);) {
                     if (label_subset.count(*label_)) {
                         operand_labels.push_back(*label_);
-                        distinct_operand_labels.insert(*label_);
                         // and delete them from original subscript
                         label_ = parent_labels.erase(label_);
-                    } else{
+                    } else {
                         ++label_;
                     }
                 }
                 // if there were labels add them to operands_labels
-                if (not distinct_operand_labels.empty()) {
+                if (not operand_labels.empty()) {
                     sub_sc.operands_labels[sub_sc.next_operand_pos] = operand_labels;
-                    sub_sc.distinct_operands_labels[sub_sc.next_operand_pos] = distinct_operand_labels;
-//                    parent_op_pos2op_pos[parent_po_pos] = sub_sc.next_operand_pos++;
                     sub_sc.original_op_poss.push_back(parent_op_pos);
                     sub_sc.next_operand_pos++;
                 }
-
             }
 
-            // remove operands that got empty from operands_labels
-            for (auto it = begin((*this).operands_labels); it != end((*this).operands_labels);) {
-                if (it->second.empty()) {
-                    it = (*this).operands_labels.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-            // remove operands that got empty from distinct_operands_labels
-            for (auto it = begin((*this).distinct_operands_labels); it != end((*this).distinct_operands_labels);) {
-                if (it->second.empty()) {
-                    it = (*this).distinct_operands_labels.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-
-            /// sub_sc result_labels
-            for (label_t label : (*this).result_labels) {
+            /// init result_labels
+            for (const label_t &label : this->result_labels) {
                 if (label_subset.count(label)) {
                     sub_sc.result_labels.push_back(label);
                 }
             }
 
-            /// add new operand to sc
-            this->operands_labels[this->next_operand_pos] = sub_sc.result_labels;
-            this->distinct_operands_labels[this->next_operand_pos] = set<label_t>(begin(sub_sc.result_labels),
-                                                                                  end(sub_sc.result_labels));
-            this->op_poss.push_back(this->next_operand_pos);
+            sub_sc.calcDependentFields();
 
-
-            /// label_poss_in_operand
-            this->label_poss_in_operand = calcLabelPossInOperand(this->operands_labels);
-            sub_sc.label_poss_in_operand = calcLabelPossInOperand(sub_sc.operands_labels);
-
-            /// label_pos_in_result
-            this->label_pos_in_result = calcLabelPosInResult(this->result_labels);
-
-            /// operands_with_label
-            this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
-            sub_sc.operands_with_label = calcOperandsWithLabel(sub_sc.all_labels, sub_sc.operands_labels);
-
-            for (auto && [op_pos, labels] :sub_sc.operands_labels) {
-                sub_sc.op_poss.push_back(op_pos);
+            // remove operands that got empty from operands_labels
+            for (auto it = begin(this->operands_labels); it != end(this->operands_labels);) {
+                if (it->second.empty()) {
+                    it = this->operands_labels.erase(it);
+                } else {
+                    ++it;
+                }
             }
 
-            /// label_dependency_graph
-            calcLabelDependencyGraph(*this);
-            calcLabelDependencyGraph(sub_sc);
+            /// add new operand to sc
+            this->operands_labels[this->next_operand_pos] = sub_sc.result_labels;
+            this->op_poss.push_back(this->next_operand_pos);
 
-            /// independent_label_subsets
-            calcIndependentLabelSubsets(*this);
-            calcIndependentLabelSubsets(sub_sc);
-
-            this->sub_subscripts.insert_or_assign(this->next_operand_pos, sub_sc);
+            this->sub_subscripts.insert_or_assign(sub_sc_pos++, sub_sc);
 
             /// next_operand_pos
             this->next_operand_pos++;
         }
+
+        vector<op_pos_t> old_op_pos{};
+        for (const auto &
+            [op_pos, labels]:operands_labels) {
+            old_op_pos.push_back(op_pos);
+        }
+
+
+        this->next_operand_pos = 0;
+        for (const op_pos_t old_op_pos: old_op_pos) {
+            {
+                auto node_handle = operands_labels.extract(old_op_pos);
+                node_handle.key() = this->next_operand_pos;
+                operands_labels.insert(std::move(node_handle));
+            }
+            ++(this->next_operand_pos);
+        }
+
+        /// calc fields
+        calcDependentFields();
         return (*this);
     }
 
@@ -515,18 +524,43 @@ namespace sparsetensor::einsum {
     }
 
 
-    void Subscript::calcLabelDependencyGraph(Subscript &sc) {
-        sc.label_dependency_graph.clear();
-        for (const auto &labels :sc.distinct_operands_labels) {
-            sc.label_dependency_graph.addCompleteGraph(labels.second);
+    UndirectedGraph<label_t>
+    Subscript::calcLabelDependencyGraph(const map<op_pos_t, set<label_t>> &distinct_operands_labels) {
+        UndirectedGraph<label_t> label_dependency_graph{};
+        for (const auto &
+            [op_id, labels] :distinct_operands_labels) {
+            label_dependency_graph.addCompleteGraph(labels);
         }
+        return label_dependency_graph;
     }
 
 
-    void Subscript::calcIndependentLabelSubsets(Subscript &sc) {
-        sc.independent_label_subsets.clear();
-        sc.independent_label_subsets = sc.label_dependency_graph.getConnectedComponents();
+    unordered_set<unordered_set<label_t>>
+    Subscript::calcIndependentLabelSubsets(const UndirectedGraph<label_t> &label_dependency_graph) {
+        return label_dependency_graph.getConnectedComponents();
     }
+
+    map<op_pos_t, set<label_t>>
+    Subscript::calcDistinctOperandsLabels(const map<op_pos_t, vector<label_t>> &operands_labels) {
+        // operands_labels
+        // distinct_operands_labels
+        map<op_pos_t, set<label_t>> distinct_operands_labels{};
+        for (const auto &
+            [op_pos, op_labels]:operands_labels) {
+            set<label_t> distict_labels(op_labels.begin(), op_labels.end());
+            distinct_operands_labels[op_pos] = distict_labels;
+        }
+        return distinct_operands_labels;
+    }
+
+    vector<op_pos_t> Subscript::calcOperandsPoss(const map<op_pos_t, vector<label_t>> &operands_labels) {
+        vector<op_pos_t> op_poss{};
+        for (op_pos_t op_pos = 0; op_pos < operands_labels.size(); ++op_pos)
+            op_poss.push_back(op_pos);
+        return op_poss;
+    }
+
+
 
 
 }
