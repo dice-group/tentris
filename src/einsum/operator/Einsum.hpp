@@ -2,16 +2,14 @@
 #define SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
 
 
+#include <parallel/algorithm>
+#include <parallel/numeric>
+#include <vector>
+
 #include "../../tensor/MapTensor.hpp"
 #include "../../einsum/EvalPlan.hpp"
 #include "../../hypertrie/Join.hpp"
-
-#include <parallel/numeric>
 #include "../ShapeCalc.hpp"
-#include <parallel/algorithm>
-#include <iostream>
-#include <thread>
-#include <omp.h>
 
 
 using sparsetensor::tensor::Tensor;
@@ -22,23 +20,36 @@ using sparsetensor::hypertrie::Join;
 
 namespace sparsetensor::einsum::operators {
 
+    /**
+     * This is an basic Einstein-Summation Operator that can perform any Einsteinsummation Operation. In most cases this
+     * operator should only be used as sub operator of a CrossProduct.
+     * @tparam T type of the values hold by processed tensors.
+     */
     template<typename T>
-    class Einsum {
+    class Einsum : public Operator<T, HyperTrieTensor, MapTensor> {
+        /**
+         * The evaluation plan for this->subscript.
+         */
         EvalPlan plan;
-
+        /**
+         * This is where the result is written to.
+         */
         MapTensor<T> *result;
+
     public:
-        Subscript subscript;
+        /**
+         * Basic Constructor.
+         * @param subscript Subscript that defines what the operator does.
+         */
+        Einsum(const Subscript &subscript) : Operator<T, HyperTrieTensor, MapTensor>{subscript},
+                                             plan(EvalPlan{subscript}) {}
 
-        Einsum() : plan({}),
-                   subscript({}),
-                   result(nullptr) {}
-
-        Einsum(const Subscript &subscript) : plan(EvalPlan{subscript}), subscript(subscript) {
-
-        }
-
+        /**
+         * Prepares the arguments for the recursive calculation of the results.
+         * @param operands vector of tensors
+         */
         void rekEinsum(const vector<HyperTrieTensor<T> *> &operands) {
+            // unpacks HyperTrieTensors to HyperTries or value types T
             vector<variant<HyperTrie<T> *, T>> hypertrie_operands{};
             for (HyperTrieTensor<T> *operand : operands) {
                 if (operand->ndim == 0) {
@@ -47,76 +58,45 @@ namespace sparsetensor::einsum::operators {
                     hypertrie_operands.push_back({operand->trie});
                 }
             }
-
+            // initialize emtpy result key
             Key_t result_key = Key_t(this->result->ndim, 50);
+            // plan first step
             auto[step, label] = plan.firstStep(hypertrie_operands);
-//            std::cout << "Initial Label: " << label << std::endl;
-//            std::cout << "Initial Step: " << step << std::endl;
-//            std::cout << "####### start ####" << std::endl;
+            // start recursion
             rekEinsum(hypertrie_operands, result_key, step, label);
         }
 
-
+        /**
+         * Acutal recursion to calculate the result
+         * @param operands vector of current operands
+         * @param result_key current result key. Is filled step by step. When all positions are filled this key represents
+         * the key of an result value.
+         * @param step current step. This holds also data to plan the next step.
+         * @param label the current label that is to be processed in this recursive step
+         */
         void rekEinsum(const vector<variant<HyperTrie<T> *, T>> &operands, const Key_t &result_key,
                        PlanStep &step, const label_t &label) {
-//            std::cout << "Current Key: " << result_key << std::endl;
-//            std::cout << "Current Label: " << label << std::endl;
-//            std::cout << "Current Step: " << step << std::endl;
-//            std::cout << "Current Tensors: \n";
-//            for (const auto &operand : operands) {
-//                if (std::holds_alternative<HyperTrie<T> *>(operand))
-//                    std::cout << *std::get<HyperTrie<T> *>(operand) << "\n";
-//                else
-//                    std::cout << std::get<T>(operand) << "\n";
-//            }
-
-//            std::cout << "\n";
-
+            // there are steps left
             if (not step.all_done) {
+                // calculate next operands and result_key from current operands, step, label and resultKey
                 Join<T> join{operands, step, label, result_key};
-                // TODO: parallelize
 
-
-
-                const typename Join<T>::Iterator &join_end = join.end();
-//                #pragma omp parallel for private(threadID)
-                // __gnu_parallel::for_each
-                std::for_each(join.begin(), join.end(), [&](const auto &entry){
-                    auto tid = omp_get_thread_num();
-                    printf("Hello World from thread = %d\n", tid);
-                    std::cout<<std::this_thread::get_id()<<std::endl;
-                    const auto &[next_operands, next_result_key] = entry;
-//                    std::cout << "####### rek ####" << label << std::endl;
+                for (auto[next_operands, next_result_key] : join) {
                     auto[next_step, next_label] = plan.nextStep<T>(operands, step, label);
+                    // start next recursive step.
                     rekEinsum(next_operands, next_result_key, next_step, next_label);
-                });
-//                for(typename Join<T>::Iterator join_it = join.begin(); join_it != join_end; ++join_it){
-//                    const auto &[next_operands, next_result_key] = *join_it;
-//                    threadID = omp_get_thread_num();
-//                    #pragma omp critical
-//                    {
-//                        printf("Thread %d reporting\n", threadID);
-//                    }
-//
-////                    std::cout << "####### rek ####" << label << std::endl;
-//                    auto[next_step, next_label] = plan.nextStep<T>(operands, step, label);
-//                    rekEinsum(next_operands, next_result_key, next_step, next_label);
-//                }
-            } else {
-//                std::cout << "####### calc ####" << label << std::endl;
+                }
+            } else { // there are no steps left
                 T result_value = 1;
-                for (auto &&operand : operands) {
+                for (const auto &operand : operands) {
                     result_value *= std::get<T>(operand);
                 }
-                const T res_val = result->get(result_key) + result_value;
-//                std::cout << "## add " << result_value << "to" << result_key << "results in:" << res_val << std::endl;
-                result->set(result_key, res_val);
+                result->set(result_key, result->get(result_key) + result_value);
             }
         }
 
-
         MapTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
-            const shape_t &result_shape = calcShape<T, HyperTrieTensor>(operands, subscript);
+            const shape_t &result_shape = calcShape<T, HyperTrieTensor>(operands, this->subscript);
             result = new MapTensor<T>(result_shape);
             rekEinsum(operands);
             return result;

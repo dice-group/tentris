@@ -175,7 +175,7 @@ namespace sparsetensor::tensor {
             id++;
             if (id != end_id) {
 
-                for (int i = 0; i < input_iters.size(); ++i) {
+                for (size_t i = 0; i < input_iters.size(); ++i) {
                     Iterator<T, MapTensor> &input_iter = input_iters[i];
 
                     ++input_iter;
@@ -215,7 +215,7 @@ namespace sparsetensor::tensor {
                 value *= input_value;
                 // set key at right positions
                 const vector<label_pos_t> &poss_in_result = *poss_in_result_;
-                for (int j = 0; j < input_key.size(); ++j) {
+                for (size_t j = 0; j < input_key.size(); ++j) {
                     const label_pos_t &pos_in_result = poss_in_result[j];
                     const key_part_t &key_part = input_key[j];
                     key[pos_in_result] = key_part;

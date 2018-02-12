@@ -2,9 +2,10 @@
 #define SPARSETENSOR_EINSUM_OPERATOR_CROSSPRODUCT_HPP
 
 
-#include "Einsum.hpp"
 #include <vector>
 #include <tuple>
+#include "Operator.hpp"
+#include "Einsum.hpp"
 #include "../../tensor/CrossProductTensor.hpp"
 
 using std::vector;
@@ -17,22 +18,22 @@ using sparsetensor::tensor::MapTensor;
 namespace sparsetensor::einsum::operators {
 
     template<typename T>
-    class CrossProduct {
-        const Subscript &subscript;
+    class CrossProduct : public Operator<T, HyperTrieTensor, CrossProductTensor> {
+    protected:
         const Subscript optimized_subscript;
         vector<Einsum<T>> predecessors{};
     public:
         explicit CrossProduct(const Subscript &subscript) :
-                subscript(subscript),
+                Operator<T, HyperTrieTensor, CrossProductTensor>{subscript},
                 optimized_subscript(Subscript{subscript}.optimize()) {
-            const map<op_pos_t, Subscript> &sub_subscripts = optimized_subscript.getSubSubscripts();
-            for (const auto &[op_id, sub_subscript] : sub_subscripts) {
+
+            for (const auto &[op_id, sub_subscript] : optimized_subscript.getSubSubscripts()) {
                 predecessors.push_back({sub_subscript});
             }
         }
 
-        CrossProductTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) { // todo: make this more narrow
-            shape_t result_shape = calcShape<T, HyperTrieTensor>(operands, subscript);
+        CrossProductTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
+            shape_t result_shape = calcShape<T, HyperTrieTensor>(operands, this->subscript);
 
             vector<MapTensor<T> *> predecessor_results(predecessors.size());
             // TODO: make parallel

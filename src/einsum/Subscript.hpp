@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <map>
 #include <parallel/numeric>
+#include <parallel/algorithm>
 #include <iterator>
 
 using std::unordered_set;
@@ -580,3 +581,4 @@ std::ostream &operator<<(std::ostream &out, sparsetensor::einsum::Subscript &sub
 }
 
 #endif //SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
+

@@ -185,7 +185,7 @@ namespace sparsetensor::hypertrie {
 
                     // find key_pos with minimal cardinality position
                     // todo: this can be precomputed and cached for every possible cardinality order.
-                    key_pos_t min_card_key_pos = getMinCardKeyPos(non_slice_key_parts, current_subtrie, posCalc);
+                    key_pos_t min_card_key_pos = current_subtrie->getMinCardKeyPos(non_slice_key_parts, posCalc);
                     key_pos_t min_card_subkey_pos = posCalc->key_to_subkey_pos(min_card_key_pos);
 
                     // get the child at the key_pos with minimal cardinality
@@ -254,12 +254,10 @@ namespace sparsetensor::hypertrie {
         }
 
         key_pos_t getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts,
-                                   const HyperTrie<T> *result,
                                    const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
-            for (const auto &
-            [key_pos, key_part] : non_slice_key_parts) {
+            for (const auto &[key_pos, key_part] : non_slice_key_parts) {
                 size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
                 if (card < min_card) {
                     min_card = card;
