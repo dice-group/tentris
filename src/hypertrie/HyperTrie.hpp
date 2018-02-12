@@ -103,7 +103,7 @@ namespace sparsetensor::hypertrie {
         variant<HyperTrie<T> *, T> &
         setChild(const key_pos_t pos, const key_part_t key_part,
                  const optional<variant<HyperTrie<T> *, T>> &value = std::nullopt) {
-            map<key_part_t, variant<HyperTrie<T> *, T>> * edge = getOrCreateEdges(pos);
+            map<key_part_t, variant<HyperTrie<T> *, T>> *edge = getOrCreateEdges(pos);
 
             // depth > 1 means it is an inner node. So a sub-HyperTrie is added not a T value.
             if (this->depth > 1 && not value) {
@@ -214,9 +214,8 @@ namespace sparsetensor::hypertrie {
                 if (not edges->empty()) {
                     return edges->begin()->first;
                 }
-            } catch (...) {
-                return KEY_PART_MAX;
-            }
+            } catch (...) {}
+            return KEY_PART_MAX;
         }
 
         /**
@@ -230,9 +229,8 @@ namespace sparsetensor::hypertrie {
                 if (not edges->empty()) {
                     return edges->rbegin()->first;
                 }
-            } catch (...) {
-                return KEY_PART_MIN;
-            }
+            } catch (...) {}
+            return KEY_PART_MIN;
         }
 
         /**
@@ -247,7 +245,7 @@ namespace sparsetensor::hypertrie {
 
         inline vector<size_t> getCards(const vector<key_pos_t> &key_poss) const {
             vector<size_t> cards(key_poss.size());
-            for (int i = 0; i < key_poss.size(); ++i) {
+            for (size_t i = 0; i < key_poss.size(); ++i) {
                 cards[i] = getCard(key_poss.at(i));
             }
             return cards;
@@ -257,7 +255,8 @@ namespace sparsetensor::hypertrie {
                                    const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
-            for (const auto &[key_pos, key_part] : non_slice_key_parts) {
+            for (const auto &
+                [key_pos, key_part] : non_slice_key_parts) {
                 size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
                 if (card < min_card) {
                     min_card = card;

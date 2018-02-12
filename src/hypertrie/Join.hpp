@@ -104,7 +104,7 @@ namespace sparsetensor::hypertrie {
             // position in result
             const optional<label_pos_t> &result_pos_ = planStep.labelPosInResult(label);
             has_result_pos = bool(result_pos_);
-            if (has_result_pos = bool(result_pos_))
+            if (has_result_pos == bool(result_pos_))
                 result_pos = *result_pos_;
         }
 
@@ -177,8 +177,6 @@ namespace sparsetensor::hypertrie {
             Iterator &operator++() {
                 if (not ended) {
                     while (not min_card_diagonal_iter.hasEnded()) {
-
-                        bool match = true;
 
                         const auto & [current_key_part, min_card_op] = *min_card_diagonal_iter;
 
