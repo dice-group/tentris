@@ -11,7 +11,7 @@ namespace sparsetensor::einsum::operators {
     /**
      * Abstract superclass to Operators that process the einsum.
      * They are initialized by an subscript and can later be applied to any input tensors that satisfy the subscript.
-     * @tparam T type of the values hold by processed tensors.
+     * @tparam T type of the values hold by processed Tensors.
      * @tparam IN_TENSOR type of the tensor that is accepted as inputs by the operator.
      * @tparam OUT_TENSOR type if the tensor that is output by the operator as result.
      */

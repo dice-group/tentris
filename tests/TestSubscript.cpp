@@ -56,7 +56,7 @@ TEST(TestSubscript, optimize) {
     std::cout << "raw_res_labels:\n\t" << raw_res_sc << std::endl;
 
 
-    Subscript opt_sc = Subscript{raw_op_sc, raw_res_sc}.optimize();
+    Subscript opt_sc = Subscript{raw_op_sc, raw_res_sc}.bracketCrossproductFactors();
 
     std::cout << opt_sc << std::endl;
 

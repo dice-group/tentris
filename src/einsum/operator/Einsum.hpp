@@ -21,9 +21,10 @@ using sparsetensor::hypertrie::Join;
 namespace sparsetensor::einsum::operators {
 
     /**
-     * This is an basic Einstein-Summation Operator that can perform any Einsteinsummation Operation. In most cases this
-     * operator should only be used as sub operator of a CrossProduct.
-     * @tparam T type of the values hold by processed tensors.
+     * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this
+     * operator should only be used as sub operator of a CrossProduct as it is not very effective if an cross product is involved.
+     * @see CrossProduct
+     * @tparam T type of the values hold by processed Tensors.
      */
     template<typename T>
     class Einsum : public Operator<T, HyperTrieTensor, MapTensor> {

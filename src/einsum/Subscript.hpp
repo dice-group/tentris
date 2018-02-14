@@ -85,7 +85,7 @@ namespace sparsetensor::einsum {
          * This provides brackets out all independently computable parts and resulting in a cross product of the bracketed parts.
          * @return this instance
          */
-        Subscript optimize();
+        Subscript bracketCrossproductFactors();
 
         /**
          * A set of all labels used in this subscript. Labels from bracketed expressions are not included.
@@ -396,7 +396,7 @@ namespace sparsetensor::einsum {
         }
     }
 
-    Subscript Subscript::optimize() {
+    Subscript Subscript::bracketCrossproductFactors() {
         op_pos_t sub_sc_pos = 0;
         for (const unordered_set<label_t> &label_subset : this->independent_label_subsets) {
 
