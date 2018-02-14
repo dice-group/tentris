@@ -21,7 +21,7 @@ namespace sparsetensor::einsum::operators {
      * This is a cross product operator that takes in any number of operands and maps every of their dimensions into an
      * result dimension. The Mapping is defind by an sparsetensor::einsum::Subscript.
      * Example of an cross product: ij,kl->il <=> m,n->mn with m = (ij->i)  and n = (kl->l)
-     * @tparam T type of the values hold by processed Tensors.
+     * @tparam T type of the values hold by processed Tensors (Tensor).
      */
     template<typename T>
     class CrossProduct : public Operator<T, HyperTrieTensor, CrossProductTensor> {
@@ -80,7 +80,7 @@ namespace sparsetensor::einsum::operators {
                 // if one of the results is 0 the cross product will be zero. So no more calculation is needed.
                 if (predecessor_results.at(i)->nnz == 0) {
                     // TODO: when parallel -> cancel all other threads.
-                    shape_t result_shape = calcShape<T, HyperTrieTensor>(operands, this->subscript);
+                    shape_t result_shape = calcResultShape<T, HyperTrieTensor>(operands, this->subscript);
                     return new CrossProductTensor<T>(result_shape);
                 }
             }

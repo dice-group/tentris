@@ -15,6 +15,14 @@ using sparsetensor::einsum::operators::CrossProduct;
 namespace sparsetensor::einsum {
 
 
+    /**
+     * Solves a Einstein Summation Convention on given Tensors.
+     * @tparam T type of the values hold by processed Tensors (Tensor).
+     * @param operands HyperTrieTensor Operands to process
+     * @param raw_operand_subscripts labels of the Operands
+     * @param raw_result_subscript result labels
+     * @return a Tensor holding the result. The CrossProductTensor must be freed manually.
+     */
     template<typename T>
     CrossProductTensor<T> *einsum(const vector<HyperTrieTensor<T> *> operands,
                                   const vector<raw_subscript> raw_operand_subscripts,
@@ -22,11 +30,12 @@ namespace sparsetensor::einsum {
 
         Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript};
 
+        // generate a operator tree from the subscript
+        // TODO: cache
         CrossProduct<T> operator_tree{subscript};
 
-        CrossProductTensor<T> *result = operator_tree.getResult(operands);
-
-        return result;
+        // calculate and return the result.
+        return operator_tree.getResult(operands);
     }
 }
 

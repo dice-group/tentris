@@ -107,10 +107,19 @@ namespace sparsetensor::einsum::util {
             return connected_components;
         }
 
+        /**
+         * Get all neignbors of a node.
+         * @param node the node.
+         * @return the neigbors.
+         */
         unordered_set<T> neighbors(const T node) const {
             return edges.at(node);
         }
 
+        /**
+         * Get all nodes.
+         * @return all nodes.
+         */
         unordered_set<T> getNodes() const {
             return nodes;
         }

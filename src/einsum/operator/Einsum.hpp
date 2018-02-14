@@ -24,7 +24,7 @@ namespace sparsetensor::einsum::operators {
      * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this
      * operator should only be used as sub operator of a CrossProduct as it is not very effective if an cross product is involved.
      * @see CrossProduct
-     * @tparam T type of the values hold by processed Tensors.
+     * @tparam T type of the values hold by processed Tensors (Tensor).
      */
     template<typename T>
     class Einsum : public Operator<T, HyperTrieTensor, MapTensor> {
@@ -97,7 +97,7 @@ namespace sparsetensor::einsum::operators {
         }
 
         MapTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
-            const shape_t &result_shape = calcShape<T, HyperTrieTensor>(operands, this->subscript);
+            const shape_t &result_shape = calcResultShape<T, HyperTrieTensor>(operands, this->subscript);
             result = new MapTensor<T>(result_shape);
             rekEinsum(operands);
             return result;

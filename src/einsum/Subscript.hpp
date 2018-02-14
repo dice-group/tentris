@@ -2,17 +2,16 @@
 #define SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
 
 
-#include "../util/All.hpp"
-#include "util/UndirectedGraph.hpp"
-#include "Types.hpp"
 #include <vector>
-#include <cstdint>
+#include <tuple>
 #include <unordered_set>
 #include <unordered_map>
 #include <map>
 #include <parallel/numeric>
 #include <parallel/algorithm>
-#include <iterator>
+#include "../util/All.hpp"
+#include "util/UndirectedGraph.hpp"
+#include "Types.hpp"
 
 using std::unordered_set;
 using std::set;
@@ -32,26 +31,71 @@ std::ostream &operator<<(std::ostream &out, sparsetensor::einsum::Subscript &sub
 namespace sparsetensor::einsum {
     /**
      * Representation of the subscript of a expression in einstein summation convention.
-     * This provides also Subscript::optimize() brackets out all independently computable parts and resulting in a
+     * This provides also  brackets out all independently computable parts and resulting in a
      * cross product of the bracketed parts.
      */
     class Subscript {
         friend ::std::ostream &::operator<<(::std::ostream &out, ::sparsetensor::einsum::Subscript &tensor);
 
     private:
+        /**
+         * A set of all labels used in this Subscript. Labels from bracketed sub-Subscripts are not included.
+         */
         unordered_set<label_t> all_labels{};
+        /**
+         * A vector of all operands' positions.
+         */
         vector<op_pos_t> op_poss{};
+        /**
+         * A vector equal in length to #op_poss that holds the original positions of the operands before bracketing.
+         */
         vector<op_pos_t> original_op_poss{};
+        /**
+         * Label Vectors by operands.
+         */
         map<op_pos_t, vector<label_t>> operands_labels{};
+        /**
+         * Distinct Labels by operands.
+         */
         map<op_pos_t, set<label_t>> distinct_operands_labels{};
+        /**
+         * Labels of the result
+         */
         vector<label_t> result_labels{};
+        /**
+         * Positions of a specific label in an specific operand.
+         */
         unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operand{};
+        /**
+         * Position of a specific label in the result.
+         */
         unordered_map<label_t, label_pos_t> label_pos_in_result{};
+        /**
+         * Operands that hold a specific label.
+         */
         unordered_map<label_t, vector<op_pos_t>> operands_with_label{};
+        /**
+         * A label dependency graph is defined like:
+         * - It has a node for every label.
+         * - The "dependency" of the labels are represented by the edges. A edge is between two nodes if the corresponding labels occur together in at least one operand subscript.
+         * The reason why this is interesting is that unconnected sub-graphs (independent node sets) are sets of labels that can be evaluated independent of the others. The full result can later be calculated by a simple cross-product.
+         */
         UndirectedGraph<label_t> label_dependency_graph{};
+        /**
+         * Sets of distinct labels that can be computed independently.
+         */
         unordered_set<unordered_set<label_t>> independent_label_subsets{};
+        /**
+         * sub-Subscripts that were bracketed out.
+         */
         map<op_pos_t, Subscript> sub_subscripts{};
+        /**
+         * The next free position for a new operand.
+         */
         op_pos_t next_operand_pos{};
+        /**
+         * The next free label position.
+         */
         label_t next_label{};
 
     public:
@@ -67,14 +111,18 @@ namespace sparsetensor::einsum {
         /**
          * Empty constructor. The fields are initialized but not filled with data.
          */
-        Subscript() {}
+        Subscript() = default;
 
+        /**
+         * Default copy constructor.
+         * @param subscript
+         */
         Subscript(const Subscript &subscript) = default;
 
     private:
 
         /**
-         * Parses the subscript and writes the result to this' fields. Labels may or may not be optimized.
+         * Parses the subscript and writes the result to this' fields. The resulting labels may be renamed.
          * @param [in] raw_operand_subscripts vector of vectors of the operand's labels.
          * @param [in] raw_result_subscript vector of the result's.
          */
@@ -82,7 +130,8 @@ namespace sparsetensor::einsum {
 
     public:
         /**
-         * This provides brackets out all independently computable parts and resulting in a cross product of the bracketed parts.
+         * This brackets out all independently computable parts. After calling this function this Subscript will be a
+         * cross product. All other calculations are moved to #sub_subscripts.
          * @return this instance
          */
         Subscript bracketCrossproductFactors();
@@ -112,7 +161,7 @@ namespace sparsetensor::einsum {
         }
 
         /**
-         * Stores the labels of the operands.
+         * Labels of the operands.
          * @return Map from operand position to a vector holding it's labels in order.
          */
         const map<op_pos_t, vector<label_t>> &getOperandsLabels() const {
@@ -179,7 +228,7 @@ namespace sparsetensor::einsum {
         }
 
         /**
-         * A map holding all Subscript s that were bracketed out by Subscript::optimize() .
+         * A map holding all Subscript s that were bracketed out by bracketCrossproductFactors() .
          * @return A map from operand position to sub Subscript.
          */
         const map<op_pos_t, Subscript> &getSubSubscripts() const {
@@ -188,7 +237,7 @@ namespace sparsetensor::einsum {
 
         /**
          * Next free position where a new operand could be.
-         * Note: adding additional operands is currently not directly supported and happens only internally when Subscript::optimize() is called.
+         * Note: adding additional operands is currently not directly supported and happens only internally when bracketCrossproductFactors() is called.
          * @return next free operand position.
          */
         op_pos_t getNextOperandPos() const {
@@ -198,36 +247,86 @@ namespace sparsetensor::einsum {
         /**
          * Next unused label.
          * Note: Changing or adding labels is currently not supported.
-         * @return next unsed Label or total number of  used labels.
+         * @return next unused Label or total number of  used labels.
          */
         label_t getNextLabel() const {
             return next_label;
         }
 
+    private:
+        void updateDependentFields() {
+            /// calc fields
+            this->distinct_operands_labels = calcDistinctOperandsLabels(this->operands_labels);
+
+            this->label_poss_in_operand = calcLabelPossInOperand(this->operands_labels);
+
+            this->label_pos_in_result = calcLabelPosInResult(this->result_labels);
+
+            this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
+
+            this->op_poss = calcOperandsPoss(this->operands_labels);
+
+            this->label_dependency_graph = calcLabelDependencyGraph(this->distinct_operands_labels);
+
+            this->independent_label_subsets = calcIndependentLabelSubsets(this->label_dependency_graph);
+        }
+
+    public:
         /**
-         * Calculates the label_poss_in_operand field using:
-         * - operands_labels
-         * - distinct_operands_labels
-         * @param sc Subscript to be updated.
+         * Calculates the label_poss_in_operand.
+         * @param operands_labels
+         * @return
          */
         static unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>>
         calcLabelPossInOperand(const map<op_pos_t, vector<label_t>> &operands_labels);
 
         /**
-         * Calculates the label_pos_in_result field using:
-         * - result_labels
-         * @param sc Subscript to be updated.
+         * Calculates the label_pos_in_result.
+         * @param result_labels
+         * @return
          */
         static unordered_map<label_t, label_pos_t> calcLabelPosInResult(const vector<label_t> &result_labels);
 
+
         /**
-         * Calculates the operands_with_label field using:
-         * - all_labels
-         * - distinct_operands_labels
-         * @param sc Subscript to be updated.
+         * Calculates operands_with_label.
+         * @param all_labels
+         * @param operands_labels
+         * @return
          */
         static unordered_map<label_t, vector<op_pos_t>> calcOperandsWithLabel(const unordered_set<label_t> &all_labels,
                                                                               const map<op_pos_t, vector<label_t>> &operands_labels);
+
+        /**
+         * Calculates label_dependency_graph.
+         * @param distinct_operands_labels
+         * @return
+         */
+        static UndirectedGraph<label_t>
+        calcLabelDependencyGraph(const map<op_pos_t, set<label_t>> &distinct_operands_labels);
+
+        /**
+         * Calculates the independent_label_subsets.
+         * @param independent_label_subsets
+         * @return
+         */
+        static unordered_set<unordered_set<label_t>>
+        calcIndependentLabelSubsets(const UndirectedGraph<label_t> &independent_label_subsets);
+
+        /**
+         * Calculates distinct_operands_labels.
+         * @param operands_labels
+         * @return
+         */
+        static map<op_pos_t, set<label_t>>
+        calcDistinctOperandsLabels(const map<op_pos_t, vector<label_t>> &operands_labels);
+
+        /**
+         * Calculates op_poss.
+         * @param operands_labels
+         * @return
+         */
+        static vector<op_pos_t> calcOperandsPoss(const map<op_pos_t, vector<label_t>> &operands_labels);
 
     private:
         /**
@@ -251,45 +350,6 @@ namespace sparsetensor::einsum {
         static vector<label_t>
         normalizeLabelVector(unordered_map<label_t, label_t> &raw_to_norm_label, label_t &next_norm_label,
                              const vector<label_t> &raw_labels);
-
-
-        /**
-         * Calculates the label_dependency_graph field using:
-         * - distinct_operands_labels
-         * @param sc Subscript to be updated.
-         */
-        static UndirectedGraph<label_t>
-        calcLabelDependencyGraph(const map<op_pos_t, set<label_t>> &distinct_operands_labels);
-
-        /**
-         * Calculates the independent_label_subsets field using:
-         * - label_dependency_graph
-         * @param sc Subscript to be updated.
-         */
-        static unordered_set<unordered_set<label_t>>
-        calcIndependentLabelSubsets(const UndirectedGraph<label_t> &independent_label_subsets);
-
-        static map<op_pos_t, set<label_t>>
-        calcDistinctOperandsLabels(const map<op_pos_t, vector<label_t>> &operands_labels);
-
-        static vector<op_pos_t> calcOperandsPoss(const map<op_pos_t, vector<label_t>> &operands_labels);
-
-        void calcDependentFields() {
-            /// calc fields
-            this->distinct_operands_labels = calcDistinctOperandsLabels(this->operands_labels);
-
-            this->label_poss_in_operand = calcLabelPossInOperand(this->operands_labels);
-
-            this->label_pos_in_result = calcLabelPosInResult(this->result_labels);
-
-            this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
-
-            this->op_poss = calcOperandsPoss(this->operands_labels);
-
-            this->label_dependency_graph = calcLabelDependencyGraph(this->distinct_operands_labels);
-
-            this->independent_label_subsets = calcIndependentLabelSubsets(this->label_dependency_graph);
-        }
     };
 
 /*
@@ -435,7 +495,7 @@ namespace sparsetensor::einsum {
                 }
             }
 
-            sub_sc.calcDependentFields();
+            sub_sc.updateDependentFields();
 
             this->sub_subscripts.insert_or_assign(sub_sc_pos++, sub_sc);
 
@@ -450,14 +510,15 @@ namespace sparsetensor::einsum {
         }
 
         /// add new operands to sc
-        for(auto &[drop, sub_sub_sc]: this->sub_subscripts){
+        for (auto & [drop, sub_sub_sc]: this->sub_subscripts) {
             this->operands_labels[this->next_operand_pos++] = sub_sub_sc.result_labels;
         }
 
-        this->all_labels = unordered_set<label_t >(this->result_labels.begin(), this->result_labels.end());
+        this->all_labels = unordered_set<label_t>(this->result_labels.begin(), this->result_labels.end());
 
         vector<op_pos_t> old_op_pos{};
-        for (const auto &[op_pos, labels]:operands_labels) {
+        for (const auto &
+            [op_pos, labels]:operands_labels) {
             old_op_pos.push_back(op_pos);
         }
         this->next_operand_pos = 0;
@@ -471,7 +532,7 @@ namespace sparsetensor::einsum {
         }
 
         /// calc fields
-        calcDependentFields();
+        updateDependentFields();
         return (*this);
     }
 

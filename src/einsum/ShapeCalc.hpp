@@ -1,15 +1,24 @@
 #ifndef SPARSETENSOR_EINSUM_SHAPECALC_HPP
 #define SPARSETENSOR_EINSUM_SHAPECALC_HPP
 
-#include "Subscript.hpp"
 #include "../tensor/Types.hpp"
+#include "Subscript.hpp"
 
 using sparsetensor::tensor::shape_t;
 
 namespace sparsetensor::einsum {
 
+    /**
+     * Calculates the shape that will result from a einsum() on given operands.
+     * @tparam T type of the values hold by processed Tensors (Tensor).
+     * @tparam Tensor Tensor implementation. Must be subclass of sparsetensor::tensor::Tensor.
+     * @param operands operands to einsum()
+     * @param sc Subscript for einsum()
+     * @return the shape of the result
+     */
     template<typename T, template<typename> class Tensor>
-    shape_t calcShape(const vector<Tensor<T> *> &operands, const Subscript &sc) {
+    shape_t calcResultShape(const vector<Tensor<T> *> &operands, const Subscript &sc) {
+        // TODO: check if all dimensions the the same label have the same size
         shape_t result_shape{};
         for (auto &&resultLabel : sc.getResultLabels()) {
             const unordered_map<label_t, vector<op_pos_t>> &map = sc.getOperandsWithLabel();

@@ -9,7 +9,7 @@
 #include "MapTensor.hpp"
 #include <tuple>
 
-using sparsetensor::einsum::calcShape;
+using sparsetensor::einsum::calcResultShape;
 using sparsetensor::einsum::Subscript;
 using sparsetensor::einsum::label_pos_t;
 using sparsetensor::einsum::label_t;
@@ -58,7 +58,7 @@ namespace sparsetensor::tensor {
          */
         CrossProductTensor(const vector<MapTensor<T> *> &input_tensors, const Subscript &subscript)
                 : Tensor<T, CrossProductTensor>{} {
-            this->setShape(calcShape<T, MapTensor>(input_tensors, subscript));
+            this->setShape(calcResultShape<T, MapTensor>(input_tensors, subscript));
 
 
             const map<op_pos_t, vector<label_t>> &operands_labels = subscript.getOperandsLabels();

@@ -22,16 +22,43 @@ namespace sparsetensor::einsum {
 
     class EvalPlan;
 
+    /**
+     * A PlanStep holds all relevant information for an step in sparsetensor::einsum::operators::Einsum and all
+     * following steps. A step is the contraction of a single label.
+     */
     class PlanStep {
         friend class EvalPlan;
 
+        /**
+         * Labels that could be processed in this step. Those labels must be adjacent to already processed labels in
+         * the label dependency graph.
+         * @see Subscript::calcLabelDependencyGraph()
+         */
         unordered_set<label_t> label_candidates;
+        /**
+         * Labels that were already processed in previous steps.
+         */
         unordered_set<label_t> processed_labels;
+        /**
+         * Operands that hold a specific label.
+         */
         const unordered_map<label_t, vector<op_pos_t>> &operands_with_label;
-        const unordered_map<label_t, label_pos_t> &label_pos_in_result;
+        /**
+         * Positions of a specific label in an specific operand.
+         */
         unordered_map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operand;
+        /**
+         * Position of a specific label in the result.
+         */
+        const unordered_map<label_t, label_pos_t> &label_pos_in_result;
+        /**
+         * This PlanStep is part of that EvalPlan.
+         */
         const EvalPlan *plan;
     public:
+        /**
+         * There are no labels left to be processed. This PlanStep MUST NOT be used.
+         */
         bool all_done = true;
 
         PlanStep(const PlanStep &plan_step) :
@@ -84,9 +111,19 @@ namespace sparsetensor::einsum {
         }
 
     private:
+        /**
+         * Create a copy of operands_labels where #processed_labels are removed.
+         * @param processed_labels Labels to be removed.
+         * @return copy of operands_labels where #processed_labels are removed
+         */
         map<op_pos_t, vector<label_t>> calcNextOperandsLabels(const unordered_set<label_t> &processed_labels);
 
     public:
+        /**
+         * Get the next PlanStep when using #label in this step.
+         * @param label MUST be part of #label_candidates
+         * @return the next PlanStep
+         */
         PlanStep getNextStep(label_t label);
 
         friend ostream &operator<<(ostream &os, const PlanStep &step) {
@@ -101,30 +138,38 @@ namespace sparsetensor::einsum {
         }
     };
 
+    /**
+     * This Class plans the evaluation for an sparsetensor::einsum::operators::Einsum Operator. The plan is defined by a Subscript.
+     */
     class EvalPlan {
         friend class PlanStep;
 
+        /**
+         * Subscript that is basis to this plan.
+         */
         const Subscript &subscript;
+        /**
+         * Label dependency graph of this plan.
+         * TODO: Currently just a copy of subscript.getLabelDependencyGraph().
+         * When non_result_single_op_labels are introduced that will be different.
+         */
         const UndirectedGraph<label_t> label_dependency_graph;
     public:
-        EvalPlan(const Subscript &subscript = Subscript{}) :
+        /**
+         * Constructor.
+         * @param subscript Subscript that is basis to this plan. It is referenced.
+         */
+        explicit EvalPlan(const Subscript &subscript = Subscript{}) :
                 subscript(subscript),
                 label_dependency_graph(subscript.getLabelDependencyGraph()) {}
 
 
-        template<typename T>
-        tuple<PlanStep, label_t> nextStep(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &last_step,
-                                          const label_t &last_label) {
-            if (last_step.all_done) {
-                throw "nextStep should not be called on 'last_step' with all_done = true";
-            }
-            PlanStep next_step = last_step.getNextStep(last_label);
-            label_t min_card_label{};
-            if(not next_step.all_done)
-                min_card_label = calcMinCardLabel<T>(operands, next_step, next_step.label_candidates);
-            return {next_step, min_card_label};
-        }
-
+        /**
+         * Calculates the first PlanStep.
+         * @tparam T type of the values hold by processed Tensors (Tensor).
+         * @param operands Operands that match the Subscript that was used to construct this plan.
+         * @return a PlanStep and an Label (label_t). Check PlanStep.all_done before you use the the result.
+         */
         template<typename T>
         tuple<PlanStep, label_t> firstStep(const vector<variant<HyperTrie<T> *, T>> &operands) {
             // todo: make temp_initial_step a pointer and cache it
@@ -139,21 +184,59 @@ namespace sparsetensor::einsum {
             return {initial_step, min_card_label};
         }
 
+        /**
+         * Calculates the next PlanStep.
+         * @tparam T type of the values hold by processed Tensors (Tensor).
+         * @param operands Operands that match the Subscript that was used to construct this plan but reduced by all
+         * dimensions that were selected in previous Steps (PlanStep).
+         * @param last_step last PlanStep executed
+         * @param last_label last Label used.
+         * @return a PlanStep and an Label (label_t). Check PlanStep.all_done before you use the the result.
+         */
+        template<typename T>
+        tuple<PlanStep, label_t> nextStep(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &last_step,
+                                          const label_t &last_label) {
+            if (last_step.all_done) {
+                throw "nextStep should not be called on 'last_step' with all_done = true";
+            }
+            PlanStep next_step = last_step.getNextStep(last_label);
+            label_t min_card_label{};
+            if(not next_step.all_done)
+                min_card_label = calcMinCardLabel<T>(operands, next_step, next_step.label_candidates);
+            return {next_step, min_card_label};
+        }
+
+        /**
+         * Calculates the cardinality of an Label in an Step.
+         * @tparam T type of the values hold by processed Tensors (Tensor).
+         * @param operands Operands for this Step.
+         * @param step current step
+         * @param label the label
+         * @return label's cardinality in current step.
+         */
         template<typename T>
         float calcCard(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &step, const label_t &label) {
-            const std::vector<op_pos_t> &op_ids = step.operandsWithLabel(label);
+            // get operands that have the label
+            const vector<op_pos_t> &op_ids = step.operandsWithLabel(label);
+
             vector<float> dim_cardinalities(op_ids.size(), INFINITY);
             vector<float> operand_cardinalities(op_ids.size(), INFINITY);
-
             float min_dim_cardinality =  INFINITY;
+
+            //iterate the operands that hold the label
             for (size_t i = 0; i < op_ids.size(); ++i) {
                 const op_pos_t &op_id = op_ids.at(i);
+                // get operand
                 const HyperTrie<T> *operand = std::get<HyperTrie<T> *>(operands.at(i));
+                // get cardinality of the operand in this dimension
                 const vector<size_t> cards = operand->getCards(step.labelPossInOperand(op_id, label));
 
+                // calc it's cardinality
                 const size_t &dim_cardinality = *std::min_element(cards.cbegin(), cards.cend());
+                // if it is zero the overall cardinality is zero
                 if (dim_cardinality == 0)
                     return 0;
+
                 if (dim_cardinality < min_dim_cardinality)
                     min_dim_cardinality = dim_cardinality;
                 dim_cardinalities[i] = dim_cardinality;
@@ -171,6 +254,14 @@ namespace sparsetensor::einsum {
         }
 
 
+        /**
+         * Calc the label out of label_candidates that has the minimum cardinality.
+         * @tparam T type of the values hold by processed Tensors (Tensor).
+         * @param operands Operands for this Step.
+         * @param step current step
+         * @param label_candidates labels that are candidates
+         * @return the label with minimum cardinality
+         */
         template<typename T>
         label_t calcMinCardLabel(const vector<variant<HyperTrie<T> *, T>> &operands, PlanStep &step,
                                  unordered_set<label_t> &label_candidates) {
@@ -180,7 +271,7 @@ namespace sparsetensor::einsum {
                 return *label_candidates.begin();
             } else {
                 label_t best_label{};
-                float best_cardinality = UINT64_MAX;
+                float best_cardinality = INFINITY;
 
                 // find the label with the lowest cardinality
                 for (const label_t &label  : label_candidates) {
@@ -189,6 +280,7 @@ namespace sparsetensor::einsum {
                         best_cardinality = cardinality;
                         best_label = label;
                     }
+                    // nothing can be better than zero
                     if (cardinality == 0) {
                         return label;
                     }
