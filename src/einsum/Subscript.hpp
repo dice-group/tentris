@@ -433,27 +433,7 @@ namespace sparsetensor::einsum {
 
         // result_labels
         result_labels = result_subscript;
-
-        // label_poss_in_operand
-        this->label_poss_in_operand = calcLabelPossInOperand(this->operands_labels);
-
-        // label_pos_in_result
-        this->label_pos_in_result = calcLabelPosInResult(this->result_labels);
-
-        // operands_with_label
-        this->operands_with_label = calcOperandsWithLabel(this->all_labels, this->operands_labels);
-
-        this->op_poss = calcOperandsPoss(this->operands_labels);
-
-        // label_dependency_graph
-        this->label_dependency_graph = calcLabelDependencyGraph(this->distinct_operands_labels);
-
-        // independent_label_subsets
-        this->independent_label_subsets = calcIndependentLabelSubsets(this->label_dependency_graph);
-
-        for (auto && [op_pos, labels] :this->operands_labels) {
-            op_poss.push_back(op_pos);
-        }
+        updateDependentFields();
     }
 
     Subscript Subscript::bracketCrossproductFactors() {
