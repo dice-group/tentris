@@ -14,82 +14,153 @@
 #include <limits>
 #include <ostream>
 
-using std::ostream;
-
-
-using std::vector;
-using std::unordered_map;
-using std::variant;
-using std::map;
-using std::optional;
-using std::tuple;
-using sparsetensor::tensor::key_pos_t;
-using sparsetensor::tensor::key_part_t;
-
-
 namespace sparsetensor::hypertrie {
-
+    using sparsetensor::tensor::Key_t;
+    using std::vector;
+    using std::unordered_map;
+    using std::variant;
+    using std::map;
+    using std::optional;
+    using std::tuple;
+    using sparsetensor::tensor::key_pos_t;
+    using sparsetensor::tensor::key_part_t;
+    using std::ostream;
 
     class BoolHyperTrie {
-        using Key_t = sparsetensor::tensor::Key_t;
+        // TODO: write destructor
+        // TODO: implement del
+
 
     public:
-        using inner_childs = std::map<key_part_t, BoolHyperTrie *>;
-        using leaf_childs = std::set<key_part_t>;
+        /**
+         * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero
+         * subhypertrie are stored. A inner_edges is used for every position of the stored keys.
+         */
+        using inner_edges = map<key_part_t, BoolHyperTrie *>;
+        /**
+         * Leaf edges are encoded by storing only the key_parts that map to a true. All other key parts map to zero.
+         */
+        using leaf_edges = std::set<key_part_t>;
 
-        explicit BoolHyperTrie(key_pos_t depth) : depth(depth), edges_by_pos{
-                (depth > 0) ? std::variant<vector<inner_childs>, leaf_childs>{vector<inner_childs>(depth)}
-                            : std::variant<vector<inner_childs>, leaf_childs>{leaf_childs{}}} {
+        /**
+         * The default constructor creates a empty BoolHyperTrie with depth = 1.
+         */
+        BoolHyperTrie() : _depth(1), _subtries{leaf_edges{}} {}
+
+        /**
+         * Creates a empty BoolHyperTrie with given depth.
+         * @param depth depth of the BoolHyperTrie
+         */
+        explicit BoolHyperTrie(key_pos_t depth) : _depth(depth), _subtries{} {
+            if (depth > 1) {
+                _subtries = vector<inner_edges>(depth);
+            } else {
+                _subtries = leaf_edges{};
+            }
         }
 
-        /**
-         * Depth is the length of the keys.
-         */
-        key_pos_t depth{};
-
-        /**
-         * Number of entries.
-         */
-        uint64_t leafcount{};
 
     private:
         /**
-         * edges_by_pos: subkey_pos -> edges;<br/>
-         * edges: key_part -> subtrie OR value
+         * The depth defines the length of keys.
          */
-        std::variant<vector<inner_childs>, leaf_childs> edges_by_pos;
+        key_pos_t _depth{};
 
-
-        // Done
-        inner_childs &getEdges(const key_pos_t &subkey_pos) {
-            vector<inner_childs> &anAuto = std::get<vector<inner_childs>>(this->edges_by_pos);
-            return anAuto.at(subkey_pos);
+    public:
+        /**
+         * Get the depth of the BoolHyperTrie.
+         * @return depth of this
+         */
+        inline const key_pos_t &depth() const noexcept {
+            return _depth;
         }
 
-        // Done
-        inline leaf_childs &getLeafs() {
-            return std::get<leaf_childs>(this->edges_by_pos);
+    private:
+        /**
+         * Number of entries.
+         */
+        uint64_t _leafcount{};
+
+    public:
+        /**
+         * Get the number of none-zero elements stored.
+         * @return number of stored none-zero elements
+         */
+        inline const uint64_t &size() const noexcept {
+            return _leafcount;
         }
 
-        // Done
-        inline void addChildAsLink(const key_pos_t &pos, key_part_t key_part, BoolHyperTrie *&subhypertrie) {
-            inner_childs &edges = getEdges(pos);
+    private:
+        /**
+         * Stores the subtries. For depth > 1 a vector of length equal to depth stores for every position in the keys to
+         * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
+         * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
+         */
+        variant<vector<inner_edges>, leaf_edges> _subtries{};
+
+
+        /**
+         * Returns the inner edges for a given position of this BoolHyperTrie.
+         * @param subkey_pos key_position in this hypertrie. May differ from the position in an parent BoolHyperTrie.
+         * @return a map of inner_edges.
+         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
+         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() 
+         */
+        inner_edges &getInnerEdges(const key_pos_t &subkey_pos) {
+            std::get<vector<inner_edges>>(this->_subtries).at(subkey_pos);
+        }
+
+        /**
+         * Returns leaf edges.
+         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is not 1
+         * @return a set of leaf edges.
+         */
+        inline leaf_edges &getLeafEdges() {
+            return std::get<leaf_edges>(this->_subtries);
+        }
+
+        /**
+         * Adds an Child BoolHyperTrie at the given position and for the given key_part.
+         * @param pos position of the key_part
+         * @param key_part a key_part that must not be in use at this position and BoolHyperTrie.
+         * @param subhypertrie A pointer to a BoolHyperTrie. For consistency it must have a depth = --this->depth(). The
+         * argument is consumed and thus must not be used again after calling this function.
+         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
+         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth()
+         */
+        inline void addChildAsPointer(const key_pos_t &pos, key_part_t key_part, BoolHyperTrie *&subhypertrie) {
+            inner_edges &edges = getInnerEdges(pos);
             edges.emplace(std::move(key_part), std::move(subhypertrie));
         }
 
-        inline BoolHyperTrie *insertNewChild(const key_pos_t &pos, const key_part_t &key_part) {
-
-            inner_childs &edges = getEdges(pos);
-            // no value was passed. So create a new sub HyperTrie of depth this->depth -1 and add it.
-            BoolHyperTrie *child_ = new BoolHyperTrie(this->depth - (key_pos_t) 1);
+        /**
+         * Creates a new Child BoolHyperTrie at the given position and for the given key_part.
+         * @param key_pos position of the key_part
+         * @param key_part a key_part that must not be in use at this position and BoolHyperTrie.
+         * @return a pointer to the created child BoolHyperTrie
+         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
+         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth()
+         */
+        inline BoolHyperTrie *insertNewChild(const key_pos_t &key_pos, const key_part_t &key_part) {
+            inner_edges &edges = getInnerEdges(key_pos);
+            // no value was passed. So create a new sub HyperTrie of _depth this->_depth -1 and add it.
+            BoolHyperTrie *child_ = new BoolHyperTrie(this->_depth - (key_pos_t) 1);
             edges.insert(std::make_pair(key_part, child_));
             // return new value
             return child_;
         }
 
-        // Done
-        BoolHyperTrie *getInnerChild(const key_pos_t &subkey_pos, const key_part_t &key_part) {
-            inner_childs &edges = getEdges(subkey_pos);
+        /**
+         * Get an child of an inner node at the given position and for the given key_part.
+         * @param key_pos position of the key_part
+         * @param key_part key_part where to look for the child
+         * @return the child
+         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
+         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth()
+         * @throws "The requested child doesn't exist."
+         */
+        BoolHyperTrie *getInnerChild(const key_pos_t &key_pos, const key_part_t &key_part) {
+            inner_edges &edges = getInnerEdges(key_pos);
             // find child
             const auto &child_ = edges.find(key_part);
             // return it if it exist
@@ -103,12 +174,13 @@ namespace sparsetensor::hypertrie {
     public:
 
         /**
-         * Get an value or SubTrie by a key.
-         * @param key Vector of uint64 coordinates.
-         * @return a SubTrie or a value depending on the length of the key.
+         * Get an value or sub BoolHyperTrie by a key.
+         * @param key key to the requested part
+         * @return a sub BoolHyperTrie or a value depending on the length of the key.
+         * @throws the entry doesn't exist
          */
         variant<BoolHyperTrie *, bool> get(const Key_t &key) {
-            vector<std::optional<key_part_t>> intern_key(this->depth);
+            vector<optional<key_part_t>> intern_key(this->_depth);
             for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
                 intern_key[key_pos] = {key[key_pos]};
             }
@@ -117,18 +189,19 @@ namespace sparsetensor::hypertrie {
 
 
         /**
-         * Get an value or SubTrie by a key.
-         * @param key Vector of optional uint64 key_parts. If a key_pos is an std::nullopt the key_part for that position is not set resulting in a slice.
-         * @return a SubTrie or a value depending if the key contains slices.
+         * Get an value or sub BoolHyperTrie by a key.
+         * @param key Vector of optional key_parts. If a key_pos is an std::nullopt the key_part for that position is
+         * not set resulting in a slice.
+         * @return a sub BoolHyperTrie or a value depending if the key contains slices.
          */
-        variant<BoolHyperTrie *, bool> get(const vector<std::optional<key_part_t>> &key) {
+        variant<BoolHyperTrie *, bool> get(const vector<optional<key_part_t>> &key) {
             if (this->empty()) {
                 throw "hypertrie is emtpy.";
             }
 
             // extract non_slice_key_parts
             map<key_pos_t, key_part_t> non_slice_key_parts{};
-            for (key_pos_t key_pos = 0; key_pos < size(key); ++key_pos) {
+            for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
                 if (key[key_pos]) {
                     non_slice_key_parts[key_pos] = *key[key_pos];
                 }
@@ -140,13 +213,13 @@ namespace sparsetensor::hypertrie {
             } else {
                 // get child while there are non slice parts in the subkey.
                 BoolHyperTrie *current_subtrie = this;
-                PosCalc *posCalc = PosCalc::getInstance(this->depth);
+                PosCalc *posCalc = PosCalc::getInstance(this->_depth);
                 while (not non_slice_key_parts.empty()) {
                     if (non_slice_key_parts.size() == 1) {
                         const auto&[key_pos, key_part] = *non_slice_key_parts.cbegin();
 
-                        if (current_subtrie->depth == 1) {
-                            std::set<key_part_t> &entries = current_subtrie->getLeafs();
+                        if (current_subtrie->_depth == 1) {
+                            std::set<key_part_t> &entries = current_subtrie->getLeafEdges();
                             if (entries.find(key_part) != entries.end()) {
                                 return true;
                             } else {
@@ -173,15 +246,15 @@ namespace sparsetensor::hypertrie {
 
         /**
          * Returns the smallest key that is used at the given position.
-         * @param key_pos key position.
-         * @return samllest key at given position or the maximum key_part_t value if no entry is in this HyperTrie.
+         * @param key_pos position of the key_part
+         * @return smallest key_part at given position or the maximum key_part_t value if no entry is in this BoolHyperTrie.
          */
         inline key_part_t getMinKeyPart(const key_pos_t &key_pos) {
             try {
-                if (this->depth == 1) {
-                    return *std::get<leaf_childs>(this->edges_by_pos).cbegin();
+                if (this->_depth == 1) {
+                    return *std::get<leaf_edges>(this->_subtries).cbegin();
                 } else {
-                    return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).cbegin()->first;
+                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).cbegin()->first;
                 }
             } catch (...) {}
             return KEY_PART_MAX;
@@ -189,34 +262,38 @@ namespace sparsetensor::hypertrie {
 
         /**
          * Returns the largest key that is used at the given position.
-         * @param key_pos key position.
-         * @return largest key at given position or the minimum key_part_t value if no entry is in this HyperTrie.
+         * @param key_pos position of the key_part
+         * @return largest key_part at given position or the minimum key_part_t value if no entry is in this BoolHyperTrie.
          */
         inline key_part_t getMaxKeyPart(const key_pos_t &key_pos) const {
             try {
-                if (this->depth == 1) {
-                    return *std::get<leaf_childs>(this->edges_by_pos).crbegin();
+                if (this->_depth == 1) {
+                    return *std::get<leaf_edges>(this->_subtries).crbegin();
                 } else {
-                    return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).crbegin()->first;
+                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).crbegin()->first;
                 }
             } catch (...) {}
             return KEY_PART_MIN;
         }
 
         /**
-         * Looksup the number of children at the given Position.
+         * Lookup the number of children at the given position.
          * @param key_pos position to check amount of children.
          * @return number of children for given position.
          */
         inline size_t getCard(const key_pos_t &key_pos) const {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).size();
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).size();
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).size();
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).size();
             }
         }
 
-        // Todo: correct
+        /**
+         * Get the cardinalities (numbers of direct children) for the given key positions.
+         * @param key_poss vector of key positions
+         * @return cardinalities at the requested positions
+         */
         inline vector<size_t> getCards(const vector<key_pos_t> &key_poss) const {
             vector<size_t> cards(key_poss.size());
             for (size_t i = 0; i < key_poss.size(); ++i) {
@@ -225,11 +302,17 @@ namespace sparsetensor::hypertrie {
             return cards;
         }
 
-        key_pos_t getMinCardKeyPos(const map<key_pos_t, key_part_t> &non_slice_key_parts,
+        /**
+         * Given a map that has key_pos keys, return the key_pos out of them with the minimum cardinality.
+         * @param map_from_key_pos a map that has key_pos as keys
+         * @param posCalc a position calculator
+         * @return the minimum key position.
+         */
+        key_pos_t getMinCardKeyPos(const map<key_pos_t, key_part_t> &map_from_key_pos,
                                    const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
-            for (const auto &[key_pos, key_part] : non_slice_key_parts) {
+            for (const auto &[key_pos, key_part] : map_from_key_pos) {
                 size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
                 if (card < min_card) {
                     min_card = card;
@@ -240,7 +323,7 @@ namespace sparsetensor::hypertrie {
         }
 
     private:
-        void del_rek(const Key_t &key, std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
+        void del_rek(const Key_t &key, unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
                      PosCalc *pos_calc) {
             throw "del_rek not yet implemented.";
         }
@@ -248,16 +331,13 @@ namespace sparsetensor::hypertrie {
         /**
          * Inserts and links the HyperTrie nodes recursively.
          * @param key key to save the value for
-         * @param new_value the new value to be safed.
-         * @param has_old_value if there was an value for this key before.
-         * @param value_diff difference beween former value and current value
          * @param finished_subtries map of finished sub HyperTries
          * @param pos_calc PosCalc object for the current sub HyperTrie
          */
-        void set_rek(const Key_t &key, std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
+        void set_rek(const Key_t &key, unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
                      PosCalc *pos_calc) {
             // update this node
-            this->leafcount += 1;
+            this->_leafcount += 1;
 
             // add it to the finished ( means updated ) nodes.
             finished_subtries[pos_calc->getSubKeyMask()] = this;
@@ -266,11 +346,11 @@ namespace sparsetensor::hypertrie {
             if (pos_calc->subkey_length == 1) {
                 key_part_t key_part = key.at(pos_calc->subkey_to_key_pos(0));
 
-                leaf_childs &leafs = this->getLeafs();
+                leaf_edges &leafs = this->getLeafEdges();
 
                 leafs.emplace(key_part);
 
-            } else { // depth > 1 -> inner node
+            } else { // _depth > 1 -> inner node
                 // a child must be set or updated for every subkey_pos available.
                 for (const key_pos_t key_pos : pos_calc->getKeyPoss()) {
                     key_part_t key_part = key.at(key_pos);
@@ -294,7 +374,7 @@ namespace sparsetensor::hypertrie {
                         if (finished_child != finished_subtries.end()) {
                             // set the child at this node
                             BoolHyperTrie *child = finished_child->second;
-                            this->addChildAsLink(pos_calc->key_to_subkey_pos(key_pos), key_part, child);
+                            this->addChildAsPointer(pos_calc->key_to_subkey_pos(key_pos), key_part, child);
 
                         } else { // ... and the subtrie starting with the child was not already finished:
                             // set a new child and call this function for the child
@@ -313,10 +393,12 @@ namespace sparsetensor::hypertrie {
          * Set a value for a key.
          * @param key key to the value
          * @param value value to be set
+         * @throws "Key length must match HyperTrie->_depth";
+         * @throws "Delete not supported yet."
          */
         void set(const Key_t &key, const bool &value) {
-            if (key.size() != this->depth) {
-                throw "Key length must match HyperTrie->depth";
+            if (key.size() != this->_depth) {
+                throw "Key length must match HyperTrie->_depth";
             }
             // check if there is already another value for this subkey.
             try {
@@ -338,7 +420,7 @@ namespace sparsetensor::hypertrie {
             } catch (...) {
                 if (value) {
                     // cache for already created sub HyperTries.
-                    std::unordered_map<subkey_mask_t, BoolHyperTrie *> finished_subtries{};
+                    unordered_map<subkey_mask_t, BoolHyperTrie *> finished_subtries{};
 
                     // get pos_calc for this.
                     subkey_mask_t subkey_mask(key.size());
@@ -358,62 +440,66 @@ namespace sparsetensor::hypertrie {
             throw "Not yet implemented.";
         }
 
+        /**
+         * Returns if there are no nonzero elements in the trie.
+         * @return true if it is empty
+         */
         inline bool empty() const noexcept {
-            return leafcount == 0;
+            return _leafcount == 0;
         }
 
-        variant<leaf_childs::iterator, inner_childs::iterator> begin_(const key_pos_t &key_pos) {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).begin();
+        variant<leaf_edges::iterator, inner_edges::iterator> begin_(const key_pos_t &key_pos) {
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).begin();
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).begin();
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).begin();
             }
         }
 
-        variant<leaf_childs::iterator, inner_childs::iterator> end_(const key_pos_t &key_pos) {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).end();
+        variant<leaf_edges::iterator, inner_edges::iterator> end_(const key_pos_t &key_pos) {
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).end();
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).end();
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).end();
             }
         }
 
-        variant<leaf_childs::const_iterator, inner_childs::const_iterator> cbegin_(const key_pos_t &key_pos) {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).cbegin();
+        variant<leaf_edges::const_iterator, inner_edges::const_iterator> cbegin_(const key_pos_t &key_pos) {
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).cbegin();
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).cbegin();
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).cbegin();
             }
         }
 
-        variant<leaf_childs::const_iterator, inner_childs::const_iterator> cend_(const key_pos_t &key_pos) {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).cend();
+        variant<leaf_edges::const_iterator, inner_edges::const_iterator> cend_(const key_pos_t &key_pos) {
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).cend();
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).cend();
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).cend();
             }
         }
 
-        variant<leaf_childs::iterator, inner_childs::iterator> lower_bound(key_part_t min_key_part = KEY_PART_MIN,
-                                                                           key_pos_t key_pos = 0) {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).lower_bound(min_key_part);
+        variant<leaf_edges::iterator, inner_edges::iterator> lower_bound(key_part_t min_key_part = KEY_PART_MIN,
+                                                                         key_pos_t key_pos = 0) {
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).lower_bound(min_key_part);
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).lower_bound(min_key_part);
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).lower_bound(min_key_part);
             }
         }
 
-        variant<leaf_childs::iterator, inner_childs::iterator>
+        variant<leaf_edges::iterator, inner_edges::iterator>
         upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
-            if (this->depth == 1) {
-                return std::get<leaf_childs>(this->edges_by_pos).upper_bound(max_key_part);
+            if (this->_depth == 1) {
+                return std::get<leaf_edges>(this->_subtries).upper_bound(max_key_part);
             } else {
-                return std::get<vector<inner_childs>>(this->edges_by_pos).at(key_pos).upper_bound(max_key_part);
+                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).upper_bound(max_key_part);
             }
         }
 
         friend ostream &operator<<(ostream &out, BoolHyperTrie &trie) {
-            out << "<BoolHyperTrie: depth=" << int(trie.depth) << ", leafcount=" << int(trie.leafcount) << ">";
+            out << "<BoolHyperTrie: _depth=" << int(trie._depth) << ", leafcount=" << int(trie._leafcount) << ">";
             return out;
         }
 
