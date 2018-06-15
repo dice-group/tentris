@@ -6,7 +6,7 @@
 #include <vector>
 
 
-namespace sparsetensor::einsum {
+namespace sparsetensor::operations {
     /**
      * Type for labels (uint8_t).
      */

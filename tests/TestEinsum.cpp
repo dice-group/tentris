@@ -3,8 +3,8 @@
 #include "einsum/Einsum.hpp"
 
 using sparsetensor::tensor::shape_t;
-using sparsetensor::einsum::raw_subscript;
-using sparsetensor::einsum::einsum;
+using sparsetensor::operations::raw_subscript;
+using sparsetensor::operations::einsum;
 
 
 TEST(TestEinsum, simple_call) {

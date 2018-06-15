@@ -9,11 +9,11 @@
 #include "MapTensor.hpp"
 #include <tuple>
 
-using sparsetensor::einsum::calcResultShape;
-using sparsetensor::einsum::Subscript;
-using sparsetensor::einsum::label_pos_t;
-using sparsetensor::einsum::label_t;
-using sparsetensor::einsum::op_pos_t;
+using sparsetensor::operations::calcResultShape;
+using sparsetensor::operations::Subscript;
+using sparsetensor::operations::label_pos_t;
+using sparsetensor::operations::label_t;
+using sparsetensor::operations::op_pos_t;
 using std::tuple;
 using std::vector;
 

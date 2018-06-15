@@ -10,7 +10,7 @@ using std::unordered_map;
 using std::set;
 
 
-namespace sparsetensor::einsum::util {
+namespace sparsetensor::operations::util {
 
 /**
  * Simple undirected Graph implementation.

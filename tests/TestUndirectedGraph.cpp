@@ -2,7 +2,7 @@
 #include "einsum/util/UndirectedGraph.hpp"
 
 TEST(TestUndirectedGraph, addEdge) {
-    using namespace ::sparsetensor::einsum::util;
+    using namespace ::sparsetensor::operations::util;
     UndirectedGraph<uint8_t> graph{};
 
     graph.addEdge(1, 1);
@@ -21,7 +21,7 @@ TEST(TestUndirectedGraph, addEdge) {
 }
 
 TEST(TestUndirectedGraph, addFullGraph) {
-    using namespace ::sparsetensor::einsum::util;
+    using namespace ::sparsetensor::operations::util;
     UndirectedGraph<uint8_t> graph{};
 
     graph.addCompleteGraph({1, 2, 3});

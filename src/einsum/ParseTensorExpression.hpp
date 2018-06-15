@@ -2,20 +2,18 @@
 #define SPARSETENSOR_EINSUM_EINSUM_HPP
 
 
-#include "../tensor/BoolHyperTrieTensor.hpp"
+#include "../tensor/HyperTrieTensor.hpp"
 #include "../tensor/CrossProductTensor.hpp"
 #include "Subscript.hpp"
 #include "operator/CrossProduct.hpp"
 
+using sparsetensor::tensor::Tensor;
+using sparsetensor::tensor::HyperTrieTensor;
+using sparsetensor::tensor::CrossProductTensor;
+using sparsetensor::einsum::operators::CrossProduct;
 
+namespace sparsetensor::einsum {
 
-namespace sparsetensor::operations {
-    using sparsetensor::tensor::Tensor;
-    using sparsetensor::tensor::BoolHyperTrieTensor;
-    using sparsetensor::tensor::CrossProductTensor;
-    using sparsetensor::operations::operators::CrossProduct;
-
-    CrossProduct<
 
     /**
      * Solves a Einstein Summation Convention on given Tensors.
@@ -25,14 +23,13 @@ namespace sparsetensor::operations {
      * @param raw_result_subscript result labels
      * @return a Tensor holding the result. The CrossProductTensor must be freed manually.
      */
-    CrossProductTensor *einsum(const vector<BoolHyperTrieTensor*> operands,
-                                  const vector<raw_subscript> raw_operand_subscripts,
-                                  const raw_subscript raw_result_subscript) {
+    CrossProductTensor *einsum(const vector<HyperTrieTensor *> operands,
+                               const vector<raw_subscript> raw_operand_subscripts,
+                               const raw_subscript raw_result_subscript) {
 
         Subscript subscript = Subscript{raw_operand_subscripts, raw_result_subscript};
 
         // generate a operator tree from the subscript
-        // TODO: cache
         CrossProduct<T> operator_tree{subscript};
 
         // calculate and return the result.

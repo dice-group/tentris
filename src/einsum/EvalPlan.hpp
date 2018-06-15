@@ -18,7 +18,7 @@ using sparsetensor::hypertrie::HyperTrie;
 using std::variant;
 using std::vector;
 
-namespace sparsetensor::einsum {
+namespace sparsetensor::operations {
 
     class EvalPlan;
 

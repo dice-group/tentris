@@ -3,9 +3,9 @@
 
 #include "../Subscript.hpp"
 
-using sparsetensor::einsum::Subscript;
+using sparsetensor::operations::Subscript;
 
-namespace sparsetensor::einsum::operators {
+namespace sparsetensor::operations::operators {
 
 
     /**
@@ -15,10 +15,13 @@ namespace sparsetensor::einsum::operators {
      * @tparam IN_TENSOR type of the tensor that is accepted as inputs by the operator.
      * @tparam OUT_TENSOR type if the tensor that is output by the operator as result.
      */
-    template<typename T, template<typename> class IN_TENSOR,
-            template<typename> class OUT_TENSOR>
+    template<typename IN_TYPE,
+            typename OUT_TYPE>
     class Operator {
     public:
+
+        template<typename IN_TYPE_>
+        void setInputOperators(const vector<Operator<IN_TYPE_, IN_TYPE>*> input_operators);
         /**
          * Subscript that defines what the operator does.
          */
@@ -37,7 +40,7 @@ namespace sparsetensor::einsum::operators {
          * @param operands operands to be processed
          * @return result of processing
          */
-        OUT_TENSOR<T> *getResult(const vector<IN_TENSOR<T> *> &operands);
+        OUT_TYPE *getResult();
     };
 
 }

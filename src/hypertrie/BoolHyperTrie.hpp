@@ -4,6 +4,8 @@
 #include "PosCalc.hpp"
 #include "Types.hpp"
 #include "../tensor/Types.hpp"
+#include "../container/VecMap.hpp"
+#include "../container/VecSet.hpp"
 #include <cstdint>
 #include <map>
 #include <set>
@@ -36,11 +38,11 @@ namespace sparsetensor::hypertrie {
          * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero
          * subhypertrie are stored. A inner_edges is used for every position of the stored keys.
          */
-        using inner_edges = map<key_part_t, BoolHyperTrie *>;
+        using inner_edges = sparsetensor::container::VecMap<key_part_t, BoolHyperTrie *>;
         /**
          * Leaf edges are encoded by storing only the key_parts that map to a true. All other key parts map to zero.
          */
-        using leaf_edges = std::set<key_part_t>;
+        using leaf_edges = sparsetensor::container::VecSet<key_part_t>;
 
         /**
          * The default constructor creates a empty BoolHyperTrie with depth = 1.
@@ -130,7 +132,7 @@ namespace sparsetensor::hypertrie {
          */
         inline void addChildAsPointer(const key_pos_t &pos, key_part_t key_part, BoolHyperTrie *&subhypertrie) {
             inner_edges &edges = getInnerEdges(pos);
-            edges.emplace(std::move(key_part), std::move(subhypertrie));
+            edges.setItem(key_part, subhypertrie);
         }
 
         /**
@@ -145,7 +147,7 @@ namespace sparsetensor::hypertrie {
             inner_edges &edges = getInnerEdges(key_pos);
             // no value was passed. So create a new sub HyperTrie of _depth this->_depth -1 and add it.
             BoolHyperTrie *child_ = new BoolHyperTrie(this->_depth - (key_pos_t) 1);
-            edges.insert(std::make_pair(key_part, child_));
+            edges.setItem(key_part, child_);
             // return new value
             return child_;
         }
@@ -156,19 +158,12 @@ namespace sparsetensor::hypertrie {
          * @param key_part key_part where to look for the child
          * @return the child
          * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
-         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth()
-         * @throws "The requested child doesn't exist."
+         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() or the key doesn't exist
          */
         BoolHyperTrie *getInnerChild(const key_pos_t &key_pos, const key_part_t &key_part) {
             inner_edges &edges = getInnerEdges(key_pos);
             // find child
-            const auto &child_ = edges.find(key_part);
-            // return it if it exist
-            if (child_ != edges.end()) {
-                return child_->second;
-            } else {
-                throw "The requested child doesn't exist.";
-            }
+            return edges.at(key_part);
         }
 
     public:
@@ -219,12 +214,11 @@ namespace sparsetensor::hypertrie {
                         const auto&[key_pos, key_part] = *non_slice_key_parts.cbegin();
 
                         if (current_subtrie->_depth == 1) {
-                            std::set<key_part_t> &entries = current_subtrie->getLeafEdges();
-                            if (entries.find(key_part) != entries.end()) {
+                            leaf_edges &entries = current_subtrie->getLeafEdges();
+                            if (entries.contains(key_part))
                                 return true;
-                            } else {
+                            else
                                 throw "No value stored for given Key.";
-                            }
                         } else {
                             key_pos_t subkey_pos = posCalc->key_to_subkey_pos(key_pos);
 
@@ -249,12 +243,12 @@ namespace sparsetensor::hypertrie {
          * @param key_pos position of the key_part
          * @return smallest key_part at given position or the maximum key_part_t value if no entry is in this BoolHyperTrie.
          */
-        inline key_part_t getMinKeyPart(const key_pos_t &key_pos) {
+        inline key_part_t getMinKeyPart(const key_pos_t &key_pos = 0) {
             try {
                 if (this->_depth == 1) {
-                    return *std::get<leaf_edges>(this->_subtries).cbegin();
+                    return std::get<leaf_edges>(this->_subtries).min();
                 } else {
-                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).cbegin()->first;
+                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).minKey();
                 }
             } catch (...) {}
             return KEY_PART_MAX;
@@ -265,12 +259,12 @@ namespace sparsetensor::hypertrie {
          * @param key_pos position of the key_part
          * @return largest key_part at given position or the minimum key_part_t value if no entry is in this BoolHyperTrie.
          */
-        inline key_part_t getMaxKeyPart(const key_pos_t &key_pos) const {
+        inline key_part_t getMaxKeyPart(const key_pos_t &key_pos = 0) const {
             try {
                 if (this->_depth == 1) {
-                    return *std::get<leaf_edges>(this->_subtries).crbegin();
+                    return std::get<leaf_edges>(this->_subtries).max();
                 } else {
-                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).crbegin()->first;
+                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).maxKey();
                 }
             } catch (...) {}
             return KEY_PART_MIN;
@@ -348,7 +342,7 @@ namespace sparsetensor::hypertrie {
 
                 leaf_edges &leafs = this->getLeafEdges();
 
-                leafs.emplace(key_part);
+                leafs.add(key_part);
 
             } else { // _depth > 1 -> inner node
                 // a child must be set or updated for every subkey_pos available.

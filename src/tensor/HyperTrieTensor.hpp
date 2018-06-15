@@ -14,7 +14,7 @@
 using std::vector;
 using sparsetensor::hypertrie::HyperTrie;
 
-namespace sparsetensor::einsum::operators {
+namespace sparsetensor::operations::operators {
     template<typename T>
     class Einsum;
 }
@@ -23,7 +23,7 @@ namespace sparsetensor::tensor {
 
     template<typename T>
     class HyperTrieTensor : public Tensor<T, HyperTrieTensor> {
-        friend class sparsetensor::einsum::operators::Einsum<T>;
+        friend class sparsetensor::operations::operators::Einsum<T>;
         HyperTrie<T> *trie;
 
     public:

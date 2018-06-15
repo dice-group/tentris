@@ -18,7 +18,7 @@ using sparsetensor::tensor::MapTensor;
 using sparsetensor::hypertrie::Join;
 
 
-namespace sparsetensor::einsum::operators {
+namespace sparsetensor::operations::operators {
 
     /**
      * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this

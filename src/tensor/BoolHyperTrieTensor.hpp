@@ -12,7 +12,7 @@
 #include <map>
 
 
-namespace sparsetensor::einsum::operators {
+namespace sparsetensor::operations::operators {
     template<typename T>
     class Einsum;
 }
@@ -23,7 +23,7 @@ namespace sparsetensor::tensor {
 
     template<>
     class BoolHyperTrieTensor : public Tensor<bool, BoolHyperTrieTensor> {
-        friend class sparsetensor::einsum::operators::Einsum<bool>;
+        friend class sparsetensor::operations::operators::Einsum<bool>;
 
         BoolHyperTrie *trie;
         bool scalar{};

@@ -6,7 +6,7 @@
 
 using sparsetensor::tensor::shape_t;
 
-namespace sparsetensor::einsum {
+namespace sparsetensor::operations {
 
     /**
      * Calculates the shape that will result from a einsum() on given operands.

@@ -4,11 +4,11 @@
 
 using sparsetensor::tensor::shape_t;
 using sparsetensor::hypertrie::HyperTrie;
-using sparsetensor::einsum::raw_subscript;
+using sparsetensor::operations::raw_subscript;
 
 
 TEST(EvalPlan, simple_call) {
-    using namespace sparsetensor::einsum;
+    using namespace sparsetensor::operations;
 
     HyperTrie<int> tensor_a{2};
     tensor_a.set({1, 0}, 7);

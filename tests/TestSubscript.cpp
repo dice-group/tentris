@@ -4,7 +4,7 @@
 
 
 TEST(TestSubscript, print_and_check_norming) {
-    using namespace ::sparsetensor::einsum;
+    using namespace ::sparsetensor::operations;
     // data
     vector<vector<label_t >> raw_op_sc{
             {3, 2, 1},
@@ -39,7 +39,7 @@ TEST(TestSubscript, print_and_check_norming) {
 }
 
 TEST(TestSubscript, optimize) {
-    using namespace ::sparsetensor::einsum;
+    using namespace ::sparsetensor::operations;
     // data
     vector<vector<label_t >> raw_op_sc{
             {3, 2, 1},

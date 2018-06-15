@@ -3,9 +3,9 @@
 #include "hypertrie/Join.hpp"
 
 using sparsetensor::tensor::shape_t;
-using sparsetensor::einsum::raw_subscript;
-using sparsetensor::einsum::Subscript;
-using sparsetensor::einsum::EvalPlan;
+using sparsetensor::operations::raw_subscript;
+using sparsetensor::operations::Subscript;
+using sparsetensor::operations::EvalPlan;
 
 
 TEST(TestJoin, simple_call) {

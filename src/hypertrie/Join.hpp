@@ -1,7 +1,7 @@
 #ifndef SPARSETENSOR_HYPERTRIE_JOIN_HPP
 #define SPARSETENSOR_HYPERTRIE_JOIN_HPP
 
-#include "HyperTrie.hpp"
+#include "BoolHyperTrie.hpp"
 #include "Diagonal.hpp"
 #include "../einsum/EvalPlan.hpp"
 #include "../tensor/Types.hpp"
@@ -16,10 +16,10 @@ using std::tuple;
 using std::set;
 using std::optional;
 using std::input_iterator_tag;
-using ::sparsetensor::einsum::label_t;
-using ::sparsetensor::einsum::op_pos_t;
-using ::sparsetensor::einsum::PlanStep;
-using sparsetensor::einsum::label_pos_t;
+using ::sparsetensor::operations::label_t;
+using ::sparsetensor::operations::op_pos_t;
+using ::sparsetensor::operations::PlanStep;
+using sparsetensor::operations::label_pos_t;
 using sparsetensor::tensor::key_pos_t;
 using sparsetensor::tensor::key_part_t;
 

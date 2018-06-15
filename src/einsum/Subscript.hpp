@@ -20,22 +20,22 @@ using std::map;
 using std::vector;
 using std::tuple;
 
-using ::sparsetensor::einsum::util::UndirectedGraph;
+using ::sparsetensor::operations::util::UndirectedGraph;
 
-namespace sparsetensor::einsum {
+namespace sparsetensor::operations {
     class Subscript;
 }
 
-std::ostream &operator<<(std::ostream &out, sparsetensor::einsum::Subscript &subscript);
+std::ostream &operator<<(std::ostream &out, sparsetensor::operations::Subscript &subscript);
 
-namespace sparsetensor::einsum {
+namespace sparsetensor::operations {
     /**
      * Representation of the subscript of a expression in einstein summation convention.
      * This provides also  brackets out all independently computable parts and resulting in a
      * cross product of the bracketed parts.
      */
     class Subscript {
-        friend ::std::ostream &::operator<<(::std::ostream &out, ::sparsetensor::einsum::Subscript &tensor);
+        friend ::std::ostream &::operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &tensor);
 
     private:
         /**
@@ -600,7 +600,7 @@ namespace sparsetensor::einsum {
     }
 }
 
-std::ostream &operator<<(std::ostream &out, sparsetensor::einsum::Subscript &subscript) {
+std::ostream &operator<<(std::ostream &out, sparsetensor::operations::Subscript &subscript) {
     out << "<Subscript: \n"
         << "all_labels=" << subscript.all_labels
         << ",\n\t"

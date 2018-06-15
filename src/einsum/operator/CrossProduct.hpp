@@ -15,7 +15,7 @@ using sparsetensor::tensor::CrossProductTensor;
 using sparsetensor::tensor::MapTensor;
 
 
-namespace sparsetensor::einsum::operators {
+namespace sparsetensor::operations::operators {
 
     /**
      * This is a cross product operator that takes in any number of operands and maps every of their dimensions into an
