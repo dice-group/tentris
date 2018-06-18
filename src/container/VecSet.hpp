@@ -9,46 +9,49 @@ namespace sparsetensor::container {
 
     template<typename KEY_t>
     class VecSet {
+        constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::max();
+        constexpr const static KEY_t MAX_KEY = std::numeric_limits<KEY_t>::max();
+
         std::vector<KEY_t> keys{};
     public:
-        using iterator = std::vector<KEY_t>::iterator;
+        using iterator = typename std::vector<KEY_t>::iterator;
 
         VecSet() {};
 
-        const KEY_t &min() {
+        inline const KEY_t &min() {
             if (keys.size())
-                return *keys.cbegin();
+                return keys.at(0);
             else
-                return std::numeric_limits<KEY_t>::max();
+                return MAX_KEY;
         }
 
-        const KEY_t &max() {
+        inline const KEY_t &max() {
             if (keys.size())
                 return *keys.crbegin();
             else
-                return std::numeric_limits<KEY_t>::min();
+                return MIN_KEY;
         }
 
-        void add(const KEY_t &key) {
-            size_t pos = bin_search_insert_pos<KEY_t>(keys, key);
-            if (pos == keys.size() or keys[pos] != key) {
+        inline void add(const KEY_t &key) {
+            size_t pos = insert_pos<KEY_t>(keys, key);
+            if (pos != keys.size() or keys[pos] != key) {
                 keys.insert(keys.begin() + pos, key);
             }
         }
 
 
-        void del(const KEY_t &key) {
-            size_t pos = bin_search_insert_pos<KEY_t>(keys, key);
-            if (pos != keys.size() and keys[pos] == key) {
+        inline void del(const KEY_t &key) {
+            size_t pos = search<KEY_t>(keys, key);
+            if (pos != NOT_FOUND) {
                 keys.erase(keys.begin() + pos);
             }
         }
 
-        bool contains(const KEY_t &key) const {
-            return search<KEY_t>(keys, key) != std::numeric_limits<size_t>::max();
+        inline bool contains(const KEY_t &key) const {
+            return search<KEY_t>(keys, key) != NOT_FOUND;
         }
 
-        const KEY_t &byInd(size_t index) const {
+        inline const KEY_t &byInd(size_t index) const {
             return keys.at(index);
         }
 
@@ -59,10 +62,10 @@ namespace sparsetensor::container {
         /**
          *
          * @param key
-         * @return The position or if the value is not contained the size of the Set.
+         * @return The position or if the value is NOT_FOUND
          */
-        size_t getInd(const KEY_t &key) {
-            return bin_search_insert_pos<KEY_t>(keys, key);
+        inline size_t getInd(const KEY_t &key) {
+            return search<KEY_t>(keys, key);
         }
 
         inline iterator begin() {

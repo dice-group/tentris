@@ -3,41 +3,55 @@
 
 #include <vector>
 #include <algorithm>
-#include "container/BinarySearch.hpp"
+#include "BinarySearch.hpp"
 
 namespace sparsetensor::container {
-    constexpr const size_t min_size_t = std::numeric_limits<size_t>::min();
-    constexpr const size_t max_size_t = std::numeric_limits<size_t>::max();
 
     template<typename KEY_t, typename VALUE_t>
     class VecMap {
+        constexpr const static size_t MAX_SIZE_T = std::numeric_limits<size_t>::max();
+        constexpr const static size_t MIN_SIZE_T = std::numeric_limits<size_t>::min();
+        constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::max();
+        constexpr const static KEY_t MAX_KEY = std::numeric_limits<KEY_t>::max();
+        constexpr const static VALUE_t MAX_VAL = std::numeric_limits<VALUE_t>::max();
+        constexpr const static VALUE_t MIN_VAL = std::numeric_limits<VALUE_t>::max();
 
+
+    public:
         std::vector<KEY_t> keys{};
         std::vector<VALUE_t> values{};
-    public:
+
         VecMap() {};
 
         const KEY_t &minKey() {
             if (keys.size())
                 return *keys.cbegin();
             else
-                return std::numeric_limits<KEY_t>::max();
+                return MAX_KEY;
         }
 
         const KEY_t &maxKey() {
             if (keys.size())
                 return *keys.crbegin();
             else
-                return std::numeric_limits<KEY_t>::min();
+                return MIN_KEY;
         }
 
         void setItem(const KEY_t &key, const VALUE_t &value) {
-            size_t pos = bin_search_insert_pos<KEY_t>(keys, key);
+            size_t pos = insert_pos<KEY_t>(keys, key);
             if (pos != keys.size() and keys[pos] == key) {
                 values[pos] = value;
             } else {
                 keys.insert(keys.begin() + pos, key);
                 values.insert(values.begin() + pos, value);
+            }
+        }
+
+        void delItem(const KEY_t &key) {
+            size_t pos = search<KEY_t>(keys, key);
+            if (pos != NOT_FOUND) {
+                keys.erase(keys.begin() + pos);
+                values.erase(values.begin() + pos);
             }
         }
 
@@ -48,41 +62,33 @@ namespace sparsetensor::container {
          * @throws std::out_of_range if the key is not contained
          */
         VALUE_t &at(const KEY_t &key) {
-            size_t pos = search<KEY_t>(keys, key);
-            return values.at(pos);
-        }
-
-        void delItem(const KEY_t &key) {
-            size_t pos = bin_search_insert_pos<KEY_t>(keys, key);
-            if (pos != keys.size() && keys[pos] == key) {
-                keys.erase(keys.begin() + pos);
-                values.erase(values.begin() + pos);
-            }
+            size_t pos = insert_pos<KEY_t>(keys, key);
+            return values.at(pos); // throws if result is out of range
         }
 
         /**
          *
          * @param key
-         * @return the value or a null-pointer if it doesn't exist
+         * @return the value or the max value of VALUE_t if it doesn't exist
          */
-        VALUE_t &get(const KEY_t &key) const {
+        const VALUE_t &get(const KEY_t &key) const {
             size_t pos = search<KEY_t>(keys, key);
-            if (pos != std::numeric_limits<size_t>::max()) {
+            if (pos != NOT_FOUND) {
                 return values.at(pos);
             } else {
-                return nullptr;
+                return MAX_VAL;
             }
         }
 
-        bool contains(const KEY_t &key) {
-            return search<KEY_t>(keys, key) != std::numeric_limits<size_t>::max();
+        inline bool contains(const KEY_t &key) {
+            return search<KEY_t>(keys, key) != NOT_FOUND;
         }
 
-        KEY_t keyByInd(size_t index) const {
+        inline const KEY_t &keyByInd(size_t index) const {
             return keys.at(index);
         }
 
-        VALUE_t valByInd(size_t index) const {
+        inline const VALUE_t &valByInd(size_t index) const {
             return values.at(index);
         }
 
@@ -90,34 +96,42 @@ namespace sparsetensor::container {
             return values.size();
         }
 
-
-        class ItemView {
+    protected:
+        class View {
+        protected:
             const VecMap &map;
             KEY_t _min;
             KEY_t _max;
-            size_t _min_ind = min_size_t;
-            size_t _max_ind = max_size_t;
+            size_t _min_ind = MIN_SIZE_T;
+            size_t _max_ind = NOT_FOUND;
             size_t _size;
         public:
-            explicit ItemView(const VecMap &map, KEY_t min, KEY_t max) :
+            explicit View(const VecMap &map, KEY_t min, KEY_t max) :
                     map{map}, _min{min}, _max{max}, _size{map.size()} {
-                if (not _size == 0 and not min > max) {
-                    this->_min_ind = search<KEY_t>(map.keys, min);
+                if (_size != 0 and _min <= _max) { // check if view is empty
+                    // get min value index
+                    _min_ind = insert_pos<KEY_t>(map.keys, _min);
                     if (min != _size) {
-                        _max_ind = search_upper<KEY_t>(map.keys, min, _min_ind);
+                        // get max value index
+                        _max_ind = insert_pos<KEY_t>(map.keys, _max, _min_ind);
+                        // check if a higher value was found.
+                        if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
+                            --_max_ind;
+                        }
                         if (_min_ind <= _max_ind) {
-                            this->_min = map.keyByInd(_min_ind);
-                            this->_max = map.keyByInd(_max_ind);
-                            this->_size = this->_max_ind - this->_min_ind + 1;
+                            // get actual min and max values
+                            _min = map.keyByInd(_min_ind);
+                            _max = map.keyByInd(_max_ind);
+                            _size = _max_ind - _min_ind + 1;
                             return;
                         }
                     }
                 }
-                this->_min = std::numeric_limits<KEY_t>::max();
-                this->_max = std::numeric_limits<KEY_t>::min();
-                this->_min_ind = max_size_t;
-                this->_max_ind = max_size_t;
-                this->_size = 0;
+                _min = MAX_SIZE_T;
+                _max = MIN_SIZE_T;
+                _min_ind = NOT_FOUND;
+                _max_ind = NOT_FOUND;
+                _size = 0;
             }
 
             inline const KEY_t &min() const {
@@ -136,12 +150,58 @@ namespace sparsetensor::container {
                 return _max_ind;
             }
 
+            const VALUE_t &at(const KEY_t &key) const {
+                size_t pos = insert_pos<KEY_t>(map.keys, key);
+                // throws if result is out of range
+                if (_min_ind <= pos <= _max_ind)
+                    return map.values.at(pos);
+                else
+                    throw "Out of Range";
+
+            }
+
+            /**
+             *
+             * @param key
+             * @return the value or the max value of VALUE_t if it doesn't exist
+             */
+            const VALUE_t &get(const KEY_t &key) const {
+                size_t pos = search<KEY_t>(map.keys, key);
+                if (_min_ind <= pos <= _max_ind) {
+                    return map.values.at(pos);
+                } else {
+                    return MAX_VAL;
+                }
+            }
+
+            inline const KEY_t &keyByInd(size_t index) const {
+                if (_min_ind <= index <= _max_ind)
+                    return map.keys.at(index);
+                else
+                    throw "Out of Range";
+            }
+
+            inline const VALUE_t &valByInd(size_t index) const {
+                if (_min_ind <= index <= _max_ind)
+                    return map.values.at(index);
+                else
+                    throw "Out of Range";
+            }
+
             inline const size_t &size() const {
                 return _max_ind;
             }
 
             bool contains(const KEY_t &key) {
-                return search<KEY_t>(map.keys, key, _min_ind, _max_ind) != map.size();
+                return search<KEY_t>(map.keys, key, _min_ind, _max_ind) != NOT_FOUND;
+            }
+        };
+
+    public:
+
+        class ItemView : public View {
+        public:
+            explicit ItemView(const VecMap &map, KEY_t min, KEY_t max) : View(map, min, max) {
             }
 
             class iterator {
@@ -169,8 +229,47 @@ namespace sparsetensor::container {
                 bool operator==(const iterator &rhs) const {
                     return ((*rhs.view == *view) and
                             (rhs.pos == pos or
-                             (rhs.pos > view._min_ind and pos < view._min_ind)))
-                    return true;
+                             (rhs.pos > view._min_ind and pos < view._min_ind)));
+                }
+
+                bool operator!=(const iterator &rhs) const {
+                    return not this->operator==(rhs);
+                }
+
+            };
+
+        };
+
+        class KeyView : public View {
+        public:
+            explicit KeyView(const VecMap &map, KEY_t min, KEY_t max) : View(map, min, max) {
+            }
+
+            class iterator {
+                KeyView &view;
+                size_t pos;
+
+                explicit iterator(KeyView &itemView, size_t pos = 0) : view{itemView}, pos{pos} {}
+
+                iterator &operator++() {
+                    if (pos < view.size())
+                        ++pos;
+                    return *this;
+                }
+
+                iterator operator++(int) {
+                    operator++();
+                    return *this;
+                }
+
+                KEY_t operator*() {
+                    return view.keyByInd(view._min_ind + pos);
+                }
+
+                bool operator==(const iterator &rhs) const {
+                    return ((*rhs.view == *view) and
+                            (rhs.pos == pos or
+                             (rhs.pos > view._min_ind and pos < view._min_ind)));
                 }
 
                 bool operator!=(const iterator &rhs) const {
