@@ -62,7 +62,7 @@ namespace sparsetensor::container {
          * @throws std::out_of_range if the key is not contained
          */
         VALUE_t &at(const KEY_t &key) {
-            size_t pos = insert_pos<KEY_t>(keys, key);
+            size_t pos = search<KEY_t>(keys, key);
             return values.at(pos); // throws if result is out of range
         }
 
