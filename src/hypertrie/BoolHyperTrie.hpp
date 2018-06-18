@@ -248,7 +248,7 @@ namespace sparsetensor::hypertrie {
                 if (this->_depth == 1) {
                     return std::get<leaf_edges>(this->_subtries).min();
                 } else {
-                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).minKey();
+                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).min();
                 }
             } catch (...) {}
             return KEY_PART_MAX;
@@ -264,7 +264,7 @@ namespace sparsetensor::hypertrie {
                 if (this->_depth == 1) {
                     return std::get<leaf_edges>(this->_subtries).max();
                 } else {
-                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).maxKey();
+                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).min();
                 }
             } catch (...) {}
             return KEY_PART_MIN;
@@ -442,7 +442,7 @@ namespace sparsetensor::hypertrie {
             return _leafcount == 0;
         }
 
-        variant<leaf_edges::iterator, inner_edges::iterator> begin_(const key_pos_t &key_pos) {
+        variant<leaf_edges::iterator, inner_edges::KeyView::iterator> begin_(const key_pos_t &key_pos) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).begin();
             } else {
@@ -450,7 +450,7 @@ namespace sparsetensor::hypertrie {
             }
         }
 
-        variant<leaf_edges::iterator, inner_edges::iterator> end_(const key_pos_t &key_pos) {
+        variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).end();
             } else {
@@ -458,23 +458,7 @@ namespace sparsetensor::hypertrie {
             }
         }
 
-        variant<leaf_edges::const_iterator, inner_edges::const_iterator> cbegin_(const key_pos_t &key_pos) {
-            if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).cbegin();
-            } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).cbegin();
-            }
-        }
-
-        variant<leaf_edges::const_iterator, inner_edges::const_iterator> cend_(const key_pos_t &key_pos) {
-            if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).cend();
-            } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).cend();
-            }
-        }
-
-        variant<leaf_edges::iterator, inner_edges::iterator> lower_bound(key_part_t min_key_part = KEY_PART_MIN,
+        variant<leaf_edges::iterator, inner_edges::KeyView::iterator> lower_bound(key_part_t min_key_part = KEY_PART_MIN,
                                                                          key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).lower_bound(min_key_part);
@@ -483,7 +467,7 @@ namespace sparsetensor::hypertrie {
             }
         }
 
-        variant<leaf_edges::iterator, inner_edges::iterator>
+        variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
         upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).upper_bound(max_key_part);

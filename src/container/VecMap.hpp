@@ -23,14 +23,14 @@ namespace sparsetensor::container {
 
         VecMap() {};
 
-        const KEY_t &minKey() {
+        const KEY_t &min() const {
             if (keys.size())
                 return *keys.cbegin();
             else
                 return MAX_KEY;
         }
 
-        const KEY_t &maxKey() {
+        const KEY_t &max() const {
             if (keys.size())
                 return *keys.crbegin();
             else
@@ -106,7 +106,14 @@ namespace sparsetensor::container {
             size_t _max_ind = NOT_FOUND;
             size_t _size;
         public:
-            explicit View(const VecMap &map, KEY_t min, KEY_t max) :
+            explicit View(const VecMap &map) : map{map}, _min{map.min()}, _max{map.max()}, _size{map.size()} {
+                if (auto size = map.size(); size > 0) {
+                    _min_ind = 0;
+                    _max_ind = size - 1;
+                }
+            }
+
+            View(const VecMap &map, KEY_t min, KEY_t max) :
                     map{map}, _min{min}, _max{max}, _size{map.size()} {
                 if (_size != 0 and _min <= _max) { // check if view is empty
                     // get min value index
@@ -115,8 +122,10 @@ namespace sparsetensor::container {
                         // get max value index
                         _max_ind = insert_pos<KEY_t>(map.keys, _max, _min_ind);
                         // check if a higher value was found.
-                        if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
-                            --_max_ind;
+                        if (_max_ind != map.size()) {
+                            if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
+                                --_max_ind;
+                            }
                         }
                         if (_min_ind <= _max_ind) {
                             // get actual min and max values
@@ -189,7 +198,7 @@ namespace sparsetensor::container {
             }
 
             inline const size_t &size() const {
-                return _max_ind;
+                return _size;
             }
 
             bool contains(const KEY_t &key) {
@@ -201,13 +210,15 @@ namespace sparsetensor::container {
 
         class ItemView : public View {
         public:
-            explicit ItemView(const VecMap &map, KEY_t min, KEY_t max) : View(map, min, max) {
+            explicit ItemView(const VecMap &map) : View{map} {}
+
+            ItemView(const VecMap &map, KEY_t min, KEY_t max) : View{map, min, max} {
             }
 
             class iterator {
                 ItemView &view;
                 size_t pos;
-
+            public:
                 explicit iterator(ItemView &itemView, size_t pos = 0) : view{itemView}, pos{pos} {}
 
                 iterator &operator++() {
@@ -238,16 +249,27 @@ namespace sparsetensor::container {
 
             };
 
+            iterator begin() {
+                return iterator{*this};
+            }
+
+            iterator end() {
+                return iterator{*this, size()};
+            }
+
         };
 
         class KeyView : public View {
         public:
-            explicit KeyView(const VecMap &map, KEY_t min, KEY_t max) : View(map, min, max) {
+            explicit KeyView(const VecMap &map) : View{map} {}
+
+            KeyView(const VecMap &map, KEY_t min, KEY_t max) : View{map, min, max} {
             }
 
             class iterator {
                 KeyView &view;
                 size_t pos;
+            public:
 
                 explicit iterator(KeyView &itemView, size_t pos = 0) : view{itemView}, pos{pos} {}
 
@@ -278,7 +300,36 @@ namespace sparsetensor::container {
 
             };
 
+            iterator begin() {
+                return iterator{*this};
+            }
+
+            iterator end() {
+                return iterator{*this, size()};
+            }
+
         };
+
+        typename KeyView::iterator keyView(KEY_t min, KEY_t max) {
+            return KeyView{*this, min, max};
+        }
+
+        typename KeyView::iterator lower_bound(KEY_t min_) {
+            return KeyView{*this, min_, max()}.begin();
+        }
+
+        typename KeyView::iterator upper_bound(KEY_t max_) {
+            return KeyView{*this, min(), max_}.begin();
+        }
+
+        typename KeyView::iterator begin() {
+            return KeyView{*this}.begin();
+        }
+
+        typename KeyView::iterator end() {
+            return KeyView{*this}.end();
+        }
+
 
     };
 }

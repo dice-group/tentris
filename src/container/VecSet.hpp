@@ -7,8 +7,10 @@
 
 namespace sparsetensor::container {
 
+
     template<typename KEY_t>
     class VecSet {
+
         constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::max();
         constexpr const static KEY_t MAX_KEY = std::numeric_limits<KEY_t>::max();
 
@@ -18,14 +20,14 @@ namespace sparsetensor::container {
 
         VecSet() {};
 
-        inline const KEY_t &min() {
+        inline const KEY_t &min() const {
             if (keys.size())
                 return keys.at(0);
             else
                 return MAX_KEY;
         }
 
-        inline const KEY_t &max() {
+        inline const KEY_t &max() const {
             if (keys.size())
                 return *keys.crbegin();
             else
@@ -90,6 +92,19 @@ namespace sparsetensor::container {
 
         inline iterator crend() {
             return keys.crend();
+        }
+
+        inline iterator lower_bound(KEY_t min) {
+            const size_t pos = insert_pos(keys, min);
+            return keys.begin() + pos;
+        }
+
+        inline iterator upper_bound(KEY_t max) {
+            size_t pos = insert_pos(keys, max);
+            if (pos != keys.size() and keys.at(pos) != max) {
+                --pos;
+            }
+            return keys.begin() + pos;
         }
     };
 }
