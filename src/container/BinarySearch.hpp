@@ -8,6 +8,14 @@ namespace sparsetensor::container {
      * NOT_FOUND return value for function search
      */
     constexpr const size_t NOT_FOUND = std::numeric_limits<size_t>::max();
+    /**
+     * Maximum value of std::size_t.
+     */
+    constexpr const size_t MAX_SIZE_T = std::numeric_limits<size_t>::max();
+    /**
+     * Minimum value of std::size_t.
+     */
+    constexpr const size_t MIN_SIZE_T = std::numeric_limits<size_t>::min();
 
     /**
      * Searches for the position to insert an given value into a sorted vector (with no duplicate values). If it exists already its position is

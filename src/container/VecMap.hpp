@@ -7,22 +7,49 @@
 
 namespace sparsetensor::container {
 
+    /**
+     * A Map that is based on two sorted vectors storing the entries.
+     * @tparam KEY_t type of the key
+     * @tparam VALUE_t type of the value
+     */
     template<typename KEY_t, typename VALUE_t>
     class VecMap {
-        constexpr const static size_t MAX_SIZE_T = std::numeric_limits<size_t>::max();
-        constexpr const static size_t MIN_SIZE_T = std::numeric_limits<size_t>::min();
+        /**
+         * Minimum value of KEY_t.
+         */
         constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::max();
+        /**
+         * Maximum value of KEY_t.
+         */
         constexpr const static KEY_t MAX_KEY = std::numeric_limits<KEY_t>::max();
+        /**
+         * Minimum value of VALUE_t.
+         */
         constexpr const static VALUE_t MAX_VAL = std::numeric_limits<VALUE_t>::max();
+        /**
+         * Maximum value of VALUE_t.
+         */
         constexpr const static VALUE_t MIN_VAL = std::numeric_limits<VALUE_t>::max();
 
-
-    public:
+        /**
+         * Vector string the keys.
+         */
         std::vector<KEY_t> keys{};
+        /**
+         * Vector storing the values.
+         */
         std::vector<VALUE_t> values{};
+    public:
 
+        /**
+         * Instance of an empty set.
+         */
         VecMap() {};
 
+        /**
+         * Get the minimum key currently stored.
+         * @return the minimum key currently stored.
+         */
         const KEY_t &min() const {
             if (keys.size())
                 return *keys.cbegin();
@@ -30,6 +57,10 @@ namespace sparsetensor::container {
                 return MAX_KEY;
         }
 
+        /**
+         * Get the maximum key currently stored.
+         * @return the maximum key currently stored.
+         */
         const KEY_t &max() const {
             if (keys.size())
                 return *keys.crbegin();
@@ -37,6 +68,11 @@ namespace sparsetensor::container {
                 return MIN_KEY;
         }
 
+        /**
+         * Set a value for a key. If a value is already set for that key it is replaced with the new one.
+         * @param key key where to set the value
+         * @param value value to be set
+         */
         void setItem(const KEY_t &key, const VALUE_t &value) {
             size_t pos = insert_pos<KEY_t>(keys, key);
             if (pos != keys.size() and keys[pos] == key) {
@@ -47,6 +83,10 @@ namespace sparsetensor::container {
             }
         }
 
+        /**
+         * Deletes the entry for the given key. If there is no value for that key nothing happens.
+         * @param key the key to the entry to be deleted.
+         */
         void delItem(const KEY_t &key) {
             size_t pos = search<KEY_t>(keys, key);
             if (pos != NOT_FOUND) {
@@ -56,9 +96,9 @@ namespace sparsetensor::container {
         }
 
         /**
-         *
-         * @param key
-         * @return
+         * Returns the values stored for key. Throws an exception if there is none.
+         * @param key key to the value
+         * @return the stored value
          * @throws std::out_of_range if the key is not contained
          */
         VALUE_t &at(const KEY_t &key) {
@@ -67,9 +107,9 @@ namespace sparsetensor::container {
         }
 
         /**
-         *
-         * @param key
-         * @return the value or the max value of VALUE_t if it doesn't exist
+         * Returns the values stored for key. Returns NOT_FOUND if there is none.
+         * @param key key to the value
+         * @return the stored value or MAX_VAL
          */
         const VALUE_t &get(const KEY_t &key) const {
             size_t pos = search<KEY_t>(keys, key);
@@ -80,32 +120,78 @@ namespace sparsetensor::container {
             }
         }
 
+        /**
+         * Returns if an entry by the key is contained in the set.
+         * @param key key to check
+         * @return if there is an entry for that key or not.
+         */
         inline bool contains(const KEY_t &key) {
             return search<KEY_t>(keys, key) != NOT_FOUND;
         }
 
+        /**
+         * Returns a key by its internal index in the keys vector.
+         * @param index index of the key.
+         * @return the key
+         * @throws std::out_of_range there is no key for that index, i.e. it is not 0 <= index < size()
+         */
         inline const KEY_t &keyByInd(size_t index) const {
             return keys.at(index);
         }
 
+        /**
+         * Returns a value by its internal index in the values vector.
+         * @param index index of the value.
+         * @return the value
+         * @throws std::out_of_range there is no value for that index, i.e. it is not 0 <= index < size()
+         */
         inline const VALUE_t &valByInd(size_t index) const {
             return values.at(index);
         }
 
+        /**
+         * Number of entries.
+         * @return number of entries.
+         */
         inline size_t size() const {
             return values.size();
         }
 
     protected:
+        /**
+         * This is an non-public parent class for views on Keys and Entries. It allows to access only a range of entries.
+         */
         class View {
         protected:
+            /**
+             * The map that is viewed.
+             */
             const VecMap &map;
+            /**
+             * The minimum key that may be accessed.
+             */
             KEY_t _min;
+            /**
+             * The maximum key that may be accessed.
+             */
             KEY_t _max;
+            /**
+             * The index of the minimum key that may be accessed.
+             */
             size_t _min_ind = MIN_SIZE_T;
+            /**
+             * The index of the maximum key that may be accessed.
+             */
             size_t _max_ind = NOT_FOUND;
+            /**
+             * The number of elements in the view.
+             */
             size_t _size;
         public:
+            /**
+             * Constructor without restricting the range.
+             * @param map the VecMap to be viewed.
+             */
             explicit View(const VecMap &map) : map{map}, _min{map.min()}, _max{map.max()}, _size{map.size()} {
                 if (auto size = map.size(); size > 0) {
                     _min_ind = 0;
@@ -113,6 +199,12 @@ namespace sparsetensor::container {
                 }
             }
 
+            /**
+             * Constructor restricting the keys requested to min <= key <= max.
+             * @param map the VecMap to be viewed.
+             * @param min minimum key
+             * @param max maximum key
+             */
             View(const VecMap &map, KEY_t min, KEY_t max) :
                     map{map}, _min{min}, _max{max}, _size{map.size()} {
                 if (_size != 0 and _min <= _max) { // check if view is empty
@@ -143,64 +235,103 @@ namespace sparsetensor::container {
                 _size = 0;
             }
 
+            /**
+             * Get the minimum key currently visible.
+             * @return the minimum key currently visible.
+             */
             inline const KEY_t &min() const {
                 return _min;
             }
 
+            /**
+             * Get the maximum key currently visible.
+             * @return the maximum key currently visible.
+             */
             inline const KEY_t &max() const {
                 return _max;
             }
 
+            /**
+             * Get the index of the maximum key currently visible.
+             * @return the index of the maximum key currently visible.
+             */
             inline const size_t &minInd() const {
                 return _min_ind;
             }
 
+            /**
+             * Get the index of the maximum key currently visible.
+             * @return the index of the maximum key currently visible.
+             */
             inline const size_t &maxInd() const {
                 return _max_ind;
             }
 
+            /**
+             * Returns the values stored for key. Throws an exception if there is none.
+             * @param key key to the value
+             * @return the stored value
+             * @throws std::out_of_range if the key is not contained
+             */
             const VALUE_t &at(const KEY_t &key) const {
-                size_t pos = insert_pos<KEY_t>(map.keys, key);
+                size_t pos = search<KEY_t>(map.keys, key, _min_ind, _max_ind);
                 // throws if result is out of range
-                if (_min_ind <= pos <= _max_ind)
-                    return map.values.at(pos);
-                else
-                    throw "Out of Range";
+                return map.values.at(pos);
 
             }
 
             /**
-             *
-             * @param key
-             * @return the value or the max value of VALUE_t if it doesn't exist
+             * Returns the values stored for key. Returns NOT_FOUND if there is none.
+             * @param key key to the value
+             * @return the stored value or MAX_VAL
              */
             const VALUE_t &get(const KEY_t &key) const {
-                size_t pos = search<KEY_t>(map.keys, key);
-                if (_min_ind <= pos <= _max_ind) {
-                    return map.values.at(pos);
-                } else {
+                size_t pos = search<KEY_t>(map.keys, key, _min_ind, _max_ind);
+                if (pos != NOT_FOUND)
+                    return map.keys.at(pos);
+                else
                     return MAX_VAL;
-                }
             }
 
+            /**
+             * Returns a value by its internal index in the values vector.
+             * @param index index of the value.
+             * @return the value
+             * @throws std::out_of_range there is no value for that index, i.e. it is not 0 <= index < size()
+             */
             inline const KEY_t &keyByInd(size_t index) const {
-                if (_min_ind <= index <= _max_ind)
+                if (_min_ind <= index and index <= _max_ind)
                     return map.keys.at(index);
                 else
-                    throw "Out of Range";
+                    throw std::out_of_range{"not in view."};
             }
 
+            /**
+             * Returns a value by its internal index in the values vector.
+             * @param index index of the value.
+             * @return the value
+             * @throws std::out_of_range there is no value for that index, i.e. it is not 0 <= index < size()
+             */
             inline const VALUE_t &valByInd(size_t index) const {
-                if (_min_ind <= index <= _max_ind)
+                if (_min_ind <= index and index <= _max_ind)
                     return map.values.at(index);
                 else
-                    throw "Out of Range";
+                    throw std::out_of_range{"not in view."};
             }
 
+            /**
+             * Number of entries in the view.
+             * @return number of entries.
+             */
             inline const size_t &size() const {
                 return _size;
             }
 
+            /**
+             * Returns if an entry by the key is contained in the set.
+             * @param key key to check
+             * @return if there is an entry for that key or not.
+             */
             bool contains(const KEY_t &key) {
                 return search<KEY_t>(map.keys, key, _min_ind, _max_ind) != NOT_FOUND;
             }
