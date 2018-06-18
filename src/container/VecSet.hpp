@@ -36,7 +36,7 @@ namespace sparsetensor::container {
 
         inline void add(const KEY_t &key) {
             size_t pos = insert_pos<KEY_t>(keys, key);
-            if (pos != keys.size() or keys[pos] != key) {
+            if (pos == keys.size() or keys[pos] != key) {
                 keys.insert(keys.begin() + pos, key);
             }
         }
