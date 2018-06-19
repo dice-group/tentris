@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include "BinarySearch.hpp"
+#include <tuple>
 
 namespace sparsetensor::container {
 
@@ -338,7 +339,9 @@ namespace sparsetensor::container {
         };
 
     public:
-
+        /**
+         * Provides an iterable view of the items (key-value-pairs) of a VecMap. The viewed key range can be restricted.
+         */
         class ItemView : public View {
         public:
             explicit ItemView(const VecMap &map) : View{map} {}
@@ -389,6 +392,10 @@ namespace sparsetensor::container {
             }
 
         };
+
+        ItemView itemView(KEY_t min, KEY_t max) {
+            return ItemView{*this, min, max};
+        }
 
         class KeyView : public View {
         public:
@@ -441,7 +448,7 @@ namespace sparsetensor::container {
 
         };
 
-        typename KeyView::iterator keyView(KEY_t min, KEY_t max) {
+        KeyView keyView(KEY_t min, KEY_t max) {
             return KeyView{*this, min, max};
         }
 

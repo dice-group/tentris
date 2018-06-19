@@ -18,7 +18,7 @@ namespace sparsetensor::container {
     public:
         using iterator = typename std::vector<KEY_t>::iterator;
 
-        VecSet() {};
+        VecSet() {}
 
         inline const KEY_t &min() const {
             if (keys.size())

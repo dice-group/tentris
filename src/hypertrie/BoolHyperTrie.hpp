@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <limits>
 #include <ostream>
+#include <tuple>
 
 namespace sparsetensor::hypertrie {
     using sparsetensor::tensor::Key_t;
@@ -109,7 +110,7 @@ namespace sparsetensor::hypertrie {
          * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() 
          */
         inner_edges &getInnerEdges(const key_pos_t &subkey_pos) {
-            std::get<vector<inner_edges>>(this->_subtries).at(subkey_pos);
+            return std::get<vector<inner_edges>>(this->_subtries).at(subkey_pos);
         }
 
         /**
@@ -458,8 +459,9 @@ namespace sparsetensor::hypertrie {
             }
         }
 
-        variant<leaf_edges::iterator, inner_edges::KeyView::iterator> lower_bound(key_part_t min_key_part = KEY_PART_MIN,
-                                                                         key_pos_t key_pos = 0) {
+        variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
+        lower_bound(key_part_t min_key_part = KEY_PART_MIN,
+                    key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).lower_bound(min_key_part);
             } else {
@@ -481,8 +483,74 @@ namespace sparsetensor::hypertrie {
             return out;
         }
 
+    public:
+        class DiagonalView {
+        protected:
+            const BoolHyperTrie *_trie;
+
+            const std::vector<key_pos_t> _positions;
+
+            size_t _size;
+        public:
+            DiagonalView(const DiagonalView &diag) :
+                    _trie{diag._trie}, _positions{diag._positions}, _size{diag._size} {}
+
+            DiagonalView(DiagonalView &diag) :
+                    _trie{diag._trie}, _positions{diag._positions}, _size{diag._size} {}
+
+            /**
+             * Constructor without restricting the range.
+             * @param map the VecMap to be viewed.
+             */
+            DiagonalView(const BoolHyperTrie *trie, const std::vector<key_pos_t> positions) :
+                    _trie{trie}, _positions{positions}, _size{_trie->size()} {
+
+
+            }
+
+
+            /**
+             * Finds the
+             * @param key_part
+             * @return
+             */
+            key_part_t setMinGreaterEqual(const key_part_t &key_part) {
+                return 0;
+            }
+
+            key_part_t min() {
+                return 0;
+            }
+
+            std::variant<BoolHyperTrie *, bool> min_value(){
+                return true;
+            }
+
+            key_part_t max() {
+                return 0;
+            }
+
+            bool containsAndUpdateMin(const key_part_t &key_part) {
+                return true;
+            }
+
+            key_part_t incrementMin() {
+                return 0;
+            }
+
+
+            static tuple<size_t, size_t> minimizeRange(std::vector<DiagonalView> diagonals) {
+                // TODO: implement
+                return std::make_tuple(size_t(0), size_t(0));
+            }
+
+
+        };
+
     };
-}
+
+
+};
 
 #endif //SPARSETENSOR_HYPERTRIE_BOOLHYPERTRIE_HPP
 

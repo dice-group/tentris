@@ -61,7 +61,7 @@ TEST(TestDoubleVector, probeElements) {
     for (size_t i = 0; i < keys.size(); ++i) {
         map.setItem(keys[i], values[i]);
     }
-    std::cout << map.keys[0] << std::endl;
+    // std::cout << map.keys[0] << std::endl;
 }
 
 
