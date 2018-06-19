@@ -4,6 +4,9 @@ project(sparsetensor CXX)
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif ()
+SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
+find_package(Pistache REQUIRED)
+find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -12,6 +15,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fopenmp -D_GLIBCXX_PARALLEL
 set (CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-add_library(libsparsetensor util/ExtendContainerPrint.hpp einsum/util/UndirectedGraph.hpp einsum/Subscript.hpp einsum/Einsum.hpp einsum/operator/Einsum.hpp einsum/operator/CrossProduct.hpp hypertrie/HyperTrie.hpp hypertrie/PosCalc.hpp tensor/CrossProductTensor.hpp tensor/Tensor.hpp tensor/MapTensor.hpp tensor/HyperTrieTensor.hpp  einsum/EvalPlan.hpp hypertrie/Join.hpp util/ExtendHash.hpp hypertrie/Types.hpp hypertrie/Diagonal.hpp einsum/Types.hpp util/All.hpp tensor/Types.hpp einsum/ShapeCalc.hpp einsum/operator/Operator.hpp)
-add_executable(rundiag Main.cpp)
+add_library(libsparsetensor util/ExtendContainerPrint.hpp einsum/util/UndirectedGraph.hpp einsum/Subscript.hpp einsum/Einsum.hpp einsum/operator/Einsum.hpp einsum/operator/CrossProduct.hpp hypertrie/HyperTrie.hpp hypertrie/PosCalc.hpp tensor/CrossProductTensor.hpp tensor/Tensor.hpp tensor/MapTensor.hpp tensor/HyperTrieTensor.hpp  einsum/EvalPlan.hpp hypertrie/Join.hpp util/ExtendHash.hpp hypertrie/Types.hpp hypertrie/Diagonal.hpp einsum/Types.hpp util/All.hpp tensor/Types.hpp einsum/ShapeCalc.hpp einsum/operator/Operator.hpp web/healthCheck.hpp)
+add_executable(TNT Main.cpp)
 SET_TARGET_PROPERTIES(libsparsetensor PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(TNT ${Pistache_LIBRARY} Threads::Threads)
