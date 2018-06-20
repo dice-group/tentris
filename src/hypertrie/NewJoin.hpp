@@ -241,7 +241,7 @@ namespace sparsetensor::hypertrie {
                 for (size_t i = 0; i < _join._trie_poss.size(); ++i) {
                     op_pos_t &pos = _join._trie_poss[i];
 
-                    result[pos] = _join.diags[i].min_value();
+                    result[pos] = _join.diags[i].minValue();
                 }
 
                 return {{result},
