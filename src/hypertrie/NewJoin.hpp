@@ -143,7 +143,7 @@ namespace sparsetensor::hypertrie {
 
         NewJoin(std::vector<std::variant<BoolHyperTrie *, bool>> operands, Key_t key,
                 std::optional<key_pos_t> result_pos,
-                std::vector<std::vector<key_pos_t >> dims) : _result{operands}, _key{key}, _result_pos{result_pos} {
+                std::vector<std::vector<key_pos_t >> dims) :  _key{key}, _result{operands}, _result_pos{result_pos} {
 
             Operands<bool> ops_view{operands};
 
@@ -177,6 +177,7 @@ namespace sparsetensor::hypertrie {
                     const std::tuple<size_t, size_t> &min_max = BoolHyperTrie::DiagonalView::minimizeRange(diags);
                     _min_keypart = std::get<0>(min_max);
                     _max_keypart = std::get<1>(min_max);
+
 
                 };
             }

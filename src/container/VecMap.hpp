@@ -45,7 +45,7 @@ namespace sparsetensor::container {
         /**
          * Instance of an empty set.
          */
-        VecMap() {};
+        VecMap() {}
 
         /**
          * Get the minimum key currently stored.
@@ -126,8 +126,69 @@ namespace sparsetensor::container {
          * @param key key to check
          * @return if there is an entry for that key or not.
          */
-        inline bool contains(const KEY_t &key) {
+        inline bool contains(const KEY_t &key) const {
             return search<KEY_t>(keys, key) != NOT_FOUND;
+        }
+
+        /**
+         * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
+         * If it is not present the position where to insert the key is returned.
+         * @param key key to check
+         * @param minInd the minimum index where to look
+         * @param maxInd the maximum index where to look
+         * @return if there is an entry for that key or not.
+         */
+        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
+            const size_t ind = insert_pos<KEY_t>(keys, key, min, max);
+            if (ind == this->keys.size() or key != this->keys[ind]) {
+                return std::make_tuple(false, ind);
+            } else {
+                return std::make_tuple(true, ind);
+            }
+        }
+
+        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key) const {
+            const size_t ind = insert_pos<KEY_t>(keys, key);
+            if (ind == this->keys.size() or key != this->keys[ind]) {
+                return std::make_tuple(false, ind);
+            } else {
+                return std::make_tuple(true, ind);
+            }
+        }
+
+        /**
+         * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
+         * If it is not present the position of the next smaller value is returned. If it would be before the first element,
+         * SIZE_MAX is returned.
+         * @param key key to check
+         * @param minInd the minimum index where to look
+         * @param maxInd the maximum index where to look
+         * @return if there is an entry for that key or not.
+         */
+        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
+            const size_t ind = insert_pos<KEY_t>(keys, key, min, max);
+            if (ind == this->keys.size() or key != this->keys[ind]) {
+                if (ind == 0) {
+                    return std::make_tuple(false, SIZE_MAX);
+                } else {
+                    return std::make_tuple(false, ind - 1);
+                }
+            } else {
+                return std::make_tuple(true, ind);
+            }
+        }
+
+        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key) {
+            const size_t ind = insert_pos<KEY_t>(keys, key);
+            if (ind == this->keys.size() or key != this->keys[ind]) {
+                if (ind == 0) {
+                    return std::make_tuple(false, SIZE_MAX);
+                } else {
+                    return std::make_tuple(false, ind - 1);
+                }
+            } else {
+                return std::make_tuple(true, ind);
+            }
         }
 
         /**
