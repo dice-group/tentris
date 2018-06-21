@@ -35,11 +35,11 @@ namespace sparsetensor::container {
         /**
          * Vector string the keys.
          */
-        std::vector<KEY_t> keys{};
+        std::vector<KEY_t> _keys{};
         /**
          * Vector storing the values.
          */
-        std::vector<VALUE_t> values{};
+        std::vector<VALUE_t> _values{};
     public:
 
         /**
@@ -52,8 +52,8 @@ namespace sparsetensor::container {
          * @return the minimum key currently stored.
          */
         const KEY_t &min() const {
-            if (keys.size())
-                return *keys.cbegin();
+            if (_keys.size())
+                return *_keys.cbegin();
             else
                 return MAX_KEY;
         }
@@ -63,8 +63,8 @@ namespace sparsetensor::container {
          * @return the maximum key currently stored.
          */
         const KEY_t &max() const {
-            if (keys.size())
-                return *keys.crbegin();
+            if (_keys.size())
+                return *_keys.crbegin();
             else
                 return MIN_KEY;
         }
@@ -75,12 +75,12 @@ namespace sparsetensor::container {
          * @param value value to be set
          */
         void setItem(const KEY_t &key, const VALUE_t &value) {
-            size_t pos = insert_pos<KEY_t>(keys, key);
-            if (pos != keys.size() and keys[pos] == key) {
-                values[pos] = value;
+            size_t pos = insert_pos<KEY_t>(_keys, key);
+            if (pos != _keys.size() and _keys[pos] == key) {
+                _values[pos] = value;
             } else {
-                keys.insert(keys.begin() + pos, key);
-                values.insert(values.begin() + pos, value);
+                _keys.insert(_keys.begin() + pos, key);
+                _values.insert(_values.begin() + pos, value);
             }
         }
 
@@ -89,10 +89,10 @@ namespace sparsetensor::container {
          * @param key the key to the entry to be deleted.
          */
         void delItem(const KEY_t &key) {
-            size_t pos = search<KEY_t>(keys, key);
+            size_t pos = search<KEY_t>(_keys, key);
             if (pos != NOT_FOUND) {
-                keys.erase(keys.begin() + pos);
-                values.erase(values.begin() + pos);
+                _keys.erase(_keys.begin() + pos);
+                _values.erase(_values.begin() + pos);
             }
         }
 
@@ -103,8 +103,8 @@ namespace sparsetensor::container {
          * @throws std::out_of_range if the key is not contained
          */
         VALUE_t &at(const KEY_t &key) {
-            size_t pos = search<KEY_t>(keys, key);
-            return values.at(pos); // throws if result is out of range
+            size_t pos = search<KEY_t>(_keys, key);
+            return _values.at(pos); // throws if result is out of range
         }
 
         /**
@@ -113,9 +113,9 @@ namespace sparsetensor::container {
          * @return the stored value or MAX_VAL
          */
         const VALUE_t &get(const KEY_t &key) const {
-            size_t pos = search<KEY_t>(keys, key);
+            size_t pos = search<KEY_t>(_keys, key);
             if (pos != NOT_FOUND) {
-                return values.at(pos);
+                return _values.at(pos);
             } else {
                 return MAX_VAL;
             }
@@ -127,7 +127,7 @@ namespace sparsetensor::container {
          * @return if there is an entry for that key or not.
          */
         inline bool contains(const KEY_t &key) const {
-            return search<KEY_t>(keys, key) != NOT_FOUND;
+            return search<KEY_t>(_keys, key) != NOT_FOUND;
         }
 
         /**
@@ -139,8 +139,8 @@ namespace sparsetensor::container {
          * @return if there is an entry for that key or not.
          */
         inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(keys, key, min, max);
-            if (ind == this->keys.size() or key != this->keys[ind]) {
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+            if (ind == this->_keys.size() or key != this->_keys[ind]) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
@@ -148,8 +148,8 @@ namespace sparsetensor::container {
         }
 
         inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key) const {
-            const size_t ind = insert_pos<KEY_t>(keys, key);
-            if (ind == this->keys.size() or key != this->keys[ind]) {
+            const size_t ind = insert_pos<KEY_t>(_keys, key);
+            if (ind == this->_keys.size() or key != this->_keys[ind]) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
@@ -166,8 +166,8 @@ namespace sparsetensor::container {
          * @return if there is an entry for that key or not.
          */
         inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(keys, key, min, max);
-            if (ind == this->keys.size() or key != this->keys[ind]) {
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+            if (ind == this->_keys.size() or key != this->_keys[ind]) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);
                 } else {
@@ -179,8 +179,8 @@ namespace sparsetensor::container {
         }
 
         inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key) {
-            const size_t ind = insert_pos<KEY_t>(keys, key);
-            if (ind == this->keys.size() or key != this->keys[ind]) {
+            const size_t ind = insert_pos<KEY_t>(_keys, key);
+            if (ind == this->_keys.size() or key != this->_keys[ind]) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);
                 } else {
@@ -198,7 +198,7 @@ namespace sparsetensor::container {
          * @throws std::out_of_range there is no key for that index, i.e. it is not 0 <= index < size()
          */
         inline const KEY_t &keyByInd(size_t index) const {
-            return keys.at(index);
+            return _keys.at(index);
         }
 
         /**
@@ -208,7 +208,7 @@ namespace sparsetensor::container {
          * @throws std::out_of_range there is no value for that index, i.e. it is not 0 <= index < size()
          */
         inline const VALUE_t &valByInd(size_t index) const {
-            return values.at(index);
+            return _values.at(index);
         }
 
         /**
@@ -216,8 +216,19 @@ namespace sparsetensor::container {
          * @return number of entries.
          */
         inline size_t size() const {
-            return values.size();
+            return _values.size();
         }
+
+
+        inline const std::vector<KEY_t> &keys() const{
+            return _keys;
+        }
+
+        inline const std::vector<VALUE_t> &values() const{
+            return _values;
+        }
+
+
 
     protected:
         /**
@@ -271,10 +282,10 @@ namespace sparsetensor::container {
                     map{map}, _min{min}, _max{max}, _size{map.size()} {
                 if (_size != 0 and _min <= _max) { // check if view is empty
                     // get min value index
-                    _min_ind = insert_pos<KEY_t>(map.keys, _min);
+                    _min_ind = insert_pos<KEY_t>(map._keys, _min);
                     if (min != _size) {
                         // get max value index
-                        _max_ind = insert_pos<KEY_t>(map.keys, _max, _min_ind);
+                        _max_ind = insert_pos<KEY_t>(map._keys, _max, _min_ind);
                         // check if a higher value was found.
                         if (_max_ind != map.size()) {
                             if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
@@ -336,9 +347,9 @@ namespace sparsetensor::container {
              * @throws std::out_of_range if the key is not contained
              */
             const VALUE_t &at(const KEY_t &key) const {
-                size_t pos = search<KEY_t>(map.keys, key, _min_ind, _max_ind);
+                size_t pos = search<KEY_t>(map._keys, key, _min_ind, _max_ind);
                 // throws if result is out of range
-                return map.values.at(pos);
+                return map._values.at(pos);
 
             }
 
@@ -348,9 +359,9 @@ namespace sparsetensor::container {
              * @return the stored value or MAX_VAL
              */
             const VALUE_t &get(const KEY_t &key) const {
-                size_t pos = search<KEY_t>(map.keys, key, _min_ind, _max_ind);
+                size_t pos = search<KEY_t>(map._keys, key, _min_ind, _max_ind);
                 if (pos != NOT_FOUND)
-                    return map.keys.at(pos);
+                    return map._keys.at(pos);
                 else
                     return MAX_VAL;
             }
@@ -363,7 +374,7 @@ namespace sparsetensor::container {
              */
             inline const KEY_t &keyByInd(size_t index) const {
                 if (_min_ind <= index and index <= _max_ind)
-                    return map.keys.at(index);
+                    return map._keys.at(index);
                 else
                     throw std::out_of_range{"not in view."};
             }
@@ -376,7 +387,7 @@ namespace sparsetensor::container {
              */
             inline const VALUE_t &valByInd(size_t index) const {
                 if (_min_ind <= index and index <= _max_ind)
-                    return map.values.at(index);
+                    return map._values.at(index);
                 else
                     throw std::out_of_range{"not in view."};
             }
@@ -389,13 +400,14 @@ namespace sparsetensor::container {
                 return _size;
             }
 
+
             /**
              * Returns if an entry by the key is contained in the set.
              * @param key key to check
              * @return if there is an entry for that key or not.
              */
             bool contains(const KEY_t &key) {
-                return search<KEY_t>(map.keys, key, _min_ind, _max_ind) != NOT_FOUND;
+                return search<KEY_t>(map._keys, key, _min_ind, _max_ind) != NOT_FOUND;
             }
         };
 

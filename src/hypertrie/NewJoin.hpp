@@ -146,7 +146,7 @@ namespace sparsetensor::hypertrie {
                 const std::vector<std::variant<BoolHyperTrie *, bool>> &operands,
                 const std::vector<std::vector<key_pos_t >> &key_poss,
                 const std::optional<key_pos_t> &result_pos) :
-                _key{key}, _result{operands}, _result_pos{result_pos} {
+                _result{operands}, _key{key}, _result_pos{result_pos} {
 
             Operands<bool> ops_view{operands};
 
@@ -183,7 +183,7 @@ namespace sparsetensor::hypertrie {
         }
 
         class iterator {
-            const NewJoin &_join;
+            NewJoin &_join;
             key_part_t _current_key_part;
             key_part_t _last_key_part;
             bool _ended{};
@@ -193,9 +193,11 @@ namespace sparsetensor::hypertrie {
 
             iterator(NewJoin &join, bool ended = false) :
                     _join{join},
-                    _ended{ended},
+
                     _current_key_part{(not ended) ? join._min_keypart : join._max_keypart + 1},
-                    _last_key_part{join._max_keypart} {
+
+                    _last_key_part{join._max_keypart},
+                    _ended{ended} {
                 if (_current_key_part <= _last_key_part) {
                     _sort_order = sortPermutation(join.diags,
                                                   [](const BoolHyperTrie::DiagonalView &a,
@@ -203,7 +205,7 @@ namespace sparsetensor::hypertrie {
                                                       return a.size() < b.size();
                                                   });
                     _min_diag = &_join.diags[_sort_order[0]];
-                    _current_key_part = _min_diag->min();
+                    _current_key_part = _min_diag->first();
                     findNextMatch();
                 } else {
                     _sort_order = {};
@@ -224,20 +226,18 @@ namespace sparsetensor::hypertrie {
                         BoolHyperTrie::DiagonalView &diag = _join.diags[_sort_order[i]];
 
                         if (not diag.containsAndUpdateLower(_current_key_part)) {
-                            _current_key_part = _min_diag->min(diag.lower());
+                            _current_key_part = _min_diag->first(diag.lower());
                             goto continue_outer_loop;
                         }
                     }
                     return;
                 }
+                _ended = true;
             }
 
             iterator &operator++() {
-                BoolHyperTrie::DiagonalView &min_diag = _join.diags[_sort_order[0]];
-                if (_current_key_part <= _last_key_part) {
-                    _current_key_part = _min_diag->incrementMin();
-                    findNextMatch();
-                }
+                _current_key_part = _min_diag->incrementMin();
+                findNextMatch();
                 return *this;
             }
 

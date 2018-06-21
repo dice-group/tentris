@@ -176,7 +176,7 @@ namespace sparsetensor::hypertrie {
          * @return a sub BoolHyperTrie or a value depending on the length of the key.
          * @throws the entry doesn't exist
          */
-        variant<BoolHyperTrie *, bool> get(const Key_t &key) {
+        variant<BoolHyperTrie *, bool> get(const Key_t &key) const {
             vector<optional<key_part_t>> intern_key(this->_depth);
             for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
                 intern_key[key_pos] = {key[key_pos]};
@@ -191,7 +191,7 @@ namespace sparsetensor::hypertrie {
          * not set resulting in a slice.
          * @return a sub BoolHyperTrie or a value depending if the key contains slices.
          */
-        variant<BoolHyperTrie *, bool> get(const vector<optional<key_part_t>> &key) {
+        variant<BoolHyperTrie *, bool> get(const vector<optional<key_part_t>> &key) const {
             if (this->empty()) {
                 throw "hypertrie is emtpy.";
             }
@@ -209,7 +209,7 @@ namespace sparsetensor::hypertrie {
                 //return {variant<HyperTrie<bool> *, T>{this}}; // TODO: is there a problem with this?
             } else {
                 // get child while there are non slice parts in the subkey.
-                BoolHyperTrie *current_subtrie = this;
+                BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
                 PosCalc *posCalc = PosCalc::getInstance(this->_depth);
                 while (not non_slice_key_parts.empty()) {
                     if (non_slice_key_parts.size() == 1) {
@@ -508,7 +508,7 @@ namespace sparsetensor::hypertrie {
         protected:
             const BoolHyperTrie *_trie;
 
-            const std::vector<key_pos_t> _positions;
+            std::vector<key_pos_t> _positions;
             union {
                 leaf_edges *_leafs;
                 std::vector<inner_edges> *_edges;
@@ -520,6 +520,10 @@ namespace sparsetensor::hypertrie {
             size_t _size;
 
             key_pos_t _min_key_pos;
+
+            BoolHyperTrie *_result;
+
+
         public:
             DiagonalView(const DiagonalView &diag) :
                     _trie{diag._trie}, _positions{diag._positions}, _min_ind{diag._min_ind},
@@ -546,10 +550,9 @@ namespace sparsetensor::hypertrie {
                     _max = _leafs->max();
                     _max_ind = _leafs->size() - 1;
 
-                    min_lower_p = &DiagonalView::min_lower_I;
-                    minValue_p = &DiagonalView::minValue_I;
+                    first_lower_p = &DiagonalView::first_lower_I;
+                    minValue_p = &DiagonalView::minValue_I_III;
                     containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_I;
-                    incrementMin_p = &DiagonalView::incrementMin_I;
 
 
                 } else if (trie->depth() > positions.size()) {
@@ -578,6 +581,20 @@ namespace sparsetensor::hypertrie {
                             min_size = child_size;
                         }
                     }
+                    // calculate the positions of the key to use
+                    PosCalc *pos_calc = PosCalc::getInstance(trie->depth())->use(_min_key_pos);
+                    std::vector<key_pos_t> _sub_key_poss{};
+                    _sub_key_poss.resize(pos_calc->subkey_length);
+                    for (const key_pos_t &pos : positions) {
+                        if (pos != _min_key_pos) {
+                            _sub_key_poss.emplace_back(pos_calc->key_to_subkey_pos(pos));
+                        }
+                    }
+                    _positions = _sub_key_poss;
+
+                    first_lower_p = &DiagonalView::first_lower_II;
+                    minValue_p = &DiagonalView::minValue_II;
+                    containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_II;
 
                 } else {
                     // trie has depth greater than 1 and uses all positions.
@@ -603,6 +620,10 @@ namespace sparsetensor::hypertrie {
                             min_size = child_size;
                         }
                     }
+
+                    first_lower_p = &DiagonalView::first_lower_III;
+                    minValue_p = &DiagonalView::minValue_I_III;
+                    containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_III;
                 }
 
                 if (not positions.size()) {
@@ -627,8 +648,10 @@ namespace sparsetensor::hypertrie {
             /*
              */
         private:
-            key_part_t min_lower_I(const key_part_t &key_part) {
-                size_t ind = sparsetensor::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
+            key_part_t first_lower_I(const key_part_t &key_part) {
+                size_t ind = (key_part == _leafs->_keys.at(_min_ind))
+                             ? _min_ind
+                             : sparsetensor::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
                 _min_ind = ind;
                 if (ind != sparsetensor::container::NOT_FOUND) {
                     _size = _max_ind - ind + 1;
@@ -640,24 +663,102 @@ namespace sparsetensor::hypertrie {
                 }
             }
 
-            key_part_t (DiagonalView::*
-            min_lower_p)(const key_part_t &);
+            key_part_t first_lower_II(const key_part_t &key_part) {
+                inner_edges &children = _edges->at(_min_key_pos);
+                const std::vector<key_part_t> &childrens_keys = children.keys();
+                const std::vector<BoolHyperTrie *> &childrens_values = children.values();
+
+                key_part_t current_key_part = key_part;
+
+                size_t ind = (current_key_part == childrens_keys.at(_min_ind))
+                             ? _min_ind
+                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                while (ind != _max_ind + 1) {
+
+                    current_key_part = childrens_keys.at(ind);
+                    const BoolHyperTrie *child = childrens_values.at(ind);
+                    try {
+                        // TODO: implement diagonal key retrieval in HyperTrie directly.
+                        vector<std::optional<key_part_t>> key(_positions.size() - 1);
+                        for (size_t pos: _positions) {
+                            key[pos] = current_key_part;
+                        }
+                        _result = std::get<BoolHyperTrie *>(child->get(key));
+                        _min_ind = ind;
+                        _size = _max_ind - ind + 1;
+                        _min = current_key_part;
+                        return current_key_part;
+                    } catch (...) {}
+                    ++ind;
+                }
+                _size = 0;
+                return KEY_PART_MAX;
+
+
+            }
+
+            key_part_t first_lower_III(const key_part_t &key_part) {
+                inner_edges &children = _edges->at(_min_key_pos);
+                const std::vector<key_part_t> &childrens_keys = children.keys();
+                const std::vector<BoolHyperTrie *> &childrens_values = children.values();
+
+                key_part_t current_key_part = key_part;
+
+                size_t ind = (current_key_part == childrens_keys.at(_min_ind))
+                             ? _min_ind
+                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+
+                while (ind != _max_ind + 1) {
+
+                    current_key_part = childrens_keys.at(ind);
+                    const BoolHyperTrie *child = childrens_values.at(ind);
+                    try {
+                        // TODO: implement diagonal key retrieval in HyperTrie directly.
+                        child->get(Key_t(_positions.size() - 1, current_key_part));
+                        _min_ind = ind;
+                        _size = _max_ind - ind + 1;
+                        _min = current_key_part;
+                        return current_key_part;
+                    } catch (...) {}
+
+                    ++ind;
+                }
+                _size = 0;
+                return KEY_PART_MAX;
+            }
+
+            key_part_t (DiagonalView::*first_lower_p)(const key_part_t &);
 
         public:
             /**
-             * Finds the next valid key_part that is greater or equal to the given lower bound. lower is updated with this.
-             * @param lower
-             * @return the new min key part
+             * Finds the next valid key_part that is greater or equal to the given min_. this->min() is updated alongside..
+             * @param min_
+             * @return the new minimal key_part
              */
-            inline key_part_t min(const key_part_t &lower) {
-                return (this->*min_lower_p)(lower);
+            inline key_part_t first(const key_part_t &min_) {
+                return (this->*first_lower_p)(min_);
+            }
+
+            /*
+    */
+        public:
+            /**
+             * Finds the next valid key_part that is greater or equal to this->min(). this->min() is updated alongside..
+             * @return the new minimal key_part
+             */
+            inline key_part_t first() {
+                return (this->*first_lower_p)(_min_ind);
             }
 
             /*
              */
         private:
-            std::variant<BoolHyperTrie *, bool> minValue_I() {
+            std::variant<BoolHyperTrie *, bool> minValue_I_III() {
                 return {true};
+            }
+
+            std::variant<BoolHyperTrie *, bool> minValue_II() {
+                return {_result};
             }
 
             std::variant<BoolHyperTrie *, bool> (DiagonalView::*
@@ -665,6 +766,7 @@ namespace sparsetensor::hypertrie {
 
         public:
             inline std::variant<BoolHyperTrie *, bool> minValue() {
+                // todo: think about if it is sufficient to return BoolHyperTries.
                 return (this->*minValue_p)();
             }
 
@@ -674,10 +776,92 @@ namespace sparsetensor::hypertrie {
             bool containsAndUpdateLower_I(const key_part_t &key_part) {
                 size_t ind = sparsetensor::container::insert_pos(_leafs->_keys, key_part, _min_ind,
                                                                  _max_ind);
-                _min = _leafs->byInd(ind);
-                _min_ind = ind;
-                _size = _max_ind - ind + 1;
-                return _min == key_part;
+                if (ind != _max_ind + 1) {
+                    _min = _leafs->byInd(ind);
+                    _min_ind = ind;
+                    _size = _max_ind - ind + 1;
+                    return _min == key_part;
+                }
+            }
+
+            bool containsAndUpdateLower_II(const key_part_t &key_part) {
+                inner_edges &children = _edges->at(_min_key_pos);
+                const std::vector<key_part_t> &childrens_keys = children.keys();
+                const std::vector<BoolHyperTrie *> &childrens_values = children.values();
+
+                key_part_t current_key_part = key_part;
+
+                size_t ind = (current_key_part == childrens_keys.at(_min_ind))
+                             ? _min_ind
+                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+
+
+                if (ind != _max_ind + 1) {
+                    current_key_part = childrens_keys.at(ind);
+                    if (current_key_part == key_part) {
+                        const BoolHyperTrie *child = childrens_values.at(ind);
+                        try {
+                            // TODO: implement diagonal key retrieval in HyperTrie directly.
+                            vector<std::optional<key_part_t>> key(_positions.size() - 1);
+                            for (size_t pos: _positions) {
+                                key[pos] = current_key_part;
+                            }
+                            _result = std::get<BoolHyperTrie *>(child->get(key));
+                            _min_ind = ind;
+                            _size = _max_ind - ind + 1;
+                            _min = current_key_part;
+                            return true;
+                        } catch (...) {}
+                    }
+                }
+                if (ind != _max_ind + 1) {
+
+                    _min_ind = ind + 1;
+                    _size = _max_ind - _min_ind + 1;
+                    _min = childrens_keys.at(ind);
+                } else {
+                    _size = 0;
+                    return KEY_PART_MAX;
+                }
+                return false;
+            }
+
+            bool containsAndUpdateLower_III(const key_part_t &key_part) {
+                inner_edges &children = _edges->at(_min_key_pos);
+                const std::vector<key_part_t> &childrens_keys = children.keys();
+                const std::vector<BoolHyperTrie *> &childrens_values = children.values();
+
+                key_part_t current_key_part = key_part;
+
+                size_t ind = (current_key_part == childrens_keys.at(_min_ind))
+                             ? _min_ind
+                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+
+
+                if (ind != _max_ind + 1) {
+                    current_key_part = childrens_keys.at(ind);
+                    if (current_key_part == key_part) {
+                        const BoolHyperTrie *child = childrens_values.at(ind);
+                        try {
+                            // TODO: implement diagonal key retrieval in HyperTrie directly.
+                            child->get(Key_t(_positions.size() - 1, current_key_part));
+                            _min_ind = ind;
+                            _size = _max_ind - ind + 1;
+                            _min = current_key_part;
+                            return true;
+                        } catch (...) {}
+                    }
+                }
+                if (ind != _max_ind + 1) {
+
+                    _min_ind = ind + 1;
+                    _size = _max_ind - _min_ind + 1;
+                    _min = childrens_keys.at(ind);
+                } else {
+                    _size = 0;
+                    _min = _max;
+                }
+                return false;
             }
 
 
@@ -688,35 +872,19 @@ namespace sparsetensor::hypertrie {
                 return (this->*containsAndUpdateLower_p)(key_part);
             }
 
-            /*
-             */
-        private:
-            key_part_t (DiagonalView::*minValid_p)();
 
-        public:
-            inline key_part_t min() {
-                return (this->*minValid_p)();
-            }
 
             /*
              */
-        private:
-            key_part_t incrementMin_I() {
-                const size_t &min_ind = ++_min_ind;
-                --_size;
-                if (min_ind <= _max_ind) {
-                    _min = _leafs->byInd(min_ind);
-                } else {
-                    _min = KEY_PART_MAX;
-                }
-                return _min;
-            }
-
-            key_part_t (DiagonalView::*incrementMin_p)();
 
         public:
             inline key_part_t incrementMin() {
-                return (this->*incrementMin_p)();
+                ++_min_ind;
+                if (_min_ind <= _max_ind) {
+                    return (this->*first_lower_p)(_min_ind);
+                } else {
+                    _min = KEY_PART_MAX;
+                }
             }
 
         private:
@@ -780,7 +948,7 @@ namespace sparsetensor::hypertrie {
                 auto temp_min = min_;
                 auto temp_max = max_;
                 for (int times = 0; times < 2; ++times) { // do it twice
-                    for (int i = 0; i < diagonals.size(); ++i) {
+                    for (size_t i = 0; i < diagonals.size(); ++i) {
                         DiagonalView &diag = diagonals[i];
                         diag.setMinMax(min_, max_);
                         if (diag._size == 0)

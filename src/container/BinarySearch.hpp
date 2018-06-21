@@ -93,6 +93,7 @@ namespace sparsetensor::container {
      */
     template<typename T>
     inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value, size_t low, size_t high) {
+        // TODO: siehe Klebezettel am Monitor
         if (low > high)
             return sorted_vector.size();
         else if (low == high)
