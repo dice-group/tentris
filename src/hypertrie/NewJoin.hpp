@@ -223,8 +223,8 @@ namespace sparsetensor::hypertrie {
                     for (size_t i = 1; i < _sort_order.size(); ++i) {
                         BoolHyperTrie::DiagonalView &diag = _join.diags[_sort_order[i]];
 
-                        if (not diag.containsAndUpdateMin(_current_key_part)) {
-                            _current_key_part = _min_diag->setMinGreaterEqual(diag.lower());
+                        if (not diag.containsAndUpdateLower(_current_key_part)) {
+                            _current_key_part = _min_diag->min(diag.lower());
                             goto continue_outer_loop;
                         }
                     }

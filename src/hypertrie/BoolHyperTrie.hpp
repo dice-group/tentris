@@ -535,7 +535,7 @@ namespace sparsetensor::hypertrie {
              */
             DiagonalView(const BoolHyperTrie *trie, const std::vector<key_pos_t> positions) :
                     _trie{trie}, _positions{positions}, _min_ind{0},
-                    _max_ind{SIZE_MAX} , _size{_trie->size()}{
+                    _max_ind{SIZE_MAX}, _size{_trie->size()} {
                 if (trie->depth() == 1) {
                     // trie has depth 1, so positions is assumed to be < 0 >.
                     // handle VecSet instead of VecMap
@@ -546,34 +546,63 @@ namespace sparsetensor::hypertrie {
                     _max = _leafs->max();
                     _max_ind = _leafs->size() - 1;
 
-                    setMinGreaterEqual_p = &DiagonalView::setMinGreaterEqual_I;
+                    min_lower_p = &DiagonalView::min_lower_I;
                     minValue_p = &DiagonalView::minValue_I;
-                    containsAndUpdateMin_p = &DiagonalView::containsAndUpdateMin_I;
+                    containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_I;
                     incrementMin_p = &DiagonalView::incrementMin_I;
 
 
                 } else if (trie->depth() > positions.size()) {
                     // trie has depth greater than 1, but not all positions are used.
                     // So the result is a trie again.
-
-                } else {
                     _edges = const_cast<std::vector<inner_edges> *>(&std::get<std::vector<inner_edges>>(
                             _trie->_subtries));
                     size_t min_size = SIZE_MAX;
-                    for (size_t key_pos = 0; key_pos < _edges->size(); ++key_pos) {
+
+                    // iterate all key_positions
+                    for (size_t i = 0; i < _positions.size(); ++i) {
+
+                        const key_pos_t &key_pos = _positions[i];
+
                         const inner_edges &children = _edges->at(key_pos);
+                        // find greatest min
                         if (const key_part_t &current_min = children.min(); _min < current_min)
                             _min = current_min;
+                        // find smallest max
                         if (const key_part_t &current_max = children.max();  current_max < _max)
                             _max = current_max;
-                        if (const size_t &child_size = children.size(); min_size < child_size){
+                        // find smallest size
+                        // and set the _min_key_pos to its key_pos
+                        if (const size_t &child_size = children.size(); child_size < min_size) {
                             _min_key_pos = key_pos_t(key_pos);
                             min_size = child_size;
                         }
                     }
 
+                } else {
                     // trie has depth greater than 1 and uses all positions.
                     // So the result is bool
+                    _edges = const_cast<std::vector<inner_edges> *>(&std::get<std::vector<inner_edges>>(
+                            _trie->_subtries));
+                    size_t min_size = SIZE_MAX;
+
+                    // iterate all key_positions
+                    for (size_t key_pos = 0; key_pos < _edges->size(); ++key_pos) {
+
+                        const inner_edges &children = _edges->at(key_pos);
+                        // find greatest min
+                        if (const key_part_t &current_min = children.min(); _min < current_min)
+                            _min = current_min;
+                        // find smallest max
+                        if (const key_part_t &current_max = children.max();  current_max < _max)
+                            _max = current_max;
+                        // find smallest size
+                        // and set the _min_key_pos to its key_pos
+                        if (const size_t &child_size = children.size(); child_size < min_size) {
+                            _min_key_pos = key_pos_t(key_pos);
+                            min_size = child_size;
+                        }
+                    }
                 }
 
                 if (not positions.size()) {
@@ -598,7 +627,7 @@ namespace sparsetensor::hypertrie {
             /*
              */
         private:
-            key_part_t setMinGreaterEqual_I(const key_part_t &key_part) {
+            key_part_t min_lower_I(const key_part_t &key_part) {
                 size_t ind = sparsetensor::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
                 _min_ind = ind;
                 if (ind != sparsetensor::container::NOT_FOUND) {
@@ -612,11 +641,16 @@ namespace sparsetensor::hypertrie {
             }
 
             key_part_t (DiagonalView::*
-            setMinGreaterEqual_p)(const key_part_t &);
+            min_lower_p)(const key_part_t &);
 
         public:
-            inline key_part_t setMinGreaterEqual(const key_part_t &key_part) {
-                return (this->*setMinGreaterEqual_p)(key_part);
+            /**
+             * Finds the next valid key_part that is greater or equal to the given lower bound. lower is updated with this.
+             * @param lower
+             * @return the new min key part
+             */
+            inline key_part_t min(const key_part_t &lower) {
+                return (this->*min_lower_p)(lower);
             }
 
             /*
@@ -637,7 +671,7 @@ namespace sparsetensor::hypertrie {
             /*
              */
         private:
-            bool containsAndUpdateMin_I(const key_part_t &key_part) {
+            bool containsAndUpdateLower_I(const key_part_t &key_part) {
                 size_t ind = sparsetensor::container::insert_pos(_leafs->_keys, key_part, _min_ind,
                                                                  _max_ind);
                 _min = _leafs->byInd(ind);
@@ -647,11 +681,11 @@ namespace sparsetensor::hypertrie {
             }
 
 
-            bool (DiagonalView::*containsAndUpdateMin_p)(const key_part_t &);
+            bool (DiagonalView::*containsAndUpdateLower_p)(const key_part_t &);
 
         public:
-            inline bool containsAndUpdateMin(const key_part_t &key_part) {
-                return (this->*containsAndUpdateMin_p)(key_part);
+            inline bool containsAndUpdateLower(const key_part_t &key_part) {
+                return (this->*containsAndUpdateLower_p)(key_part);
             }
 
             /*
@@ -728,34 +762,34 @@ namespace sparsetensor::hypertrie {
              * @return tuple of the largest min and smallest max.
              */
             static tuple<size_t, size_t> minimizeRange(std::vector<DiagonalView> diagonals) {
-                key_part_t min = 0;
-                key_part_t max = SIZE_MAX;
+                key_part_t min_ = 0;
+                key_part_t max_ = SIZE_MAX;
                 // get min and max
                 for (size_t i = 0; i < diagonals.size(); ++i) {
                     const DiagonalView &diag = diagonals[i];
-                    if (const key_part_t &current_min = diag.lower(); min < current_min)
-                        min = current_min;
-                    if (const key_part_t &current_max = diag.upper();  current_max < max)
-                        max = current_max;
+                    if (const key_part_t &current_min = diag.lower(); min_ < current_min)
+                        min_ = current_min;
+                    if (const key_part_t &current_max = diag.upper();  current_max < max_)
+                        max_ = current_max;
                 }
                 // return if min > max, i.e. there are no key_part candidates left no more.
-                if (min > max) {
-                    return std::make_tuple(min, max);
+                if (min_ > max_) {
+                    return std::make_tuple(min_, max_);
                 }
                 // narrow down min and max
-                auto temp_min = min;
-                auto temp_max = max;
+                auto temp_min = min_;
+                auto temp_max = max_;
                 for (int times = 0; times < 2; ++times) { // do it twice
                     for (int i = 0; i < diagonals.size(); ++i) {
                         DiagonalView &diag = diagonals[i];
-                        diag.setMinMax(min, max);
+                        diag.setMinMax(min_, max_);
                         if (diag._size == 0)
-                            return std::make_tuple(min, max);
+                            return std::make_tuple(min_, max_);
                     }
-                    if ((temp_min == min) and (temp_max == max))
-                            break;
+                    if ((temp_min == min_) and (temp_max == max_))
+                        break;
                 }
-                return std::make_tuple(min, max);
+                return std::make_tuple(min_, max_);
             }
 
 
