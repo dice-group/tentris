@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 #include "../tensor/Tensor.hpp"
-#include "../hypertrie/HyperTrie.hpp"
+#include "../hypertrie/BoolHyperTrie.hpp"
 #include <parallel/numeric>
 #include <cmath>
 #include <ostream>

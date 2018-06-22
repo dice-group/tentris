@@ -24,6 +24,7 @@ link_libraries(
 add_executable(TestBoolHyperTrie TestBoolHyperTrie.cpp)
 #add_executable(TestHyperTrieTensor TestHyperTrieTensor.cpp)
 #add_executable(TestJoin TestJoin.cpp)
+add_executable(TestNewJoin TestNewJoin.cpp)
 #add_executable(TestMapTensor TestMapTensor.cpp)
 #add_executable(TestPosCalc TestPosCalc.cpp)
 #add_executable(TestSubscript TestSubscript.cpp)
