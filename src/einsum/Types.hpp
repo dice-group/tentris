@@ -17,6 +17,8 @@ namespace sparsetensor::operations {
      */
     using op_pos_t=uint8_t;
 
+    constexpr uint8_t OP_POS_MAX = UINT8_MAX;
+
     /**
      * Type for the position of a label (uint8_t).
      */

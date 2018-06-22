@@ -551,7 +551,6 @@ namespace sparsetensor::hypertrie {
                     _max_ind = _leafs->size() - 1;
 
                     first_lower_p = &DiagonalView::first_lower_I;
-                    minValue_p = &DiagonalView::minValue_I_III;
                     containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_I;
 
 
@@ -593,7 +592,6 @@ namespace sparsetensor::hypertrie {
                     _positions = _sub_key_poss;
 
                     first_lower_p = &DiagonalView::first_lower_II;
-                    minValue_p = &DiagonalView::minValue_II;
                     containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_II;
 
                 } else {
@@ -622,7 +620,6 @@ namespace sparsetensor::hypertrie {
                     }
 
                     first_lower_p = &DiagonalView::first_lower_III;
-                    minValue_p = &DiagonalView::minValue_I_III;
                     containsAndUpdateLower_p = &DiagonalView::containsAndUpdateLower_III;
                 }
 
@@ -752,22 +749,17 @@ namespace sparsetensor::hypertrie {
 
             /*
              */
-        private:
-            std::variant<BoolHyperTrie *, bool> minValue_I_III() {
-                return {true};
-            }
-
-            std::variant<BoolHyperTrie *, bool> minValue_II() {
-                return {_result};
-            }
-
-            std::variant<BoolHyperTrie *, bool> (DiagonalView::*
-            minValue_p)();
 
         public:
-            inline std::variant<BoolHyperTrie *, bool> minValue() {
+            /**
+             * Returns the HyperTrie that corresponds to the last call of first() retrieved. This function
+             * must only be called if before either first(...) was called returning a key_part in range or
+             * if  containsAndUpdateLower() was called returning true.
+             * @return the child HyperTrie
+             */
+            inline BoolHyperTrie * minValue() {
                 // todo: think about if it is sufficient to return BoolHyperTries.
-                return (this->*minValue_p)();
+                return _result;
             }
 
             /*

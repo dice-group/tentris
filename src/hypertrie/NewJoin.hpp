@@ -9,9 +9,11 @@
 #include "BoolHyperTrie.hpp"
 #include "Types.hpp"
 #include "../einsum/Types.hpp"
+#include "../einsum/EvalPlan.hpp"
 
 namespace sparsetensor::hypertrie {
     using op_pos_t = sparsetensor::operations::op_pos_t;
+    using sparsetensor::operations::OP_POS_MAX;
 
     template<typename T, typename Compare>
     std::vector<std::size_t> sortPermutation(
@@ -58,159 +60,129 @@ namespace sparsetensor::hypertrie {
         }
     }
 
-    template<typename COUNT_t>
-    class Operands {
-        std::vector<std::variant<BoolHyperTrie *, COUNT_t>> ops;
-        std::vector<bool> is_trie;
-    public:
-
-        Operands(std::vector<std::variant<BoolHyperTrie *, COUNT_t>> operands) :
-                ops{operands}, is_trie(operands.size()) {
-            for (size_t i = 0; i < operands.size(); ++i) {
-                if (std::holds_alternative<BoolHyperTrie *>(operands[i]))
-                    is_trie[i] = true;
-            }
-        }
-
-        inline size_t scalar_count() {
-            return ops.size() - std::accumulate(is_trie.begin(), is_trie.end(), 0);
-        }
-
-        inline size_t trie_count() {
-            return size_t(std::accumulate(is_trie.begin(), is_trie.end(), 0));
-        }
-
-        std::vector<op_pos_t> scalar_positions() {
-            vector<op_pos_t> scalar_poss(ops.size() - std::accumulate(is_trie.begin(), is_trie.end(), 0));
-            for (op_pos_t pos = 0, scalars_i = 0; pos < ops.size(); ++pos) {
-                if (not is_trie[pos]) {
-                    scalar_poss[scalars_i] = pos;
-                    ++scalars_i;
-                }
-            }
-            return scalar_poss;
-        }
-
-        std::vector<op_pos_t> trie_positions() {
-            vector<op_pos_t> trie_poss(size_t(std::accumulate(is_trie.begin(), is_trie.end(), 0)));
-            for (op_pos_t pos = 0, trie_i = 0; pos < ops.size(); ++pos) {
-                if (is_trie[pos]) {
-                    trie_poss[trie_i] = pos;
-                    ++trie_i;
-                }
-            }
-            return trie_poss;
-        }
-
-        std::vector<BoolHyperTrie *> tries() {
-            const vector<op_pos_t> &trie_poss = trie_positions();
-            const unsigned long trie_count = trie_poss.size();
-            vector<BoolHyperTrie *> tries(trie_count);
-            for (size_t i = 0; i < trie_count; ++i) {
-                tries[i] = std::get<BoolHyperTrie *>(ops[trie_poss[i]]);
-            }
-            return tries;
-        }
-
-        inline BoolHyperTrie *trie_at(op_pos_t pos) const {
-            return std::get<BoolHyperTrie *>(ops.at(pos));
-        }
-
-        inline const std::variant<BoolHyperTrie *, COUNT_t> &at(op_pos_t pos) const {
-            return ops.at(pos);
-        }
-
-        inline const size_t &size() const {
-            return is_trie.size();
-        }
-
-
-    };
+    using Operands =  typename std::vector<BoolHyperTrie *>;
 
     class NewJoin {
+        using sparsetensor::operations::label_pos_t;
 
         key_part_t _min_keypart = KEY_PART_MAX;
         key_part_t _max_keypart = KEY_PART_MIN;
 
         std::vector<op_pos_t> _trie_poss;
 
-        const std::vector<std::variant<BoolHyperTrie *, bool>> &_result;
+
+        Operands _result; ///< Operands that are copied each time the iterator returns a result
         const Key_t &_key;
 
         std::vector<BoolHyperTrie::DiagonalView> diags{};
 
         // TODO: do that via template
-        const std::optional<key_pos_t> &_result_pos;
+        const std::optional<key_pos_t> &_result_key_pos;
 
+        std::vector<op_pos_t> _joinee2result_pos;
+
+
+
+    public:
+//        static NewJoin create(const Key_t &key,
+//                              const std::vector<BoolHyperTrie *> &operands,
+//                              sparsetensor::operations::PlanStep *step) {
+//            // TODO: implement step to fit this interface
+//            const optional<operations::label_pos_t> &key_pos = step->labelPosInResult();
+//            vector<op_pos_t> &op_ids = step->operandsWithLabel();
+//            vector<vector<key_pos_t>> &key_poss
+//            step->labelPossInOperands();
+//        }
+
+        /**
+         * @brief NewJoin
+         * @param key the current key that maybe gets updated.
+         * @param operands the current operands
+         * @param op_poss the positions of the joining BoolHyperTrie in operands
+         * @param key_part_posss the the joining key positions of each join operand.
+         * @param next_op_position the positions in operands of BoolHyperTrie that will be in the result
+         * @param result_key_pos
+         */
         NewJoin(const Key_t &key,
-                const std::vector<std::variant<BoolHyperTrie *, bool>> &operands,
-                const std::vector<std::vector<key_pos_t >> &key_poss,
-                const std::optional<key_pos_t> &result_pos) :
-                _result{operands}, _key{key}, _result_pos{result_pos} {
+                const Operands &operands,
+                const std::vector<op_pos_t> op_poss,
+                const std::vector<std::vector<key_pos_t >> &key_part_posss,
+                const std::vector<op_pos_t> next_op_position,
+                const std::optional<key_pos_t> &result_key_pos) :
+                _result(op_poss.size()), _key{key}, _result_key_pos{result_key_pos} {
 
-            Operands<bool> ops_view{operands};
-
-            if (ops_view.trie_count() > 0) {
-                _trie_poss = ops_view.trie_positions();
-                removeUnusedTriePoss(key_poss, _trie_poss);
-                if (_trie_poss.size() > 0) {
-                    diags.reserve(_trie_poss.size());
-                    for (size_t i = 0; i < _trie_poss.size(); ++i) {
-                        diags.emplace_back(
-                                BoolHyperTrie::DiagonalView{ops_view.trie_at(_trie_poss[i]), key_poss[_trie_poss[i]]});
-                    }
-                    const std::tuple<size_t, size_t> &min_max = BoolHyperTrie::DiagonalView::minimizeRange(diags);
-                    _min_keypart = std::get<0>(min_max);
-                    _max_keypart = std::get<1>(min_max);
-                };
+            // write operands into _result
+            for (size_t i; i < next_op_position.size(); ++i) {
+                _result[i] = operands[next_op_position[i]];
             }
-        }
 
-        // TODO: maybe we already know which positions are used in advance?
-        void removeUnusedTriePoss(const vector<vector<key_pos_t>> &dims, vector<op_pos_t> &trie_poss) const {
-            // remove positions of iterators that are not involved in the join.
-            vector<op_pos_t>::iterator trie_poss_it = trie_poss.begin();
-            vector<op_pos_t>::iterator trie_poss_end = trie_poss.begin();
-            for (size_t pos = 0; (pos < dims.size()) and (trie_poss_it != trie_poss_end); ++pos) {
-                if (*trie_poss_it == pos) {
-                    if (dims[pos].size() == 0) {
-                        trie_poss_it = trie_poss.erase(trie_poss_it);
-                    } else {
-                        ++trie_poss_it;
-                    }
+            // initialize diagonals with the operands and their positions to join on.
+            auto &&key_part_poss = key_part_posss.cbegin();
+            for (const op_pos_t &op_pos : op_poss) {
+                diags.emplace_back(BoolHyperTrie::DiagonalView{operands[op_pos], *key_part_poss});
+                ++key_part_poss;
+            }
+
+            // narrow the range of the diagonals
+            const std::tuple<size_t, size_t> &min_max = BoolHyperTrie::DiagonalView::minimizeRange(diags);
+            _min_keypart = std::get<0>(min_max);
+            _max_keypart = std::get<1>(min_max);
+
+            // calculate the position mapping from diagonals to result
+            _joinee2result_pos = std::vector<op_pos_t>(next_op_position.size());
+            for(size_t i = 0, j =0; i < op_poss.size(); ++i){
+                auto pos_of_join_in_operands = op_poss[i];
+                auto pos_of_result_in_operands = next_op_position[j];
+                if(pos_of_join_in_operands == pos_of_result_in_operands){
+                    _joinee2result_pos[i] = pos_of_join_in_operands;
+                    ++j;
+                } else{
+                    _joinee2result_pos[i] = OP_POS_MAX;
                 }
             }
         }
 
+
         class iterator {
             NewJoin &_join;
+            std::vector<BoolHyperTrie::DiagonalView> &_diagonals;
+
             key_part_t _current_key_part;
             key_part_t _last_key_part;
             bool _ended{};
-            std::vector<size_t> _sort_order;
-            BoolHyperTrie::DiagonalView *_min_diag;
+            std::vector<std::tuple<op_pos_t, op_pos_t>> _reorderedJoinee2result_pos{};
         public:
 
             iterator(NewJoin &join, bool ended = false) :
                     _join{join},
-
+                    _diagonals{join.diags},
                     _current_key_part{(not ended) ? join._min_keypart : join._max_keypart + 1},
-
                     _last_key_part{join._max_keypart},
                     _ended{ended} {
                 if (_current_key_part <= _last_key_part) {
-                    _sort_order = sortPermutation(join.diags,
+                    // sort the diagonals by size
+                    const std::vector<size_t> _sort_order = sortPermutation(_diagonals,
                                                   [](const BoolHyperTrie::DiagonalView &a,
                                                      const BoolHyperTrie::DiagonalView &b) {
                                                       return a.size() < b.size();
                                                   });
-                    _min_diag = &_join.diags[_sort_order[0]];
-                    _current_key_part = _min_diag->first();
+                    applyPermutation(_diagonals, _sort_order);
+
+                    // get the inverse sort order
+                    const std::vector<size_t> _inv_sort_order = invPermutation(_sort_order);
+
+                    // calculate the mapping from the reordered Diagonals to the result from it
+                    for(size_t posInReorderedDiagonals = 0; posInReorderedDiagonals < _inv_sort_order.size(); ++posInReorderedDiagonals ){
+                        auto positionOfReorderedDiagonalInDiagonals= _inv_sort_order[posInReorderedDiagonals];
+                        auto positionOfDiagonalInResult = join._joinee2result_pos[positionOfReorderedDiagonalInDiagonals];
+                        if(positionOfDiagonalInResult != OP_POS_MAX){
+                            _reorderedJoinee2result_pos.emplace_back(std::make_tuple(posInReorderedDiagonals, positionOfDiagonalInResult));
+                        }
+                    }
+
+                    _current_key_part = _diagonals[0].first();
                     findNextMatch();
-                } else {
-                    _sort_order = {};
-                    _min_diag = nullptr;
-                };
+        }
             }
 
             /**
@@ -222,11 +194,11 @@ namespace sparsetensor::hypertrie {
             inline void findNextMatch() {
                 continue_outer_loop:
                 while (_current_key_part <= _last_key_part) {
-                    for (size_t i = 1; i < _sort_order.size(); ++i) {
-                        BoolHyperTrie::DiagonalView &diag = _join.diags[_sort_order[i]];
+                    for (size_t i = 1; i < _diagonals.size(); ++i) {
+                        BoolHyperTrie::DiagonalView &diagonal = _diagonals[i];
 
-                        if (not diag.containsAndUpdateLower(_current_key_part)) {
-                            _current_key_part = _min_diag->first(diag.lower());
+                        if (not diagonal.containsAndUpdateLower(_current_key_part)) {
+                            _current_key_part = _diagonals[0].first(diagonal.lower());
                             goto continue_outer_loop;
                         }
                     }
@@ -236,23 +208,21 @@ namespace sparsetensor::hypertrie {
             }
 
             iterator &operator++() {
-                _current_key_part = _min_diag->incrementMin();
+                _current_key_part = _diagonals[0].incrementMin();
                 findNextMatch();
                 return *this;
             }
 
-            std::tuple<std::vector<std::variant<BoolHyperTrie *, bool>>, vector<uint64_t>> operator*() {
-                vector<variant<BoolHyperTrie *, bool>> result = _join._result;
+            std::tuple<std::vector<BoolHyperTrie *>, vector<uint64_t>> operator*() {
+                vector<BoolHyperTrie *> result = _join._result;
 
-                for (size_t i = 0; i < _join._trie_poss.size(); ++i) {
-                    op_pos_t &pos = _join._trie_poss[i];
-
-                    result[pos] = _join.diags[i].minValue();
+                for (auto &&[revJoinee_pos, result_pos] : _reorderedJoinee2result_pos) {
+                    result[result_pos] = _diagonals[revJoinee_pos].minValue();
                 }
 
                 Key_t key = _join._key;
-                if (_join._result_pos)
-                    key[*_join._result_pos] = _current_key_part;
+                if (_join._result_key_pos)
+                    key[*_join._result_key_pos] = _current_key_part;
 
                 return {{result},
                         {key}};
