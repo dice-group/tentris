@@ -5,7 +5,7 @@
 #include "ExtendHash.hpp"
 // #include "cppitertools/itertools.hpp"
 #include "range.h"
-#include "enum.hpp"
+#include "Enumerate.hpp"
 
 // using namespace iter;
 using namespace whoshuu;
