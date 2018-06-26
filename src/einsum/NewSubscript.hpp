@@ -36,6 +36,7 @@ namespace sparsetensor::operations {
         std::vector<label_t> _result_labels;
         std::vector<op_pos_t> _original_op_poss;
         std::vector<std::shared_ptr<NewSubscript>> _sub_subscripts;
+        // TODO: remove?
         label_t _max_label;
         std::vector<std::set<label_t>> _distinct_operands_labels;
         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
@@ -46,23 +47,7 @@ namespace sparsetensor::operations {
         std::vector<op_pos_t> _operands_without_unique_non_result_labels;
         UndirectedGraph<label_t> _label_dependency_graph;
         std::vector<std::set<label_t>> _independent_label_subsets;
-        std::map<op_pos_t, vector<vector<label_pos_t>>> _unique_non_result_contractions;
-
-    public:
-
-        NewSubscript(std::vector<raw_subscript> operands, raw_subscript result) {
-            std::tie(_operands_labels, _result_labels, _all_labels) = normalizeRawSubscripts(operands, result);
-
-            _original_op_poss = std::vector<op_pos_t>{};
-            _original_op_poss.reserve(numberOfOperands());
-            std::iota(_original_op_poss.begin(), _original_op_poss.end(), 0);
-
-            // TODO: add execPlan and remove_labels_cache
-//            self._exec_plan = None
-//            self._remove_labels_cache: Dict[label_t, 'Subscript'] = dict()
-
-            updateFields();
-        }
+        std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> _unique_non_result_contractions;
 
         void updateFields() {
             _max_label = (_all_labels.size() > 0) ? *std::max_element(_all_labels.begin(), _all_labels.end())
@@ -106,9 +91,26 @@ namespace sparsetensor::operations {
             _unique_non_result_contractions =
                     calcUniqueNonResultContractions(_operands_with_unique_non_result_labels, _distinct_operands_labels,
                                                     _unique_non_result_labels, _label_poss_in_operands);
-
-
         }
+
+        NewSubscript() {};
+    public:
+        NewSubscript(std::vector<raw_subscript> operands, raw_subscript result) {
+            std::tie(_operands_labels, _result_labels, _all_labels) = normalizeRawSubscripts(operands, result);
+
+            _original_op_poss = std::vector<op_pos_t>{};
+            _original_op_poss.reserve(numberOfOperands());
+            std::iota(_original_op_poss.begin(), _original_op_poss.end(), 0);
+
+            _sub_subscripts = {};
+
+            // TODO: add execPlan and remove_labels_cache
+//            self._exec_plan = None
+//            self._remove_labels_cache: Dict[label_t, 'Subscript'] = dict()
+
+            updateFields();
+        }
+
 
         inline size_t numberOfOperands() const {
             return _operands_labels.size();
@@ -184,6 +186,36 @@ namespace sparsetensor::operations {
             return _unique_non_result_contractions.at(op_pos);
         }
 
+        NewSubscript removeLabel(const label_t &label) {
+            if (not _all_labels.count(label))
+                return *this;
+            else {
+                NewSubscript subscript{};
+
+                subscript._all_labels = {};
+                std::copy_if(_all_labels.begin(), _all_labels.end(),
+                             std::inserter(subscript._all_labels, subscript._all_labels.begin()),
+                             [&](const label_t &l) { return l != label; });
+
+                subscript._operands_labels = {};
+                subscript._original_op_poss = {};
+                for (const auto &[op_pos, op_labels] : enumerate(_operands_labels)) {
+                    std::vector<label_t> new_op_labels{};
+                    std::copy_if(op_labels.begin(), op_labels.end(), std::back_inserter(new_op_labels),
+                                 [&](const label_t &l) { return l != label; });
+                    if (new_op_labels.size()) {
+                        subscript._operands_labels.emplace_back(std::move(new_op_labels));
+                        _original_op_poss.emplace_back(op_pos);
+                    }
+                }
+
+                subscript.updateFields();
+                return subscript;
+            }
+
+        }
+
+
         NewSubscript optimized() {
             std::vector<std::shared_ptr<NewSubscript>> sub_subscripts{};
             std::vector<std::vector<label_t>> new_operands_labels{};
@@ -223,7 +255,7 @@ namespace sparsetensor::operations {
             return extracted_subscript;
         }
 
-
+    private:
         static std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>>
         _calc_label_poss_in_operands(std::vector<std::vector<label_t>> operands_labels) {
             std::map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operands{};
