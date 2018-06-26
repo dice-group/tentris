@@ -46,13 +46,15 @@ namespace sparsetensor::operations {
         std::vector<Subscript *> _sub_subscripts;
         label_t _max_label;
         std::vector<std::set<label_t>> _distinct_operands_labels;
+        std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
         std::map<label_t, label_pos_t> _label_pos_in_result;
         std::map<label_t, std::set<op_pos_t>> _operands_with_label;
         std::set<label_t> _unique_non_result_labels;
         std::vector<op_pos_t> _operands_with_unique_non_result_labels;
         std::vector<op_pos_t> _operands_without_unique_non_result_labels;
-         UndirectedGraph<label_t>  _label_dependency_graph;
-         std::vector<std::set<label_t>> _independent_label_subsets;
+        UndirectedGraph<label_t> _label_dependency_graph;
+        std::vector<std::set<label_t>> _independent_label_subsets;
+        std::map<op_pos_t, vector<vector<label_pos_t>>> _unique_non_result_contractions;
 
     public:
 
@@ -70,6 +72,16 @@ namespace sparsetensor::operations {
             updateFields();
         }
 
+        static std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>>
+        _calc_label_poss_in_operands(std::vector<std::vector<label_t>> operands_labels) {
+            std::map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operands{};
+
+            for (const auto &[op_id, labels] : operands_labels)
+                for (const auto &[label_pos, label] : enumerate(labels))
+                    label_poss_in_operands[{op_id, label}].push_back(label_pos_t(label_pos));
+            return label_poss_in_operands;
+        }
+
         void updateFields() {
             _max_label = (_all_labels.size() > 0) ?
                          *std::max_element(_all_labels.begin(), _all_labels.end()) : NO_LABEL;
@@ -81,6 +93,9 @@ namespace sparsetensor::operations {
                               _distinct_operands_labels.emplace_back(
                                       std::set<label_t>(operands.begin(), operands.end()));
                           });
+
+            _label_poss_in_operands = _calc_label_poss_in_operands(_operands_labels);
+
             _label_pos_in_result = {};
             for (const auto &[pos, label] : enumerate(_result_labels)) {
                 _label_pos_in_result[pos] = label;
@@ -109,12 +124,40 @@ namespace sparsetensor::operations {
 
             _independent_label_subsets = _label_dependency_graph.getConnectedComponents();
 
-
+            _unique_non_result_contractions =
+                    _calcUniqueNonResultContractions(_operands_with_unique_non_result_labels, _operands_labels,
+                                                     _unique_non_result_labels, _label_poss_in_operands);
 
 
         }
 
-        std::set<label_t>
+        static std::map<op_pos_t, vector<vector<label_pos_t>>>
+        _calcUniqueNonResultContractions(std::vector<op_pos_t> operands_with_unique_non_result_labels,
+                                         std::vector<std::vector<label_t>> operands_labels,
+                                         std::set<label_t> unique_non_result_labels,
+                                         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> label_poss_in_operands) {
+
+            std::map<op_pos_t, std::vector<std::vector<label_pos_t >>> unique_non_result_contractions;
+
+            for (const op_pos_t &op_pos : operands_with_unique_non_result_labels) {
+
+                std::vector<std::vector<label_pos_t>> contractions{};
+
+                for (const label_t &label : std::set<label_t>(operands_labels.begin(), operands_labels.end()))
+                    if (unique_non_result_labels.count(label)) {
+                        const vector<label_pos_t> &contraction = label_poss_in_operands[std::make_tuple(op_pos, label)];
+                        if (contraction.size())
+                            contractions.emplace_back(contraction);
+                    }
+
+                if (contractions.size())
+                    unique_non_result_contractions.emplace(op_pos, contractions);
+            }
+
+            return unique_non_result_contractions;
+        }
+
+        static std::set<label_t>
         _calcNonResultSingleOperandLabels(const std::map<label_t, std::set<op_pos_t>> &operands_with_label,
                                           const std::vector<label_t> &result_labels) {
             std::set<label_t> non_result_single_operand{};
@@ -129,7 +172,7 @@ namespace sparsetensor::operations {
 
         UndirectedGraph<label_t> calcLabelDependencyGraph(const std::vector<set<label_t>> &distinct_operands_labels) {
             UndirectedGraph<label_t> label_dependency_graph{};
-            for (const set<label_t> & labels:distinct_operands_labels) {
+            for (const set<label_t> &labels:distinct_operands_labels) {
                 label_dependency_graph.addCompleteGraph(labels);
             }
             return label_dependency_graph;
@@ -193,6 +236,14 @@ namespace sparsetensor::operations {
 
         inline size_t numberOfOperands() {
             return _operands_labels.size();
+        }
+
+        /**
+         * Stores a mapping from operand position and label to the positions where that label is stored in this operand.
+         * @return A map from (operand position, label) to a vector of label positions
+         */
+        inline const vector<label_pos_t> &labelPossInOperand(const op_pos_t &op_pos, const label_t &label) const {
+            return _label_poss_in_operands[std::make_tuple(op_pos, label)];
         }
     };
 }
