@@ -23,6 +23,7 @@ namespace sparsetensor::hypertrie {
      */
     class NewJoin {
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
+
         key_part_t _max_keypart = KEY_PART_MIN; ///< a upper bound to the key parts that are candidates for this join
 
         Operands _result; ///< Operands that are copied each time the iterator returns a result
@@ -53,7 +54,7 @@ namespace sparsetensor::hypertrie {
          * @param key the current key that maybe gets updated.
          * @param operands the current operands
          * @param op_poss the positions of the joining BoolHyperTrie in operands
-         * @param key_part_posss the the joining key positions of each join operand.
+         * @param key_part_posss the joining key part positions of each join operand.
          * @param next_op_position the positions in operands of BoolHyperTrie that will be in the result
          * @param result_key_pos
          */

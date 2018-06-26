@@ -1,5 +1,5 @@
-#ifndef SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
-#define SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
+#ifndef SPARSETENSOR_EINSUM_SUBSCRIPT_OLD
+#define SPARSETENSOR_EINSUM_SUBSCRIPT_OLD
 
 
 #include <vector>
@@ -400,7 +400,7 @@ namespace sparsetensor::operations {
                                                                      raw_result_subscript);
 
 
-        return {norm_operand_subscripts, norm_result_subscript, next_norm_label};
+        return std::make_tuple(norm_operand_subscripts, norm_result_subscript, next_norm_label);
     }
 
 
@@ -621,5 +621,5 @@ std::ostream &operator<<(std::ostream &out, sparsetensor::operations::Subscript 
     return out;
 }
 
-#endif //SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
+#endif //SPARSETENSOR_EINSUM_SUBSCRIPT_OLD
 

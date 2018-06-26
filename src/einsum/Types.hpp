@@ -12,12 +12,14 @@ namespace sparsetensor::operations {
      */
     using label_t = uint8_t;
 
+    constexpr const uint8_t NO_LABEL = UINT8_MAX;
+
     /**
      * Type for the position of a operand (uint8_t).
      */
     using op_pos_t=uint8_t;
 
-    constexpr uint8_t OP_POS_MAX = UINT8_MAX;
+    constexpr const uint8_t OP_POS_MAX = UINT8_MAX;
 
     /**
      * Type for the position of a label (uint8_t).
@@ -28,6 +30,6 @@ namespace sparsetensor::operations {
      * A raw subscript is a vector of uint8s (uint8_t).
      */
     using raw_subscript = ::std::vector<uint8_t>;
-}
+};
 
 #endif //SPARSETENSOR_EINSUM_TYPES_HPP
