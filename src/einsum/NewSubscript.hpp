@@ -14,36 +14,25 @@
 #include "util/UndirectedGraph.hpp"
 
 
-using std::unordered_set;
-using std::set;
-using std::unordered_map;
-using std::map;
-using std::vector;
-using std::tuple;
-
-
-using ::sparsetensor::operations::util::UndirectedGraph;
+// std::ostream &operator<<(std::ostream &out, sparsetensor::operations::Subscript &subscript);
 
 namespace sparsetensor::operations {
-    class Subscript;
-}
 
-std::ostream &operator<<(std::ostream &out, sparsetensor::operations::Subscript &subscript);
+    using ::sparsetensor::operations::util::UndirectedGraph;
 
-namespace sparsetensor::operations {
     /**
      * Representation of the subscript of a expression in einstein summation convention.
      * This provides also  brackets out all independently computable parts and resulting in a
      * cross product of the bracketed parts.
      */
     class NewSubscript {
-        friend ::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &subscript);
+
 
         std::unordered_set<label_t> _all_labels;
         std::vector<std::vector<label_t>> _operands_labels;
         std::vector<label_t> _result_labels;
         std::vector<op_pos_t> _original_op_poss;
-        std::vector<Subscript *> _sub_subscripts;
+        std::vector<NewSubscript *> _sub_subscripts;
         label_t _max_label;
         std::vector<std::set<label_t>> _distinct_operands_labels;
         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
@@ -76,7 +65,7 @@ namespace sparsetensor::operations {
         _calc_label_poss_in_operands(std::vector<std::vector<label_t>> operands_labels) {
             std::map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operands{};
 
-            for (const auto &[op_id, labels] : operands_labels)
+            for (const auto &[op_id, labels] : enumerate(operands_labels))
                 for (const auto &[label_pos, label] : enumerate(labels))
                     label_poss_in_operands[{op_id, label}].push_back(label_pos_t(label_pos));
             return label_poss_in_operands;
@@ -104,7 +93,7 @@ namespace sparsetensor::operations {
             _operands_with_label = {};
             for (const auto &[op_pos, labels] : enumerate(_operands_labels))
                 for (const label_t &label : labels)
-                    _operands_with_label[label].insert(label);
+                    _operands_with_label[label].insert(op_pos_t(op_pos));
 
             _unique_non_result_labels = _calcNonResultSingleOperandLabels(_operands_with_label, _result_labels);
 
@@ -125,17 +114,17 @@ namespace sparsetensor::operations {
             _independent_label_subsets = _label_dependency_graph.getConnectedComponents();
 
             _unique_non_result_contractions =
-                    _calcUniqueNonResultContractions(_operands_with_unique_non_result_labels, _operands_labels,
-                                                     _unique_non_result_labels, _label_poss_in_operands);
+                    calcUniqueNonResultContractions(_operands_with_unique_non_result_labels, _operands_labels,
+                                                    _unique_non_result_labels, _label_poss_in_operands);
 
 
         }
 
         static std::map<op_pos_t, vector<vector<label_pos_t>>>
-        _calcUniqueNonResultContractions(std::vector<op_pos_t> operands_with_unique_non_result_labels,
-                                         std::vector<std::vector<label_t>> operands_labels,
-                                         std::set<label_t> unique_non_result_labels,
-                                         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> label_poss_in_operands) {
+        calcUniqueNonResultContractions(std::vector<op_pos_t> operands_with_unique_non_result_labels,
+                                        std::vector<std::vector<label_t>> operands_labels,
+                                        std::set<label_t> unique_non_result_labels,
+                                        std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> label_poss_in_operands) {
 
             std::map<op_pos_t, std::vector<std::vector<label_pos_t >>> unique_non_result_contractions;
 
@@ -143,7 +132,8 @@ namespace sparsetensor::operations {
 
                 std::vector<std::vector<label_pos_t>> contractions{};
 
-                for (const label_t &label : std::set<label_t>(operands_labels.begin(), operands_labels.end()))
+                for (const label_t &label : std::set<label_t>(operands_labels[op_pos].cbegin(),
+                                                              operands_labels[op_pos].cend()))
                     if (unique_non_result_labels.count(label)) {
                         const vector<label_pos_t> &contraction = label_poss_in_operands[std::make_tuple(op_pos, label)];
                         if (contraction.size())
@@ -242,32 +232,49 @@ namespace sparsetensor::operations {
          * Stores a mapping from operand position and label to the positions where that label is stored in this operand.
          * @return A map from (operand position, label) to a vector of label positions
          */
-        inline const vector<label_pos_t> &labelPossInOperand(const op_pos_t &op_pos, const label_t &label) const {
+        inline const vector<label_pos_t> &labelPossInOperand(const op_pos_t &op_pos, const label_t &label) {
             return _label_poss_in_operands[std::make_tuple(op_pos, label)];
+        }
+
+        friend ::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::NewSubscript &subscript) {
+            out << "<Subscript: \n"
+                << "all_labels=" << subscript._all_labels
+                << ",\n\t"
+                << "operands_labels = \n\t\t" << subscript._operands_labels
+                << ",\n\t"
+                << "distinct_operands_labels = \n\t\t" << subscript._distinct_operands_labels
+                << ",\n\t"
+                << "result_labels = \n\t\t" << subscript._result_labels
+                << ",\n\t"
+                << "label_poss_in_operand = \n\t\t" << subscript._label_poss_in_operands
+                << ",\n\t"
+                << "label_pos_in_result = \n\t\t" << subscript._label_pos_in_result
+                << ",\n\t"
+                << "independent_label_subsets = \n\t\t" << subscript._independent_label_subsets
+                << "\n>";
+            return out;
         }
     };
 }
 
-::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::NewSubscript &subscript) {
+//::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::NewSubscript &subscript) {
 //    out << "<Subscript: \n"
-//        << "all_labels=" << subscript.all_labels
+//        << "all_labels=" << subscript._all_labels
 //        << ",\n\t"
-//        << "operands_labels = \n\t\t" << subscript.operands_labels
+//        << "operands_labels = \n\t\t" << subscript._operands_labels
 //        << ",\n\t"
-//        << "distinct_operands_labels = \n\t\t" << subscript.distinct_operands_labels
+//        << "distinct_operands_labels = \n\t\t" << subscript._distinct_operands_labels
 //        << ",\n\t"
-//        << "result_labels = \n\t\t" << subscript.result_labels
+//        << "result_labels = \n\t\t" << subscript._result_labels
 //        << ",\n\t"
-//        << "label_poss_in_operand = \n\t\t" << subscript.label_poss_in_operand
+//        << "label_poss_in_operand = \n\t\t" << subscript._label_poss_in_operands
 //        << ",\n\t"
-//        << "label_pos_in_result = \n\t\t" << subscript.label_pos_in_result
+//        << "label_pos_in_result = \n\t\t" << subscript._label_pos_in_result
 //        << ",\n\t"
-//        << "operands_labels = \n\t\t" << subscript.operands_labels
-//        << ",\n\t"
-//        << "independent_label_subsets = \n\t\t" << subscript.independent_label_subsets
+//        << "independent_label_subsets = \n\t\t" << subscript._independent_label_subsets
 //        << "\n>";
 //    return out;
-}
+//}
 
 
 #endif //SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
