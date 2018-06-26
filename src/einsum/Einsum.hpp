@@ -2,9 +2,8 @@
 #define SPARSETENSOR_EINSUM_EINSUM_HPP
 
 
-#include "../tensor/BoolHyperTrieTensor.hpp"
+#include "../hypertrie/BoolHyperTrie.hpp"
 #include "../tensor/CrossProductTensor.hpp"
-#include "Subscript.hpp"
 #include "operator/CrossProduct.hpp"
 
 

@@ -2,23 +2,22 @@
 #define SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
 
 
-#include <parallel/algorithm>
-#include <parallel/numeric>
+#include <algorithm>
+#include <numeric>
 #include <vector>
+#include <einsum/Einsum.hpp>
 
-#include "../../tensor/MapTensor.hpp"
-#include "../../einsum/EvalPlan.hpp"
-#include "../../hypertrie/Join.hpp"
-#include "../ShapeCalc.hpp"
-
-
-using sparsetensor::tensor::Tensor;
-using sparsetensor::tensor::HyperTrieTensor;
-using sparsetensor::tensor::MapTensor;
-using sparsetensor::hypertrie::Join;
-
+#include "../../hypertrie/BoolHyperTrie.hpp"
+#include "../../einsum/EinsumPlan.hpp"
+#include "../../hypertrie/NewJoin.hpp"
+#include "../../container/NDMap.hpp"
 
 namespace sparsetensor::operations::operators {
+    using BoolHypertrie = sparsetensor::hypertrie::BoolHyperTrie;
+    using Join = sparsetensor::hypertrie::NewJoin;
+    using Key_t = sparsetensor::hypertrie::Key_t;
+    template<typename T>
+    using NDMap = sparsetensor::container::NDMap<T> ;
 
     /**
      * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this
@@ -26,43 +25,36 @@ namespace sparsetensor::operations::operators {
      * @see CrossProduct
      * @tparam T type of the values hold by processed Tensors (Tensor).
      */
-    template<typename T>
-    class Einsum : public Operator<T, HyperTrieTensor, MapTensor> {
+    template<typename OUT_COUNT_T>
+    class Einsum : public Operator<BoolHyperTrie, NDMap<OUT_COUNT_T>> {
         /**
          * The evaluation plan for this->subscript.
          */
-        EvalPlan plan;
+        EinsumPlan plan;
         /**
          * This is where the result is written to.
          */
-        MapTensor<T> *result;
+        NDMap<OUT_COUNT_T> *result;
 
     public:
         /**
          * Basic Constructor.
          * @param subscript Subscript that defines what the operator does.
          */
-        Einsum(const Subscript &subscript) : Operator<T, HyperTrieTensor, MapTensor>{subscript},
-                                             plan(EvalPlan{subscript}) {}
+        Einsum(const Subscript &subscript) : Operator<BoolHyertrieTensor, MapTensor<OUT_COUNT_T>>{subscript},
+                                             plan{subscript} {}
 
         /**
          * Prepares the arguments for the recursive calculation of the results.
          * @param operands vector of tensors
          */
-        void rekEinsum(const vector<HyperTrieTensor<T> *> &operands) {
+        void rekEinsum(const vector<BoolHyertrieTensor *> &operands) {
             // unpacks HyperTrieTensors to HyperTries or value types T
-            vector<variant<HyperTrie<T> *, T>> hypertrie_operands{};
-            for (HyperTrieTensor<T> *operand : operands) {
-                if (operand->ndim == 0) {
-                    hypertrie_operands.push_back({operand->trie->leafsum});
-                } else {
-                    hypertrie_operands.push_back({operand->trie});
-                }
-            }
             // initialize emtpy result key
-            Key_t result_key = Key_t(this->result->ndim, 50);
             // plan first step
-            auto[step, label] = plan.firstStep(hypertrie_operands);
+            const EinsumPlan::EinsumStep &step = plan.getInitialStep();
+            const EinsumPlan::EinsumStep::Action &action = step.getAction(operands);
+            Key_t result_key = Key_t(step.getResultSize());
             // start recursion
             rekEinsum(hypertrie_operands, result_key, step, label);
         }
@@ -96,7 +88,9 @@ namespace sparsetensor::operations::operators {
             }
         }
 
-        MapTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
+        MapTensor<T> *getResult(const vector<HyperTrieTensor < T> *
+
+        > &operands) {
             const shape_t &result_shape = calcResultShape<T, HyperTrieTensor>(operands, this->subscript);
             result = new MapTensor<T>(result_shape);
             rekEinsum(operands);
