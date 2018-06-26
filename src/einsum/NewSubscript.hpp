@@ -57,6 +57,7 @@ namespace sparsetensor::operations {
             _original_op_poss.reserve(numberOfOperands());
             std::iota(_original_op_poss.begin(), _original_op_poss.end(), 0);
 
+            // TODO: add execPlan and remove_labels_cache
 //            self._exec_plan = None
 //            self._remove_labels_cache: Dict[label_t, 'Subscript'] = dict()
 
@@ -64,23 +65,20 @@ namespace sparsetensor::operations {
         }
 
         void updateFields() {
-            _max_label = (_all_labels.size() > 0) ?
-                         *std::max_element(_all_labels.begin(), _all_labels.end()) : NO_LABEL;
+            _max_label = (_all_labels.size() > 0) ? *std::max_element(_all_labels.begin(), _all_labels.end())
+                                                  : NO_LABEL;
 
             _distinct_operands_labels = {};
             _distinct_operands_labels.reserve(numberOfOperands());
-            std::for_each(_operands_labels.begin(), _operands_labels.end(),
-                          [&](const std::vector<label_t> &operands) {
-                              _distinct_operands_labels.emplace_back(
-                                      std::set<label_t>(operands.begin(), operands.end()));
-                          });
+            for (const std::vector<label_t> &operands : _operands_labels)
+                _distinct_operands_labels.emplace_back(std::set<label_t>(operands.begin(), operands.end()));
+
 
             _label_poss_in_operands = _calc_label_poss_in_operands(_operands_labels);
 
             _label_pos_in_result = {};
-            for (const auto &[pos, label] : enumerate(_result_labels)) {
+            for (const auto &[pos, label] : enumerate(_result_labels))
                 _label_pos_in_result[pos] = label;
-            }
 
             _operands_with_label = {};
             for (const auto &[op_pos, labels] : enumerate(_operands_labels))
@@ -95,7 +93,7 @@ namespace sparsetensor::operations {
                 std::vector<label_t> intersect;
                 std::set_intersection(labels.cbegin(), labels.cend(), _unique_non_result_labels.cbegin(),
                                       _unique_non_result_labels.cend(), std::back_inserter(intersect));
-                if (intersect.size() > 0)
+                if (intersect.size())
                     _operands_with_unique_non_result_labels.push_back(op_pos_t(op_pos));
                 else
                     _operands_without_unique_non_result_labels.push_back(op_pos_t(op_pos));
@@ -189,11 +187,10 @@ namespace sparsetensor::operations {
         NewSubscript optimized() {
             std::vector<std::shared_ptr<NewSubscript>> sub_subscripts{};
             std::vector<std::vector<label_t>> new_operands_labels{};
+
             for (const std::set<label_t> &label_subset : _independent_label_subsets) {
 
-
-                std::shared_ptr<NewSubscript> sub_subscript = std::make_shared<NewSubscript>(
-                        extractSubscript(label_subset));
+                auto sub_subscript = std::make_shared<NewSubscript>(extractSubscript(label_subset));
                 new_operands_labels.emplace_back(sub_subscript->getResultLabels());
                 _sub_subscripts.push_back(sub_subscript);
             }
@@ -281,7 +278,7 @@ namespace sparsetensor::operations {
         static UndirectedGraph<label_t>
         calcLabelDependencyGraph(const std::vector<set<label_t>> &distinct_operands_labels) {
             UndirectedGraph<label_t> label_dependency_graph{};
-            for (const std::set<label_t> &labels:distinct_operands_labels) {
+            for (const std::set<label_t> &labels : distinct_operands_labels) {
                 label_dependency_graph.addCompleteGraph(labels);
             }
             return label_dependency_graph;
@@ -296,15 +293,11 @@ namespace sparsetensor::operations {
             // next new label to be used
             label_t next_norm_label = 0;
 
-            // init the output for the operands
-            std::vector<std::vector<label_t >> norm_operand_subscripts(raw_operand_subscripts.size());
-
             // normalize the operands
-            op_pos_t op_pos = 0;
-            for (const std::vector<label_t> &op_labels : raw_operand_subscripts) {
-                std::vector<label_t> norm_operand_labels = normalizeLabelVector(raw_to_norm_label, next_norm_label,
-                                                                                op_labels);
-                norm_operand_subscripts[op_pos++] = norm_operand_labels;
+            std::vector<std::vector<label_t >> norm_operand_subscripts{};
+            norm_operand_subscripts.reserve(raw_operand_subscripts.size());
+            for (const auto &[op_pos, op_labels] : enumerate(raw_operand_subscripts)) {
+                norm_operand_subscripts[op_pos] = normalizeLabelVector(raw_to_norm_label, next_norm_label, op_labels);
             }
 
             // normalize the result
@@ -313,10 +306,10 @@ namespace sparsetensor::operations {
 
             // put all new labels that were used into a set
             std::set<label_t> labels{};
-            for (label_t label = 0; label < next_norm_label; ++label)
+            for (label_t label : range(next_norm_label))
                 labels.emplace(label);
 
-            return std::make_tuple(norm_operand_subscripts, norm_result_subscript, labels);
+            return {norm_operand_subscripts, norm_result_subscript, labels};
         }
 
         static std::vector<label_t> normalizeLabelVector(
@@ -363,26 +356,6 @@ namespace sparsetensor::operations {
         }
     };
 }
-
-//::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::NewSubscript &subscript) {
-//    out << "<Subscript: \n"
-//        << "all_labels=" << subscript._all_labels
-//        << ",\n\t"
-//        << "operands_labels = \n\t\t" << subscript._operands_labels
-//        << ",\n\t"
-//        << "distinct_operands_labels = \n\t\t" << subscript._distinct_operands_labels
-//        << ",\n\t"
-//        << "result_labels = \n\t\t" << subscript._result_labels
-//        << ",\n\t"
-//        << "label_poss_in_operand = \n\t\t" << subscript._label_poss_in_operands
-//        << ",\n\t"
-//        << "label_pos_in_result = \n\t\t" << subscript._label_pos_in_result
-//        << ",\n\t"
-//        << "independent_label_subsets = \n\t\t" << subscript._independent_label_subsets
-//        << "\n>";
-//    return out;
-//}
-
 
 #endif //SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
 
