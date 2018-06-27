@@ -2,69 +2,66 @@
 #define SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
 
 
-#include <parallel/algorithm>
-#include <parallel/numeric>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 
-#include "../../tensor/MapTensor.hpp"
-#include "../../einsum/EvalPlan.hpp"
+#include "../../hypertrie/BoolHyperTrie.hpp"
+#include "../../einsum/EinsumPlan.hpp"
 #include "../../hypertrie/Join.hpp"
-#include "../ShapeCalc.hpp"
+#include "../../container/NDMap.hpp"
 
+namespace sparsetensor::operations::operators {
 
-using sparsetensor::tensor::Tensor;
-using sparsetensor::tensor::HyperTrieTensor;
-using sparsetensor::tensor::MapTensor;
-using sparsetensor::hypertrie::Join;
-
-
-namespace sparsetensor::einsum::operators {
 
     /**
      * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this
      * operator should only be used as sub operator of a CrossProduct as it is not very effective if an cross product is involved.
      * @see CrossProduct
-     * @tparam T type of the values hold by processed Tensors (Tensor).
      */
-    template<typename T>
-    class Einsum : public Operator<T, HyperTrieTensor, MapTensor> {
+    template<typename OUT_COUNT_T>
+    class Einsum {
+        using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
+        using Join = sparsetensor::hypertrie::Join;
+        using Key_t = sparsetensor::tensor::Key_t;
+
+        template<typename T>
+        using NDMap = sparsetensor::container::NDMap<T>;
+        using NewJoin = sparsetensor::hypertrie::Join;
+        using Operands = sparsetensor::hypertrie::Operands;
         /**
          * The evaluation plan for this->subscript.
          */
-        EvalPlan plan;
-        /**
-         * This is where the result is written to.
-         */
-        MapTensor<T> *result;
+        EinsumPlan _plan;
 
     public:
         /**
          * Basic Constructor.
          * @param subscript Subscript that defines what the operator does.
          */
-        Einsum(const Subscript &subscript) : Operator<T, HyperTrieTensor, MapTensor>{subscript},
-                                             plan(EvalPlan{subscript}) {}
+        Einsum(const Subscript &subscript) : _plan{subscript} {}
 
+
+        const NDMap<OUT_COUNT_T> &getResult(const Operands &operands) {
+            return calcEinsum(extractRelevantOperands(operands));
+        }
+
+    private:
         /**
          * Prepares the arguments for the recursive calculation of the results.
          * @param operands vector of tensors
          */
-        void rekEinsum(const vector<HyperTrieTensor<T> *> &operands) {
+        NDMap<OUT_COUNT_T> calcEinsum(const Operands &operands) {
             // unpacks HyperTrieTensors to HyperTries or value types T
-            vector<variant<HyperTrie<T> *, T>> hypertrie_operands{};
-            for (HyperTrieTensor<T> *operand : operands) {
-                if (operand->ndim == 0) {
-                    hypertrie_operands.push_back({operand->trie->leafsum});
-                } else {
-                    hypertrie_operands.push_back({operand->trie});
-                }
-            }
             // initialize emtpy result key
-            Key_t result_key = Key_t(this->result->ndim, 50);
             // plan first step
-            auto[step, label] = plan.firstStep(hypertrie_operands);
+            EinsumPlan::EinsumStep step = _plan.getInitialStep();
+            EinsumPlan::EinsumStep::Action action = step.getAction(operands);
+            NDMap<OUT_COUNT_T> result{};
+            Key_t result_key = Key_t(step.getResultSize());
             // start recursion
-            rekEinsum(hypertrie_operands, result_key, step, label);
+            rekEinsum(operands, result_key, action, result);
+            return result;
         }
 
         /**
@@ -75,32 +72,36 @@ namespace sparsetensor::einsum::operators {
          * @param step current step. This holds also data to plan the next step.
          * @param label the current label that is to be processed in this recursive step
          */
-        void rekEinsum(const vector<variant<HyperTrie<T> *, T>> &operands, const Key_t &result_key,
-                       PlanStep &step, const label_t &label) {
+        void
+        rekEinsum(const Operands &operands, const Key_t &result_key, const EinsumPlan::EinsumStep::Action &action,
+                  NDMap<OUT_COUNT_T> &result) {
             // there are steps left
-            if (not step.all_done) {
+            if (not action.all_done) {
                 // calculate next operands and result_key from current operands, step, label and resultKey
-                Join<T> join{operands, step, label, result_key};
+                NewJoin join{operands, action};
 
                 for (auto[next_operands, next_result_key] : join) {
-                    auto[next_step, next_label] = plan.nextStep<T>(operands, step, label);
+                    EinsumPlan::EinsumStep::Action next_action = action.nextAction(next_operands);
                     // start next recursive step.
-                    rekEinsum(next_operands, next_result_key, next_step, next_label);
+                    rekEinsum(next_operands, next_result_key, next_action, result);
                 }
             } else { // there are no steps left
-                T result_value = 1;
-                for (const auto &operand : operands) {
-                    result_value *= std::get<T>(operand);
-                }
-                result->set(result_key, result->get(result_key) + result_value);
+                result[result_key] += OUT_COUNT_T(1);
             }
         }
 
-        MapTensor<T> *getResult(const vector<HyperTrieTensor<T> *> &operands) {
-            const shape_t &result_shape = calcResultShape<T, HyperTrieTensor>(operands, this->subscript);
-            result = new MapTensor<T>(result_shape);
-            rekEinsum(operands);
-            return result;
+        /**
+             * Extracts the operands needed for the given Einsum Operator.
+             * @param operands all operands that are input to this CrossProduct
+             * @param einsum the Einsum Operator that the operands shall be extracted
+             * @return the operands relevant for the given Einsum Operator
+             */
+        Operands extractRelevantOperands(const Operands &all_operands) const {
+            Operands operands{};
+            for (const op_pos_t &op_pos : _plan.getSubscript().getOriginalOpPoss()) {
+                operands.push_back(operands.at(op_pos));
+            }
+            return operands;
         }
     };
 

@@ -1,246 +1,243 @@
-#ifndef SPARSETENSOR_HYPERTRIE_JOIN_HPP
-#define SPARSETENSOR_HYPERTRIE_JOIN_HPP
+#ifndef SPARSETENSOR_HYPERTRIE_JOIN
+#define SPARSETENSOR_HYPERTRIE_JOIN
 
-#include "HyperTrie.hpp"
-#include "Diagonal.hpp"
-#include "../einsum/EvalPlan.hpp"
-#include "../tensor/Types.hpp"
-#include <iterator>
-#include <tuple>
-#include <variant>
 #include <vector>
+#include <forward_list>
+#include <variant>
+#include <numeric>
 #include <optional>
-
-
-using std::tuple;
-using std::set;
-using std::optional;
-using std::input_iterator_tag;
-using ::sparsetensor::einsum::label_t;
-using ::sparsetensor::einsum::op_pos_t;
-using ::sparsetensor::einsum::PlanStep;
-using sparsetensor::einsum::label_pos_t;
-using sparsetensor::tensor::key_pos_t;
-using sparsetensor::tensor::key_part_t;
-
+#include "BoolHyperTrie.hpp"
+#include "Types.hpp"
+#include "../einsum/Types.hpp"
+#include "../util/Sort.hpp"
 
 namespace sparsetensor::hypertrie {
-/**
- * This class the evaluation result of one label from einstein summation. It takes a planStep and an label as input and
- * returns the contracted operands and the updated key.
- * It is only iterable.
- */
-    template<typename T>
+    using Operands =  typename std::vector<BoolHyperTrie *>;
+
+
+    /**
+     * Joins two or more tensors and returns the non-scalar results of the return via the iterator
+     */
     class Join {
-    public:
-        class Iterator;
+        using key_pos_t = sparsetensor::tensor::key_pos_t;
+        using op_pos_t = sparsetensor::operations::op_pos_t;
+        constexpr static const op_pos_t &OP_POS_MAX = sparsetensor::operations::OP_POS_MAX;
+        using label_pos_t = sparsetensor::operations::label_pos_t;
 
-    private:
-        const vector<variant<HyperTrie<T> *, T>> &operands;
-        const Key_t &result_key;
-        vector<Diagonal<T>> diagonals{};
-        vector<op_pos_t> join_op_pos{};
-        op_pos_t min_card_op_pos = 0;
-        Diagonal<T> *min_card_diagonal;
-        key_part_t min_key_part = KEY_PART_MIN;
-        key_part_t max_key_part = KEY_PART_MAX;
-        bool has_result_pos = false;
-        label_pos_t result_pos{};
+        using key_part_t =  sparsetensor::tensor::key_part_t;
+        using Key_t =  sparsetensor::tensor::Key_t;
+
+        key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
+
+        key_part_t _max_keypart = KEY_PART_MIN; ///< a upper bound to the key parts that are candidates for this join
+
+        Operands _result; ///< Operands that are copied each time the iterator returns a result
+
+        const Key_t &_key; ///< a key that is copied each time the iterator returns a result
+
+        std::vector<BoolHyperTrie::DiagonalView> _diagonals{}; ///< diagonals that are used in the join
+
+        // TODO: do that via template
+        const std::optional<key_pos_t> &_result_key_pos; ///< an optional position in the result key where to write the binding to
+
+        std::vector<op_pos_t> _diagonal2result_pos; ///< an position mapping from _diagonals to _results
+
 
     public:
+//        static Join create(const Key_t &key,
+//                              const std::vector<BoolHyperTrie *> &operands,
+//                              sparsetensor::operations::PlanStep *step) {
+//            // TODO: implement step to fit this interface
+//            const optional<operations::label_pos_t> &key_pos = step->labelPosInResult();
+//            vector<op_pos_t> &op_ids = step->operandsWithLabel();
+//            vector<vector<key_pos_t>> &key_poss
+//            step->labelPossInOperands();
+//        }
 
         /**
-         * initializes this->diagonals with all diagonals and writes the position on the vector of the
-         * operand with minimal cardinality to min_card_op_pos
-         * @param [in] planStep
-         * @param [in] label
-         * @param [in] operands
-         * @param [in,out] min_key_part returns the largest lower_bound of all diagonals
-         * @param [in,out] max_key_part returns the smallest upper_bound of all diagonals
+         *
+         * @param key the current key that maybe gets updated.
+         * @param operands the current operands
+         * @param op_poss the positions of the joining BoolHyperTrie in operands
+         * @param key_part_posss the joining key part positions of each join operand.
+         * @param next_op_position the positions in operands of BoolHyperTrie that will be in the result
+         * @param result_key_pos
          */
-        void initDiagonals(const PlanStep &planStep,
-                           const label_t &label,
-                           const vector<variant<HyperTrie<T> *, T>> &operands,
-                           key_part_t &min_key_part,
-                           key_part_t &max_key_part) {
+        Join(const Key_t &key,
+             const Operands &operands,
+             const std::vector<op_pos_t> op_poss,
+             const std::vector<std::vector<key_pos_t >> &key_part_posss,
+             const std::vector<op_pos_t> next_op_position,
+             const std::optional<key_pos_t> &result_key_pos) :
+                _result(op_poss.size()), _key{key}, _result_key_pos{result_key_pos} {
 
-            size_t min_card = SIZE_MAX;
+            // write operands into _result
+            for (size_t i = 0; i < next_op_position.size(); ++i) {
+                _result[i] = operands[next_op_position[i]];
+            }
 
-            for(const  op_pos_t &op_pos: planStep.operandsWithLabel(label)){
+            // initialize diagonals with the operands and their positions to join on.
+            auto &&key_part_poss = key_part_posss.cbegin();
+            for (const op_pos_t &op_pos : op_poss) {
+                _diagonals.emplace_back(BoolHyperTrie::DiagonalView{operands[op_pos], *key_part_poss});
+                ++key_part_poss;
+            }
 
-                // gernerate diagonal
-                Diagonal<T> diagonal{std::get<HyperTrie<T> *>(operands.at(op_pos)),
-                                     planStep.labelPossInOperand(op_pos, label)};
+            // narrow the range of the diagonals
+            const std::tuple<size_t, size_t> &min_max = BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
+            _min_keypart = std::get<0>(min_max);
+            _max_keypart = std::get<1>(min_max);
 
-                if (min_card > diagonal.estimCard()) {
-                    min_card = diagonal.estimCard();
-                    min_card_op_pos = op_pos;
+            // calculate the position mapping from diagonals to result
+            // TODO: move that to PlanStep
+            _diagonal2result_pos = std::vector<op_pos_t>(next_op_position.size());
+            for (size_t i = 0, j = 0; i < op_poss.size(); ++i) {
+                auto pos_of_join_in_operands = op_poss[i];
+                auto pos_of_result_in_operands = next_op_position[j];
+                if (pos_of_join_in_operands == pos_of_result_in_operands) {
+                    _diagonal2result_pos[i] = pos_of_join_in_operands;
+                    ++j;
+                } else {
+                    _diagonal2result_pos[i] = OP_POS_MAX;
                 }
-                min_key_part = (diagonal.min() > min_key_part) ? diagonal.min() : min_key_part;
-                max_key_part = (diagonal.max() < max_key_part) ? diagonal.max() : max_key_part;
-
-                diagonals.push_back(diagonal);
-                join_op_pos.push_back(op_pos);
             }
         }
 
-        Join(const vector<variant<HyperTrie<T> *, T>> &operands,
-             const PlanStep &planStep,
-             const label_t &label,
-             const Key_t &result_key)
-                : result_key(result_key),
-                  operands(operands){
 
+        /**
+         *
+         * @brief An Iterator for NewJoins that returns its results.
+         */
+        class iterator {
+            Join &_join; ///< the join that is iterated.
 
-            // get non min_card diagonals
-            initDiagonals(planStep, label, operands, min_key_part, max_key_part);
+            std::vector<BoolHyperTrie::DiagonalView> &_diagonals; ///< the diagonals of the join i.e. its inputs.
 
-            // get min_card diagonal
-            min_card_diagonal = new Diagonal<T>{std::get<HyperTrie<T> *>(operands[min_card_op_pos]),
-                                                planStep.labelPossInOperand(min_card_op_pos, label)};
-            min_card_diagonal->setLowerBound(min_key_part);
-            min_card_diagonal->setUpperBound(max_key_part);
+            key_part_t _current_key_part; ///< the key part of the current result
 
-            // position in result
-            const optional<label_pos_t> &result_pos_ = planStep.labelPosInResult(label);
-            has_result_pos = bool(result_pos_);
-            if (has_result_pos == bool(result_pos_))
-                result_pos = *result_pos_;
-        }
+            key_part_t _last_key_part; ///< the key part that is the last candidate to produce a result.
 
-        ~Join() {
-            delete min_card_diagonal;
-        }
+            bool _ended{};  ///< if the end was reached.
 
-
-        Iterator begin() {
-            return Iterator{*this};
-        }
-
-        Iterator end() {
-            return Iterator{*this, true};
-        }
-
-        class Iterator : public std::iterator<std::input_iterator_tag, tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>>>{
-            friend class Join<T>;
-
-            /**
-             * Diagonals of the hypertries that are joined except for the one with the smallest estimated cardinality.
-             */
-            const vector<Diagonal<T>> &diagonals;
-
-            const op_pos_t &min_card_op_pos;
-
-            const vector<op_pos_t> &join_op_pos;
-            /**
-             * Iterator of the diagonal with the smallest estimated cardinality.
-             */
-            typename Diagonal<T>::Iterator min_card_diagonal_iter;
-
-            /**
-             * The keypart that is currently in use
-             */
-            key_part_t current_key_part;
-
-            const bool &in_result;
-            const label_pos_t &result_pos;
-
-            bool ended = false;
-
-            vector<variant<HyperTrie<T> *, T>> joined_operands;
-            Key_t joined_key;
-
+            std::vector<std::tuple<op_pos_t, op_pos_t>> _reorderedDiagonals2result_pos{};  ///< Mapping from reordered diagonal to result positions.
         public:
 
-            Iterator(const Join<T> &join,
-                     const bool ended = false) :
-                    min_card_diagonal_iter(join.min_card_diagonal->begin()),
-                    diagonals(join.diagonals),
-                    min_card_op_pos(join.min_card_op_pos),
-                    join_op_pos(join.join_op_pos),
-                    current_key_part(join.min_key_part),
-                    in_result(join.has_result_pos),
-                    result_pos(join.result_pos),
-                    joined_key(join.result_key),
-                    joined_operands(join.operands){
-                this->ended = ended;
-                if (not ended && current_key_part > join.min_card_diagonal->max()) { // todo: remove
-                    throw "something is fishy.";
-                }
-                if (ended) {
-                    current_key_part = std::max(join.min_card_diagonal->max() + 1, KEY_PART_MAX);
-                }
-                operator++();
-            }
+            iterator(Join &join, bool ended = false) :
+                    _join{join},
+                    _diagonals{join._diagonals},
+                    _current_key_part{(not ended) ? join._min_keypart : join._max_keypart + 1},
+                    _last_key_part{join._max_keypart},
+                    _ended{ended} {
+                if ((not ended) and (_current_key_part <= _last_key_part)) {
+                    // sort the diagonals by size
+                    const std::vector<size_t> _sort_order = sparsetensor::sorting::sortPermutation(
+                            _diagonals, [](const BoolHyperTrie::DiagonalView &a,
+                                           const BoolHyperTrie::DiagonalView &b) {
+                                return a.size() <
+                                       b.size();
+                            });
 
+                    ::sparsetensor::sorting::applyPermutation(_diagonals, _sort_order);
 
-            Iterator &operator++() {
-                if (not ended) {
-                    while (not min_card_diagonal_iter.hasEnded()) {
+                    // get the inverse sort order
+                    const std::vector<size_t> _inv_sort_order = ::sparsetensor::sorting::invPermutation(_sort_order);
 
-                        const auto & [current_key_part, min_card_op] = *min_card_diagonal_iter;
-
-                        auto diagonal_ = diagonals.begin();
-                        for(const op_pos_t &op_pos : join_op_pos){
-                            if(op_pos != min_card_op_pos){
-                                optional<variant<HyperTrie<T> *, T>> op = (*diagonal_).find(current_key_part);
-
-                                if (op) {
-                                    joined_operands.at(op_pos) = *op; // todo: is this the right op_pos
-                                } else {
-                                    ++min_card_diagonal_iter;
-                                    goto continue_while;
-                                }
-                            }
-                            ++diagonal_;
+                    // calculate the mapping from the reordered Diagonals to the result from it
+                    for (size_t posInReorderedDiagonals = 0;
+                         posInReorderedDiagonals < _inv_sort_order.size(); ++posInReorderedDiagonals) {
+                        auto positionOfReorderedDiagonalInDiagonals = _inv_sort_order[posInReorderedDiagonals];
+                        auto positionOfDiagonalInResult = join._diagonal2result_pos[positionOfReorderedDiagonalInDiagonals];
+                        if (positionOfDiagonalInResult != OP_POS_MAX) {
+                            _reorderedDiagonals2result_pos.emplace_back(
+                                    std::make_tuple(posInReorderedDiagonals, positionOfDiagonalInResult));
                         }
-
-                        joined_operands.at(min_card_op_pos) = min_card_op;
-                        this->current_key_part = current_key_part;
-                        if (in_result) {
-                            joined_key.at(result_pos) = current_key_part;
-                        }
-                        ++min_card_diagonal_iter;
-                        return *this;
-
-                        continue_while:;
                     }
-                    ended = true;
+                    // find the first result
+                    _current_key_part = _diagonals[0].first();
+                    findNextMatch();
                 }
+            }
+
+            /**
+             * When this function is called _current_key_part
+             * MUST be either a valid key for _min_diag OR (_current_key_part >_last_key_part).
+             * After running this function _current_key_part is greater or equal to the value it had before such that
+             * it is a valid key for all DiagonalView s in _join.diags .
+             */
+            inline void findNextMatch() {
+                // check if the end was reached
+                continue_outer_loop:
+                while (_current_key_part <= _last_key_part) {
+                    // iterate all but the first diagonal
+                    for (size_t i = 1; i < _diagonals.size(); ++i) {
+                        BoolHyperTrie::DiagonalView &diagonal = _diagonals[i];
+                        // check if the diagonal contains the current key
+                        if (not diagonal.containsAndUpdateLower(_current_key_part)) {
+                            // if not, update the current key by searching the next
+                            // greaterEqual key to the new lower bound of this diagonal from the first diagonal
+                            _current_key_part = _diagonals[0].first(diagonal.lower());
+                            // and start over
+                            goto continue_outer_loop;
+                        }
+                    }
+                    return;
+                }
+                // the end was reached
+                _ended = true;
+            }
+
+            iterator &operator++() {
+                _current_key_part = _diagonals[0].incrementMin();
+                findNextMatch();
                 return *this;
             }
 
-            Iterator operator++(int) {
-                operator++();
-                return *this;
+            std::tuple<std::vector<BoolHyperTrie *>, std::vector<uint64_t>> operator*() {
+                // build the result
+                std::vector<BoolHyperTrie *> result = _join._result;
+                for (auto &&[revJoinee_pos, result_pos] : _reorderedDiagonals2result_pos) {
+                    result[result_pos] = _diagonals[revJoinee_pos].minValue();
+                }
+
+                // set the entry in the key
+                Key_t key = _join._key;
+                if (_join._result_key_pos)
+                    key[*_join._result_key_pos] = _current_key_part;
+
+                return {{result},
+                        {key}};
             }
 
-            tuple<vector<variant<HyperTrie<T> *, T>>, vector<uint64_t>> operator*() {
-                return {{joined_operands},
-                        {joined_key}};
+
+            inline bool operator==(const iterator &rhs) const {
+                // careful, it doesn't check if it is tested against another iterator for the same Join.
+                return ((rhs._ended and _ended) or
+                        (rhs._current_key_part == _current_key_part) or
+                        (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part));
             }
 
-            bool operator==(const Iterator &rhs) const {
-                // if both ended they are equal
-                if (rhs.ended && ended)
-                    return true;
-                    // if rhs ended and lhs's key_pos is greater then rhs's
-                else if (rhs.ended && rhs.current_key_part <= current_key_part)
-                    return true;
-                    // the same the other way around
-                else if (ended && current_key_part <= rhs.current_key_part)
-                    return true;
-                    // both key_parts are equal
-                else
-                    return current_key_part == rhs.current_key_part;
-            }
-
-            bool operator!=(const Iterator &rhs) const {
+            inline bool operator!=(const iterator &rhs) const {
                 return not this->operator==(rhs);
             }
+
         };
+
+        /**
+         * Iterates the result of the Join. MUST NOT be called twice!
+         * @return an iterator
+         */
+        iterator begin() {
+            return iterator{*this};
+        }
+
+        /**
+         * End iterator. MAY be called multiple times.
+         * @return the end iterator.
+         */
+        iterator end() {
+            return iterator{*this, true};
+        }
     };
 }
 
-
-#endif //SPARSETENSOR_HYPERTRIE_JOIN_HPP
+#endif //SPARSETENSOR_HYPERTRIE_JOIN

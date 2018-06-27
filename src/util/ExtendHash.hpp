@@ -3,13 +3,13 @@
 
 #include <cinttypes>
 #include <unordered_set>
-using std::hash;
+#include <tuple>
 
 namespace std {
     template<typename Tt>
-    struct hash<unordered_set<Tt>> {
-        size_t operator()(const unordered_set<Tt> &v) const {
-            hash<Tt> hasher;
+    struct hash<std::unordered_set<Tt>> {
+        size_t operator()(const unordered_set <Tt> &v) const {
+            std::hash<Tt> hasher;
             size_t seed = 0;
             for (int i : v) {
                 seed ^= hasher(i); // + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -29,7 +29,7 @@ namespace std {
 
         template<class T>
         inline void hash_combine(std::size_t &seed, T const &v) {
-            seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         }
 
         // Recursive template code derived from Matthieu M.
@@ -50,16 +50,11 @@ namespace std {
     }
 
     template<typename ... TT>
-    struct hash<tuple<TT...>> {
-        size_t
-        operator()(tuple<TT...
-        > const &tt) const {
+    struct hash<std::tuple<TT...>> {
+        size_t operator()(std::tuple<TT...> const &tt) const {
             size_t seed = 0;
-            HashValueImpl<tuple<TT...> >
-            ::apply(seed, tt
-            );
-            return
-                    seed;
+            HashValueImpl<tuple<TT...> >::apply(seed, tt);
+            return seed;
         }
 
     };

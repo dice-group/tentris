@@ -2,27 +2,27 @@
 #define SPARSETENSOR_HYPERTRIE_POSCALC_HPP
 
 
-#include "Types.hpp"
-#include "../tensor/Types.hpp"
 #include <cstdint>
 #include <map>
 #include <vector>
 
-using std::vector;
-using std::map;
-using sparsetensor::tensor::key_pos_t;
+#include "Types.hpp"
+#include "../tensor/Types.hpp"
+
 
 namespace sparsetensor::hypertrie {
+
 
     /**
      * Provides translation between position in superkeys with subkeys. (1,2,4) for example is a subkey of (1,2,3,4).
      * And the other way around.
      */
     class PosCalc {
+        using key_pos_t = sparsetensor::tensor::key_pos_t;
         /**
          * Holds all instances.
          */
-        inline static map<vector<bool>, PosCalc *> instances{};
+        inline static std::map<std::vector<bool>, PosCalc *> instances{};
     public:
         /**
          * Length of superkeys.
@@ -37,12 +37,12 @@ namespace sparsetensor::hypertrie {
         /**
          * Stores for superkey positions to which subkey positions they map.
          */
-        vector<key_pos_t> key_to_subkey;
+        std::vector<key_pos_t> key_to_subkey;
 
         /**
          * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
          */
-        vector<key_pos_t> subkey_to_key;
+        std::vector<key_pos_t> subkey_to_key;
 
         /**
          * removed_positions bit vector of positions removed from superkey to subkey.
@@ -52,7 +52,7 @@ namespace sparsetensor::hypertrie {
         /**
          * Cache for PosCalcs of subkeys that are 1 shorter.
          */
-        vector<PosCalc *> next_pos_calcs;
+        std::vector<PosCalc *> next_pos_calcs;
 
         /**
              * Private construcor.
@@ -61,10 +61,10 @@ namespace sparsetensor::hypertrie {
              */
         PosCalc(key_pos_t key_length, key_pos_t subkey_length) : key_length(key_length),
                                                                  subkey_length(subkey_length),
-                                                                 key_to_subkey(vector<key_pos_t>(key_length)),
-                                                                 subkey_to_key(vector<key_pos_t>(subkey_length)),
+                                                                 key_to_subkey(std::vector<key_pos_t>(key_length)),
+                                                                 subkey_to_key(std::vector<key_pos_t>(subkey_length)),
                                                                  removed_positions(subkey_mask_t(key_length)),
-                                                                 next_pos_calcs(vector<PosCalc *>(key_length)) {}
+                                                                 next_pos_calcs(std::vector<PosCalc *>(key_length)) {}
 
     public:
         /**
@@ -89,7 +89,7 @@ namespace sparsetensor::hypertrie {
          * Get all keypositions that this subkey contains.
          * @return vector of key positions.
          */
-        inline const vector<key_pos_t> &getKeyPoss() const {
+        inline const std::vector<key_pos_t> &getKeyPoss() const {
             return subkey_to_key;
         }
 
@@ -109,7 +109,7 @@ namespace sparsetensor::hypertrie {
         inline PosCalc *use(const key_pos_t &key_pos) {
             PosCalc *child = next_pos_calcs.at(key_pos);
             if (child == nullptr) {
-                vector<bool> used_pos_mask(this->key_length, true);
+                std::vector<bool> used_pos_mask(this->key_length, true);
                 for (uint8_t subkey_pos : this->subkey_to_key)
                     used_pos_mask[subkey_pos] = false;
                 used_pos_mask[key_pos] = true;
@@ -125,7 +125,7 @@ namespace sparsetensor::hypertrie {
          * @param removed_positions bit vector of positions removed from superkey to subkey.
          * @return an instance
          */
-        static PosCalc *getInstance(const vector<bool> &removed_positions) {
+        static PosCalc *getInstance(const std::vector<bool> &removed_positions) {
             auto instance_ = instances.find(removed_positions);
             if (instance_ != instances.end()) {
                 // if an instance already exists return it

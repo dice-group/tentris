@@ -1,7 +1,3 @@
-//
-// Created by me on 2/2/18.
-//
-
 #ifndef SPARSETENSOR_HYPERTRIE_TYPES_HPP
 #define SPARSETENSOR_HYPERTRIE_TYPES_HPP
 

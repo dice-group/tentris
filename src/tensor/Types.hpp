@@ -16,9 +16,9 @@ namespace sparsetensor::tensor {
 
     using Key_t = ::std::vector<key_part_t>;
 
-    #define KEY_PART_MAX (UINT64_MAX)
+#define KEY_PART_MAX (UINT64_MAX)
 
-    #define KEY_PART_MIN (0)
+#define KEY_PART_MIN (0)
 }
 
 std::ostream &operator<<(std::ostream &out, ::sparsetensor::tensor::shape_t &shape) {
