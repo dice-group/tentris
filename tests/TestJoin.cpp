@@ -8,50 +8,65 @@ using sparsetensor::operations::Subscript;
 using sparsetensor::operations::EvalPlan;
 
 
-TEST(TestJoin, simple_call) {
-    using namespace sparsetensor::hypertrie;
-    key_pos_t depth = 2;
+TEST(TestJoin, simple_call
+) {
+using namespace sparsetensor::hypertrie;
+key_pos_t depth = 2;
 
-    HyperTrie<int> tensor_0{depth};
-    tensor_0.set({0, 0}, 1);
-    tensor_0.set({0, 1}, 2);
-    tensor_0.set({1, 0}, 3);
-    tensor_0.set({1, 1}, 5);
+HyperTrie<int> tensor_0{depth};
+tensor_0.set({
+0, 0}, 1);
+tensor_0.set({
+0, 1}, 2);
+tensor_0.set({
+1, 0}, 3);
+tensor_0.set({
+1, 1}, 5);
 
-    HyperTrie<int> tensor_1{depth};
-    tensor_1.set({0, 0}, 7);
-    tensor_1.set({0, 1}, 11);
-    tensor_1.set({1, 0}, 13);
-    tensor_1.set({1, 1}, 17);
+HyperTrie<int> tensor_1{depth};
+tensor_1.set({
+0, 0}, 7);
+tensor_1.set({
+0, 1}, 11);
+tensor_1.set({
+1, 0}, 13);
+tensor_1.set({
+1, 1}, 17);
 
-    vector<variant<HyperTrie<int> *, int >> operands{&tensor_0, &tensor_1};
+vector<variant < HyperTrie < int> *, int >> operands{
+&tensor_0, &tensor_1};
 
-    vector<raw_subscript> op_sc{{0, 1},
-                                {1, 2}};
-    raw_subscript res_sc{0, 2};
+vector <raw_subscript> op_sc{{0, 1},
+                             {1, 2}};
+raw_subscript res_sc{0, 2};
 
-    Subscript subscript{op_sc, res_sc};
+Subscript subscript{op_sc, res_sc};
 
-    EvalPlan plan{subscript};
-    auto[step, label] = plan.firstStep(operands);
+EvalPlan plan{subscript};
+auto[step, label] = plan.firstStep(operands);
 
-    std::cout << "step: " <<label << std::endl;
+std::cout << "step: " <<label <<
+std::endl;
 
-    Key_t key(depth);
+Key_t key(depth);
 
-    Join<int> join{operands, step, label, key};
+Join<int> join{operands, step, label, key};
 
-    typename sparsetensor::hypertrie::Join<int>::Iterator it_begin = join.begin();
-    typename sparsetensor::hypertrie::Join<int>::Iterator it_end = join.end();
+typename sparsetensor::hypertrie::Join<int>::Iterator it_begin = join.begin();
+typename sparsetensor::hypertrie::Join<int>::Iterator it_end = join.end();
 
-    for(;it_begin != it_end; ++it_begin){
-        auto &&[operands, key] = *it_begin;
-        std::cout << key <<  std::endl;
-        std::cout << *std::get<HyperTrie<int> *>(operands.at(0)) << std::endl;
-        std::cout << *std::get<HyperTrie<int> *>(operands.at(1)) << std::endl << std::endl;
+for(;it_begin !=
+it_end;
+++it_begin){
+auto &&[operands, key] = *it_begin;
+std::cout << key <<
+std::endl;
+std::cout << *std::get<HyperTrie < int> *>(operands.at(0)) <<
+std::endl;
+std::cout << *std::get<HyperTrie < int> *>(operands.at(1)) << std::endl <<
+std::endl;
 
-    }
-
+}
 
 
 }

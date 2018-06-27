@@ -9,19 +9,24 @@
 #include "BoolHyperTrie.hpp"
 #include "Types.hpp"
 #include "../einsum/Types.hpp"
-//#include "../einsum/EvalPlan.hpp"
 #include "../util/Sort.hpp"
 
 namespace sparsetensor::hypertrie {
-    using op_pos_t = sparsetensor::operations::op_pos_t;
-    using sparsetensor::operations::OP_POS_MAX;
-    using label_pos_t = sparsetensor::operations::label_pos_t;
     using Operands =  typename std::vector<BoolHyperTrie *>;
+
 
     /**
      * Joins two or more tensors and returns the non-scalar results of the return via the iterator
      */
-    class NewJoin {
+    class Join {
+        using key_pos_t = sparsetensor::tensor::key_pos_t;
+        using op_pos_t = sparsetensor::operations::op_pos_t;
+        constexpr static const op_pos_t &OP_POS_MAX = sparsetensor::operations::OP_POS_MAX;
+        using label_pos_t = sparsetensor::operations::label_pos_t;
+
+        using key_part_t =  sparsetensor::tensor::key_part_t;
+        using Key_t =  sparsetensor::tensor::Key_t;
+
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
 
         key_part_t _max_keypart = KEY_PART_MIN; ///< a upper bound to the key parts that are candidates for this join
@@ -39,7 +44,7 @@ namespace sparsetensor::hypertrie {
 
 
     public:
-//        static NewJoin create(const Key_t &key,
+//        static Join create(const Key_t &key,
 //                              const std::vector<BoolHyperTrie *> &operands,
 //                              sparsetensor::operations::PlanStep *step) {
 //            // TODO: implement step to fit this interface
@@ -58,12 +63,12 @@ namespace sparsetensor::hypertrie {
          * @param next_op_position the positions in operands of BoolHyperTrie that will be in the result
          * @param result_key_pos
          */
-        NewJoin(const Key_t &key,
-                const Operands &operands,
-                const std::vector<op_pos_t> op_poss,
-                const std::vector<std::vector<key_pos_t >> &key_part_posss,
-                const std::vector<op_pos_t> next_op_position,
-                const std::optional<key_pos_t> &result_key_pos) :
+        Join(const Key_t &key,
+             const Operands &operands,
+             const std::vector<op_pos_t> op_poss,
+             const std::vector<std::vector<key_pos_t >> &key_part_posss,
+             const std::vector<op_pos_t> next_op_position,
+             const std::optional<key_pos_t> &result_key_pos) :
                 _result(op_poss.size()), _key{key}, _result_key_pos{result_key_pos} {
 
             // write operands into _result
@@ -104,7 +109,7 @@ namespace sparsetensor::hypertrie {
          * @brief An Iterator for NewJoins that returns its results.
          */
         class iterator {
-            NewJoin &_join; ///< the join that is iterated.
+            Join &_join; ///< the join that is iterated.
 
             std::vector<BoolHyperTrie::DiagonalView> &_diagonals; ///< the diagonals of the join i.e. its inputs.
 
@@ -117,7 +122,7 @@ namespace sparsetensor::hypertrie {
             std::vector<std::tuple<op_pos_t, op_pos_t>> _reorderedDiagonals2result_pos{};  ///< Mapping from reordered diagonal to result positions.
         public:
 
-            iterator(NewJoin &join, bool ended = false) :
+            iterator(Join &join, bool ended = false) :
                     _join{join},
                     _diagonals{join._diagonals},
                     _current_key_part{(not ended) ? join._min_keypart : join._max_keypart + 1},
@@ -187,9 +192,9 @@ namespace sparsetensor::hypertrie {
                 return *this;
             }
 
-            std::tuple<std::vector<BoolHyperTrie *>, vector<uint64_t>> operator*() {
+            std::tuple<std::vector<BoolHyperTrie *>, std::vector<uint64_t>> operator*() {
                 // build the result
-                vector<BoolHyperTrie *> result = _join._result;
+                std::vector<BoolHyperTrie *> result = _join._result;
                 for (auto &&[revJoinee_pos, result_pos] : _reorderedDiagonals2result_pos) {
                     result[result_pos] = _diagonals[revJoinee_pos].minValue();
                 }

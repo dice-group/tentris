@@ -3,42 +3,33 @@
 
 #include <iostream>
 #include <vector>
-#include <parallel/numeric>
+#include <numeric>
 #include <set>
 #include <map>
 #include <unordered_set>
 #include <unordered_map>
 #include <cinttypes>
 
-using std::ostream;
-using std::tuple;
-using std::pair;
-using std::hash;
-using std::vector;
-using std::unordered_set;
-using std::set;
-using std::unordered_map;
-using std::map;
 
-ostream &operator<<(ostream &os, const uint8_t &element) {
+std::ostream &operator<<(std::ostream &os, const uint8_t &element) {
     os << int(element);
     return os;
 }
 
 template<typename T1, typename T2>
-ostream &operator<<(ostream &os, const tuple<T1, T2> &t) {
+std::ostream &operator<<(std::ostream &os, const std::tuple<T1, T2> &t) {
     os << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ")";
     return os;
 }
 
 template<typename T1, typename T2>
-ostream &operator<<(ostream &os, const pair<const T1, T2> &p) {
+std::ostream &operator<<(std::ostream &os, const std::pair<const T1, T2> &p) {
     os << p.first << " : " << p.second;
     return os;
 }
 
 template<typename Value>
-ostream &operator<<(ostream &os, const vector<Value> &elements) {
+std::ostream &operator<<(std::ostream &os, const std::vector<Value> &elements) {
     auto iter_begin = begin(elements);
     auto iter_end = end(elements);
     os << "[";
@@ -62,7 +53,7 @@ ostream &operator<<(ostream &os, const vector<Value> &elements) {
 //}
 
 template<typename Value>
-ostream &operator<<(ostream &os, const set<Value> &elements) {
+std::ostream &operator<<(std::ostream &os, const std::set<Value> &elements) {
     auto iter_begin = begin(elements);
     auto iter_end = end(elements);
     os << "{";
@@ -74,7 +65,7 @@ ostream &operator<<(ostream &os, const set<Value> &elements) {
 }
 
 template<typename Value>
-ostream &operator<<(ostream &os, const unordered_set<Value> &elements) {
+std::ostream &operator<<(std::ostream &os, const std::unordered_set<Value> &elements) {
     auto iter_begin = begin(elements);
     auto iter_end = end(elements);
     os << "{";
@@ -99,7 +90,7 @@ ostream &operator<<(ostream &os, const unordered_set<Value> &elements) {
 //}
 
 template<typename Key, typename Value>
-ostream &operator<<(ostream &os, const map<Key, Value> &elements) {
+std::ostream &operator<<(std::ostream &os, const std::map<Key, Value> &elements) {
     auto iter_begin = begin(elements);
     auto iter_end = end(elements);
     os << "{";
@@ -111,7 +102,7 @@ ostream &operator<<(ostream &os, const map<Key, Value> &elements) {
 }
 
 template<typename Key, typename Value>
-ostream &operator<<(ostream &os, const unordered_map<Key, Value> &elements) {
+std::ostream &operator<<(std::ostream &os, const std::unordered_map<Key, Value> &elements) {
     auto iter_begin = begin(elements);
     auto iter_end = end(elements);
     os << "{";

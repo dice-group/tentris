@@ -7,10 +7,10 @@
 namespace whoshuu {
     namespace detail {
 
-        template <typename T>
+        template<typename T>
         class Range {
         public:
-            Range(const T& start, const T& stop, const T& step) : start_{start}, stop_{stop}, step_{step} {
+            Range(const T &start, const T &stop, const T &step) : start_{start}, stop_{stop}, step_{step} {
                 if (step_ == 0) {
                     throw std::invalid_argument("Range step argument must not be zero");
                 } else {
@@ -24,19 +24,31 @@ namespace whoshuu {
             public:
                 typedef std::forward_iterator_tag iterator_category;
                 typedef T value_type;
-                typedef T& reference;
-                typedef T* pointer;
+                typedef T &reference;
+                typedef T *pointer;
 
                 iterator(value_type value, value_type step, value_type boundary) : value_{value}, step_{step},
                                                                                    boundary_{boundary},
                                                                                    positive_step_(step_ > 0) {}
-                iterator operator++() { value_ += step_; return *this; }
+
+                iterator operator++() {
+                    value_ += step_;
+                    return *this;
+                }
+
                 reference operator*() { return value_; }
+
                 pointer operator->() { return &value_; }
-                bool operator==(const iterator& rhs) { return positive_step_ ? (value_ >= rhs.value_ && value_ > boundary_)
-                                                                             : (value_ <= rhs.value_ && value_ < boundary_); }
-                bool operator!=(const iterator& rhs) { return positive_step_ ? (value_ < rhs.value_ && value_ >= boundary_)
-                                                                             : (value_ > rhs.value_ && value_ <= boundary_); }
+
+                bool operator==(const iterator &rhs) {
+                    return positive_step_ ? (value_ >= rhs.value_ && value_ > boundary_)
+                                          : (value_ <= rhs.value_ && value_ < boundary_);
+                }
+
+                bool operator!=(const iterator &rhs) {
+                    return positive_step_ ? (value_ < rhs.value_ && value_ >= boundary_)
+                                          : (value_ > rhs.value_ && value_ <= boundary_);
+                }
 
             private:
                 value_type value_;
@@ -61,18 +73,18 @@ namespace whoshuu {
 
     } // namespace detail
 
-    template <typename T>
-    detail::Range<T> range(const T& stop) {
+    template<typename T>
+    detail::Range<T> range(const T &stop) {
         return detail::Range<T>(T{0}, stop, T{1});
     }
 
-    template <typename T>
-    detail::Range<T> range(const T& start, const T& stop) {
+    template<typename T>
+    detail::Range<T> range(const T &start, const T &stop) {
         return detail::Range<T>(start, stop, T{1});
     }
 
-    template <typename T>
-    detail::Range<T> range(const T& start, const T& stop, const T& step) {
+    template<typename T>
+    detail::Range<T> range(const T &start, const T &stop, const T &step) {
         return detail::Range<T>(start, stop, step);
     }
 

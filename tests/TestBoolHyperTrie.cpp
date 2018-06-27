@@ -1,11 +1,9 @@
 #include <gtest/gtest.h>
 
 #include "hypertrie/BoolHyperTrie.hpp"
-#include "tensor/Types.hpp"
 
 
-using sparsetensor::tensor::Key_t;
-using std::variant;
+using Key_t = sparsetensor::tensor::Key_t;
 using namespace sparsetensor::hypertrie;
 
 TEST(TestBoolHyperTrie, test_single_write_read) {
@@ -17,7 +15,7 @@ TEST(TestBoolHyperTrie, test_single_write_read) {
 
     trie.set(key, value);
 
-    variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
+    std::variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
 
     bool stored_value = std::get<bool>(stored_value_);
     ASSERT_EQ(stored_value, value);
@@ -36,7 +34,7 @@ TEST(TestBoolHyperTrie, test_double_write_read0) {
     trie.set(key, value);
 
     // validate
-    variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
+    std::variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
 
     bool stored_value = std::get<bool>(stored_value_);
     ASSERT_EQ(stored_value, value);
@@ -44,7 +42,7 @@ TEST(TestBoolHyperTrie, test_double_write_read0) {
 
 TEST(TestBoolHyperTrie, test_mult_write_read1) {
     // data
-    vector<Key_t> keys{
+    std::vector<Key_t> keys{
             {0, 10, 8},
             {0, 10, 9}
     };
@@ -66,7 +64,7 @@ TEST(TestBoolHyperTrie, test_mult_write_read1) {
     for (unsigned int i = 0; i < keys.size(); ++i) {
         Key_t &key = keys[i];
 
-        variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
+        std::variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
 
         bool stored_value = std::get<bool>(stored_value_);
         ASSERT_EQ(stored_value, value);
@@ -83,7 +81,7 @@ TEST(TestBoolHyperTrie, DISABLED_test_read_empty_key) {
 
     Key_t empty_key{};
 
-    variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
+    std::variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
 
     bool stored_value = std::get<bool>(stored_value_);
     ASSERT_EQ(stored_value, value);
@@ -91,7 +89,7 @@ TEST(TestBoolHyperTrie, DISABLED_test_read_empty_key) {
 
 TEST(TestBoolHyperTrie, test_mult_write_read4) {
     // data
-    vector<Key_t> keys{
+    std::vector<Key_t> keys{
             {0, 10, 8,  2},
             {2, 5,  10, 9},
             {1, 0,  10, 5},
@@ -116,7 +114,7 @@ TEST(TestBoolHyperTrie, test_mult_write_read4) {
 
     // validate
     for (Key_t &key :keys) {
-        variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
+        std::variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
 
         bool stored_value = std::get<bool>(stored_value_);
         ASSERT_EQ(stored_value, value);
@@ -126,7 +124,7 @@ TEST(TestBoolHyperTrie, test_mult_write_read4) {
 
 TEST(TestBoolHyperTrie, test_multi_level_read) {
     // data
-    vector<Key_t> keys{
+    std::vector<Key_t> keys{
             {0, 10, 8,  2},
             {2, 5,  10, 9},
             {0, 4,  8,  9},
@@ -151,7 +149,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
     }
 
     Key_t subkey_0 = Key_t{0};
-    const variant<BoolHyperTrie *, bool> &subtrie_0_ = trie.get(subkey_0);
+    const std::variant<BoolHyperTrie *, bool> &subtrie_0_ = trie.get(subkey_0);
 
     BoolHyperTrie *subtrie_0 = std::get<BoolHyperTrie *>(subtrie_0_);
 
@@ -160,7 +158,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
 
 
     Key_t subkey_4 = Key_t{4};
-    const variant<BoolHyperTrie *, bool> &subtrie_04_ = subtrie_0->get(subkey_4);
+    const std::variant<BoolHyperTrie *, bool> &subtrie_04_ = subtrie_0->get(subkey_4);
 
     BoolHyperTrie *subtrie_04 = std::get<BoolHyperTrie *>(subtrie_04_);
 
@@ -169,7 +167,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
 
 
     Key_t subkey_8 = Key_t{8};
-    const variant<BoolHyperTrie *, bool> &subtrie_048_ = subtrie_04->get(subkey_8);
+    const std::variant<BoolHyperTrie *, bool> &subtrie_048_ = subtrie_04->get(subkey_8);
 
     BoolHyperTrie *subtrie_048 = std::get<BoolHyperTrie *>(subtrie_048_);
 
@@ -178,7 +176,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
 
 
     Key_t subkey_9 = Key_t{9};
-    const variant<BoolHyperTrie *, bool> &subtrie_0489_ = subtrie_048->get(subkey_9);
+    const std::variant<BoolHyperTrie *, bool> &subtrie_0489_ = subtrie_048->get(subkey_9);
 
     bool safed_value = std::get<bool>(subtrie_0489_);
 
@@ -187,7 +185,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
 
 TEST(TestBoolHyperTrie, calc_card) {
     // data
-    vector<Key_t> keys{
+    std::vector<Key_t> keys{
             {0, 1},
             {0, 2},
             {0, 3},

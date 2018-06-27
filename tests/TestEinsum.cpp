@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "einsum/Einsum.hpp"
-
 //using sparsetensor::tensor::shape_t;
 //using sparsetensor::operations::raw_subscript;
 //using sparsetensor::operations::einsum;

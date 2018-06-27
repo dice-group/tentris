@@ -8,34 +8,37 @@
 #include <numeric>
 #include <algorithm>
 #include <memory>
+
 #include "Types.hpp"
 #include "../util/All.hpp"
 #include "util/UndirectedGraph.hpp"
 
 
 namespace sparsetensor::operations {
-    class NewSubscript;
+    class Subscript;
 };
 
-::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::NewSubscript &subscript);
+::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &subscript);
 
 namespace sparsetensor::operations {
 
-    using ::sparsetensor::operations::util::UndirectedGraph;
 
     /**
      * Representation of the subscript of a expression in einstein summation convention.
      * This provides also  brackets out all independently computable parts and resulting in a
      * cross product of the bracketed parts.
      */
-    class NewSubscript {
+    class Subscript {
+
+        template<typename T>
+        using UndirectedGraph = typename ::sparsetensor::operations::util::UndirectedGraph<T>;
 
 
         std::set<label_t> _all_labels;
         std::vector<std::vector<label_t>> _operands_labels;
         std::vector<label_t> _result_labels;
         std::vector<op_pos_t> _original_op_poss;
-        std::vector<std::shared_ptr<NewSubscript>> _sub_subscripts;
+        std::vector<std::shared_ptr<Subscript>> _sub_subscripts;
         // TODO: remove?
         label_t _max_label;
         std::vector<std::set<label_t>> _distinct_operands_labels;
@@ -93,9 +96,9 @@ namespace sparsetensor::operations {
                                                     _unique_non_result_labels, _label_poss_in_operands);
         }
 
-        NewSubscript() {};
+        Subscript() {};
     public:
-        NewSubscript(std::vector<raw_subscript> operands, raw_subscript result) {
+        Subscript(std::vector<raw_subscript> operands, raw_subscript result) {
             std::tie(_operands_labels, _result_labels, _all_labels) = normalizeRawSubscripts(operands, result);
 
             _original_op_poss = std::vector<op_pos_t>{};
@@ -136,7 +139,7 @@ namespace sparsetensor::operations {
             return _original_op_poss;
         }
 
-        inline const std::vector<std::shared_ptr<NewSubscript>> &getSubSubscripts() const {
+        inline const std::vector<std::shared_ptr<Subscript>> &getSubSubscripts() const {
             return _sub_subscripts;
         }
 
@@ -186,11 +189,11 @@ namespace sparsetensor::operations {
             return _unique_non_result_contractions.at(op_pos);
         }
 
-        NewSubscript removeLabel(const label_t &label) {
+        Subscript removeLabel(const label_t &label) {
             if (not _all_labels.count(label))
                 return *this;
             else {
-                NewSubscript subscript{};
+                Subscript subscript{};
 
                 subscript._all_labels = {};
                 std::copy_if(_all_labels.begin(), _all_labels.end(),
@@ -215,23 +218,27 @@ namespace sparsetensor::operations {
 
         }
 
-
-        NewSubscript optimized() {
-            std::vector<std::shared_ptr<NewSubscript>> sub_subscripts{};
+        Subscript optimized() const {
+            std::vector<std::shared_ptr<Subscript>> sub_subscripts{};
             std::vector<std::vector<label_t>> new_operands_labels{};
+            std::vector<std::shared_ptr<Subscript>> new_sub_subscripts{};
 
             for (const std::set<label_t> &label_subset : _independent_label_subsets) {
 
-                auto sub_subscript = std::make_shared<NewSubscript>(extractSubscript(label_subset));
+                auto sub_subscript = std::make_shared<Subscript>(extractSubscript(label_subset));
                 new_operands_labels.emplace_back(sub_subscript->getResultLabels());
-                _sub_subscripts.push_back(sub_subscript);
+                new_sub_subscripts.push_back(sub_subscript);
             }
-            NewSubscript opt_subscript{new_operands_labels, _result_labels};
-            opt_subscript._sub_subscripts = _sub_subscripts;
-            return opt_subscript;
+            if (new_sub_subscripts.size() >= 1) {
+                return {*this};
+            } else {
+                Subscript opt_subscript{new_operands_labels, _result_labels};
+                opt_subscript._sub_subscripts = new_sub_subscripts;
+                return opt_subscript;
+            }
         }
 
-        NewSubscript extractSubscript(const std::set<label_t> &label_subset) {
+        Subscript extractSubscript(const std::set<label_t> &label_subset) const {
             std::vector<std::vector<label_t>> operands_labels;
             std::vector<op_pos_t> original_op_poss;
             for (const auto &[parent_op_pos, parent_op_labels] : enumerate(_operands_labels)) {
@@ -250,7 +257,7 @@ namespace sparsetensor::operations {
                 if (label_subset.count(label))
                     result_labels.emplace_back(label);
 
-            NewSubscript extracted_subscript{operands_labels, result_labels};
+            Subscript extracted_subscript{operands_labels, result_labels};
             extracted_subscript._original_op_poss = original_op_poss;
             return extracted_subscript;
         }
@@ -258,7 +265,7 @@ namespace sparsetensor::operations {
     private:
         static std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>>
         _calc_label_poss_in_operands(std::vector<std::vector<label_t>> operands_labels) {
-            std::map<tuple<op_pos_t, label_t>, vector<label_pos_t>> label_poss_in_operands{};
+            std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> label_poss_in_operands{};
 
             for (const auto &[op_id, labels] : enumerate(operands_labels))
                 for (const auto &[label_pos, label] : enumerate(labels))
@@ -266,7 +273,7 @@ namespace sparsetensor::operations {
             return label_poss_in_operands;
         }
 
-        static std::map<op_pos_t, vector<vector<label_pos_t>>>
+        static std::map<op_pos_t, std::vector<std::vector<label_pos_t>>>
         calcUniqueNonResultContractions(std::vector<op_pos_t> operands_with_unique_non_result_labels,
                                         std::vector<std::set<label_t>> distinct_operands_labels,
                                         std::set<label_t> unique_non_result_labels,
@@ -280,7 +287,8 @@ namespace sparsetensor::operations {
 
                 for (const label_t &label : distinct_operands_labels[op_pos])
                     if (unique_non_result_labels.count(label)) {
-                        const vector<label_pos_t> &contraction = label_poss_in_operands[std::make_tuple(op_pos, label)];
+                        const std::vector<label_pos_t> &contraction = label_poss_in_operands[std::make_tuple(op_pos,
+                                                                                                             label)];
                         if (contraction.size())
                             contractions.emplace_back(contraction);
                     }
@@ -308,7 +316,7 @@ namespace sparsetensor::operations {
 
 
         static UndirectedGraph<label_t>
-        calcLabelDependencyGraph(const std::vector<set<label_t>> &distinct_operands_labels) {
+        calcLabelDependencyGraph(const std::vector<std::set<label_t>> &distinct_operands_labels) {
             UndirectedGraph<label_t> label_dependency_graph{};
             for (const std::set<label_t> &labels : distinct_operands_labels) {
                 label_dependency_graph.addCompleteGraph(labels);
@@ -318,7 +326,7 @@ namespace sparsetensor::operations {
 
         static std::tuple<std::vector<std::vector<label_t >>, std::vector<label_t>, std::set<label_t>>
         normalizeRawSubscripts(
-                const vector<vector<label_t>> &raw_operand_subscripts,
+                const std::vector<std::vector<label_t>> &raw_operand_subscripts,
                 const std::vector<label_t> &raw_result_subscript) {
             // map storing the mapping from old to new labels
             std::map<label_t, label_t> raw_to_norm_label{};
@@ -368,7 +376,7 @@ namespace sparsetensor::operations {
             return norm_operand_labels;
         }
 
-        friend ::std::ostream &::operator<<(::std::ostream &out, ::sparsetensor::operations::NewSubscript &subscript) {
+        friend ::std::ostream &::operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &subscript) {
             out << "<Subscript: \n"
                 << "all_labels=" << subscript._all_labels
                 << ",\n\t"

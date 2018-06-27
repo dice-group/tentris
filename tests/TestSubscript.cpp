@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include "einsum/NewSubscript.hpp"
-
 
 //TEST(TestSubscript, print_and_check_norming) {
 //    using namespace ::sparsetensor::operations;

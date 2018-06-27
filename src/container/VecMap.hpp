@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <algorithm>
-#include "BinarySearch.hpp"
 #include <tuple>
+#include "BinarySearch.hpp"
 
 namespace sparsetensor::container {
 
@@ -220,14 +220,13 @@ namespace sparsetensor::container {
         }
 
 
-        inline const std::vector<KEY_t> &keys() const{
+        inline const std::vector<KEY_t> &keys() const {
             return _keys;
         }
 
-        inline const std::vector<VALUE_t> &values() const{
+        inline const std::vector<VALUE_t> &values() const {
             return _values;
         }
-
 
 
     protected:

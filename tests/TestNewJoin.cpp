@@ -1,12 +1,15 @@
 #include <gtest/gtest.h>
 
-#include "hypertrie/NewJoin.hpp"
-
-#include <typeinfo>
+#include "hypertrie/Join.hpp"
 
 TEST(TestJoin, simple_call) {
-    typeid(sparsetensor::hypertrie::NewJoin).name();
-    sparsetensor::hypertrie::NewJoin join = sparsetensor::hypertrie::NewJoin{{}, {}, {}, {}, {} , {}};
+    typeid(sparsetensor::hypertrie::Join).name();
+    sparsetensor::hypertrie::Join join = sparsetensor::hypertrie::Join{{},
+                                                                       {},
+                                                                       {},
+                                                                       {},
+                                                                       {},
+                                                                       {}};
     join.begin();
 
 

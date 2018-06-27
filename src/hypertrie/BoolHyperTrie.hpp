@@ -1,11 +1,6 @@
 #ifndef SPARSETENSOR_HYPERTRIE_BOOLHYPERTRIE_HPP
 #define SPARSETENSOR_HYPERTRIE_BOOLHYPERTRIE_HPP
 
-#include "PosCalc.hpp"
-#include "Types.hpp"
-#include "../tensor/Types.hpp"
-#include "../container/VecMap.hpp"
-#include "../container/VecSet.hpp"
 #include <cstdint>
 #include <map>
 #include <set>
@@ -18,19 +13,18 @@
 #include <tuple>
 #include <functional>
 
+#include "PosCalc.hpp"
+#include "Types.hpp"
+#include "../tensor/Types.hpp"
+#include "../container/VecMap.hpp"
+#include "../container/VecSet.hpp"
+
 namespace sparsetensor::hypertrie {
-    using sparsetensor::tensor::Key_t;
-    using std::vector;
-    using std::unordered_map;
-    using std::variant;
-    using std::map;
-    using std::optional;
-    using std::tuple;
-    using sparsetensor::tensor::key_pos_t;
-    using sparsetensor::tensor::key_part_t;
-    using std::ostream;
 
     class BoolHyperTrie {
+        using Key_t = sparsetensor::tensor::Key_t;
+        using key_pos_t = sparsetensor::tensor::key_pos_t;
+        using key_part_t = sparsetensor::tensor::key_part_t;
         // TODO: write destructor
         // TODO: implement del
 
@@ -57,7 +51,7 @@ namespace sparsetensor::hypertrie {
          */
         explicit BoolHyperTrie(key_pos_t depth) : _depth(depth), _subtries{} {
             if (depth > 1) {
-                _subtries = vector<inner_edges>(depth);
+                _subtries = std::vector<inner_edges>(depth);
             } else {
                 _subtries = leaf_edges{};
             }
@@ -100,7 +94,7 @@ namespace sparsetensor::hypertrie {
          * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
          * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
          */
-        variant<vector<inner_edges>, leaf_edges> _subtries{};
+        std::variant<std::vector<inner_edges>, leaf_edges> _subtries{};
 
 
         /**
@@ -111,7 +105,7 @@ namespace sparsetensor::hypertrie {
          * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() 
          */
         inner_edges &getInnerEdges(const key_pos_t &subkey_pos) {
-            return std::get<vector<inner_edges>>(this->_subtries).at(subkey_pos);
+            return std::get<std::vector<inner_edges>>(this->_subtries).at(subkey_pos);
         }
 
         /**
@@ -176,8 +170,8 @@ namespace sparsetensor::hypertrie {
          * @return a sub BoolHyperTrie or a value depending on the length of the key.
          * @throws the entry doesn't exist
          */
-        variant<BoolHyperTrie *, bool> get(const Key_t &key) const {
-            vector<optional<key_part_t>> intern_key(this->_depth);
+        std::variant<BoolHyperTrie *, bool> get(const Key_t &key) const {
+            std::vector<std::optional<key_part_t>> intern_key(this->_depth);
             for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
                 intern_key[key_pos] = {key[key_pos]};
             }
@@ -191,13 +185,13 @@ namespace sparsetensor::hypertrie {
          * not set resulting in a slice.
          * @return a sub BoolHyperTrie or a value depending if the key contains slices.
          */
-        variant<BoolHyperTrie *, bool> get(const vector<optional<key_part_t>> &key) const {
+        std::variant<BoolHyperTrie *, bool> get(const std::vector<std::optional<key_part_t>> &key) const {
             if (this->empty()) {
                 throw "hypertrie is emtpy.";
             }
 
             // extract non_slice_key_parts
-            map<key_pos_t, key_part_t> non_slice_key_parts{};
+            std::map<key_pos_t, key_part_t> non_slice_key_parts{};
             for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
                 if (key[key_pos]) {
                     non_slice_key_parts[key_pos] = *key[key_pos];
@@ -237,6 +231,7 @@ namespace sparsetensor::hypertrie {
                         posCalc = posCalc->use(min_card_key_pos);
                     }
                 }
+                throw "Is never reached.";
             }
         }
 
@@ -250,7 +245,7 @@ namespace sparsetensor::hypertrie {
                 if (this->_depth == 1) {
                     return std::get<leaf_edges>(this->_subtries).min();
                 } else {
-                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).min();
+                    return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).min();
                 }
             } catch (...) {}
             return KEY_PART_MAX;
@@ -266,7 +261,7 @@ namespace sparsetensor::hypertrie {
                 if (this->_depth == 1) {
                     return std::get<leaf_edges>(this->_subtries).max();
                 } else {
-                    return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).min();
+                    return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).min();
                 }
             } catch (...) {}
             return KEY_PART_MIN;
@@ -281,7 +276,7 @@ namespace sparsetensor::hypertrie {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).size();
             } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).size();
+                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).size();
             }
         }
 
@@ -290,8 +285,8 @@ namespace sparsetensor::hypertrie {
          * @param key_poss vector of key positions
          * @return cardinalities at the requested positions
          */
-        inline vector<size_t> getCards(const vector<key_pos_t> &key_poss) const {
-            vector<size_t> cards(key_poss.size());
+        inline std::vector<size_t> getCards(const std::vector<key_pos_t> &key_poss) const {
+            std::vector<size_t> cards(key_poss.size());
             for (size_t i = 0; i < key_poss.size(); ++i) {
                 cards[i] = getCard(key_poss.at(i));
             }
@@ -304,7 +299,7 @@ namespace sparsetensor::hypertrie {
          * @param posCalc a position calculator
          * @return the minimum key position.
          */
-        key_pos_t getMinCardKeyPos(const map<key_pos_t, key_part_t> &map_from_key_pos,
+        key_pos_t getMinCardKeyPos(const std::map<key_pos_t, key_part_t> &map_from_key_pos,
                                    const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
@@ -338,7 +333,7 @@ namespace sparsetensor::hypertrie {
         }
 
     private:
-        void del_rek(const Key_t &key, unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
+        void del_rek(const Key_t &key, std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
                      PosCalc *pos_calc) {
             throw "del_rek not yet implemented.";
         }
@@ -349,7 +344,7 @@ namespace sparsetensor::hypertrie {
          * @param finished_subtries map of finished sub HyperTries
          * @param pos_calc PosCalc object for the current sub HyperTrie
          */
-        void set_rek(const Key_t &key, unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
+        void set_rek(const Key_t &key, std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
                      PosCalc *pos_calc) {
             // update this node
             this->_leafcount += 1;
@@ -435,7 +430,7 @@ namespace sparsetensor::hypertrie {
             } catch (...) {
                 if (value) {
                     // cache for already created sub HyperTries.
-                    unordered_map<subkey_mask_t, BoolHyperTrie *> finished_subtries{};
+                    std::unordered_map<subkey_mask_t, BoolHyperTrie *> finished_subtries{};
 
                     // get pos_calc for this.
                     subkey_mask_t subkey_mask(key.size());
@@ -463,42 +458,41 @@ namespace sparsetensor::hypertrie {
             return _leafcount == 0;
         }
 
-        variant<leaf_edges::iterator, inner_edges::KeyView::iterator> begin_(const key_pos_t &key_pos) {
+        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> begin_(const key_pos_t &key_pos) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).begin();
             } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).begin();
+                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).begin();
             }
         }
 
-        variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
+        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).end();
             } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).end();
+                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).end();
             }
         }
 
-        variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
-        lower_bound(key_part_t min_key_part = KEY_PART_MIN,
-                    key_pos_t key_pos = 0) {
+        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
+        lower_bound(key_part_t min_key_part = KEY_PART_MIN, key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).lower_bound(min_key_part);
             } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).lower_bound(min_key_part);
+                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).lower_bound(min_key_part);
             }
         }
 
-        variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
+        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
         upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
                 return std::get<leaf_edges>(this->_subtries).upper_bound(max_key_part);
             } else {
-                return std::get<vector<inner_edges>>(this->_subtries).at(key_pos).upper_bound(max_key_part);
+                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).upper_bound(max_key_part);
             }
         }
 
-        friend ostream &operator<<(ostream &out, BoolHyperTrie &trie) {
+        friend std::ostream &operator<<(std::ostream &out, BoolHyperTrie &trie) {
             out << "<BoolHyperTrie: _depth=" << int(trie._depth) << ", leafcount=" << int(trie._leafcount) << ">";
             return out;
         }
@@ -676,7 +670,7 @@ namespace sparsetensor::hypertrie {
                     const BoolHyperTrie *child = childrens_values.at(ind);
                     try {
                         // TODO: implement diagonal key retrieval in HyperTrie directly.
-                        vector<std::optional<key_part_t>> key(_positions.size() - 1);
+                        std::vector<std::optional<key_part_t>> key(_positions.size() - 1);
                         for (size_t pos: _positions) {
                             key[pos] = current_key_part;
                         }
@@ -757,7 +751,7 @@ namespace sparsetensor::hypertrie {
              * if  containsAndUpdateLower() was called returning true.
              * @return the child HyperTrie
              */
-            inline BoolHyperTrie * minValue() {
+            inline BoolHyperTrie *minValue() {
                 // todo: think about if it is sufficient to return BoolHyperTries.
                 return _result;
             }
@@ -766,13 +760,16 @@ namespace sparsetensor::hypertrie {
              */
         private:
             bool containsAndUpdateLower_I(const key_part_t &key_part) {
-                size_t ind = sparsetensor::container::insert_pos(_leafs->_keys, key_part, _min_ind,
-                                                                 _max_ind);
+                size_t ind = sparsetensor::container::insert_pos(_leafs->_keys, key_part, _min_ind, _max_ind);
                 if (ind != _max_ind + 1) {
                     _min = _leafs->byInd(ind);
                     _min_ind = ind;
                     _size = _max_ind - ind + 1;
                     return _min == key_part;
+                } else {
+                    _min = KEY_PART_MAX;
+                    _size = 0;
+                    return false;
                 }
             }
 
@@ -794,7 +791,7 @@ namespace sparsetensor::hypertrie {
                         const BoolHyperTrie *child = childrens_values.at(ind);
                         try {
                             // TODO: implement diagonal key retrieval in HyperTrie directly.
-                            vector<std::optional<key_part_t>> key(_positions.size() - 1);
+                            std::vector<std::optional<key_part_t>> key(_positions.size() - 1);
                             for (size_t pos: _positions) {
                                 key[pos] = current_key_part;
                             }
@@ -875,7 +872,7 @@ namespace sparsetensor::hypertrie {
                 if (_min_ind <= _max_ind) {
                     return (this->*first_lower_p)(_min_ind);
                 } else {
-                    _min = KEY_PART_MAX;
+                    return _min = KEY_PART_MAX;
                 }
             }
 
@@ -884,15 +881,13 @@ namespace sparsetensor::hypertrie {
                 const inner_edges &children = _edges->at(_min_key_pos);
                 // calc min
                 if (children.keyByInd(_min_ind) != min) {
-                    auto &&[contained, ind] = children.containsAndInd(min, _min_ind, _max_ind);
-                    _min_ind = ind;
+                    _min_ind = std::get<1>(children.containsAndInd(min, _min_ind, _max_ind));;
                     _min = children.keyByInd(_min_ind);
                     min = _min;
                 }
                 // calc max
                 if (children.keyByInd(_max_ind) != max) {
-                    auto &&[contained, ind] = children.containsAndIndLower(max, _min_ind, _max_ind);
-                    _max_ind = ind;
+                    _max_ind = std::get<1>(children.containsAndIndLower(max, _min_ind, _max_ind));
                     _max = children.keyByInd(_max_ind);
                     max = _max;
                 }
@@ -921,7 +916,7 @@ namespace sparsetensor::hypertrie {
              * @param diagonals the diagonals where the range should be minimized to a common range.
              * @return tuple of the largest min and smallest max.
              */
-            static tuple<size_t, size_t> minimizeRange(std::vector<DiagonalView> diagonals) {
+            static std::tuple<size_t, size_t> minimizeRange(std::vector<DiagonalView> diagonals) {
                 key_part_t min_ = 0;
                 key_part_t max_ = SIZE_MAX;
                 // get min and max
@@ -951,13 +946,8 @@ namespace sparsetensor::hypertrie {
                 }
                 return std::make_tuple(min_, max_);
             }
-
-
         };
-
     };
-
-
 };
 
 #endif //SPARSETENSOR_HYPERTRIE_BOOLHYPERTRIE_HPP

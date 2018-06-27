@@ -1,11 +1,10 @@
 #ifndef SPARSETENSOR_EINSUM_UTIL_UNDIRECTEDGRAPH_HPP
 #define SPARSETENSOR_EINSUM_UTIL_UNDIRECTEDGRAPH_HPP
 
-#include "../../util/All.hpp"
 #include <set>
 #include <map>
 
-
+#include "../../util/All.hpp"
 
 
 namespace sparsetensor::operations::util {
@@ -69,14 +68,14 @@ namespace sparsetensor::operations::util {
          * Get all connected components e.g. all sets of nodes that are reachable form each other.
          * @return set of connected components.
          */
-        std::vector<set<T>> getConnectedComponents() const {
+        std::vector<std::set<T>> getConnectedComponents() const {
             // this is basically a breadth first search
             // see: https://en.wikipedia.org/wiki/Breadth-first_search
             std::set<T> unfinished_nodes{this->nodes};
 
             std::set<T> open_nodes{};
 
-            std::vector<set<T>> connected_components{};
+            std::vector<std::set<T>> connected_components{};
 
             while (not unfinished_nodes.empty()) {
                 std::set<T> connected_component{};

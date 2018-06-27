@@ -15,10 +15,8 @@ namespace sparsetensor::sorting {
  * @return a vector that maps the the positions in the vector to the sorted positions.
  */
     template<typename T, typename Compare>
-    std::vector <std::size_t> sortPermutation(
-            const std::vector <T> &vec,
-            const Compare &compare) {
-        std::vector <std::size_t> permutation(vec.size());
+    std::vector<std::size_t> sortPermutation(const std::vector<T> &vec, const Compare &compare) {
+        std::vector<std::size_t> permutation(vec.size());
         std::iota(permutation.begin(), permutation.end(), 0);
         std::sort(permutation.begin(), permutation.end(),
                   [&](size_t i, size_t j) { return compare(vec[i], vec[j]); });
@@ -33,8 +31,8 @@ namespace sparsetensor::sorting {
  * @return the inverse of the given sort permutation
  */
     template<typename T>
-    inline std::vector <size_t> invPermutation(const std::vector <T> &permutation) {
-        std::vector <size_t> inv_permutation(permutation.size());
+    inline std::vector<size_t> invPermutation(const std::vector<T> &permutation) {
+        std::vector<size_t> inv_permutation(permutation.size());
         for (size_t i = 0; i < permutation.size(); i++)
             inv_permutation[permutation[i] - 1] = i + 1;
         return inv_permutation;
@@ -48,7 +46,7 @@ namespace sparsetensor::sorting {
  * @param permutation the permutation.
  */
     template<typename T>
-    void applyPermutation(std::vector <T> &vec, const std::vector <std::size_t> &permutation) {
+    void applyPermutation(std::vector<T> &vec, const std::vector<std::size_t> &permutation) {
         std::vector<bool> done(vec.size());
         for (std::size_t i = 0; i < vec.size(); ++i) {
             if (done[i]) {
