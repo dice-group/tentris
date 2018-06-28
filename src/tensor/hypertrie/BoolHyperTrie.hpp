@@ -14,32 +14,45 @@
 #include <functional>
 
 #include "PosCalc.hpp"
-#include "Types.hpp"
-#include "../tensor/Types.hpp"
-#include "../container/VecMap.hpp"
-#include "../container/VecSet.hpp"
+#include "../../util/container/VecMap.hpp"
+#include "../../util/container/VecSet.hpp"
+#include "../../util/All.hpp"
 
-namespace sparsetensor::hypertrie {
+namespace tnt::tensor::hypertrie {
 
     class BoolHyperTrie {
-        using Key_t = sparsetensor::tensor::Key_t;
-        using key_pos_t = sparsetensor::tensor::key_pos_t;
-        using key_part_t = sparsetensor::tensor::key_part_t;
-        // TODO: write destructor
-        // TODO: implement del
-
-
+        using Key_t = tnt::util::types::Key_t;
+        using key_pos_t = tnt::util::types::key_pos_t;
+        using key_part_t = tnt::util::types::key_part_t;
+        using subkey_mask_t = tnt::util::types::subkey_mask_t;
     public:
         /**
          * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero
          * subhypertrie are stored. A inner_edges is used for every position of the stored keys.
          */
-        using inner_edges = sparsetensor::container::VecMap<key_part_t, BoolHyperTrie *>;
+        using inner_edges = tnt::util::container::VecMap<key_part_t, BoolHyperTrie *>;
         /**
          * Leaf edges are encoded by storing only the key_parts that map to a true. All other key parts map to zero.
          */
-        using leaf_edges = sparsetensor::container::VecSet<key_part_t>;
+        using leaf_edges = tnt::util::container::VecSet<key_part_t>;
+    private:
 
+        // TODO: write destructor
+        // TODO: implement del
+        key_pos_t _depth{}; ///< The depth defines the length of keys.
+
+        size_t _leafcount{}; ///< Number of entries.
+
+        /**
+         * Stores the subtries. For depth > 1 a vector of length equal to depth stores for every position in the keys to
+         * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
+         * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
+         */
+        std::variant<std::vector<inner_edges>, leaf_edges> _subtries{};
+
+
+
+    public:
         /**
          * The default constructor creates a empty BoolHyperTrie with depth = 1.
          */
@@ -57,14 +70,6 @@ namespace sparsetensor::hypertrie {
             }
         }
 
-
-    private:
-        /**
-         * The depth defines the length of keys.
-         */
-        key_pos_t _depth{};
-
-    public:
         /**
          * Get the depth of the BoolHyperTrie.
          * @return depth of this
@@ -73,28 +78,15 @@ namespace sparsetensor::hypertrie {
             return _depth;
         }
 
-    private:
-        /**
-         * Number of entries.
-         */
-        uint64_t _leafcount{};
-
-    public:
         /**
          * Get the number of none-zero elements stored.
          * @return number of stored none-zero elements
          */
-        inline const uint64_t &size() const noexcept {
+        inline const size_t &size() const noexcept {
             return _leafcount;
         }
 
     private:
-        /**
-         * Stores the subtries. For depth > 1 a vector of length equal to depth stores for every position in the keys to
-         * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
-         * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
-         */
-        std::variant<std::vector<inner_edges>, leaf_edges> _subtries{};
 
 
         /**
@@ -303,7 +295,7 @@ namespace sparsetensor::hypertrie {
                                    const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
-            for (const auto &[key_pos, key_part] : map_from_key_pos) {
+            for (const key_pos_t &key_pos : keys(map_from_key_pos)) {
                 size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
                 if (card < min_card) {
                     min_card = card;
@@ -642,9 +634,9 @@ namespace sparsetensor::hypertrie {
             key_part_t first_lower_I(const key_part_t &key_part) {
                 size_t ind = (key_part == _leafs->_keys.at(_min_ind))
                              ? _min_ind
-                             : sparsetensor::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
                 _min_ind = ind;
-                if (ind != sparsetensor::container::NOT_FOUND) {
+                if (ind != tnt::util::container::NOT_FOUND) {
                     _size = _max_ind - ind + 1;
                     _min = _leafs->byInd(ind);
                     return _min;
@@ -663,7 +655,7 @@ namespace sparsetensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
                 while (ind != _max_ind + 1) {
 
                     current_key_part = childrens_keys.at(ind);
@@ -697,7 +689,7 @@ namespace sparsetensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
 
                 while (ind != _max_ind + 1) {
 
@@ -760,7 +752,7 @@ namespace sparsetensor::hypertrie {
              */
         private:
             bool containsAndUpdateLower_I(const key_part_t &key_part) {
-                size_t ind = sparsetensor::container::insert_pos(_leafs->_keys, key_part, _min_ind, _max_ind);
+                size_t ind = tnt::util::container::insert_pos(_leafs->_keys, key_part, _min_ind, _max_ind);
                 if (ind != _max_ind + 1) {
                     _min = _leafs->byInd(ind);
                     _min_ind = ind;
@@ -782,7 +774,7 @@ namespace sparsetensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
 
 
                 if (ind != _max_ind + 1) {
@@ -824,7 +816,7 @@ namespace sparsetensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : sparsetensor::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
 
 
                 if (ind != _max_ind + 1) {

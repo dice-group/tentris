@@ -6,11 +6,10 @@
 #include <map>
 #include <vector>
 
-#include "Types.hpp"
-#include "../tensor/Types.hpp"
+#include "../../util/All.hpp"
 
 
-namespace sparsetensor::hypertrie {
+namespace tnt::tensor::hypertrie {
 
 
     /**
@@ -18,7 +17,8 @@ namespace sparsetensor::hypertrie {
      * And the other way around.
      */
     class PosCalc {
-        using key_pos_t = sparsetensor::tensor::key_pos_t;
+        using key_pos_t = tnt::util::types::key_pos_t;
+        using subkey_mask_t = tnt::util::types::subkey_mask_t;
         /**
          * Holds all instances.
          */

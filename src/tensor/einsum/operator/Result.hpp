@@ -6,24 +6,24 @@
 #include <vector>
 #include <memory>
 
+#include "../../hypertrie/BoolHyperTrie.hpp"
+#include "../../hypertrie/Join.hpp"
 #include "Einsum.hpp"
 #include "CrossProduct.hpp"
-#include "../../hypertrie/BoolHyperTrie.hpp"
-#include "../../einsum/EinsumPlan.hpp"
-#include "../../hypertrie/Join.hpp"
-#include "../../container/NDMap.hpp"
+#include "../EinsumPlan.hpp"
+#include "../../../util/container/NDMap.hpp"
+#include "../../../util/All.hpp"
 
-namespace sparsetensor::operations::operators {
+namespace tnt::tensor::einsum::operators {
 
     template<typename T>
     class Result {
-        using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
-        using Join = sparsetensor::hypertrie::Join;
-        using Key_t = sparsetensor::tensor::Key_t;
+        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
+        using Join = tnt::tensor::hypertrie::Join;
         template<typename V>
-        using NDMap = sparsetensor::container::NDMap<V>;
-        using NewJoin = sparsetensor::hypertrie::Join;
-        using Operands = sparsetensor::hypertrie::Operands;
+        using NDMap = tnt::util::container::NDMap<V>;
+        using NewJoin = tnt::tensor::hypertrie::Join;
+        using Operands = tnt::tensor::hypertrie::Operands;
     public:
 
         const Subscript &_subscript;

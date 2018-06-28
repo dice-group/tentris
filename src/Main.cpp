@@ -1,6 +1,5 @@
 
-#include "einsum/operator/Result.hpp"
-
+#include "tensor/einsum/operator/Result.hpp"
 
 int main() {
 }

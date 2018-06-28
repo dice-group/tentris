@@ -4,9 +4,10 @@
 #include <vector>
 #include <algorithm>
 #include <tuple>
+
 #include "BinarySearch.hpp"
 
-namespace sparsetensor::container {
+namespace tnt::util::container {
 
     /**
      * A Map that is based on two sorted vectors storing the entries.

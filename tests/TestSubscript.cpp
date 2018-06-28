@@ -2,7 +2,7 @@
 
 
 //TEST(TestSubscript, print_and_check_norming) {
-//    using namespace ::sparsetensor::operations;
+//    using namespace ::tnt::operations;
 //    // data
 //    vector<vector<label_t >> raw_op_sc{
 //            {3, 2, 1},
@@ -37,7 +37,7 @@
 //}
 
 //TEST(TestSubscript, optimize) {
-//    using namespace ::sparsetensor::operations;
+//    using namespace ::tnt::operations;
 //    // data
 //    vector<vector<label_t >> raw_op_sc{
 //            {3, 2, 1},

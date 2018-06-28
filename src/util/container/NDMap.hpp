@@ -1,12 +1,13 @@
 #ifndef TEST_NDMAP_HPP
 #define TEST_NDMAP_HPP
 
-#include "../tensor/Types.hpp"
 
 #include <map>
 
-namespace sparsetensor::container {
-    using Key_t = sparsetensor::tensor::Key_t;
+#include "../Types.hpp"
+
+namespace tnt::util::container {
+    using Key_t = tnt::util::types::Key_t;
 
     template<typename VALUE_t>
     using NDMap = std::map<Key_t, VALUE_t>;

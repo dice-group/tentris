@@ -2,9 +2,9 @@
 #define SPARSETENSOR_CONTAINER_BINARYSEARCH
 
 #include <vector>
-#include<algorithm>
+#include <algorithm>
 
-namespace sparsetensor::container {
+namespace tnt::util::container {
     /**
      * NOT_FOUND return value for function search
      */
@@ -136,7 +136,7 @@ namespace sparsetensor::container {
             return low;
         else {
             size_t size = high - low + 1;
-            size_t probe = sorted_vector.size();
+            size_t probe;
 
             while (size > 0) {
                 size_t half = size / 2;
@@ -152,9 +152,7 @@ namespace sparsetensor::container {
             }
             return NOT_FOUND;
         }
-
     }
-
 }
 
 #endif //SPARSETENSOR_CONTAINER_BINARYSEARCH
