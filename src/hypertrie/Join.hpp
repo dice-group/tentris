@@ -7,10 +7,9 @@
 #include <numeric>
 #include <optional>
 #include "BoolHyperTrie.hpp"
-#include "Types.hpp"
-#include "../einsum/Types.hpp"
 #include "../util/Sort.hpp"
 #include "../einsum/EinsumPlan.hpp"
+#include "../util/All.hpp"
 
 namespace sparsetensor::hypertrie {
     using Operands =  typename std::vector<BoolHyperTrie *>;
@@ -20,12 +19,11 @@ namespace sparsetensor::hypertrie {
      * Joins two or more tensors and returns the non-scalar results of the return via the iterator
      */
     class Join {
-        using key_pos_t = sparsetensor::tensor::key_pos_t;
+        using key_pos_t = sparsetensor::util::types::key_pos_t;
         using op_pos_t = sparsetensor::operations::op_pos_t;
-        constexpr static const op_pos_t &OP_POS_MAX = sparsetensor::operations::OP_POS_MAX;
         using label_pos_t = sparsetensor::operations::label_pos_t;
-        using key_part_t =  sparsetensor::tensor::key_part_t;
-        using Key_t =  sparsetensor::tensor::Key_t;
+        using key_part_t =  sparsetensor::util::types::key_part_t;
+        using Key_t =  sparsetensor::util::types::Key_t;
         using EinsumPlan = sparsetensor::operations::EinsumPlan;
 
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join

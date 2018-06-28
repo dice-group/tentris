@@ -6,6 +6,8 @@
 #include <tuple>
 
 #include "Einsum.hpp"
+#include "../../util/All.hpp"
+
 
 
 namespace sparsetensor::operations::operators {

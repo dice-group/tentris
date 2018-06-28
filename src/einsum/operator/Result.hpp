@@ -12,14 +12,15 @@
 #include "../../einsum/EinsumPlan.hpp"
 #include "../../hypertrie/Join.hpp"
 #include "../../container/NDMap.hpp"
+#include "../../util/All.hpp"
 
 namespace sparsetensor::operations::operators {
 
     template<typename T>
     class Result {
+        using namespace sparsetensor::util::types;
         using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
         using Join = sparsetensor::hypertrie::Join;
-        using Key_t = sparsetensor::tensor::Key_t;
         template<typename V>
         using NDMap = sparsetensor::container::NDMap<V>;
         using NewJoin = sparsetensor::hypertrie::Join;

@@ -14,8 +14,6 @@
 #include <functional>
 
 #include "PosCalc.hpp"
-#include "Types.hpp"
-#include "../tensor/Types.hpp"
 #include "../container/VecMap.hpp"
 #include "../container/VecSet.hpp"
 #include "../util/All.hpp"
@@ -23,9 +21,10 @@
 namespace sparsetensor::hypertrie {
 
     class BoolHyperTrie {
-        using Key_t = sparsetensor::tensor::Key_t;
-        using key_pos_t = sparsetensor::tensor::key_pos_t;
-        using key_part_t = sparsetensor::tensor::key_part_t;
+        using Key_t = sparsetensor::util::types::Key_t;
+        using key_pos_t = sparsetensor::util::types::key_pos_t;
+        using key_part_t = sparsetensor::util::types::key_part_t;
+        using subkey_mask_t = sparsetensor::util::types::subkey_mask_t;
     public:
         /**
          * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero

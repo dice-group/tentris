@@ -152,9 +152,7 @@ namespace sparsetensor::container {
             }
             return NOT_FOUND;
         }
-
     }
-
 }
 
 #endif //SPARSETENSOR_CONTAINER_BINARYSEARCH

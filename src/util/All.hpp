@@ -6,6 +6,7 @@
 #include "Range.hpp"
 #include "Enumerate.hpp"
 #include "KeysValues.hpp"
+#include "Types.hpp"
 
 using namespace whoshuu;
 

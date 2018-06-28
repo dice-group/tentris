@@ -3,7 +3,7 @@
 #include "hypertrie/BoolHyperTrie.hpp"
 
 
-using Key_t = sparsetensor::tensor::Key_t;
+using namespace sparsetensor::util::types;
 using namespace sparsetensor::hypertrie;
 
 TEST(TestBoolHyperTrie, test_single_write_read) {

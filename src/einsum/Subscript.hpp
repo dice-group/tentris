@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "Types.hpp"
 #include "../util/All.hpp"
 #include "util/UndirectedGraph.hpp"
 
@@ -21,6 +20,7 @@ namespace sparsetensor::operations {
 ::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &subscript);
 
 namespace sparsetensor::operations {
+    using namespace sparsetensor::util::types;
 
 
     /**
@@ -40,7 +40,6 @@ namespace sparsetensor::operations {
         std::vector<op_pos_t> _original_op_poss;
         std::vector<std::shared_ptr<Subscript>> _sub_subscripts;
         // TODO: remove?
-        label_t _max_label;
         std::vector<std::set<label_t>> _distinct_operands_labels;
         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
         std::map<label_t, label_pos_t> _label_pos_in_result;
@@ -53,9 +52,6 @@ namespace sparsetensor::operations {
         std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> _unique_non_result_contractions;
 
         void updateFields() {
-            _max_label = (_all_labels.size() > 0) ? *std::max_element(_all_labels.begin(), _all_labels.end())
-                                                  : NO_LABEL;
-
             _distinct_operands_labels = {};
             _distinct_operands_labels.reserve(numberOfOperands());
             for (const std::vector<label_t> &operands : _operands_labels)

@@ -38,13 +38,10 @@ namespace sparsetensor::operations::util {
          */
         void addCompleteGraph(const std::set<T> &nodes) {
             // add all combinations
-            auto node_a = nodes.begin();
-            for (; node_a != nodes.end(); node_a++) {
-                auto node_b = node_a;
-                for (; node_b != nodes.end(); node_b++) {
-                    addEdge(*node_a, *node_b);
-                }
-            }
+
+            for (const T &node_a:nodes)
+                for (const T &node_b:nodes)
+                    addEdge(node_a, node_b);
         }
 
         /**
@@ -135,7 +132,7 @@ namespace sparsetensor::operations::util {
          * @return Node iterator
          */
         typename std::set<T>::const_iterator cbegin() const {
-            return nodes.begin();
+            return nodes.cbegin();
         };
 
         /**
@@ -143,7 +140,7 @@ namespace sparsetensor::operations::util {
          * @return iterator end
          */
         typename std::set<T>::const_iterator cend() const {
-            return nodes.end();
+            return nodes.cend();
         };
     };
 

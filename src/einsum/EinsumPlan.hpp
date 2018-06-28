@@ -6,7 +6,6 @@
 #include <exception>
 
 #include "Subscript.hpp"
-#include "Types.hpp"
 #include "../util/All.hpp"
 #include "../hypertrie/BoolHyperTrie.hpp"
 
@@ -14,7 +13,6 @@ namespace sparsetensor::operations {
     class EinsumPlan {
         using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
-        using key_pos_t = sparsetensor::tensor::key_pos_t;
         const Subscript &_subscript;
         const std::vector<label_t> &_result_labels;
     public:

@@ -10,6 +10,8 @@
 #include "../../einsum/EinsumPlan.hpp"
 #include "../../hypertrie/Join.hpp"
 #include "../../container/NDMap.hpp"
+#include "../../util/All.hpp"
+
 
 namespace sparsetensor::operations::operators {
 
@@ -21,8 +23,9 @@ namespace sparsetensor::operations::operators {
      */
     template<typename OUT_COUNT_T>
     class Einsum {
+        using namespace sparsetensor::util::types;
+
         using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
-        using Key_t = sparsetensor::tensor::Key_t;
 
         template<typename T>
         using NDMap = sparsetensor::container::NDMap<T>;
