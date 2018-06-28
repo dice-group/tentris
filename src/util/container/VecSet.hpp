@@ -3,9 +3,10 @@
 
 #include <vector>
 #include <algorithm>
+
 #include "BinarySearch.hpp"
 
-namespace sparsetensor::container {
+namespace tnt::container {
 
 
     template<typename KEY_t>

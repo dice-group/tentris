@@ -6,7 +6,7 @@
 #include <iostream>
 
 
-namespace sparsetensor::util::types {
+namespace tnt::util::types {
     /**
      * Type for labels (uint8_t).
      */

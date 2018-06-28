@@ -6,12 +6,13 @@
 #include <variant>
 #include <numeric>
 #include <optional>
-#include "BoolHyperTrie.hpp"
-#include "../util/Sort.hpp"
-#include "../einsum/EinsumPlan.hpp"
-#include "../util/All.hpp"
 
-namespace sparsetensor::hypertrie {
+#include "BoolHyperTrie.hpp"
+#include "../../util/container/Sort.hpp"
+#include "../einsum/EinsumPlan.hpp"
+#include "../../util/All.hpp"
+
+namespace tnt::hypertrie {
     using Operands =  typename std::vector<BoolHyperTrie *>;
 
 
@@ -19,12 +20,12 @@ namespace sparsetensor::hypertrie {
      * Joins two or more tensors and returns the non-scalar results of the return via the iterator
      */
     class Join {
-        using key_pos_t = sparsetensor::util::types::key_pos_t;
-        using op_pos_t = sparsetensor::operations::op_pos_t;
-        using label_pos_t = sparsetensor::operations::label_pos_t;
-        using key_part_t =  sparsetensor::util::types::key_part_t;
-        using Key_t =  sparsetensor::util::types::Key_t;
-        using EinsumPlan = sparsetensor::operations::EinsumPlan;
+        using key_pos_t = tnt::util::types::key_pos_t;
+        using op_pos_t = tnt::operations::op_pos_t;
+        using label_pos_t = tnt::operations::label_pos_t;
+        using key_part_t =  tnt::util::types::key_part_t;
+        using Key_t =  tnt::util::types::Key_t;
+        using EinsumPlan = tnt::operations::EinsumPlan;
 
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
 
@@ -124,17 +125,17 @@ namespace sparsetensor::hypertrie {
                     _ended{ended} {
                 if ((not ended) and (_current_key_part <= _last_key_part)) {
                     // sort the diagonals by size
-                    const std::vector<size_t> _sort_order = sparsetensor::sorting::sortPermutation(
+                    const std::vector<size_t> _sort_order = tnt::sorting::sortPermutation(
                             _diagonals, [](const BoolHyperTrie::DiagonalView &a,
                                            const BoolHyperTrie::DiagonalView &b) {
                                 return a.size() <
                                        b.size();
                             });
 
-                    ::sparsetensor::sorting::applyPermutation(_diagonals, _sort_order);
+                    ::tnt::sorting::applyPermutation(_diagonals, _sort_order);
 
                     // get the inverse sort order
-                    const std::vector<size_t> _inv_sort_order = ::sparsetensor::sorting::invPermutation(_sort_order);
+                    const std::vector<size_t> _inv_sort_order = ::tnt::sorting::invPermutation(_sort_order);
 
                     // calculate the mapping from the reordered Diagonals to the result from it
                     for (size_t posInReorderedDiagonals = 0;

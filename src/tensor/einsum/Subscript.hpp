@@ -9,18 +9,18 @@
 #include <algorithm>
 #include <memory>
 
-#include "../util/All.hpp"
-#include "util/UndirectedGraph.hpp"
+#include "../../util/All.hpp"
+#include "../../util/UndirectedGraph.hpp"
 
 
-namespace sparsetensor::operations {
+namespace tnt::operations {
     class Subscript;
 };
 
-::std::ostream &operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &subscript);
+::std::ostream &operator<<(::std::ostream &out, ::tnt::operations::Subscript &subscript);
 
-namespace sparsetensor::operations {
-    using namespace sparsetensor::util::types;
+namespace tnt::operations {
+    using namespace tnt::util::types;
 
 
     /**
@@ -31,7 +31,7 @@ namespace sparsetensor::operations {
     class Subscript {
 
         template<typename T>
-        using UndirectedGraph = typename ::sparsetensor::operations::util::UndirectedGraph<T>;
+        using UndirectedGraph = typename ::tnt::operations::util::UndirectedGraph<T>;
 
 
         std::set<label_t> _all_labels;
@@ -372,7 +372,7 @@ namespace sparsetensor::operations {
             return norm_operand_labels;
         }
 
-        friend ::std::ostream &::operator<<(::std::ostream &out, ::sparsetensor::operations::Subscript &subscript) {
+        friend ::std::ostream &::operator<<(::std::ostream &out, ::tnt::operations::Subscript &subscript) {
             out << "<Subscript: \n"
                 << "all_labels=" << subscript._all_labels
                 << ",\n\t"

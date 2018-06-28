@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
-#include "container/BinarySearch.hpp"
+#include "util/container/BinarySearch.hpp"
 
 TEST(TestBinarySearch, insertInRightOrder) {
-    using namespace sparsetensor::container;
+    using namespace tnt::container;
     // Data
     std::vector<int> keys{3, 8, 7, 2, 5, 9, 6};
 
     // Load data
     std::vector<int> sorted{};
     for (size_t i = 0; i < keys.size(); ++i) {
-        size_t pos = ::sparsetensor::container::insert_pos<int>(sorted, keys[i]);
+        size_t pos = ::tnt::container::insert_pos<int>(sorted, keys[i]);
         sorted.insert(sorted.begin() + pos, keys[i]);
     }
 
@@ -20,7 +20,7 @@ TEST(TestBinarySearch, insertInRightOrder) {
 }
 
 TEST(TestBinarySearch, findInsertPos) {
-    using namespace sparsetensor::container;
+    using namespace tnt::container;
     // Data
     std::vector<int> sorted{-10, -7, 0, 2, 3, 5, 6, 7, 8, 9, 15, 18, 123, 143, 199, 255};
 
@@ -43,7 +43,7 @@ TEST(TestBinarySearch, findInsertPos) {
 }
 
 TEST(TestBinarySearch, findInRange) {
-    using namespace sparsetensor::container;
+    using namespace tnt::container;
     // Data
     std::vector<int> sorted{-10, -7, 0, 2, 3, 5, 6, 7, 8, 9, 15, 18, 123, 143, 199, 255};
 

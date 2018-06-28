@@ -5,7 +5,7 @@
 #include <numeric>
 #include <algorithm>
 
-namespace sparsetensor::sorting {
+namespace tnt::sorting {
 /**
  * Calculates the permutation that sorts the given vector.
  * @tparam T type of the values the vector holds

@@ -4,7 +4,7 @@
 #include <iterator>
 #include <tuple>
 
-namespace sparsetensor::util::enumerate {
+namespace tnt::util::enumerate {
     template<class Container>
     class Enumerate {
         Container &content;
@@ -42,7 +42,7 @@ namespace sparsetensor::util::enumerate {
 
 template<class Container>
 decltype(auto) enumerate(Container &content) {
-    return sparsetensor::util::enumerate::Enumerate(content);
+    return tnt::util::enumerate::Enumerate(content);
 }
 
 

@@ -3,7 +3,7 @@
 
 #include <iterator>
 
-namespace sparsetensor::util::keys {
+namespace tnt::util::keys {
     template<class Associative>
     class Keys {
         Associative &associative;
@@ -37,7 +37,7 @@ namespace sparsetensor::util::keys {
     };
 };
 
-namespace sparsetensor::util::values {
+namespace tnt::util::values {
     template<class Associative>
     class Values {
         Associative &associative;
@@ -73,12 +73,12 @@ namespace sparsetensor::util::values {
 
 template<class Associative>
 decltype(auto) keys(Associative &associative) {
-    return sparsetensor::util::keys::Keys(associative);
+    return tnt::util::keys::Keys(associative);
 }
 
 template<class Associative>
 decltype(auto) values(Associative &associative) {
-    return sparsetensor::util::values::Values(associative);
+    return tnt::util::values::Values(associative);
 }
 
 

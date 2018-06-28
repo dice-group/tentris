@@ -7,13 +7,13 @@
 #include <vector>
 
 #include "../../hypertrie/BoolHyperTrie.hpp"
-#include "../../einsum/EinsumPlan.hpp"
+#include "../EinsumPlan.hpp"
 #include "../../hypertrie/Join.hpp"
-#include "../../container/NDMap.hpp"
-#include "../../util/All.hpp"
+#include "../../../util/container/NDMap.hpp"
+#include "../../../util/All.hpp"
 
 
-namespace sparsetensor::operations::operators {
+namespace tnt::operations::operators {
 
 
     /**
@@ -23,14 +23,13 @@ namespace sparsetensor::operations::operators {
      */
     template<typename OUT_COUNT_T>
     class Einsum {
-        using namespace sparsetensor::util::types;
 
-        using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
+        using BoolHyperTrie = tnt::hypertrie::BoolHyperTrie;
 
         template<typename T>
-        using NDMap = sparsetensor::container::NDMap<T>;
-        using Join = sparsetensor::hypertrie::Join;
-        using Operands = sparsetensor::hypertrie::Operands;
+        using NDMap = tnt::container::NDMap<T>;
+        using Join = tnt::hypertrie::Join;
+        using Operands = tnt::hypertrie::Operands;
         /**
          * The evaluation plan for this->subscript.
          */

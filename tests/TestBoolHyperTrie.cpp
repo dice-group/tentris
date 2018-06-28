@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "hypertrie/BoolHyperTrie.hpp"
+#include "tensor/hypertrie/BoolHyperTrie.hpp"
 
 
-using namespace sparsetensor::util::types;
-using namespace sparsetensor::hypertrie;
+using namespace tnt::util::types;
+using namespace tnt::hypertrie;
 
 TEST(TestBoolHyperTrie, test_single_write_read) {
 

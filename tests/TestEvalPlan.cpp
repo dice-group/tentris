@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-//using sparsetensor::tensor::shape_t;
-//using sparsetensor::hypertrie::HyperTrie;
-//using sparsetensor::operations::raw_subscript;
+//using tnt::tensor::shape_t;
+//using tnt::hypertrie::HyperTrie;
+//using tnt::operations::raw_subscript;
 
 
 //TEST(EvalPlan, simple_call) {
-//    using namespace sparsetensor::operations;
+//    using namespace tnt::operations;
 //
 //    HyperTrie<int> tensor_a{2};
 //    tensor_a.set({1, 0}, 7);

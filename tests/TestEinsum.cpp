@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-//using sparsetensor::tensor::shape_t;
-//using sparsetensor::operations::raw_subscript;
-//using sparsetensor::operations::einsum;
+//using tnt::tensor::shape_t;
+//using tnt::operations::raw_subscript;
+//using tnt::operations::einsum;
 //
 //
 //TEST(TestEinsum, simple_call) {

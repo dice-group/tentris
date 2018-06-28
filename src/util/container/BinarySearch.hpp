@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace sparsetensor::container {
+namespace tnt::container {
     /**
      * NOT_FOUND return value for function search
      */

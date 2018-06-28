@@ -4,10 +4,10 @@
 
 #include <map>
 
-#include "../util/All.hpp"
+#include "../Types.hpp"
 
-namespace sparsetensor::container {
-    using Key_t = sparsetensor::util::types::Key_t;
+namespace tnt::container {
+    using Key_t = tnt::util::types::Key_t;
 
     template<typename VALUE_t>
     using NDMap = std::map<Key_t, VALUE_t>;

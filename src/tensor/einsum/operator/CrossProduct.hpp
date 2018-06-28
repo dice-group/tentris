@@ -6,11 +6,11 @@
 #include <tuple>
 
 #include "Einsum.hpp"
-#include "../../util/All.hpp"
+#include "../../../util/All.hpp"
 
 
 
-namespace sparsetensor::operations::operators {
+namespace tnt::operations::operators {
 
     /**
      * This is a cross product operator that takes in any number of operands and maps every of their dimensions into an
@@ -20,9 +20,9 @@ namespace sparsetensor::operations::operators {
      */
     template<typename T>
     class CrossProduct {
-        using Operands = sparsetensor::hypertrie::Operands;
+        using Operands = tnt::hypertrie::Operands;
         template<typename V>
-        using NDMap = sparsetensor::container::NDMap<V>;
+        using NDMap = tnt::container::NDMap<V>;
     protected:
         /**
          * This is a subscript where independently calculable parts are bracketed into sub-Subscripts (Subscript).

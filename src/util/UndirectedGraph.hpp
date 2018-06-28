@@ -4,10 +4,10 @@
 #include <set>
 #include <map>
 
-#include "../../util/All.hpp"
+#include "All.hpp"
 
 
-namespace sparsetensor::operations::util {
+namespace tnt::operations::util {
 
 /**
  * Simple undirected Graph implementation.

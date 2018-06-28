@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "hypertrie/Join.hpp"
+#include "tensor/hypertrie/Join.hpp"
 
 TEST(TestJoin, simple_call) {
-    typeid(sparsetensor::hypertrie::Join).name();
-    sparsetensor::hypertrie::Join join = sparsetensor::hypertrie::Join{{},
+    typeid(tnt::hypertrie::Join).name();
+    tnt::hypertrie::Join join = tnt::hypertrie::Join{{},
                                                                        {},
                                                                        {},
                                                                        {},

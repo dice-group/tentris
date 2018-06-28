@@ -6,12 +6,12 @@
 #include <exception>
 
 #include "Subscript.hpp"
-#include "../util/All.hpp"
+#include "../../util/All.hpp"
 #include "../hypertrie/BoolHyperTrie.hpp"
 
-namespace sparsetensor::operations {
+namespace tnt::operations {
     class EinsumPlan {
-        using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
+        using BoolHyperTrie = tnt::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
         const Subscript &_subscript;
         const std::vector<label_t> &_result_labels;
