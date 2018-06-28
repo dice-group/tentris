@@ -55,12 +55,11 @@ namespace sparsetensor::operations::operators {
             // unpacks HyperTrieTensors to HyperTries or value types T
             // initialize emtpy result key
             // plan first step
-            EinsumPlan::EinsumStep step = _plan.getInitialStep();
-            EinsumPlan::EinsumStep::Action action = step.getAction(operands);
+            EinsumPlan::Step step = _plan.getInitialStep(operands);
             NDMap<OUT_COUNT_T> result{};
             Key_t result_key = Key_t(step.getResultSize());
             // start recursion
-            rekEinsum(operands, result_key, action, result);
+            rekEinsum(operands, result_key, step, result);
             return result;
         }
 
@@ -73,17 +72,17 @@ namespace sparsetensor::operations::operators {
          * @param label the current label that is to be processed in this recursive step
          */
         void
-        rekEinsum(const Operands &operands, const Key_t &result_key, const EinsumPlan::EinsumStep::Action &action,
+        rekEinsum(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step,
                   NDMap<OUT_COUNT_T> &result) {
             // there are steps left
-            if (not action.all_done) {
+            if (not step.all_done) {
                 // calculate next operands and result_key from current operands, step, label and resultKey
-                NewJoin join{operands, action};
+                NewJoin join{operands, step};
 
                 for (auto[next_operands, next_result_key] : join) {
-                    EinsumPlan::EinsumStep::Action next_action = action.nextAction(next_operands);
+                    EinsumPlan::Step next_step = step.nextStep(operands);
                     // start next recursive step.
-                    rekEinsum(next_operands, next_result_key, next_action, result);
+                    rekEinsum(next_operands, next_result_key, next_step, result);
                 }
             } else { // there are no steps left
                 result[result_key] += OUT_COUNT_T(1);

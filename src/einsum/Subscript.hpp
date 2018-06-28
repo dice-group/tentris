@@ -189,7 +189,7 @@ namespace sparsetensor::operations {
             return _unique_non_result_contractions.at(op_pos);
         }
 
-        Subscript removeLabel(const label_t &label) {
+        Subscript removeLabel(const label_t &label) const {
             if (not _all_labels.count(label))
                 return *this;
             else {
@@ -208,7 +208,7 @@ namespace sparsetensor::operations {
                                  [&](const label_t &l) { return l != label; });
                     if (new_op_labels.size()) {
                         subscript._operands_labels.emplace_back(std::move(new_op_labels));
-                        _original_op_poss.emplace_back(op_pos);
+                        subscript._original_op_poss.emplace_back(op_pos);
                     }
                 }
 
