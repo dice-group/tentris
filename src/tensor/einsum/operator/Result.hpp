@@ -26,7 +26,7 @@ namespace tnt::tensor::einsum::operators {
         using Operands = tnt::tensor::hypertrie::Operands;
     public:
 
-        const Subscript &_subscript;
+        const Subscript _subscript;
 
         /**
          * Basic Constructor.
