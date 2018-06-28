@@ -5,6 +5,7 @@
 #include "ExtendHash.hpp"
 #include "Range.hpp"
 #include "Enumerate.hpp"
+#include "KeysValues.hpp"
 
 using namespace whoshuu;
 

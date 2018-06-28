@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <memory>
-#include <cursesp.h>
+#include <exception>
 
 #include "Subscript.hpp"
 #include "Types.hpp"
@@ -14,6 +14,7 @@ namespace sparsetensor::operations {
     class EinsumPlan {
         using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
+        using key_pos_t = sparsetensor::tensor::key_pos_t;
         const Subscript &_subscript;
         const std::vector<label_t> &_result_labels;
     public:
@@ -22,8 +23,8 @@ namespace sparsetensor::operations {
         explicit EinsumPlan(const Subscript &subscript) : _subscript(subscript),
                                                           _result_labels{subscript.getResultLabels()} {}
 
-        Step getInitialStep(const Operands &ops) const {
-            return Step{_subscript, _subscript.getResultLabels()};
+        Step getInitialStep(const Operands &operands) const {
+            return Step{_subscript, _subscript.getResultLabels(), operands};
         }
 
         inline const Subscript &getSubscript() const {
@@ -38,20 +39,34 @@ namespace sparsetensor::operations {
         class Step {
             const Subscript &_subscript;
             const std::vector<label_t> &_result_labels;
+        public:
+            const label_t label;
+        private:
             const std::set<label_t> _label_candidates;
         public:
             const bool all_done;
         private:
             Step(const Subscript &subscript, const std::vector<label_t> &result_labels,
-                 std::set<label_t> label_candidates)
-                    : _subscript(subscript), _result_labels(result_labels), _label_candidates(label_candidates),
-                      all_done{bool(_label_candidates.size())} {}
+                 const std::set<label_t> &label_candidates, const Operands &operands) :
+                    _subscript(subscript),
+                    _result_labels(result_labels),
+                    label{getMinCardLabel(operands)},
+                    _label_candidates{getSubset(label_candidates, label)},
+                    all_done{bool(_label_candidates.size())} {}
+
+            template<typename T>
+            static std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
+                std::set<label_t> sub_set;
+                std::copy_if(interable.cbegin(), interable.cend(),
+                             std::inserter(sub_set, sub_set.begin()),
+                             [&](const label_t &l) { return remove_ != l; });
+                return sub_set;
+            }
 
         public:
-            Step(const Subscript &subscript, const std::vector<label_t> &result_labels)
-                    : _subscript(subscript), _result_labels(result_labels),
-                      _label_candidates(_subscript.getAllLabels().begin(), _subscript.getAllLabels().end()),
-                      all_done{bool(_label_candidates.size())} {}
+
+            Step(const Subscript &subscript, const std::vector<label_t> &result_labels, const Operands &operands) :
+                    Step(subscript, result_labels, subscript.getAllLabels(), operands) {}
 
             inline const std::vector<label_t> &getResultLabels() const {
                 return _result_labels;
@@ -62,28 +77,58 @@ namespace sparsetensor::operations {
             }
 
             Step nextStep(const Operands &operands) const {
-                if (_label_candidates.size() == 1) {
-                    return Step{_subscript.removeLabel(*_label_candidates.begin()), _result_labels, {}};
-                }
-                label_t min_label = *_label_candidates.begin();
-                double min_cardinality = INFINITY;
-                for (const label_t &label: _label_candidates) {
-                    if (const double label_cardinality = calcCard(operands, label); label_cardinality <
-                                                                                    min_cardinality) {
-                        min_cardinality = label_cardinality;
-                        min_label = label;
-                    }
-                }
-
-                std::set<label_t> new_label_candidates;
-                std::copy_if(_label_candidates.cbegin(), _label_candidates.cend(),
-                             std::inserter(new_label_candidates, new_label_candidates.begin()),
-                             [&](const label_t &l) { return min_label != l; });
-
-                return Step{_subscript.removeLabel(min_label), _result_labels, new_label_candidates};
+                if (all_done)
+                    throw "Must not be called if all_done is true";
+                return {_subscript, _result_labels, _label_candidates, operands};
             }
 
+            inline const std::vector<op_pos_t> &getOperandPositions() const {
+                return _subscript.operandsWithLabel(label);
+            }
+
+            std::vector<std::vector<key_pos_t>> getKeyPartPoss() const {
+                std::vector<std::vector<key_pos_t>> key_part_poss{};
+                key_part_poss.reserve(getOperandPositions().size());
+                for (const op_pos_t &op_pos : getOperandPositions()) {
+                    key_part_poss.emplace_back(_subscript.labelPossInOperand(op_pos, label));
+                }
+                return key_part_poss;
+            };
+
+            std::vector<op_pos_t> getPosOfOperandsInResult() const {
+                const std::vector<op_pos_t> &result_ops = _subscript.removeLabel(label).getOriginalOpPoss();
+                return result_ops;
+            }
+
+            std::optional<key_pos_t> getResulKeyPos() const {
+                try {
+                    return _subscript.labelPosInResult(label);
+                } catch (...) {
+                    return std::nullopt;
+                }
+            }
+
+
         private:
+
+            label_t getMinCardLabel(const Operands &operands) {
+                if (_label_candidates.size() == 1) {
+                    return *_label_candidates.begin();
+                } else {
+
+                    label_t min_label = *_label_candidates.begin();
+                    double min_cardinality = INFINITY;
+                    for (const label_t &label: _label_candidates) {
+                        if (const double label_cardinality = calcCard(operands, label); label_cardinality <
+                                                                                        min_cardinality) {
+                            min_cardinality = label_cardinality;
+                            min_label = label;
+                        }
+                    }
+                    return min_label;
+                }
+            }
+
             /**
          * Calculates the cardinality of an Label in an Step.
          * @tparam T type of the values hold by processed Tensors (Tensor).
@@ -94,7 +139,7 @@ namespace sparsetensor::operations {
          */
             double calcCard(const Operands &operands, const label_t &label) const {
                 // get operands that have the label
-                const std::set<op_pos_t> &op_poss = _subscript.operandsWithLabel(label);
+                const std::vector<op_pos_t> &op_poss = _subscript.operandsWithLabel(label);
 
                 std::vector<double> dim_cardinalities(op_poss.size(), INFINITY);
                 std::vector<double> operand_cardinalities(op_poss.size(), INFINITY);

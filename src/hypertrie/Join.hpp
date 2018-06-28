@@ -10,6 +10,7 @@
 #include "Types.hpp"
 #include "../einsum/Types.hpp"
 #include "../util/Sort.hpp"
+#include "../einsum/EinsumPlan.hpp"
 
 namespace sparsetensor::hypertrie {
     using Operands =  typename std::vector<BoolHyperTrie *>;
@@ -23,9 +24,9 @@ namespace sparsetensor::hypertrie {
         using op_pos_t = sparsetensor::operations::op_pos_t;
         constexpr static const op_pos_t &OP_POS_MAX = sparsetensor::operations::OP_POS_MAX;
         using label_pos_t = sparsetensor::operations::label_pos_t;
-
         using key_part_t =  sparsetensor::tensor::key_part_t;
         using Key_t =  sparsetensor::tensor::Key_t;
+        using EinsumPlan = sparsetensor::operations::EinsumPlan;
 
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
 
@@ -44,15 +45,10 @@ namespace sparsetensor::hypertrie {
 
 
     public:
-//        static Join create(const Key_t &key,
-//                              const std::vector<BoolHyperTrie *> &operands,
-//                              sparsetensor::operations::PlanStep *step) {
-//            // TODO: implement step to fit this interface
-//            const optional<operations::label_pos_t> &key_pos = step->labelPosInResult();
-//            vector<op_pos_t> &op_ids = step->operandsWithLabel();
-//            vector<vector<key_pos_t>> &key_poss
-//            step->labelPossInOperands();
-//        }
+
+        Join(const Key_t &key, const Operands &operands, const EinsumPlan::Step &step) :
+                Join{key, operands, step.getOperandPositions(), step.getKeyPartPoss(), step.getPosOfOperandsInResult(),
+                     step.getResulKeyPos()} {}
 
         /**
          *
@@ -60,7 +56,7 @@ namespace sparsetensor::hypertrie {
          * @param operands the current operands
          * @param op_poss the positions of the joining BoolHyperTrie in operands
          * @param key_part_posss the joining key part positions of each join operand.
-         * @param next_op_position the positions in operands of BoolHyperTrie that will be in the result
+         * @param next_op_position the positions in operands that will be in the result
          * @param result_key_pos
          */
         Join(const Key_t &key,

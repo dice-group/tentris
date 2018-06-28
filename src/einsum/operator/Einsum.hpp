@@ -22,12 +22,11 @@ namespace sparsetensor::operations::operators {
     template<typename OUT_COUNT_T>
     class Einsum {
         using BoolHyperTrie = sparsetensor::hypertrie::BoolHyperTrie;
-        using Join = sparsetensor::hypertrie::Join;
         using Key_t = sparsetensor::tensor::Key_t;
 
         template<typename T>
         using NDMap = sparsetensor::container::NDMap<T>;
-        using NewJoin = sparsetensor::hypertrie::Join;
+        using Join = sparsetensor::hypertrie::Join;
         using Operands = sparsetensor::hypertrie::Operands;
         /**
          * The evaluation plan for this->subscript.
@@ -77,7 +76,7 @@ namespace sparsetensor::operations::operators {
             // there are steps left
             if (not step.all_done) {
                 // calculate next operands and result_key from current operands, step, label and resultKey
-                NewJoin join{operands, step};
+                Join join{result_key, operands, step};
 
                 for (auto[next_operands, next_result_key] : join) {
                     EinsumPlan::Step next_step = step.nextStep(operands);

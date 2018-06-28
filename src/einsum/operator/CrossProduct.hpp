@@ -29,7 +29,7 @@ namespace sparsetensor::operations::operators {
         /**
          * Every sub-Subscript (Subscript) is calculated by an Einsum Operator.
          */
-        std::vector<Einsum < T>> predecessors{};
+        std::vector<Einsum<T>> predecessors{};
     public:
         /**
          * Constructor

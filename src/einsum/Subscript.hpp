@@ -44,7 +44,7 @@ namespace sparsetensor::operations {
         std::vector<std::set<label_t>> _distinct_operands_labels;
         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
         std::map<label_t, label_pos_t> _label_pos_in_result;
-        std::map<label_t, std::set<op_pos_t>> _operands_with_label;
+        std::map<label_t, std::vector<op_pos_t>> _operands_with_label;
         std::set<label_t> _unique_non_result_labels;
         std::vector<op_pos_t> _operands_with_unique_non_result_labels;
         std::vector<op_pos_t> _operands_without_unique_non_result_labels;
@@ -71,7 +71,7 @@ namespace sparsetensor::operations {
             _operands_with_label = {};
             for (const auto &[op_pos, labels] : enumerate(_operands_labels))
                 for (const label_t &label : labels)
-                    _operands_with_label[label].insert(op_pos_t(op_pos));
+                    _operands_with_label[label].push_back(op_pos_t(op_pos));
 
             _unique_non_result_labels = _calcNonResultSingleOperandLabels(_operands_with_label, _result_labels);
 
@@ -161,7 +161,7 @@ namespace sparsetensor::operations {
          * @return set of operand positions
          * @throws out_of_range if label is not used in this subscript
          */
-        inline const std::set<op_pos_t> &operandsWithLabel(const label_t &label) const {
+        inline const std::vector<op_pos_t> &operandsWithLabel(const label_t &label) const {
             return _operands_with_label.at(label);
         }
 
@@ -302,7 +302,7 @@ namespace sparsetensor::operations {
 
 
         static std::set<label_t>
-        _calcNonResultSingleOperandLabels(const std::map<label_t, std::set<op_pos_t>> &operands_with_label,
+        _calcNonResultSingleOperandLabels(const std::map<label_t, std::vector<op_pos_t>> &operands_with_label,
                                           const std::vector<label_t> &result_labels) {
             std::set<label_t> non_result_single_operand{};
 

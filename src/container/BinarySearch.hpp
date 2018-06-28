@@ -2,7 +2,7 @@
 #define SPARSETENSOR_CONTAINER_BINARYSEARCH
 
 #include <vector>
-#include<algorithm>
+#include <algorithm>
 
 namespace sparsetensor::container {
     /**

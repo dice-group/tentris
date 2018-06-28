@@ -18,6 +18,7 @@
 #include "../tensor/Types.hpp"
 #include "../container/VecMap.hpp"
 #include "../container/VecSet.hpp"
+#include "../util/All.hpp"
 
 namespace sparsetensor::hypertrie {
 
@@ -25,10 +26,6 @@ namespace sparsetensor::hypertrie {
         using Key_t = sparsetensor::tensor::Key_t;
         using key_pos_t = sparsetensor::tensor::key_pos_t;
         using key_part_t = sparsetensor::tensor::key_part_t;
-        // TODO: write destructor
-        // TODO: implement del
-
-
     public:
         /**
          * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero
@@ -39,7 +36,24 @@ namespace sparsetensor::hypertrie {
          * Leaf edges are encoded by storing only the key_parts that map to a true. All other key parts map to zero.
          */
         using leaf_edges = sparsetensor::container::VecSet<key_part_t>;
+    private:
 
+        // TODO: write destructor
+        // TODO: implement del
+        key_pos_t _depth{}; ///< The depth defines the length of keys.
+
+        size_t _leafcount{}; ///< Number of entries.
+
+        /**
+         * Stores the subtries. For depth > 1 a vector of length equal to depth stores for every position in the keys to
+         * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
+         * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
+         */
+        std::variant<std::vector<inner_edges>, leaf_edges> _subtries{};
+
+
+
+    public:
         /**
          * The default constructor creates a empty BoolHyperTrie with depth = 1.
          */
@@ -57,14 +71,6 @@ namespace sparsetensor::hypertrie {
             }
         }
 
-
-    private:
-        /**
-         * The depth defines the length of keys.
-         */
-        key_pos_t _depth{};
-
-    public:
         /**
          * Get the depth of the BoolHyperTrie.
          * @return depth of this
@@ -73,28 +79,15 @@ namespace sparsetensor::hypertrie {
             return _depth;
         }
 
-    private:
-        /**
-         * Number of entries.
-         */
-        uint64_t _leafcount{};
-
-    public:
         /**
          * Get the number of none-zero elements stored.
          * @return number of stored none-zero elements
          */
-        inline const uint64_t &size() const noexcept {
+        inline const size_t &size() const noexcept {
             return _leafcount;
         }
 
     private:
-        /**
-         * Stores the subtries. For depth > 1 a vector of length equal to depth stores for every position in the keys to
-         * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
-         * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
-         */
-        std::variant<std::vector<inner_edges>, leaf_edges> _subtries{};
 
 
         /**
@@ -303,7 +296,7 @@ namespace sparsetensor::hypertrie {
                                    const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             key_pos_t min_card_key_pos = 0;
-            for (const auto &[key_pos, key_part] : map_from_key_pos) {
+            for (const key_pos_t &key_pos : keys(map_from_key_pos)) {
                 size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
                 if (card < min_card) {
                     min_card = card;
