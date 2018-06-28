@@ -13,7 +13,7 @@
 #include "../../../util/All.hpp"
 
 
-namespace tnt::operations::operators {
+namespace tnt::tensor::einsum::operators {
 
 
     /**
@@ -24,12 +24,12 @@ namespace tnt::operations::operators {
     template<typename OUT_COUNT_T>
     class Einsum {
 
-        using BoolHyperTrie = tnt::hypertrie::BoolHyperTrie;
+        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
 
         template<typename T>
-        using NDMap = tnt::container::NDMap<T>;
-        using Join = tnt::hypertrie::Join;
-        using Operands = tnt::hypertrie::Operands;
+        using NDMap = tnt::util::container::NDMap<T>;
+        using Join = tnt::tensor::hypertrie::Join;
+        using Operands = tnt::tensor::hypertrie::Operands;
         /**
          * The evaluation plan for this->subscript.
          */

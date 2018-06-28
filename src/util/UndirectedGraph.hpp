@@ -7,7 +7,7 @@
 #include "All.hpp"
 
 
-namespace tnt::operations::util {
+namespace tnt::util {
 
 /**
  * Simple undirected Graph implementation.

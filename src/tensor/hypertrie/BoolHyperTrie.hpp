@@ -18,7 +18,7 @@
 #include "../../util/container/VecSet.hpp"
 #include "../../util/All.hpp"
 
-namespace tnt::hypertrie {
+namespace tnt::tensor::hypertrie {
 
     class BoolHyperTrie {
         using Key_t = tnt::util::types::Key_t;
@@ -30,11 +30,11 @@ namespace tnt::hypertrie {
          * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero
          * subhypertrie are stored. A inner_edges is used for every position of the stored keys.
          */
-        using inner_edges = tnt::container::VecMap<key_part_t, BoolHyperTrie *>;
+        using inner_edges = tnt::util::container::VecMap<key_part_t, BoolHyperTrie *>;
         /**
          * Leaf edges are encoded by storing only the key_parts that map to a true. All other key parts map to zero.
          */
-        using leaf_edges = tnt::container::VecSet<key_part_t>;
+        using leaf_edges = tnt::util::container::VecSet<key_part_t>;
     private:
 
         // TODO: write destructor
@@ -634,9 +634,9 @@ namespace tnt::hypertrie {
             key_part_t first_lower_I(const key_part_t &key_part) {
                 size_t ind = (key_part == _leafs->_keys.at(_min_ind))
                              ? _min_ind
-                             : tnt::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::search(_leafs->_keys, key_part, _min_ind, _max_ind);
                 _min_ind = ind;
-                if (ind != tnt::container::NOT_FOUND) {
+                if (ind != tnt::util::container::NOT_FOUND) {
                     _size = _max_ind - ind + 1;
                     _min = _leafs->byInd(ind);
                     return _min;
@@ -655,7 +655,7 @@ namespace tnt::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : tnt::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
                 while (ind != _max_ind + 1) {
 
                     current_key_part = childrens_keys.at(ind);
@@ -689,7 +689,7 @@ namespace tnt::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : tnt::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
 
                 while (ind != _max_ind + 1) {
 
@@ -752,7 +752,7 @@ namespace tnt::hypertrie {
              */
         private:
             bool containsAndUpdateLower_I(const key_part_t &key_part) {
-                size_t ind = tnt::container::insert_pos(_leafs->_keys, key_part, _min_ind, _max_ind);
+                size_t ind = tnt::util::container::insert_pos(_leafs->_keys, key_part, _min_ind, _max_ind);
                 if (ind != _max_ind + 1) {
                     _min = _leafs->byInd(ind);
                     _min_ind = ind;
@@ -774,7 +774,7 @@ namespace tnt::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : tnt::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
 
 
                 if (ind != _max_ind + 1) {
@@ -816,7 +816,7 @@ namespace tnt::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(_min_ind))
                              ? _min_ind
-                             : tnt::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, _min_ind, _max_ind);
 
 
                 if (ind != _max_ind + 1) {

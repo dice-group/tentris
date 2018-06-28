@@ -4,7 +4,7 @@
 
 
 using namespace tnt::util::types;
-using namespace tnt::hypertrie;
+using namespace tnt::tensor::hypertrie;
 
 TEST(TestBoolHyperTrie, test_single_write_read) {
 

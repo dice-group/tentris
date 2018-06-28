@@ -7,7 +7,7 @@
 
 #include "BinarySearch.hpp"
 
-namespace tnt::container {
+namespace tnt::util::container {
 
     /**
      * A Map that is based on two sorted vectors storing the entries.

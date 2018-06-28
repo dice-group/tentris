@@ -4,7 +4,7 @@
 #include <iterator>
 #include <tuple>
 
-namespace tnt::util::enumerate {
+namespace tnt::util::iterable::enumerate {
     template<class Container>
     class Enumerate {
         Container &content;
@@ -42,7 +42,7 @@ namespace tnt::util::enumerate {
 
 template<class Container>
 decltype(auto) enumerate(Container &content) {
-    return tnt::util::enumerate::Enumerate(content);
+    return tnt::util::iterable::enumerate::Enumerate(content);
 }
 
 

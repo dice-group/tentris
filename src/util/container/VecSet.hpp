@@ -6,7 +6,7 @@
 
 #include "BinarySearch.hpp"
 
-namespace tnt::container {
+namespace tnt::util::container {
 
 
     template<typename KEY_t>

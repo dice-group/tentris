@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include "util/container/VecMap.hpp"
+using namespace tnt::util::container;
 
 TEST(TestDoubleVector, loadAndRead) {
-    using tnt::container::VecMap;
     // Data
     std::vector<int> keys{0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14};
     std::vector<char> values{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',};
@@ -22,7 +22,6 @@ TEST(TestDoubleVector, loadAndRead) {
 }
 
 TEST(TestDoubleVector, loadDeleteRead) {
-    using tnt::container::VecMap;
     // Data
     std::vector<int> keys{0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14};
     std::vector<char> values{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',};
@@ -51,7 +50,6 @@ TEST(TestDoubleVector, loadDeleteRead) {
 }
 
 TEST(TestDoubleVector, probeElements) {
-    using tnt::container::VecMap;
     // Data
     std::vector<int> keys{0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14};
     std::vector<char> values{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',};

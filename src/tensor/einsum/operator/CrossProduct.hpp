@@ -10,7 +10,7 @@
 
 
 
-namespace tnt::operations::operators {
+namespace tnt::tensor::einsum::operators {
 
     /**
      * This is a cross product operator that takes in any number of operands and maps every of their dimensions into an
@@ -20,9 +20,9 @@ namespace tnt::operations::operators {
      */
     template<typename T>
     class CrossProduct {
-        using Operands = tnt::hypertrie::Operands;
+        using Operands = tnt::tensor::hypertrie::Operands;
         template<typename V>
-        using NDMap = tnt::container::NDMap<V>;
+        using NDMap = tnt::util::container::NDMap<V>;
     protected:
         /**
          * This is a subscript where independently calculable parts are bracketed into sub-Subscripts (Subscript).

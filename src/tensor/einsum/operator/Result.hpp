@@ -6,24 +6,24 @@
 #include <vector>
 #include <memory>
 
+#include "../../hypertrie/BoolHyperTrie.hpp"
+#include "../../hypertrie/Join.hpp"
 #include "Einsum.hpp"
 #include "CrossProduct.hpp"
-#include "../../hypertrie/BoolHyperTrie.hpp"
 #include "../EinsumPlan.hpp"
-#include "../../hypertrie/Join.hpp"
 #include "../../../util/container/NDMap.hpp"
 #include "../../../util/All.hpp"
 
-namespace tnt::operations::operators {
+namespace tnt::tensor::einsum::operators {
 
     template<typename T>
     class Result {
-        using BoolHyperTrie = tnt::hypertrie::BoolHyperTrie;
-        using Join = tnt::hypertrie::Join;
+        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
+        using Join = tnt::tensor::hypertrie::Join;
         template<typename V>
-        using NDMap = tnt::container::NDMap<V>;
-        using NewJoin = tnt::hypertrie::Join;
-        using Operands = tnt::hypertrie::Operands;
+        using NDMap = tnt::util::container::NDMap<V>;
+        using NewJoin = tnt::tensor::hypertrie::Join;
+        using Operands = tnt::tensor::hypertrie::Operands;
     public:
 
         const Subscript &_subscript;

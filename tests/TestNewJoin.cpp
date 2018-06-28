@@ -2,14 +2,16 @@
 
 #include "tensor/hypertrie/Join.hpp"
 
+using namespace tnt::tensor::hypertrie;
+
 TEST(TestJoin, simple_call) {
-    typeid(tnt::hypertrie::Join).name();
-    tnt::hypertrie::Join join = tnt::hypertrie::Join{{},
-                                                                       {},
-                                                                       {},
-                                                                       {},
-                                                                       {},
-                                                                       {}};
+    typeid(Join).name();
+    Join join{{},
+              {},
+              {},
+              {},
+              {},
+              {}};
     join.begin();
 
 

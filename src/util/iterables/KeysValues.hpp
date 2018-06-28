@@ -3,7 +3,7 @@
 
 #include <iterator>
 
-namespace tnt::util::keys {
+namespace tnt::util::iterable::keys {
     template<class Associative>
     class Keys {
         Associative &associative;
@@ -37,7 +37,7 @@ namespace tnt::util::keys {
     };
 };
 
-namespace tnt::util::values {
+namespace tnt::util::iterable::values {
     template<class Associative>
     class Values {
         Associative &associative;
@@ -73,12 +73,12 @@ namespace tnt::util::values {
 
 template<class Associative>
 decltype(auto) keys(Associative &associative) {
-    return tnt::util::keys::Keys(associative);
+    return tnt::util::iterable::keys::Keys(associative);
 }
 
 template<class Associative>
 decltype(auto) values(Associative &associative) {
-    return tnt::util::values::Values(associative);
+    return tnt::util::iterable::values::Values(associative);
 }
 
 

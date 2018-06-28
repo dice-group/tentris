@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace tnt::container {
+namespace tnt::util::container {
     /**
      * NOT_FOUND return value for function search
      */
@@ -136,7 +136,7 @@ namespace tnt::container {
             return low;
         else {
             size_t size = high - low + 1;
-            size_t probe = sorted_vector.size();
+            size_t probe;
 
             while (size > 0) {
                 size_t half = size / 2;

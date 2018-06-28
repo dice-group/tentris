@@ -9,7 +9,7 @@
 #include "../../util/All.hpp"
 
 
-namespace tnt::hypertrie {
+namespace tnt::tensor::hypertrie {
 
 
     /**

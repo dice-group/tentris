@@ -9,9 +9,10 @@
 #include "../../util/All.hpp"
 #include "../hypertrie/BoolHyperTrie.hpp"
 
-namespace tnt::operations {
+namespace tnt::tensor::einsum {
+    using namespace tnt::util::types;
     class EinsumPlan {
-        using BoolHyperTrie = tnt::hypertrie::BoolHyperTrie;
+        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
         const Subscript &_subscript;
         const std::vector<label_t> &_result_labels;

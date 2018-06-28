@@ -13,13 +13,13 @@
 #include "../../util/UndirectedGraph.hpp"
 
 
-namespace tnt::operations {
-    class Subscript;
-};
+//namespace tnt::tensor::einsum {
+//    class Subscript;
+//};
+//
+//::std::ostream &operator<<(::std::ostream &out, ::tnt::tensor::einsum::Subscript &subscript);
 
-::std::ostream &operator<<(::std::ostream &out, ::tnt::operations::Subscript &subscript);
-
-namespace tnt::operations {
+namespace tnt::tensor::einsum {
     using namespace tnt::util::types;
 
 
@@ -31,7 +31,7 @@ namespace tnt::operations {
     class Subscript {
 
         template<typename T>
-        using UndirectedGraph = typename ::tnt::operations::util::UndirectedGraph<T>;
+        using UndirectedGraph = typename ::tnt::util::UndirectedGraph<T>;
 
 
         std::set<label_t> _all_labels;
@@ -372,24 +372,25 @@ namespace tnt::operations {
             return norm_operand_labels;
         }
 
-        friend ::std::ostream &::operator<<(::std::ostream &out, ::tnt::operations::Subscript &subscript) {
-            out << "<Subscript: \n"
-                << "all_labels=" << subscript._all_labels
-                << ",\n\t"
-                << "operands_labels = \n\t\t" << subscript._operands_labels
-                << ",\n\t"
-                << "distinct_operands_labels = \n\t\t" << subscript._distinct_operands_labels
-                << ",\n\t"
-                << "result_labels = \n\t\t" << subscript._result_labels
-                << ",\n\t"
-                << "label_poss_in_operand = \n\t\t" << subscript._label_poss_in_operands
-                << ",\n\t"
-                << "label_pos_in_result = \n\t\t" << subscript._label_pos_in_result
-                << ",\n\t"
-                << "independent_label_subsets = \n\t\t" << subscript._independent_label_subsets
-                << "\n>";
-            return out;
-        }
+//    public:
+//        friend ::std::ostream &operator<<(::std::ostream &out, ::tnt::operations::Subscript &subscript) {
+//            out << "<Subscript: \n"
+//                << "all_labels=" << subscript._all_labels
+//                << ",\n\t"
+//                << "operands_labels = \n\t\t" << subscript._operands_labels
+//                << ",\n\t"
+//                << "distinct_operands_labels = \n\t\t" << subscript._distinct_operands_labels
+//                << ",\n\t"
+//                << "result_labels = \n\t\t" << subscript._result_labels
+//                << ",\n\t"
+//                << "label_poss_in_operand = \n\t\t" << subscript._label_poss_in_operands
+//                << ",\n\t"
+//                << "label_pos_in_result = \n\t\t" << subscript._label_pos_in_result
+//                << ",\n\t"
+//                << "independent_label_subsets = \n\t\t" << subscript._independent_label_subsets
+//                << "\n>";
+//            return out;
+//        }
     };
 }
 

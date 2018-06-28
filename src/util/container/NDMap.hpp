@@ -6,7 +6,7 @@
 
 #include "../Types.hpp"
 
-namespace tnt::container {
+namespace tnt::util::container {
     using Key_t = tnt::util::types::Key_t;
 
     template<typename VALUE_t>
