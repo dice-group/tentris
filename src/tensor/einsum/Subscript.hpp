@@ -329,16 +329,16 @@ namespace tnt::tensor::einsum {
             // next new label to be used
             label_t next_norm_label = 0;
 
+            // normalize the result
+            std::vector<label_t> norm_result_subscript = normalizeLabelVector(raw_to_norm_label, next_norm_label,
+                                                                              raw_result_subscript);
+
             // normalize the operands
             std::vector<std::vector<label_t >> norm_operand_subscripts{};
             norm_operand_subscripts.reserve(raw_operand_subscripts.size());
             for (const auto &[op_pos, op_labels] : enumerate(raw_operand_subscripts)) {
                 norm_operand_subscripts[op_pos] = normalizeLabelVector(raw_to_norm_label, next_norm_label, op_labels);
             }
-
-            // normalize the result
-            std::vector<label_t> norm_result_subscript = normalizeLabelVector(raw_to_norm_label, next_norm_label,
-                                                                              raw_result_subscript);
 
             // put all new labels that were used into a set
             std::set<label_t> labels{};

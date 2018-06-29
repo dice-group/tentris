@@ -64,6 +64,64 @@ namespace tnt::tensor::einsum::operators {
             return {};
             // return new CrossProductTensor<T>(predecessor_results, bracketed_subscript);
         }
+
+        class CrossProductResult {
+            const std::vector<NDMap<T>> &_operands;
+            const Subscript &_subscript;
+            std::vector<std::tuple<size_t, size_t>> pos_mappings{};
+
+            const CrossProductResult(const std::vector<NDMap<T>> &operands, const Subscript &subscript) :
+                    _operands{operands}, _subscript{subscript} {
+
+                // check if there is any input
+                if (operands.size() == 0) {
+                    return;
+                }
+
+                // check if any input is zero
+                for (const NDMap<T> &op : operands) {
+                    if (not op.size()) {
+                        return;
+                    }
+                }
+
+                const std::vector<label_t> &res_labels = _subscript.getResultLabels();
+                for (const auto &[op_pos, op] : operands) {
+                    std::vector<std::tuple<size_t, size_t>> op_to_res_pos{};
+                    for (const auto &[label_pos_in_op, label] : enumerate(_subscript.operandLabels(op_pos))) {
+                        if (const size_t label_pos_in_res = tnt::util::container::search(res_labels, label);
+                                label_pos_in_res != tnt::util::container::NOT_FOUND)
+                            op_to_res_pos.push_back({label_pos_in_op, label_pos_in_res});
+                    }
+                    pos_mappings.emplace_back(op_to_res_pos);
+                }
+            }
+
+
+            class iterator {
+                using op_c_iter_t = typename NDMap<T>::const_iterator;
+                std::vector<op_c_iter_t> _begins;
+                std::vector<op_c_iter_t> _ends;
+                bool _ended{};
+            public:
+                iterator(const CrossProductResult &result, bool ended = false) : _ended{ended} {
+                    for (const NDMap<T> &operand : result._operands) {
+                        _begins.emplace_back(operand.cbegin());
+                        _ends.emplace_back(operand.cend());
+                    }
+                }
+            };
+
+            iterator begin() {
+
+                return {*this};
+            }
+
+            iterator end() {
+                return {*this, true};
+            }
+
+        };
     };
 }
 
