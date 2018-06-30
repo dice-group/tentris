@@ -7,6 +7,7 @@
 #include "iterables/Range.hpp"
 #include "iterables/Enumerate.hpp"
 #include "iterables/KeysValues.hpp"
+#include "iterables/Zip.hpp"
 #include "Types.hpp"
 
 using namespace whoshuu;
