@@ -40,7 +40,7 @@ namespace tnt::tensor::einsum::operators {
          * Basic Constructor.
          * @param subscript Subscript that defines what the operator does.
          */
-        Einsum(const Subscript &subscript) : _plan{subscript} {}
+        explicit Einsum(const Subscript &subscript) : _plan{subscript} {}
 
 
         const NDMap<OUT_COUNT_T> &getResult(const Operands &operands) {

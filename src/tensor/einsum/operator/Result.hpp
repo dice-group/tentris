@@ -32,12 +32,12 @@ namespace tnt::tensor::einsum::operators {
          * Basic Constructor.
          * @param subscript Subscript that defines what the operator does.
          */
-        Result(const Subscript &subscript) : _subscript{subscript.optimized()} {}
+        explicit Result(const Subscript &subscript) : _subscript{subscript.optimized()} {}
 
 
         const NDMap<T> &getResult(const Operands &operands) {
             const std::vector<std::shared_ptr<Subscript>> &sub_subscripts = _subscript.getSubSubscripts();
-            if (sub_subscripts.size()) {
+            if (not sub_subscripts.empty()) {
                 return CrossProduct<T>{_subscript}.getResult(operands);
             } else {
                 return Einsum<T>{_subscript}.getResult(operands);
