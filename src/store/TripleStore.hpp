@@ -2,6 +2,7 @@
 #define TNT_STORE_TRIPLESTORE
 
 #include "RDFTerm2Id.hpp"
+#include "RDFParser.hpp"
 
 
 namespace tnt::store {

@@ -11,7 +11,7 @@ namespace tnt::util::iterable::enumerate {
     public:
         Enumerate(Container &content) : content(content) {}
 
-        decltype(auto) begin() const { return iterator(content.begin()); }
+         decltype(auto) begin() const { return iterator(content.begin()); }
 
         decltype(auto) end() const { return iterator(content.end()); }
 

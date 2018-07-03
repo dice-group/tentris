@@ -9,9 +9,9 @@ find_package(GTest REQUIRED)
 include_directories(
         ${TEST_SOURCE_DIR}/src
         ${GTEST_INCLUDE_DIRS})
-
 link_libraries(
-        #libsparsetensor
+        stdc++fs # for #include <filesystem>
+        serd-0 # for parsing ntriples
         ${GTEST_LIBRARIES}
         pthread
 )
@@ -31,3 +31,4 @@ add_executable(TestSubscript TestSubscript.cpp)
 #add_executable(TestUndirectedGraph TestUndirectedGraph.cpp)
 add_executable(TestDoubleVector VecMapTest.cpp)
 add_executable(TestBinarySearch BinarySearchTest.cpp)
+add_executable(TestRDFParser TestRDFParser.cpp)
