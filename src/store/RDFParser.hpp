@@ -23,9 +23,12 @@ namespace tnt::store {
     class RDFParser {
         struct CallBack {
             bool producer_runs{false};
+            bool fresh_result{false};
+            std::mutex mutex;
             std::unique_ptr<Node> subject;
             std::unique_ptr<Node> predicate;
             std::unique_ptr<Node> object;
+
         };
 
         CallBack cb{};
@@ -39,7 +42,13 @@ namespace tnt::store {
                                            const SerdNode *object_datatype,
                                            const SerdNode *object_lang) -> SerdStatus {
             CallBack *cb = (CallBack *) handle;
-            while (not cb->producer_runs);
+            while (true) {
+                std::lock_guard guard{cb->mutex};
+                if (cb->producer_runs)
+                    break;
+            }
+            std::lock_guard guard{cb->mutex};
+
 
             switch (subject->type) {
                 case SERD_URI:
@@ -52,6 +61,7 @@ namespace tnt::store {
                     break;
                 default:
                     cb->producer_runs = false;
+                    cb->fresh_result = true;
                     return SERD_ERR_BAD_SYNTAX;
             }
 
@@ -61,7 +71,9 @@ namespace tnt::store {
                             new URIRef{std::string{(char *) (predicate->buf), size_t(predicate->n_chars)}}};
                     break;
                 default:
+
                     cb->producer_runs = false;
+                    cb->fresh_result = true;
                     return SERD_ERR_BAD_SYNTAX;
             }
 
@@ -89,13 +101,16 @@ namespace tnt::store {
                             new URIRef{std::string{(char *) (object->buf), size_t(object->n_chars)}}};
                     break;
                 default:
+
                     cb->producer_runs = false;
+                    cb->fresh_result = true;
                     return SERD_ERR_BAD_SYNTAX;
             }
             std::cout << (*cb->subject).getIdentifier() << " "
                       << (*cb->predicate).getIdentifier() << " "
                       << (*cb->object).getIdentifier() << " . " << std::endl;
             cb->producer_runs = false;
+            cb->fresh_result = true;
             return SERD_SUCCESS;
         };
 
@@ -107,16 +122,18 @@ namespace tnt::store {
 
     public:
 
-        RDFParser(std::string file) : _file(file), _future{std::async(std::launch::async,
-                                                         serd_reader_read_file, sr, (uint8_t *) (_file.data()))} {
-
+        explicit RDFParser(std::string file) :
+                _file(std::move(file)) {
+            cb.mutex.lock();
+            _future = std::async(std::launch::async, serd_reader_read_file, sr, (uint8_t *) (_file.data()));
         }
 
         RDFParser(const RDFParser &) = delete;
 
 
         ~ RDFParser() {
-            _future.get();
+
+            SerdStatus get1 = _future.get();
             serd_reader_free(sr);
         }
 
@@ -124,21 +141,42 @@ namespace tnt::store {
             RDFParser &_parser;
             bool _ended;
         public:
-            iterator(RDFParser &parser, bool ended = false) : _parser{parser}, _ended{ended} {
+            explicit iterator(RDFParser &parser, bool ended = false) : _parser{parser}, _ended{ended} {
                 if (not _ended) {
-                    this->operator++();
+                    _parser.cb.mutex.unlock();
+                    calculateNext();
                 }
             }
 
+            void calculateNext() {
+                {
+                    std::lock_guard guard{_parser.cb.mutex};
+                    _parser.cb.producer_runs = true;
+                }
+                // ergebnis wird berechnet
+                while (true) {
+                    std::lock_guard guard{_parser.cb.mutex};
+                    if (not _parser.cb.producer_runs) {
+                        if (not _parser.cb.fresh_result) {
+                            _ended = true;
+                        }
+                        break;
+                    }
+                    if (is_ready(_parser._future)){
+                        _ended = true;
+                        break;
+                    }
+                }
+                _parser.cb.fresh_result = false;
+            }
+
             iterator &operator++() {
-                _parser.cb.producer_runs = true;
-                while (_parser.cb.producer_runs);
-                if (is_ready(_parser._future))
-                    _ended = true;
+                calculateNext();
                 return *this;
             }
 
             std::tuple<std::unique_ptr<Node>, std::unique_ptr<Node>, std::unique_ptr<Node>> operator*() {
+
                 return {std::move(_parser.cb.subject), std::move(_parser.cb.subject), std::move(_parser.cb.subject)};
             }
 
