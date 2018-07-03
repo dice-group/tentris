@@ -8,10 +8,21 @@
 #include "RDF/Node.hpp"
 #include <stdexcept>
 #include <optional>
+#include <future>
+#include <iostream>           // std::cout
+#include <thread>             // std::thread
+#include <mutex>              // std::mutex, std::unique_lock
+#include <condition_variable>
 
 namespace tnt::store {
+
+
+    template<typename R>
+    bool is_ready(std::future<R> const &f) { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
+
     class RDFParser {
         struct CallBack {
+            bool producer_runs{false};
             std::unique_ptr<Node> subject;
             std::unique_ptr<Node> predicate;
             std::unique_ptr<Node> object;
@@ -27,8 +38,9 @@ namespace tnt::store {
                                            const SerdNode *object,
                                            const SerdNode *object_datatype,
                                            const SerdNode *object_lang) -> SerdStatus {
-
             CallBack *cb = (CallBack *) handle;
+            while (not cb->producer_runs);
+
             switch (subject->type) {
                 case SERD_URI:
                     cb->subject = std::unique_ptr<Node>{
@@ -39,6 +51,7 @@ namespace tnt::store {
                             new BNode{std::string{(char *) (subject->buf), size_t(subject->n_chars)}}};
                     break;
                 default:
+                    cb->producer_runs = false;
                     return SERD_ERR_BAD_SYNTAX;
             }
 
@@ -48,6 +61,7 @@ namespace tnt::store {
                             new URIRef{std::string{(char *) (predicate->buf), size_t(predicate->n_chars)}}};
                     break;
                 default:
+                    cb->producer_runs = false;
                     return SERD_ERR_BAD_SYNTAX;
             }
 
@@ -75,28 +89,74 @@ namespace tnt::store {
                             new URIRef{std::string{(char *) (object->buf), size_t(object->n_chars)}}};
                     break;
                 default:
+                    cb->producer_runs = false;
                     return SERD_ERR_BAD_SYNTAX;
             }
             std::cout << (*cb->subject).getIdentifier() << " "
                       << (*cb->predicate).getIdentifier() << " "
                       << (*cb->object).getIdentifier() << " . " << std::endl;
+            cb->producer_runs = false;
             return SERD_SUCCESS;
         };
 
         SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) &cb, NULL, NULL, NULL, writeTriple, NULL);
+        std::packaged_task<SerdStatus(SerdReader *, uint8_t *)> _task;
+        std::future<SerdStatus> _future;
 
     public:
 
-        RDFParser(std::string file) {
-            SerdStatus read_file = serd_reader_read_file(sr, (uint8_t *) (file.data()));
-            std::cout << read_file << std::endl;
+        RDFParser(std::string file) : _task{serd_reader_read_file(sr, (uint8_t *) (file.data()))
+        } {
+
+            _future = _task.get_future();
         }
 
         RDFParser(const RDFParser &) = delete;
 
 
         ~ RDFParser() {
+            _future.get();
             serd_reader_free(sr);
+        }
+
+        class iterator {
+            RDFParser &_parser;
+            bool _ended;
+        public:
+            iterator(RDFParser &parser, bool ended = false) : _parser{parser}, _ended{ended} {
+                if (not _ended) {
+                    this->operator++();
+                }
+            }
+
+            iterator &operator++() {
+                _parser.cb.producer_runs = true;
+                while (_parser.cb.producer_runs);
+                if (is_ready(_parser._future))
+                    _ended = true;
+                return *this;
+            }
+
+            std::tuple<std::unique_ptr<Node>, std::unique_ptr<Node>, std::unique_ptr<Node>> operator*() {
+                return {std::move(_parser.cb.subject), std::move(_parser.cb.subject), std::move(_parser.cb.subject)};
+            }
+
+            bool operator==(iterator &rhs) {
+                return _ended == rhs._ended;
+            }
+
+            bool operator!=(iterator &rhs) {
+                return _ended != rhs._ended;
+            }
+
+        };
+
+        iterator begin() {
+            return iterator{*this};
+        }
+
+        iterator end() {
+            return iterator{*this, true};
         }
 
 
