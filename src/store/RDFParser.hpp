@@ -100,15 +100,16 @@ namespace tnt::store {
         };
 
         SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) &cb, NULL, NULL, NULL, writeTriple, NULL);
-        std::packaged_task<SerdStatus(SerdReader *, uint8_t *)> _task;
+
+        std::string _file;
         std::future<SerdStatus> _future;
+
 
     public:
 
-        RDFParser(std::string file) : _task{serd_reader_read_file(sr, (uint8_t *) (file.data()))
-        } {
+        RDFParser(std::string file) : _file(file), _future{std::async(std::launch::async,
+                                                         serd_reader_read_file, sr, (uint8_t *) (_file.data()))} {
 
-            _future = _task.get_future();
         }
 
         RDFParser(const RDFParser &) = delete;

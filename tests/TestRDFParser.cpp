@@ -9,6 +9,8 @@ TEST(TestRDFParser, da) {
     path = fs::path{path}.string();
     std::cout << path << std::endl;
     tnt::store::RDFParser da{path};
+
+    for(auto x : da);
 }
 
 
