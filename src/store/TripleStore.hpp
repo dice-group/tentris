@@ -14,6 +14,10 @@ namespace tnt::store {
         }
 
         void loadRDF(std::string file_path) {
+            size_t count = 0;
+            for(auto &&triple : RDFParser{file_path}){
+
+            }
 
         }
 

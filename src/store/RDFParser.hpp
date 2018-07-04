@@ -133,7 +133,7 @@ namespace tnt::store {
 
         ~ RDFParser() {
 
-            SerdStatus get1 = _future.get();
+            _future.get();
             serd_reader_free(sr);
         }
 
@@ -153,7 +153,6 @@ namespace tnt::store {
                     std::lock_guard guard{_parser.cb.mutex};
                     _parser.cb.producer_runs = true;
                 }
-                // ergebnis wird berechnet
                 while (true) {
                     std::lock_guard guard{_parser.cb.mutex};
                     if (not _parser.cb.producer_runs) {
@@ -162,7 +161,7 @@ namespace tnt::store {
                         }
                         break;
                     }
-                    if (is_ready(_parser._future)){
+                    if (is_ready(_parser._future)) {
                         _ended = true;
                         break;
                     }
