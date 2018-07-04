@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <cinttypes>
+#include <memory>
 
 
 std::ostream &operator<<(std::ostream &os, const uint8_t &element) {
@@ -19,6 +20,13 @@ std::ostream &operator<<(std::ostream &os, const uint8_t &element) {
 template<typename T1, typename T2>
 std::ostream &operator<<(std::ostream &os, const std::tuple<T1, T2> &t) {
     os << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ")";
+    return os;
+}
+
+
+template<typename T1, typename T2, typename T3>
+std::ostream &operator<<(std::ostream &os, const std::tuple<T1, T2, T3> &t) {
+    os << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ")";
     return os;
 }
 
@@ -110,6 +118,18 @@ std::ostream &operator<<(std::ostream &os, const std::unordered_map<Key, Value> 
         os << ((iter != iter_begin) ? ", " : "") << (*iter);
     }
     os << "}";
+    return os;
+}
+
+template<typename T1>
+std::ostream &operator<<(std::ostream &os, const std::unique_ptr<T1> &p) {
+    os << *p;
+    return os;
+}
+
+template<typename T1>
+std::ostream &operator<<(std::ostream &os, std::unique_ptr<T1> &p) {
+    os << *p;
     return os;
 }
 

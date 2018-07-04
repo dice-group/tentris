@@ -1,30 +1,31 @@
 #ifndef TNT_STORE_RDFTERMINDEX
 #define TNT_STORE_RDFTERMINDEX
 
-#include "../util/All.hpp"
-#include "RDF/Node.hpp"
+#include "util/All.hpp"
+#include "Term.hpp"
 #include <map>
 #include <memory>
 
 namespace tnt::store {
-    class Node2Id {
+    class TermStore {
     public:
         using key_part_t = tnt::util::types::key_part_t;
 
     public:
-        class Id2Node {
-            friend class Node2Id;
-            Node2Id &_original;
+        class RevTermStore {
+            friend class TermStore;
+
+            TermStore &_original;
 
         protected:
-            explicit Id2Node(Node2Id &rdf_term_index) : _original(rdf_term_index) {}
+            explicit RevTermStore(TermStore &rdf_term_index) : _original(rdf_term_index) {}
 
         public:
-            const std::unique_ptr<Node> &at(const key_part_t &index) const {
+            const std::unique_ptr<Term> &at(const key_part_t &index) const {
                 return _original._id_2_str.at(index);
             }
 
-            Node2Id &inverse() noexcept {
+            TermStore &inverse() noexcept {
                 return _original;
             }
 
@@ -43,23 +44,23 @@ namespace tnt::store {
         };
 
     private:
-        std::map<key_part_t, std::unique_ptr<Node>> _id_2_str{};
-        std::map<std::unique_ptr<Node>, key_part_t> _str_2_id{};
+        std::map<key_part_t, std::unique_ptr<Term>> _id_2_str{};
+        std::map<std::unique_ptr<Term>, key_part_t> _str_2_id{};
         key_part_t _next_id{};
-        Id2Node _inverse;
+        RevTermStore _inverse;
     public:
 
-        Node2Id() : _inverse{*this} {}
+        TermStore() : RevTermStore{*this} {}
 
-        const key_part_t &at(const std::unique_ptr<Node> &term) const {
+        const key_part_t &at(const std::unique_ptr<Term> &term) const {
             return _str_2_id.at(term);
         }
 
-        const key_part_t &operator[](const std::unique_ptr<Node> &term) {
+        const key_part_t &operator[](const std::unique_ptr<Term> &term) {
             try {
                 return _str_2_id.at(term);
             } catch (...) {
-                std::pair<std::map<key_part_t, std::unique_ptr<Node>>::iterator, bool> pair =
+                std::pair<std::map<key_part_t, std::unique_ptr<Term>>::iterator, bool> pair =
                         _id_2_str.insert(_next_id, std::move(term));
                 _str_2_id.emplace(*pair.first);
                 return pair.first->first;
@@ -67,10 +68,10 @@ namespace tnt::store {
         }
 
         const key_part_t &operator[](const std::string &term) {
-            return (*self)[parse(term)];
+            return (*this)[parse(term)];
         }
 
-        Id2Node &inv() {
+        RevTermStore &inv() {
             return _inverse;
         }
 

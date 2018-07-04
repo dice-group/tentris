@@ -4,15 +4,14 @@
 #include <serd-0/serd/serd.h>
 #include <memory>
 
-#include "../util/All.hpp"
-#include "RDF/Node.hpp"
+#include "util/All.hpp"
+#include "Term.hpp"
 #include <stdexcept>
 #include <optional>
 #include <future>
 #include <iostream>           // std::cout
 #include <thread>             // std::thread
 #include <mutex>              // std::mutex, std::unique_lock
-#include <condition_variable>
 
 namespace tnt::store {
 
@@ -20,27 +19,54 @@ namespace tnt::store {
     template<typename R>
     bool is_ready(std::future<R> const &f) { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
-    class RDFParser {
+    class NTripleParser {
         struct CallBack {
             bool producer_runs{false};
             bool fresh_result{false};
             std::mutex mutex;
-            std::unique_ptr<Node> subject;
-            std::unique_ptr<Node> predicate;
-            std::unique_ptr<Node> object;
+            std::unique_ptr<Term> subject;
+            std::unique_ptr<Term> predicate;
+            std::unique_ptr<Term> object;
 
         };
 
         CallBack cb{};
 
-        SerdStatementSink writeTriple = [](void *handle,
-                                           SerdStatementFlags flags,
-                                           const SerdNode *graph,
-                                           const SerdNode *subject,
-                                           const SerdNode *predicate,
-                                           const SerdNode *object,
-                                           const SerdNode *object_datatype,
-                                           const SerdNode *object_lang) -> SerdStatus {
+        constexpr static const auto getBNode = [](const SerdNode *node) -> std::unique_ptr<Term> {
+            std::ostringstream bnode_str;
+            bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_chars)};
+            return std::unique_ptr<Term>{new BNode{bnode_str.str()}};
+        };
+
+        constexpr static const auto getURI = [](const SerdNode *node) -> std::unique_ptr<Term> {
+            std::ostringstream uri_str;
+            uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_chars)} << ">";
+            return std::unique_ptr<Term>{new URIRef{uri_str.str()}};
+        };
+
+        constexpr static const auto getLiteral = [](const SerdNode *literal, const SerdNode *type_node,
+                                                    const SerdNode *lang_node) -> std::unique_ptr<Term> {
+            std::optional<std::__cxx11::string> type = (type_node != nullptr)
+                                                       ? std::optional<std::__cxx11::string>{{(char *) (type_node->buf),
+                                                                                                     size_t(type_node->n_chars)}}
+                                                       : std::nullopt;
+            std::optional<std::__cxx11::string> lang = (lang_node != nullptr)
+                                                       ? std::optional<std::__cxx11::string>{{(char *) (lang_node->buf),
+                                                                                                     size_t(lang_node->n_chars)}}
+                                                       : std::nullopt;
+
+            return std::unique_ptr<Term>{
+                    new Literal{std::__cxx11::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
+        };
+
+        constexpr static const SerdStatementSink writeTriple = [](void *handle,
+                                                                  SerdStatementFlags flags,
+                                                                  const SerdNode *graph,
+                                                                  const SerdNode *subject,
+                                                                  const SerdNode *predicate,
+                                                                  const SerdNode *object,
+                                                                  const SerdNode *object_datatype,
+                                                                  const SerdNode *object_lang) -> SerdStatus {
             CallBack *cb = (CallBack *) handle;
             while (true) {
                 std::lock_guard guard{cb->mutex};
@@ -52,12 +78,11 @@ namespace tnt::store {
 
             switch (subject->type) {
                 case SERD_URI:
-                    cb->subject = std::unique_ptr<Node>{
-                            new URIRef{std::string{(char *) (subject->buf), size_t(subject->n_chars)}}};
+                    cb->subject = std::move(getURI(subject));
                     break;
-                case SERD_BLANK:
-                    cb->subject = std::unique_ptr<Node>{
-                            new BNode{std::string{(char *) (subject->buf), size_t(subject->n_chars)}}};
+                case SERD_BLANK: {
+                    cb->subject = std::move(getBNode(subject));
+                }
                     break;
                 default:
                     cb->producer_runs = false;
@@ -67,8 +92,7 @@ namespace tnt::store {
 
             switch (predicate->type) {
                 case SERD_URI:
-                    cb->predicate = std::unique_ptr<Node>{
-                            new URIRef{std::string{(char *) (predicate->buf), size_t(predicate->n_chars)}}};
+                    cb->predicate = std::move(getURI(predicate));
                     break;
                 default:
 
@@ -78,27 +102,14 @@ namespace tnt::store {
             }
 
             switch (object->type) {
-                case SERD_LITERAL: {
-                    std::optional<std::string> type = (object_datatype != nullptr)
-                                                      ? std::optional<std::string>{{(char *) (object_datatype->buf),
-                                                                                           size_t(object_datatype->n_chars)}}
-                                                      : std::nullopt;
-                    std::optional<std::string> lang = (object_lang != nullptr)
-                                                      ? std::optional<std::string>{{(char *) (object_lang->buf),
-                                                                                           size_t(object_lang->n_chars)}}
-                                                      : std::nullopt;
-
-                    cb->object = std::unique_ptr<Node>{
-                            new Literal{std::string{(char *) (object->buf), size_t(object->n_chars)}, lang, type}};
-                }
+                case SERD_LITERAL:
+                    cb->object = getLiteral(object, object_datatype, object_lang);
                     break;
                 case SERD_BLANK:
-                    cb->object = std::unique_ptr<Node>{
-                            new BNode{std::string{(char *) (object->buf), size_t(object->n_chars)}}};
+                    cb->object = getBNode(object);
                     break;
                 case SERD_URI:
-                    cb->object = std::unique_ptr<Node>{
-                            new URIRef{std::string{(char *) (object->buf), size_t(object->n_chars)}}};
+                    cb->object = getURI(object);
                     break;
                 default:
 
@@ -106,6 +117,7 @@ namespace tnt::store {
                     cb->fresh_result = true;
                     return SERD_ERR_BAD_SYNTAX;
             }
+            // todo: remove
             std::cout << (*cb->subject).getIdentifier() << " "
                       << (*cb->predicate).getIdentifier() << " "
                       << (*cb->object).getIdentifier() << " . " << std::endl;
@@ -113,6 +125,7 @@ namespace tnt::store {
             cb->fresh_result = true;
             return SERD_SUCCESS;
         };
+
 
         SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) &cb, NULL, NULL, NULL, writeTriple, NULL);
 
@@ -122,26 +135,25 @@ namespace tnt::store {
 
     public:
 
-        explicit RDFParser(std::string file) :
+        explicit NTripleParser(std::string file) :
                 _file(std::move(file)) {
             cb.mutex.lock();
             _future = std::async(std::launch::async, serd_reader_read_file, sr, (uint8_t *) (_file.data()));
         }
 
-        RDFParser(const RDFParser &) = delete;
+        NTripleParser(const NTripleParser &) = delete;
 
 
-        ~ RDFParser() {
-
+        ~ NTripleParser() {
             _future.get();
             serd_reader_free(sr);
         }
 
         class iterator {
-            RDFParser &_parser;
+            NTripleParser &_parser;
             bool _ended;
         public:
-            explicit iterator(RDFParser &parser, bool ended = false) : _parser{parser}, _ended{ended} {
+            explicit iterator(NTripleParser &parser, bool ended = false) : _parser{parser}, _ended{ended} {
                 if (not _ended) {
                     _parser.cb.mutex.unlock();
                     calculateNext();
@@ -174,9 +186,10 @@ namespace tnt::store {
                 return *this;
             }
 
-            std::tuple<std::unique_ptr<Node>, std::unique_ptr<Node>, std::unique_ptr<Node>> operator*() {
+            std::tuple<std::unique_ptr<Term>, std::unique_ptr<Term>, std::unique_ptr<Term>> operator*() {
 
-                return {std::move(_parser.cb.subject), std::move(_parser.cb.subject), std::move(_parser.cb.subject)};
+                return make_tuple(std::move(_parser.cb.subject), std::move(_parser.cb.predicate),
+                                  std::move(_parser.cb.object));
             }
 
             bool operator==(iterator &rhs) {

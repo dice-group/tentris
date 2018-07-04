@@ -13,7 +13,7 @@
 namespace tnt::store {
 
 
-    class Node {
+    class Term {
     public:
         enum NodeType {
             None,
@@ -30,11 +30,13 @@ namespace tnt::store {
         std::string_view _lang = nullptr;
         std::string_view _type = nullptr;
 
-        explicit Node(std::string identifier) : _identifier(identifier) {};
+        explicit Term(std::string identifier) : _identifier(identifier) {};
 
-        Node(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
+        explicit Term(NodeType node_type) : _node_type{node_type} {};
+
+        Term(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
     public:
-        bool operator==(const Node &rhs) const {
+        bool operator==(const Term &rhs) const {
             if (typeid(*this) == typeid(rhs))
                 if (_identifier == rhs._identifier)
                     return true;
@@ -54,15 +56,19 @@ namespace tnt::store {
         }
     };
 
-    class URIRef : public Node {
+    class URIRef : public Term {
 
     public:
-        explicit URIRef(std::string identifier) : Node{identifier, NodeType::URI} {};
+        explicit URIRef(std::string identifier) : Term{identifier, NodeType::URI} {
+            _value = std::string_view{_identifier.data() + 1, _identifier.size() - 2};
+        };
     };
 
-    class BNode : public Node {
+    class BNode : public Term {
     public:
-        explicit BNode(std::string identifier) : Node{identifier, NodeType::BNode} {};
+        explicit BNode(std::string identifier) : Term{identifier, NodeType::BNode} {
+            _value = std::string_view{_identifier.data() + 2, _identifier.size() - 2};
+        };
 
     };
 
@@ -71,10 +77,10 @@ namespace tnt::store {
  */
     static const std::regex literal_regex{"^\"(.*)\"(?:@(.*)|\\^\\^<(.*)>)$"};
 
-    class Literal : public Node {
+    class Literal : public Term {
 
     public:
-        explicit Literal(std::string identifier) : Node{identifier, NodeType::Literal} {
+        explicit Literal(std::string identifier) : Term{identifier, NodeType::Literal} {
 
             std::match_results<std::string::const_iterator> mr;
 
@@ -103,7 +109,7 @@ namespace tnt::store {
         }
 
         Literal(std::string identifier, std::optional<std::string> lang, std::optional<std::string> type)
-                : Node{{}, NodeType::Literal} {
+                : Term{NodeType::Literal} {
 
             if (lang) {
                 _identifier = "\"" + identifier + "\"@" + *lang;
@@ -141,23 +147,28 @@ namespace tnt::store {
 
     static const std::regex is_literal_regex{"^\"(?:.*)\"(?:@(?:.*)|\\^\\^<(?:.*)>)$"};
 
-    std::unique_ptr<Node> parse(const std::string &term) {
+    std::unique_ptr<Term> parse(const std::string &term) {
         if (std::regex_match(term, is_literal_regex))
-            return std::unique_ptr<Node>{new Literal{term}};
+            return std::unique_ptr<Term>{new Literal{term}};
         else if (std::regex_match(term, is_uri_regex))
-            return std::unique_ptr<Node>{new URIRef{term}};
+            return std::unique_ptr<Term>{new URIRef{term}};
         else if (std::regex_match(term, is_bnode_regex))
-            return std::unique_ptr<Node>{new BNode{term}};
+            return std::unique_ptr<Term>{new BNode{term}};
         throw std::invalid_argument{"RDF term string was malformed."};
     }
 };
 
 template<>
-struct std::hash<tnt::store::Node> {
-    size_t operator()(const tnt::store::Node &v) const {
+struct std::hash<tnt::store::Term> {
+    size_t operator()(const tnt::store::Term &v) const {
         std::hash<std::string> hasher;
         return hasher(v.getIdentifier());
     }
 };
+
+std::ostream &operator<<(std::ostream &os, const tnt::store::Term &p) {
+    os << p.getIdentifier();
+    return os;
+}
 
 #endif //TEST_NODE_HPP

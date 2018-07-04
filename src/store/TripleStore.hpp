@@ -1,8 +1,8 @@
 #ifndef TNT_STORE_TRIPLESTORE
 #define TNT_STORE_TRIPLESTORE
 
-#include "Node2Id.hpp"
-#include "RDFParser.hpp"
+#include "store/RDF/TermStore.hpp"
+#include "store/RDF/NTripleParser.hpp"
 #include "../tensor/hypertrie/BoolHyperTrie.hpp"
 
 
@@ -10,20 +10,20 @@ namespace tnt::store {
     class TripleStore {
         using key_part_t = tnt::util::types::key_part_t;
         using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
-        Node2Id TermIndex{};
+        TermStore termIndex{};
         BoolHyperTrie trie{3};
 
     public:
-        const Node2Id &getTermIndex() const {
-            return TermIndex;
+        const TermStore &getTermIndex() const {
+            return termIndex;
         }
 
         void loadRDF(std::string file_path) {
             size_t count = 0;
-            for (auto &&triple : RDFParser{file_path}) {
-                const key_part_t &subject_id = TermIndex[std::get<0>(triple)];
-                const key_part_t &predicate_id = TermIndex[std::get<1>(triple)];
-                const key_part_t &object_id = TermIndex[std::get<2>(triple)];
+            for (auto &&triple : NTripleParser{file_path}) {
+                const key_part_t &subject_id = termIndex[std::get<0>(triple)];
+                const key_part_t &predicate_id = termIndex[std::get<1>(triple)];
+                const key_part_t &object_id = termIndex[std::get<2>(triple)];
                 trie.set({subject_id, predicate_id, object_id}, true);
                 ++count;
             }

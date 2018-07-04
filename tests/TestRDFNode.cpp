@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "store/RDF/Node.hpp"
+#include "store/RDF/Term.hpp"
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 using namespace tnt::store;
@@ -8,8 +8,8 @@ using namespace tnt::store;
 TEST(Node, polymorphism) {
     const char *string = "\"asdasd\"^^<dsa>";
     std::string lit{string};
-    std::shared_ptr<Node> instance{new Literal{lit}};
-    Node::NodeType type = instance->type();
+    std::shared_ptr<Term> instance{new Literal{lit}};
+    Term::NodeType type = instance->type();
     std::cout << type << std::endl;
 }
 
