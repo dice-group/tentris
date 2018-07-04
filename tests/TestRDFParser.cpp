@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "store/RDFParser.hpp"
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 TEST(TestRDFParser, da) {
     std::string path = fs::current_path().string();
     path.append("/../../tests/ntriplefiles/ntriples.nt");

@@ -89,7 +89,7 @@ namespace tnt::store {
                                                       : std::nullopt;
 
                     cb->object = std::unique_ptr<Node>{
-                            new Literal{std::string{(char *) (object->buf), size_t(object->n_chars)}, type, lang}};
+                            new Literal{std::string{(char *) (object->buf), size_t(object->n_chars)}, lang, type}};
                 }
                     break;
                 case SERD_BLANK:
