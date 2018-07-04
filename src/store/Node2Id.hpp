@@ -2,24 +2,29 @@
 #define TNT_STORE_RDFTERMINDEX
 
 #include "../util/All.hpp"
+#include "RDF/Node.hpp"
 #include <map>
+#include <memory>
 
 namespace tnt::store {
-    class RDFTerm2Id {
-        using id = tnt::util::types::key_part_t;
+    class Node2Id {
+    public:
+        using key_part_t = tnt::util::types::key_part_t;
 
     public:
-        class Id2RDFTerm {
-            RDFTerm2Id &_original;
+        class Id2Node {
+            friend class Node2Id;
+            Node2Id &_original;
+
+        protected:
+            explicit Id2Node(Node2Id &rdf_term_index) : _original(rdf_term_index) {}
 
         public:
-            explicit Id2RDFTerm(RDFTerm2Id &rdf_term_index) : _original(rdf_term_index) {}
-
-            const std::string &at(const id &index) const {
+            const std::unique_ptr<Node> &at(const key_part_t &index) const {
                 return _original._id_2_str.at(index);
             }
 
-            RDFTerm2Id &inverse() {
+            Node2Id &inverse() noexcept {
                 return _original;
             }
 
@@ -38,30 +43,34 @@ namespace tnt::store {
         };
 
     private:
-        std::map<id, std::string> _id_2_str{};
-        std::map<std::string, id> _str_2_id{};
-        id _next_id{};
-        Id2RDFTerm _inverse;
+        std::map<key_part_t, std::unique_ptr<Node>> _id_2_str{};
+        std::map<std::unique_ptr<Node>, key_part_t> _str_2_id{};
+        key_part_t _next_id{};
+        Id2Node _inverse;
     public:
 
-        RDFTerm2Id() : _inverse{*this} {}
+        Node2Id() : _inverse{*this} {}
 
-        const id &at(const std::string &term) const {
+        const key_part_t &at(const std::unique_ptr<Node> &term) const {
             return _str_2_id.at(term);
         }
 
-        const id &operator[](const std::string &term) {
+        const key_part_t &operator[](const std::unique_ptr<Node> &term) {
             try {
                 return _str_2_id.at(term);
             } catch (...) {
-                std::pair<std::map<id, std::string>::iterator, bool> pair = _id_2_str.insert(
-                        std::tuple{_next_id, term});
+                std::pair<std::map<key_part_t, std::unique_ptr<Node>>::iterator, bool> pair =
+                        _id_2_str.insert(_next_id, std::move(term));
                 _str_2_id.emplace(*pair.first);
                 return pair.first->first;
             }
         }
 
-        Id2RDFTerm &inv() {
+        const key_part_t &operator[](const std::string &term) {
+            return (*self)[parse(term)];
+        }
+
+        Id2Node &inv() {
             return _inverse;
         }
 

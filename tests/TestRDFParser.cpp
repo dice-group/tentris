@@ -8,7 +8,7 @@ TEST(TestRDFParser, da) {
     path.append("/../../tests/ntriplefiles/ntriples.nt");
     path = fs::path{path}.string();
     std::cout << path << std::endl;
-    for(auto i : range(100000)){
+    for(auto i : range(100)){
         tnt::store::RDFParser da{path};
 
         for(auto x : da);

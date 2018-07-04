@@ -11,11 +11,28 @@
 #include <regex>
 
 namespace tnt::store {
+
+
     class Node {
+    public:
+        enum NodeType {
+            None,
+            URI,
+            BNode,
+            Literal
+
+        };
+
     protected:
         std::string _identifier;
+        NodeType _node_type;
+        std::string_view _value = nullptr;
+        std::string_view _lang = nullptr;
+        std::string_view _type = nullptr;
 
         explicit Node(std::string identifier) : _identifier(identifier) {};
+
+        Node(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
     public:
         bool operator==(const Node &rhs) const {
             if (typeid(*this) == typeid(rhs))
@@ -27,31 +44,37 @@ namespace tnt::store {
         const std::string &getIdentifier() const {
             return _identifier;
         }
+
+        inline const NodeType &type() {
+            return _node_type;
+        }
+
+        inline const std::string_view &get_value() const {
+            return _value;
+        }
     };
 
     class URIRef : public Node {
 
     public:
-        explicit URIRef(std::string identifier) : Node{identifier} {};
+        explicit URIRef(std::string identifier) : Node{identifier, NodeType::URI} {};
     };
 
     class BNode : public Node {
     public:
-        explicit BNode(std::string identifier) : Node{identifier} {};
+        explicit BNode(std::string identifier) : Node{identifier, NodeType::BNode} {};
 
     };
 
 /**
  * Regex with groups [1]: literal string, [2]: language tag, [3]: type tag. [2] and [3] are exclusive.
  */
-    static const std::regex literal_regex{"^<(.*)>(?:@(.*)|\\^\\^<(.*)>)$"};
+    static const std::regex literal_regex{"^\"(.*)\"(?:@(.*)|\\^\\^<(.*)>)$"};
 
     class Literal : public Node {
-        std::string_view _literal = nullptr;
-        std::string_view _lang = nullptr;
-        std::string_view _type = nullptr;
+
     public:
-        explicit Literal(std::string identifier) : Node{identifier} {
+        explicit Literal(std::string identifier) : Node{identifier, NodeType::Literal} {
 
             std::match_results<std::string::const_iterator> mr;
 
@@ -62,7 +85,7 @@ namespace tnt::store {
 
                 if (const auto &literal_group = mr[1]; literal_group.matched) {
                     // extract the literal
-                    _literal = {_identifier.data() + 1, (size_t) literal_group.length()};
+                    _value = {_identifier.data() + 1, (size_t) literal_group.length()};
                     // check if it has a language tag
                     if (const auto &lang_group = mr[2]; lang_group.matched) {
                         char *lang_raw = _identifier.data() + (lang_group.first - identifer_it);
@@ -77,22 +100,22 @@ namespace tnt::store {
             }
             throw std::invalid_argument{"Literal string was malformed."};
 
-        };
+        }
 
         Literal(std::string identifier, std::optional<std::string> lang, std::optional<std::string> type)
-                : Node{{}} {
+                : Node{{}, NodeType::Literal} {
 
             if (lang) {
                 _identifier = "\"" + identifier + "\"@" + *lang;
                 _lang = {_identifier.data() + 1 + identifier.size() + 2, lang->size()};
-            } else if (type) {
+            } else if (type and not(type->compare("http://www.w3.org/2001/XMLSchema#string") == 0)) {
+                // string tags shall not be stored as they are implicit
                 _identifier = "\"" + identifier + "\"^^<" + *type + ">";
                 _type = {_identifier.data() + 1 + identifier.size() + 3, type->size()};
-
             } else {
                 _identifier = "\"" + identifier + "\"";
             }
-            _literal = {_identifier.data() + 1, identifier.size()};
+            _value = {_identifier.data() + 1, identifier.size()};
         }
 
         bool hasLang() {
@@ -110,15 +133,31 @@ namespace tnt::store {
         const std::string_view &getType() const {
             return _type;
         }
-
     };
+
+    static const std::regex is_bnode_regex{"^_:(?:.*)$"};
+
+    static const std::regex is_uri_regex{"^<(?:.*)>$"};
+
+    static const std::regex is_literal_regex{"^\"(?:.*)\"(?:@(?:.*)|\\^\\^<(?:.*)>)$"};
+
+    std::unique_ptr<Node> parse(const std::string &term) {
+        if (std::regex_match(term, is_literal_regex))
+            return std::unique_ptr<Node>{new Literal{term}};
+        else if (std::regex_match(term, is_uri_regex))
+            return std::unique_ptr<Node>{new URIRef{term}};
+        else if (std::regex_match(term, is_bnode_regex))
+            return std::unique_ptr<Node>{new BNode{term}};
+        throw std::invalid_argument{"RDF term string was malformed."};
+    }
 };
 
 template<>
- struct std::hash<tnt::store::Node> {
+struct std::hash<tnt::store::Node> {
     size_t operator()(const tnt::store::Node &v) const {
         std::hash<std::string> hasher;
         return hasher(v.getIdentifier());
     }
 };
+
 #endif //TEST_NODE_HPP
