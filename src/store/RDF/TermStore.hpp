@@ -65,6 +65,10 @@ namespace tnt::store {
             return _term2id.at(term);
         }
 
+        bool contains(const std::unique_ptr<Term> &term) const {
+            return _term2id.find(term) != _term2id.end();
+        }
+
         const key_part_t &operator[](std::unique_ptr<Term> term) {
             try {
                 return _term2id.at(term);

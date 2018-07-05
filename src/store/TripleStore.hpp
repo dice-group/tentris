@@ -20,10 +20,10 @@ namespace tnt::store {
 
         void loadRDF(std::string file_path) {
             size_t count = 0;
-            for (auto &&triple : NTripleParser{file_path}) {
-                const key_part_t &subject_id = termIndex[std::get<0>(triple)];
-                const key_part_t &predicate_id = termIndex[std::get<1>(triple)];
-                const key_part_t &object_id = termIndex[std::get<2>(triple)];
+            for (auto &&[subject, predicate, object] : NTripleParser{file_path}) {
+                const key_part_t &subject_id = termIndex[std::move(subject)];
+                const key_part_t &predicate_id = termIndex[std::move(predicate)];
+                const key_part_t &object_id = termIndex[std::move(object)];
                 trie.set({subject_id, predicate_id, object_id}, true);
                 ++count;
             }
@@ -35,7 +35,10 @@ namespace tnt::store {
         }
 
         bool contains(std::tuple<std::string, std::string, std::string> triple) {
-
+            const std::unique_ptr<Term> &subject = parse(std::get<0>(triple));
+            const std::unique_ptr<Term> &predicate = parse(std::get<1>(triple));
+            const std::unique_ptr<Term> &object = parse(std::get<2>(triple));
+            return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
 
         void query(std::string sparql) {
