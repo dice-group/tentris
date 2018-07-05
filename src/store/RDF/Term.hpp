@@ -16,7 +16,6 @@ namespace tnt::store {
     class Term {
     public:
         enum NodeType {
-            None,
             URI,
             BNode,
             Literal
