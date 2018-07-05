@@ -9,8 +9,8 @@
 
 namespace tnt::store {
     class TermStore {
-    public:
         using key_part_t = tnt::util::types::key_part_t;
+    public:
 
         class RevTermStore {
             friend class TermStore;
@@ -18,14 +18,16 @@ namespace tnt::store {
             TermStore &_original;
 
         protected:
-            explicit RevTermStore(TermStore &rdf_term_index) : _original(rdf_term_index) {}
+            explicit RevTermStore(TermStore
+                                  &rdf_term_index) : _original(rdf_term_index) {}
 
         public:
             const std::unique_ptr<Term> &at(const key_part_t &index) const {
                 return *(_original._id2term.at(index));
             }
 
-            TermStore &inverse() noexcept {
+            TermStore &inv()
+            noexcept {
                 return _original;
             }
 
