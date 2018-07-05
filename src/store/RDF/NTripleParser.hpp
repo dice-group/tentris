@@ -145,6 +145,10 @@ namespace tnt::store {
 
 
         ~ NTripleParser() {
+            while (not is_ready(_future)) {
+                cb.producer_runs = 1;
+
+            }
             _future.get();
             serd_reader_free(sr);
         }
