@@ -75,7 +75,7 @@ namespace tnt::store {
 /**
  * Regex with groups [1]: literal string, [2]: language tag, [3]: type tag. [2] and [3] are exclusive.
  */
-    static const std::regex literal_regex{"^\"(.*)\"(?:@(.*)|\\^\\^<(.*)>|)$"};
+    static const std::regex literal_regex{"^\"([^]*)\"(?:@(.*)|\\^\\^<(.*)>|)$"};
 
     class Literal : public Term {
 
@@ -145,7 +145,7 @@ namespace tnt::store {
 
     static const std::regex is_uri_regex{"^<(?:.*)>$"};
 
-    static const std::regex is_literal_regex{"^\"(?:.*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$"};
+    static const std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$"};
 
     std::unique_ptr<Term> parse(const std::string &term) {
         if (std::regex_match(term, is_literal_regex))
