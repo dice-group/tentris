@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "util/container/BinarySearch.hpp"
+#include "tnt/util/container/BinarySearch.hpp"
 using namespace tnt::util::container;
 TEST(TestBinarySearch, insertInRightOrder) {
 

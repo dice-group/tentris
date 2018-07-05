@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "store/RDF/TermStore.hpp"
+#include "tnt/store/RDF/TermStore.hpp"
 
 using namespace tnt::store;
 using namespace tnt::util::types;

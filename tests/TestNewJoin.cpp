@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "tensor/hypertrie/Join.hpp"
+#include "tnt/tensor/hypertrie/Join.hpp"
 
 using namespace tnt::tensor::hypertrie;
 

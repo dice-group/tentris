@@ -1,20 +1,6 @@
-set(CMAKE_CXX_STANDARD 17)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fopenmp -D_GLIBCXX_PARALLEL")
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-
 find_package(GTest REQUIRED)
-include_directories(
-        ${TEST_SOURCE_DIR}/src
-        ${GTEST_INCLUDE_DIRS})
-link_libraries(
-        stdc++fs # for #include <filesystem>
-        serd-0 # for parsing ntriples
-        ${GTEST_LIBRARIES}
-        pthread
-)
+
+link_libraries(GTest::GTest GTest::Main)
 
 #add_executable(TestCrossProductTensor TestCrossProductTensor.cpp)
 #add_executable(TestDiagonal TestDiagonal.cpp)

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "store/RDF/Term.hpp"
+#include "tnt/store/RDF/Term.hpp"
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 using namespace tnt::store;

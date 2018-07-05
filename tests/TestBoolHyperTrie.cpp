@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 
 
 using namespace tnt::util::types;

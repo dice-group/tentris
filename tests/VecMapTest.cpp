@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "util/container/VecMap.hpp"
+#include "tnt/util/container/VecMap.hpp"
 using namespace tnt::util::container;
 
 TEST(TestDoubleVector, loadAndRead) {

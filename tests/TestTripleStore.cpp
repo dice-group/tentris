@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "store/TripleStore.hpp"
+#include "tnt/store/TripleStore.hpp"
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
