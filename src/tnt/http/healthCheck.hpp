@@ -1,11 +1,7 @@
-//
-// Created by afshin on 13.06.18.
-//
-
 #ifndef HEALTHCHECK_HPP
 #define HEALTHCHECK_HPP
 
-#include "pistache/endpoint.h"
+#include <pistache/endpoint.h>
 
 //using namespace Pistache;
 

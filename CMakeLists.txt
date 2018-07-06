@@ -29,6 +29,10 @@ message(STATUS "Found antlr4cpp libs: ${ANTLR4CPP_LIBS} and includes: ${ANTLR4CP
 # include generated files in project environment
 include_directories(grammar)
 
+#include pistache
+find_package(Pistache REQUIRED)
+
+
 #include threads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -54,6 +58,7 @@ link_libraries(
         libsparsetensor
         antlr4-runtime
         antlr4_interface
+        ${Pistache_LIBRARY}
 )
 
 # the main executable target

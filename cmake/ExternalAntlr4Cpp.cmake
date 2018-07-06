@@ -53,7 +53,7 @@
 ###############################################################
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12.2)
-PROJECT(antlr4cpp_fetcher CXX)
+# PROJECT(antlr4cpp_fetcher CXX)
 INCLUDE(ExternalProject)
 FIND_PACKAGE(Git REQUIRED)
 
