@@ -12,7 +12,7 @@ TEST(TestTripleStore, double_write) {
     std::string path = fs::current_path().string();
     path.append("/../../tests/ntriplefiles/ntriples.nt");
     store.loadRDF(path);
-    for(auto &&[subject, predicate, object] :NTripleParser{path}){
+    for (auto &&[subject, predicate, object] :NTripleParser{path}) {
         ASSERT_TRUE(store.contains({subject->getIdentifier(), predicate->getIdentifier(), object->getIdentifier()}));
     }
 
