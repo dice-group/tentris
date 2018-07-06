@@ -27,6 +27,9 @@ namespace tnt::store {
                 // the parser checks already if subject, predicate and object have a valid note:type
                 trie.set({subject_id, predicate_id, object_id}, true);
                 ++count;
+                if (count % 100 == 0)
+                    std::cout << "count: "<< count << std::endl;
+
             }
             std::cout << "Loaded " << count << " triples." << std::endl;
         }

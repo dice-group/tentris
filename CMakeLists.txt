@@ -37,7 +37,7 @@ link_libraries(
 add_executable(tnt_exec src/Main.cpp)
 
 
-#enable_testing() # enable this to enable testing
+enable_testing() # enable this to enable testing
 if (CMAKE_TESTING_ENABLED)
     add_subdirectory(tests)
 endif ()

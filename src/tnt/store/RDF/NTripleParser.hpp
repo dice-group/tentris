@@ -118,9 +118,9 @@ namespace tnt::store {
                     return SERD_ERR_BAD_SYNTAX;
             }
             // todo: remove
-            std::cout << (*cb->subject).getIdentifier() << " "
-                      << (*cb->predicate).getIdentifier() << " "
-                      << (*cb->object).getIdentifier() << " . " << std::endl;
+//            std::cout << (*cb->subject).getIdentifier() << " "
+//                      << (*cb->predicate).getIdentifier() << " "
+//                      << (*cb->object).getIdentifier() << " . " << std::endl;
             cb->producer_runs = false;
             cb->fresh_result = true;
             return SERD_SUCCESS;

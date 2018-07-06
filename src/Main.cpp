@@ -3,5 +3,7 @@
 
 int main() {
     tnt::store::TripleStore store{};
-    store.loadRDF(std::string{"/home/me/CLionProjects/tnt/tests/ntriplefiles/ntriples.nt"});
+    store.loadRDF(std::string{"/home/me/Downloads/swdfu8.nt"});
+    int i;
+    std::cin >> i;
 }

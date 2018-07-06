@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
-
+#include <ctime>
 
 using namespace tnt::util::types;
 using namespace tnt::tensor::hypertrie;
@@ -206,6 +206,38 @@ TEST(TestBoolHyperTrie, calc_card) {
     ASSERT_EQ(trie.getCard(0), 1);
 
     ASSERT_EQ(trie.getCard(1), 3);
+}
+
+TEST(TestBoolHyperTrie, load_data100000) {
+    // data
+    Key_t key{0, 0, 0};
+
+
+    // init
+    BoolHyperTrie trie{3};
+
+    const clock_t i1 = clock();
+    // load data
+    for (auto i : range(10000000)) {
+        key[0] = key_part_t(rand() %50000 +1);
+        key[1] = key_part_t(rand() %50000 +1);
+        key[2] = key_part_t(rand() %50000 +1);
+        trie.set(key, true);
+        if (i % 10000 == 0){
+            std::cout << "triples: " << i << std::endl;
+        }
+    }
+    printf("triples loaded: %d", int(trie.size()));
+    printf("distinct subjects: %d", int(trie.getCard(0)));
+    printf("distinct predicates: %d", int(trie.getCard(1)));
+    printf("distinct objects: %d", int(trie.getCard(2)));
+
+    double elapsed_secs = double(clock() - i1) / CLOCKS_PER_SEC;
+    std::cout << "time: " << elapsed_secs << " s" << std::endl;
+    int i;
+    std::cin >> i;
+
+
 }
 
 
