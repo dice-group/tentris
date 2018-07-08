@@ -11,6 +11,9 @@
 
 int main() {
     tnt::store::TripleStore store{};
-//    store.loadRDF(std::string{"/home/me/Downloads/swdfu8.nt"});
-    Pistache::Http::listenAndServe<healthCheck>("*:9999");
+    store.loadRDF(std::string{"/home/usr/Downloads/swdfu8.nt"});
+    std::cout << store.size() << std::endl;
+//    int i;
+//    std::cin >> i;
+//    Pistache::Http::listenAndServe<healthCheck>("*:9999");
 }

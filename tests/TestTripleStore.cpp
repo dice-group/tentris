@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "tnt/store/TripleStore.hpp"
+#include "tnt/store/RDF/NTripleParser.hpp"
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
