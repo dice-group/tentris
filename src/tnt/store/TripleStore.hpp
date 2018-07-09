@@ -6,12 +6,15 @@
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/util/container/NDMap.hpp"
 
 
 namespace tnt::store {
     class TripleStore {
         using key_part_t = tnt::util::types::key_part_t;
         using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
+        template<typename V>
+        using NDMap = tnt::util::container::NDMap<V>;
         TermStore termIndex{};
         BoolHyperTrie trie{3};
 
@@ -30,7 +33,8 @@ namespace tnt::store {
             add(std::move(std::get<0>(triple)), std::move(std::get<1>(triple)), std::move(std::get<2>(triple)));
         }
 
-        inline void add(std::unique_ptr<Term> &&subject, std::unique_ptr<Term> &&predicate, std::unique_ptr<Term> &&object) {
+        inline void
+        add(std::unique_ptr<Term> &&subject, std::unique_ptr<Term> &&predicate, std::unique_ptr<Term> &&object) {
             if (subject->type() != Term::NodeType::Literal and predicate->type() == Term::NodeType::URI) {
                 const key_part_t &subject_id = termIndex[std::move(subject)];
                 const key_part_t &predicate_id = termIndex[std::move(predicate)];
@@ -48,7 +52,9 @@ namespace tnt::store {
             return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
 
-        void query(std::string sparql) {
+        NDMap<size_t> query(std::string sparql) {
+            // TODO: implement
+            return {};
         }
 
         inline size_t size() const {

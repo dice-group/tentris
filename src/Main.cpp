@@ -1,19 +1,29 @@
 
 #include "tnt/store/TripleStore.hpp"
-#include "tnt/http/healthCheck.hpp"
-#include <antlr4-runtime.h>
-#include "SparqlParser.cpp"
-#include "SparqlLexer.cpp"
-#include "pistache/endpoint.h"
-#include "pistache/net.h"
-#include "pistache/http.h"
-#include "pistache/router.h"
+#include "tnt/http/SPARQLEndpoint.hpp"
+
+using namespace Pistache;
 
 int main() {
-    tnt::store::TripleStore store{};
-    store.loadRDF(std::string{"/home/usr/Downloads/swdfu8.nt"});
-    std::cout << store.size() << std::endl;
-//    int i;
-//    std::cin >> i;
-//    Pistache::Http::listenAndServe<healthCheck>("*:9999");
+    using namespace std;
+    using namespace Pistache;
+    Port port(9080);
+
+    int thr = std::thread::hardware_concurrency();
+    Address addr(Ipv4::any(), port);
+
+    cout << "Using " << thr << " threads to handle Requests." << endl;
+
+    auto server = std::make_shared<Http::Endpoint>(addr);
+
+    auto opts = Http::Endpoint::options()
+            .threads(thr)
+            .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
+    server->init(opts);
+    server->setHandler(Http::make_handler<SPARQLEndpoint>());
+    server->serve();
+
+    std::cout << "Shutdowning server" << std::endl;
+    server->shutdown();
+
 }
