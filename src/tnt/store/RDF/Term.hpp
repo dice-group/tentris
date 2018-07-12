@@ -35,13 +35,6 @@ namespace tnt::store {
 
         Term(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
     public:
-        bool operator==(const Term &rhs) const {
-            if (typeid(*this) == typeid(rhs))
-                if (_identifier == rhs._identifier)
-                    return true;
-            return false;
-        }
-
         const std::string &getIdentifier() const {
             return _identifier;
         }
@@ -52,6 +45,23 @@ namespace tnt::store {
 
         inline const std::string_view &get_value() const {
             return _value;
+        }
+
+
+        inline bool operator==(const Term &rhs) const {
+            return _identifier == rhs._identifier;
+        }
+
+        inline bool operator!=(const Term &rhs) const {
+            return _identifier != rhs._identifier;
+        }
+
+        inline bool operator<(const Term &rhs) const {
+            return _identifier < rhs._identifier;
+        }
+
+        inline bool operator>(const Term &rhs) const {
+            return _identifier > rhs._identifier;
         }
     };
 

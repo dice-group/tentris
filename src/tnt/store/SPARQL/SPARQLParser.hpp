@@ -45,6 +45,11 @@ namespace tnt::store::sparql {
         inline bool operator>(const Variable &rhs) const {
             return _var_name > rhs._var_name;
         }
+
+        friend std::ostream &operator<<(std::ostream &os, const Variable &p) {
+            os << p._var_name;
+            return os;
+        }
     };
 
     class SPARQLParser {
@@ -65,7 +70,7 @@ namespace tnt::store::sparql {
                                                parser{&tokens},
                                                query{parser.query()} {}
 
-        Term parseSubject(SparqlParser::GraphTermContext *termContext) {
+        Term parseGraphTerm(SparqlParser::GraphTermContext *termContext) {
             if (termContext->iriRef() != nullptr) {
                 return URIRef{termContext->getText()};
             } else if (termContext->rdfLiteral() != nullptr) {
@@ -87,7 +92,8 @@ namespace tnt::store::sparql {
             using namespace antlr4;
             SelectModifier p_select_modifier;
             std::set<Variable> query_variables{};
-            std::set<std::vector<std::variant<Term, Variable>>> bgps;
+            std::set<Variable> variables{};
+            std::set<std::vector<std::variant<Variable, Term>>> bgps;
             if (query != nullptr) {
                 SparqlParser::SelectQueryContext *select = query->selectQuery();
                 p_select_modifier = getSelectModifier(select);
@@ -95,36 +101,56 @@ namespace tnt::store::sparql {
                 for (auto &var : vars) {
                     query_variables.insert(extractVariable(var));
                 }
-                SparqlParser::WhereClauseContext *where = select->whereClause();
-                SparqlParser::GroupGraphPatternContext *groupGraphPattern = where->groupGraphPattern();
-                std::vector<SparqlParser::TriplesBlockContext *> triplesBlock = groupGraphPattern->triplesBlock();
+
+                std::vector<SparqlParser::TriplesBlockContext *> triplesBlock = select->whereClause()->groupGraphPattern()->triplesBlock();
                 for (auto &block : triplesBlock) {
                     SparqlParser::TriplesSameSubjectContext *triplesSameSubject = block->triplesSameSubject();
-                    SparqlParser::VarOrTermContext *subj_node = triplesSameSubject->varOrTerm();
 
-                    std::variant<Variable, Term> subj = (subj_node->var() != nullptr) ?
-                                                           std::variant<Variable, Term>{extractVariable(subj_node->var())} :
-                                                           std::variant<Variable, Term>{
-                                                                   parseSubject(subj_node->graphTerm())};
+                    std::variant<Variable, Term> subj = parseVarOrTerm(triplesSameSubject->varOrTerm());
+                    if (std::holds_alternative<Variable>(subj)) variables.insert(std::get<Variable>(subj));
 
                     SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
-                    const std::vector<SparqlParser::VerbContext *> &vector = propertyListNotEmpty->verb();
-                    const std::vector<SparqlParser::ObjectListContext *> &obj_nodess = propertyListNotEmpty->objectList();
-
-
                     for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
                                                           propertyListNotEmpty->objectList())) {
-                        for (auto obj_node : obj_nodes->object()) {
+                        std::variant<Variable, Term> pred = parseVerb(pred_node);
+                        if (std::holds_alternative<Variable>(pred)) variables.insert(std::get<Variable>(pred));
+                        for (auto &obj_node : obj_nodes->object()) {
+                            std::variant<Variable, Term> obj = parseObject(obj_node);
+                            if (std::holds_alternative<Variable>(obj)) variables.insert(std::get<Variable>(obj));
 
-                            std::cout << pred_node->getText() << " " << obj_node->getText() << std::endl;
+                            bgps.insert(std::vector<std::variant<Variable, Term>>{subj, pred, obj});
                         }
                     }
-
-//                    std::cout << block->toStringTree() << std::endl;
                 }
-
             }
 
+            std::cout << "query variables" << query_variables << std::endl;
+            std::cout << "variables" << variables << std::endl;
+//            std::cout << "bgps" << bgps << std::endl;
+        }
+
+        auto parseVarOrTerm(SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
+            if (varOrTerm->var() != nullptr)
+                return std::variant<Variable, Term>{extractVariable(varOrTerm->var())};
+            else
+                return std::variant<Variable, Term>{parseGraphTerm(varOrTerm->graphTerm())};
+        }
+
+        auto parseObject(SparqlParser::ObjectContext *obj) -> std::variant<Variable, Term> {
+            SparqlParser::VarOrTermContext *varOrTerm = obj->graphNode()->varOrTerm();
+            // TODO: consider obj->graphNode()->triplesNode()
+            return parseVarOrTerm(varOrTerm);
+        }
+
+        auto parseVerb(SparqlParser::VerbContext *verb) -> std::variant<Variable, Term> {
+            if (SparqlParser::VarOrIRIrefContext *varOrIRIref = verb->varOrIRIref(); varOrIRIref != nullptr) {
+                if (varOrIRIref->var() != nullptr)
+                    return std::variant<Variable, Term>{extractVariable(varOrIRIref->var())};
+                else
+                    return std::variant<Variable, Term>{URIRef(varOrIRIref->getText())};
+            } else { // is 'a'
+                return std::variant<Variable, Term>(URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"});
+            }
         }
 
         auto getSelectModifier(SparqlParser::SelectQueryContext *select) -> SelectModifier {
