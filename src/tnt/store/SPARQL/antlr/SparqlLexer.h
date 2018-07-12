@@ -1,5 +1,5 @@
 
-// Generated from grammar/Sparql.g4 by ANTLR 4.7.1
+// Generated from Sparql.g4 by ANTLR 4.7.1
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include "antlr4-runtime.h"
 
 
+namespace tnt::store::sparql::detail {
 
 
 class  SparqlLexer : public antlr4::Lexer {
@@ -70,3 +71,4 @@ private:
   static Initializer _init;
 };
 
+}  // namespace tnt::store::sparql::detail

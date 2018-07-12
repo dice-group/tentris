@@ -1,5 +1,5 @@
 
-// Generated from grammar/Sparql.g4 by ANTLR 4.7.1
+// Generated from Sparql.g4 by ANTLR 4.7.1
 
 #pragma once
 
@@ -7,6 +7,8 @@
 #include "antlr4-runtime.h"
 #include "SparqlListener.h"
 
+
+namespace tnt::store::sparql::detail {
 
 /**
  * This class provides an empty implementation of SparqlListener,
@@ -30,6 +32,9 @@ public:
 
   virtual void enterSelectQuery(SparqlParser::SelectQueryContext * /*ctx*/) override { }
   virtual void exitSelectQuery(SparqlParser::SelectQueryContext * /*ctx*/) override { }
+
+  virtual void enterSelectModifier(SparqlParser::SelectModifierContext * /*ctx*/) override { }
+  virtual void exitSelectModifier(SparqlParser::SelectModifierContext * /*ctx*/) override { }
 
   virtual void enterConstructQuery(SparqlParser::ConstructQueryContext * /*ctx*/) override { }
   virtual void exitConstructQuery(SparqlParser::ConstructQueryContext * /*ctx*/) override { }
@@ -231,3 +236,4 @@ public:
 
 };
 
+}  // namespace tnt::store::sparql::detail

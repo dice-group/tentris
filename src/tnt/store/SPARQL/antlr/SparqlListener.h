@@ -1,5 +1,5 @@
 
-// Generated from grammar/Sparql.g4 by ANTLR 4.7.1
+// Generated from Sparql.g4 by ANTLR 4.7.1
 
 #pragma once
 
@@ -7,6 +7,8 @@
 #include "antlr4-runtime.h"
 #include "SparqlParser.h"
 
+
+namespace tnt::store::sparql::detail {
 
 /**
  * This interface defines an abstract listener for a parse tree produced by SparqlParser.
@@ -28,6 +30,9 @@ public:
 
   virtual void enterSelectQuery(SparqlParser::SelectQueryContext *ctx) = 0;
   virtual void exitSelectQuery(SparqlParser::SelectQueryContext *ctx) = 0;
+
+  virtual void enterSelectModifier(SparqlParser::SelectModifierContext *ctx) = 0;
+  virtual void exitSelectModifier(SparqlParser::SelectModifierContext *ctx) = 0;
 
   virtual void enterConstructQuery(SparqlParser::ConstructQueryContext *ctx) = 0;
   virtual void exitConstructQuery(SparqlParser::ConstructQueryContext *ctx) = 0;
@@ -224,3 +229,4 @@ public:
 
 };
 
+}  // namespace tnt::store::sparql::detail

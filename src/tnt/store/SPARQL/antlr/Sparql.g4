@@ -54,8 +54,13 @@ prefixDecl
     ;
 
 selectQuery
-    : 'SELECT' ( 'DISTINCT' | 'REDUCED' )? ( var+ | '*' ) datasetClause* whereClause solutionModifier
+    : 'SELECT' selectModifier ( var+ | '*' ) datasetClause* whereClause solutionModifier
     ;
+
+selectModifier
+    : ('DISTINCT'|'REDUCE')?
+    ;
+
 
 constructQuery
     : 'CONSTRUCT' constructTemplate datasetClause* whereClause solutionModifier
