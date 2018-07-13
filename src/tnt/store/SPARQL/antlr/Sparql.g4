@@ -306,7 +306,18 @@ rdfLiteral
     ;
 
 numericLiteral
-    : numericLiteralUnsigned | numericLiteralPositive | numericLiteralNegative
+    : integerNumeric | decimalNumeric | doubleNumberic;
+
+integerNumeric
+    : (('+')? INTEGER) | INTEGER_NEGATIVE
+    ;
+
+decimalNumeric
+    : (('+')? DECIMAL) | DECIMAL_NEGATIVE
+    ;
+
+doubleNumberic
+    : ('+'? DOUBLE) |DOUBLE_NEGATIVE
     ;
 
 numericLiteralUnsigned

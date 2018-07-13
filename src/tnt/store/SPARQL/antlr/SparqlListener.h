@@ -202,6 +202,15 @@ public:
   virtual void enterNumericLiteral(SparqlParser::NumericLiteralContext *ctx) = 0;
   virtual void exitNumericLiteral(SparqlParser::NumericLiteralContext *ctx) = 0;
 
+  virtual void enterIntegerNumeric(SparqlParser::IntegerNumericContext *ctx) = 0;
+  virtual void exitIntegerNumeric(SparqlParser::IntegerNumericContext *ctx) = 0;
+
+  virtual void enterDecimalNumeric(SparqlParser::DecimalNumericContext *ctx) = 0;
+  virtual void exitDecimalNumeric(SparqlParser::DecimalNumericContext *ctx) = 0;
+
+  virtual void enterDoubleNumberic(SparqlParser::DoubleNumbericContext *ctx) = 0;
+  virtual void exitDoubleNumberic(SparqlParser::DoubleNumbericContext *ctx) = 0;
+
   virtual void enterNumericLiteralUnsigned(SparqlParser::NumericLiteralUnsignedContext *ctx) = 0;
   virtual void exitNumericLiteralUnsigned(SparqlParser::NumericLiteralUnsignedContext *ctx) = 0;
 

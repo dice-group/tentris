@@ -51,9 +51,10 @@ public:
     RuleNumericExpression = 51, RuleAdditiveExpression = 52, RuleMultiplicativeExpression = 53, 
     RuleUnaryExpression = 54, RulePrimaryExpression = 55, RuleBrackettedExpression = 56, 
     RuleBuiltInCall = 57, RuleRegexExpression = 58, RuleIriRefOrFunction = 59, 
-    RuleRdfLiteral = 60, RuleNumericLiteral = 61, RuleNumericLiteralUnsigned = 62, 
-    RuleNumericLiteralPositive = 63, RuleNumericLiteralNegative = 64, RuleBooleanLiteral = 65, 
-    RuleString = 66, RuleIriRef = 67, RulePrefixedName = 68, RuleBlankNode = 69
+    RuleRdfLiteral = 60, RuleNumericLiteral = 61, RuleIntegerNumeric = 62, 
+    RuleDecimalNumeric = 63, RuleDoubleNumberic = 64, RuleNumericLiteralUnsigned = 65, 
+    RuleNumericLiteralPositive = 66, RuleNumericLiteralNegative = 67, RuleBooleanLiteral = 68, 
+    RuleString = 69, RuleIriRef = 70, RulePrefixedName = 71, RuleBlankNode = 72
   };
 
   SparqlParser(antlr4::TokenStream *input);
@@ -128,6 +129,9 @@ public:
   class IriRefOrFunctionContext;
   class RdfLiteralContext;
   class NumericLiteralContext;
+  class IntegerNumericContext;
+  class DecimalNumericContext;
+  class DoubleNumbericContext;
   class NumericLiteralUnsignedContext;
   class NumericLiteralPositiveContext;
   class NumericLiteralNegativeContext;
@@ -1142,9 +1146,9 @@ public:
   public:
     NumericLiteralContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    NumericLiteralUnsignedContext *numericLiteralUnsigned();
-    NumericLiteralPositiveContext *numericLiteralPositive();
-    NumericLiteralNegativeContext *numericLiteralNegative();
+    IntegerNumericContext *integerNumeric();
+    DecimalNumericContext *decimalNumeric();
+    DoubleNumbericContext *doubleNumberic();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -1154,6 +1158,54 @@ public:
   };
 
   NumericLiteralContext* numericLiteral();
+
+  class  IntegerNumericContext : public antlr4::ParserRuleContext {
+  public:
+    IntegerNumericContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *INTEGER();
+    antlr4::tree::TerminalNode *INTEGER_NEGATIVE();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  IntegerNumericContext* integerNumeric();
+
+  class  DecimalNumericContext : public antlr4::ParserRuleContext {
+  public:
+    DecimalNumericContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *DECIMAL();
+    antlr4::tree::TerminalNode *DECIMAL_NEGATIVE();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  DecimalNumericContext* decimalNumeric();
+
+  class  DoubleNumbericContext : public antlr4::ParserRuleContext {
+  public:
+    DoubleNumbericContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *DOUBLE();
+    antlr4::tree::TerminalNode *DOUBLE_NEGATIVE();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  DoubleNumbericContext* doubleNumberic();
 
   class  NumericLiteralUnsignedContext : public antlr4::ParserRuleContext {
   public:

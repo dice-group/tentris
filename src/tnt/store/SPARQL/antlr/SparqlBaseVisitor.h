@@ -265,6 +265,18 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitIntegerNumeric(SparqlParser::IntegerNumericContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitDecimalNumeric(SparqlParser::DecimalNumericContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitDoubleNumberic(SparqlParser::DoubleNumbericContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitNumericLiteralUnsigned(SparqlParser::NumericLiteralUnsignedContext *ctx) override {
     return visitChildren(ctx);
   }

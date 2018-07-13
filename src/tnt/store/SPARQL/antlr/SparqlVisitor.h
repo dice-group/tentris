@@ -144,6 +144,12 @@ public:
 
     virtual antlrcpp::Any visitNumericLiteral(SparqlParser::NumericLiteralContext *context) = 0;
 
+    virtual antlrcpp::Any visitIntegerNumeric(SparqlParser::IntegerNumericContext *context) = 0;
+
+    virtual antlrcpp::Any visitDecimalNumeric(SparqlParser::DecimalNumericContext *context) = 0;
+
+    virtual antlrcpp::Any visitDoubleNumberic(SparqlParser::DoubleNumbericContext *context) = 0;
+
     virtual antlrcpp::Any visitNumericLiteralUnsigned(SparqlParser::NumericLiteralUnsignedContext *context) = 0;
 
     virtual antlrcpp::Any visitNumericLiteralPositive(SparqlParser::NumericLiteralPositiveContext *context) = 0;
