@@ -95,6 +95,15 @@ namespace tnt::store::sparql {
             std::set<Variable> variables{};
             std::set<std::vector<std::variant<Variable, Term>>> bgps;
             if (query != nullptr) {
+                std::map<std::string, std::string> prefixes{};
+                const std::vector<SparqlParser::PrefixDeclContext *> &prefixDecl = query->prologue()->prefixDecl();
+                for (auto &decl : prefixDecl) {
+                    prefixes[decl->PNAME_NS()->getText()] = std::string(decl->IRI_REF()->getText(), 1,
+                                                                        decl->IRI_REF()->getText().size() -
+                                                                        2); // remove < and > from <...>
+                }
+
+
                 SparqlParser::SelectQueryContext *select = query->selectQuery();
                 p_select_modifier = getSelectModifier(select);
                 std::vector<SparqlParser::VarContext *> vars = select->var();
@@ -112,7 +121,7 @@ namespace tnt::store::sparql {
                     SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
                     for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
                                                           propertyListNotEmpty->objectList())) {
-                        std::variant<Variable, Term> pred = parseVerb(pred_node);
+                        std::variant<Variable, Term> pred = parseVerb(pred_node, prefixes);
                         if (std::holds_alternative<Variable>(pred)) variables.insert(std::get<Variable>(pred));
                         for (auto &obj_node : obj_nodes->object()) {
                             std::variant<Variable, Term> obj = parseObject(obj_node);
@@ -126,7 +135,7 @@ namespace tnt::store::sparql {
 
             std::cout << "query variables" << query_variables << std::endl;
             std::cout << "variables" << variables << std::endl;
-//            std::cout << "bgps" << bgps << std::endl;
+            std::cout << "bgps" << bgps << std::endl;
         }
 
         auto parseVarOrTerm(SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
@@ -142,21 +151,52 @@ namespace tnt::store::sparql {
             return parseVarOrTerm(varOrTerm);
         }
 
-        auto parseVerb(SparqlParser::VerbContext *verb) -> std::variant<Variable, Term> {
+        auto parseVerb(SparqlParser::VerbContext *verb,
+                       const std::map<std::string, std::string> &prefixes) -> std::variant<Variable, Term> {
             if (SparqlParser::VarOrIRIrefContext *varOrIRIref = verb->varOrIRIref(); varOrIRIref != nullptr) {
-                if (varOrIRIref->var() != nullptr)
+                if (varOrIRIref->var() != nullptr) {
                     return std::variant<Variable, Term>{extractVariable(varOrIRIref->var())};
-                else
-                    return std::variant<Variable, Term>{URIRef(varOrIRIref->getText())};
+                } else {
+                    SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
+
+                    return std::variant<Variable, Term>{URIRef{getFullIriString(iriRef, prefixes)}};
+
+                }
             } else { // is 'a'
-                return std::variant<Variable, Term>(URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"});
+                return std::variant<Variable, Term>{
+                        URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"}};
+            }
+        }
+
+
+        auto getFullIriString(SparqlParser::IriRefContext *iriRef,
+                              const std::map<std::string, std::string> &prefixes) const -> std::string {
+            if (tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref != nullptr) {
+                return complete_ref->getText();
+            } else {
+                SparqlParser::PrefixedNameContext *prefixedName = iriRef->prefixedName();
+
+                if (tree::TerminalNode *pname_both = prefixedName->PNAME_LN();pname_both != nullptr) {
+                    const std::string &pname_both_str = pname_both->getText();
+                    unsigned long i = pname_both_str.find(':') + 1;
+                    const std::string &resolvedPrefix = prefixes.at(
+                            std::string{pname_both_str, 0, i});
+                    return {"<" + resolvedPrefix +
+                            std::string{pname_both_str, i,
+                                        pname_both_str.size() - i} +
+                            ">"};
+                } else {
+                    tree::TerminalNode *default_prefix = prefixedName->PNAME_NS();
+                    const std::string &resolvedPrefix = prefixes.at(default_prefix->getText());
+                    return {"<" + resolvedPrefix + ">"};
+                }
             }
         }
 
         auto getSelectModifier(SparqlParser::SelectQueryContext *select) -> SelectModifier {
             SparqlParser::SelectModifierContext *modifier = select->selectModifier();
             if (modifier->children.size() != 0) {
-                const std::__cxx11::string &string = modifier->children[0]->toString();
+                const std::string &string = modifier->children[0]->toString();
                 if (string.compare("DISTINCT") == 0) {
                     return DISTINCT;
                 } else {

@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <cinttypes>
 #include <memory>
+#include <variant>
 
 
 std::ostream &operator<<(std::ostream &os, const uint8_t &element) {
@@ -20,6 +21,15 @@ std::ostream &operator<<(std::ostream &os, const uint8_t &element) {
 template<typename T1, typename T2>
 std::ostream &operator<<(std::ostream &os, const std::tuple<T1, T2> &t) {
     os << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ")";
+    return os;
+}
+
+template<typename T1, typename T2>
+std::ostream &operator<<(std::ostream &os, const std::variant<T1, T2> &t) {
+    if (std:: holds_alternative<T1>(t))
+        os << "<" << 0 << " : " << std::get<T1>(t) << ">";
+    else
+        os << "<" << 1 << " : " << std::get<T2>(t) << ">";
     return os;
 }
 

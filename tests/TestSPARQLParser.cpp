@@ -5,14 +5,12 @@
 
 TEST(TestSPARQLParser, da) {
     using namespace tnt::store::sparql;
-    SPARQLParser{"SELECT ?description ?date ?amount\n"
-                 "WHERE\n"
-                 "{?meal e:description ?description ;\n"
-                 "        e:date ?date ;\n"
-                 "        e:amount ?amount ,"
-                 "?date }"}.getSubscript();
-
-
+    SPARQLParser{"PREFIX  dc:  <http://purl.org/dc/elements/1.1/>"
+                 "PREFIX  ns:  <http://example.org/ns#>"
+                 "SELECT  ?title ?price "
+                 "WHERE   { ?x ns:price ?price ."
+                 "FILTER (?price < 30.5)"
+                 "?x a ?title . }"}.getSubscript();
 }
 
 
