@@ -51,6 +51,12 @@ namespace tnt::store {
             bool operator()(const std::unique_ptr<Term> &a, const std::unique_ptr<Term> &b) const {
                 return a->getIdentifier().compare(b->getIdentifier()) < 0;
             }
+            bool operator()(const std::unique_ptr<Term> &a, const Term &b) const {
+                return a->getIdentifier().compare(b.getIdentifier()) < 0;
+            }
+            bool operator()(const Term &a, const std::unique_ptr<Term> &b) const {
+                return a.getIdentifier().compare(b->getIdentifier()) < 0;
+            }
         };
 
         std::map<key_part_t, std::unique_ptr<Term> *> _id2term{};
@@ -63,6 +69,12 @@ namespace tnt::store {
 
         const key_part_t &at(const std::unique_ptr<Term> &term) const {
             return _term2id.at(term);
+        }
+
+        const key_part_t &at(const Term &term) const {
+            std::unique_ptr<Term> temp_term{new Term{term}};
+
+            return _term2id.at(temp_term);
         }
 
         bool contains(const std::unique_ptr<Term> &term) const {

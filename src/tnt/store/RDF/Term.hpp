@@ -29,12 +29,15 @@ namespace tnt::store {
         std::string_view _lang = nullptr;
         std::string_view _type = nullptr;
 
+
+
         explicit Term(std::string identifier) : _identifier(identifier) {};
 
         explicit Term(NodeType node_type) : _node_type{node_type} {};
 
         Term(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
     public:
+        Term(const Term &term) = default;
         const std::string &getIdentifier() const {
             return _identifier;
         }

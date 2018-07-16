@@ -4,11 +4,14 @@
 
 #include <serd-0/serd/serd.h>
 #include <string>
+#include <optional>
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/util/container/NDMap.hpp"
 #include "tnt/store/SPARQL/SPARQLParser.hpp"
+#include "tnt/tensor/einsum/operator/Einsum.hpp"
+#include "tnt/tensor/einsum/operator/CrossProduct.hpp"
 
 
 namespace tnt::store {
@@ -55,7 +58,47 @@ namespace tnt::store {
         }
 
         NDMap<size_t> query(std::string sparql) {
-            // TODO: implement
+            using namespace tnt::util::types;
+            using Operands =  typename std::vector<BoolHyperTrie *>;
+            sparql::SPARQLParser parser{sparql};
+
+            std::vector<std::vector<std::optional<Term>>> op_keys = parser.getOperandKeys();
+            Operands operands;
+            for (const auto &op_key : op_keys) {
+                std::vector<std::optional<key_part_t >> id_op_key(3);
+                int count = 0;
+                for (const auto &[pos, op_key_part] : enumerate(op_key)) {
+                    if (op_key_part) {
+                        ++count;
+                        try {
+                            key_part_t ind = termIndex.at(*op_key_part);
+                            id_op_key[pos] = {ind};
+                        } catch (...) {
+                            return {}; // a keypart was not in the index so the result is zero anyways.
+                        }
+                    }
+                }
+
+                if (count)
+                    try {
+                        BoolHyperTrie * operand = std::get<BoolHyperTrie *>(trie.get(id_op_key));
+                        operands.push_back(operand);
+
+
+                    } catch (...) {
+                        return {}; // a triple pattern has an empty solution.
+                    }
+            }
+            tensor::einsum::Subscript subscript = parser.getSubscript();
+            const tensor::einsum::Subscript &optimized = subscript.optimized();
+            if (optimized.getSubSubscripts().empty()){
+                tnt::tensor::einsum::operators::Einsum einsumOp{optimized};
+                return einsumOp.getResult(operands);
+            } else{
+                tnt::tensor::einsum::operators::CrossProduct crossprodOp{optimized};
+                const tensor::einsum::operators::CrossProduct::CrossProductResult &result = crossprodOp.getResult(operands);
+                // TODO: go on here
+            }
             return {};
         }
 
@@ -79,13 +122,13 @@ namespace tnt::store {
     auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
         std::optional<std::string> type = (type_node != nullptr)
-                                                   ? std::optional<std::string>{{(char *) (type_node->buf),
-                                                                                                 size_t(type_node->n_chars)}}
-                                                   : std::nullopt;
+                                          ? std::optional<std::string>{{(char *) (type_node->buf),
+                                                                               size_t(type_node->n_chars)}}
+                                          : std::nullopt;
         std::optional<std::string> lang = (lang_node != nullptr)
-                                                   ? std::optional<std::string>{{(char *) (lang_node->buf),
-                                                                                                 size_t(lang_node->n_chars)}}
-                                                   : std::nullopt;
+                                          ? std::optional<std::string>{{(char *) (lang_node->buf),
+                                                                               size_t(lang_node->n_chars)}}
+                                          : std::nullopt;
 
         return std::unique_ptr<Term>{
                 new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};

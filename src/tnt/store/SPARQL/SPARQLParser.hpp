@@ -16,6 +16,7 @@
 #include <string>
 #include <iostream>
 #include <queue>
+#include <optional>
 
 
 namespace tnt::store::sparql {
@@ -113,15 +114,6 @@ namespace tnt::store::sparql {
 
         }
 
-        void registerVariable(std::variant<Variable, Term> &variant) {
-            if (std::holds_alternative<Variable>(variant)) {
-                Variable &var = std::get<Variable>(variant);
-                if (not var._anonym)
-                    variables.insert(var);
-                else
-                    anonym_variables.insert(var);
-            }
-        }
 
         auto getSubscript() -> tensor::einsum::Subscript {
             using namespace tnt::tensor::einsum;
@@ -133,10 +125,14 @@ namespace tnt::store::sparql {
             std::vector<std::vector<label_t>> ops_labels{};
             for (const auto &bgp : bgps) {
                 std::vector<label_t> op_labels{};
+                int count = 0;
                 for (const std::variant<Variable, Term> &res : bgp)
-                    if (std::holds_alternative<Variable>(res))
+                    if (std::holds_alternative<Variable>(res)) {
                         op_labels.push_back(var_to_label[std::get<Variable>(res)]);
-                ops_labels.push_back(op_labels);
+                        ++count;
+                    }
+                if (count) // removes operands without labels/variables
+                    ops_labels.push_back(op_labels);
             }
 
             std::vector<label_t> result_labels{};
@@ -146,6 +142,34 @@ namespace tnt::store::sparql {
 
             return Subscript{ops_labels, result_labels};
         }
+
+        auto getOperandKeys() -> std::vector<std::vector<std::optional<Term>>> {
+            using namespace tnt::util::types;
+            std::vector<std::vector<std::optional<Term>>> op_keys;
+            for (const auto &bgp : bgps) {
+                std::vector<std::optional<Term>> op_key{};
+                for (const std::variant<Variable, Term> &res : bgp)
+                    if (std::holds_alternative<Term>(res))
+                        op_key.push_back({std::get<Term>(res)});
+                    else
+                        op_key.push_back(std::nullopt);
+                op_keys.push_back(op_key);
+            }
+            return op_keys;
+        }
+
+    private:
+
+        void registerVariable(std::variant<Variable, Term> &variant) {
+            if (std::holds_alternative<Variable>(variant)) {
+                Variable &var = std::get<Variable>(variant);
+                if (not var._anonym)
+                    variables.insert(var);
+                else
+                    anonym_variables.insert(var);
+            }
+        }
+
 
         auto parseGraphTerm(SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
             if (auto *iriRef = termContext->iriRef(); iriRef) {
