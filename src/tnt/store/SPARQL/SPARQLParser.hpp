@@ -7,14 +7,14 @@
 #include "tnt/store/SPARQL/antlr/SparqlBaseListener.cpp"
 // <--- move to own library to remove it from global namespace
 #include "tnt/tensor/einsum/Subscript.hpp"
-#include "tnt/store/RDF/Term.hpp"
 #include <antlr4-runtime.h>
 #include "tnt/util/All.hpp"
+#include "tnt/store/RDF/Term.hpp"
+#include "tnt/store/SPARQL/Variable.hpp"
 
 #include <sstream>
 #include <string>
 #include <iostream>
-#include <memory>
 #include <queue>
 
 
@@ -23,35 +23,6 @@ namespace tnt::store::sparql {
         NONE,
         DISTINCT,
         REDUCE
-    };
-
-    class Variable {
-    public:
-        const std::string _var_name;
-        const bool _anonym;
-
-        explicit Variable(std::string var_name, bool anonym = false) : _var_name{var_name}, _anonym{anonym} {}
-
-        inline bool operator==(const Variable &rhs) const {
-            return _var_name == rhs._var_name;
-        }
-
-        inline bool operator!=(const Variable &rhs) const {
-            return _var_name != rhs._var_name;
-        }
-
-        inline bool operator<(const Variable &rhs) const {
-            return _var_name < rhs._var_name;
-        }
-
-        inline bool operator>(const Variable &rhs) const {
-            return _var_name > rhs._var_name;
-        }
-
-        friend std::ostream &operator<<(std::ostream &os, const Variable &p) {
-            os << "?" << p._var_name;
-            return os;
-        }
     };
 
     class SPARQLParser {
@@ -66,7 +37,7 @@ namespace tnt::store::sparql {
 
         std::map<std::string, std::string> prefixes{};
         SelectModifier p_select_modifier;
-        std::set<Variable> query_variables{};
+        std::vector<Variable> query_variables{};
         std::set<Variable> variables{};
         std::set<Variable> anonym_variables{};
         std::set<std::vector<std::variant<Variable, Term>>> bgps;
@@ -95,7 +66,7 @@ namespace tnt::store::sparql {
                 bool all_vars = false;
                 if (std::vector<SparqlParser::VarContext *> vars = select->var(); not vars.empty())
                     for (auto &var : vars)
-                        query_variables.insert(extractVariable(var));
+                        query_variables.push_back(extractVariable(var));
                 else
                     all_vars = true;
 
@@ -126,15 +97,16 @@ namespace tnt::store::sparql {
                         tripleBlocks.push(next_block);
                 }
                 if (all_vars)
-                    query_variables = variables;
+                    for (const auto &variable : variables)
+                        query_variables.push_back(variable);
 
                 if (not query_variables.size())
                     throw std::invalid_argument{"Empty query variables is not allowed."};
                 std::cout << "query variables" << query_variables << std::endl;
                 std::cout << "variables" << variables << std::endl;
                 std::cout << "bgps" << bgps << std::endl;
-                if (not std::includes(variables.cbegin(), variables.cend(), query_variables.cbegin(),
-                                      query_variables.cend()))
+                if (std::set<Variable> var_set{query_variables.begin(), query_variables.end()};
+                        not std::includes(variables.cbegin(), variables.cend(), var_set.cbegin(), var_set.cend()))
                     throw std::invalid_argument{"query variables must be a subset of BGP variables."};
             } else
                 throw std::invalid_argument{"query could not be parsed."};
@@ -152,10 +124,27 @@ namespace tnt::store::sparql {
         }
 
         auto getSubscript() -> tensor::einsum::Subscript {
-            using namespace tnt::store::sparql::detail;
-            using namespace antlr4;
+            using namespace tnt::tensor::einsum;
+            using namespace tnt::util::types;
+            std::map<Variable, label_t> var_to_label{};
+            for (const auto &[id, var] : enumerate(variables)) {
+                var_to_label[var] = id;
+            }
+            std::vector<std::vector<label_t>> ops_labels{};
+            for (const auto &bgp : bgps) {
+                std::vector<label_t> op_labels{};
+                for (const std::variant<Variable, Term> &res : bgp)
+                    if (std::holds_alternative<Variable>(res))
+                        op_labels.push_back(var_to_label[std::get<Variable>(res)]);
+                ops_labels.push_back(op_labels);
+            }
 
+            std::vector<label_t> result_labels{};
+            for (const auto &query_variable : query_variables) {
+                result_labels.push_back(var_to_label[query_variable]);
+            }
 
+            return Subscript{ops_labels, result_labels};
         }
 
         auto parseGraphTerm(SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
@@ -173,7 +162,8 @@ namespace tnt::store::sparql {
 
                     std::string temp;
 
-                    std::regex_replace(std::back_inserter(temp), literal1.begin() + 1, literal1.end() - 1, double_quote,
+                    std::regex_replace(std::back_inserter(temp), literal1.begin() + 1, literal1.end() - 1,
+                                       double_quote,
                                        "\\\"");
                     std::regex_replace(std::back_inserter(literal_string), temp.begin() + 1, temp.end() - 1,
                                        single_quote, "'");
@@ -200,7 +190,8 @@ namespace tnt::store::sparql {
                                 "\"" + plus->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#decimal>"};
                     } else {
                         return Literal{
-                                "\"" + decimalNumeric->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#decimal>"};
+                                "\"" + decimalNumeric->getText() +
+                                "\"^^<http://www.w3.org/2001/XMLSchema#decimal>"};
                     }
                 } else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
                     if (tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
@@ -218,7 +209,8 @@ namespace tnt::store::sparql {
                                 "\"" + plus->getText() + "\"^^\"http://www.w3.org/2001/XMLSchema#integer>"};
                     } else {
                         return Literal{
-                                "\"" + decimalNumeric->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
+                                "\"" + decimalNumeric->getText() +
+                                "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
                     }
                 }
 
