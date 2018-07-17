@@ -3,14 +3,9 @@
 
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
-#include "tnt/tensor/einsum/Subscript.hpp"
 
 using namespace tnt::util::types;
-using namespace tnt::tensor::hypertrie;
-using namespace tnt::tensor::einsum::operators;
 using namespace tnt::tensor::einsum;
-template<typename T>
-using NDMap = tnt::util::container::NDMap<T>;
 
 TEST(TestSubscript, print_and_check_norming) {
     std::vector<std::vector<label_t >> raw_op_sc{
@@ -26,8 +21,22 @@ TEST(TestSubscript, print_and_check_norming) {
     Subscript sc{raw_op_sc, raw_res_sc};
     std::cout << sc << std::endl;
     // check all labels
-    const std::set<label_t> &all_labels = std::set<label_t>{0, 1, 2, 3};
+    const std::set<label_t> all_labels{0, 1, 2, 3};
     ASSERT_EQ(all_labels, sc.getAllLabels());
+
+    const std::vector<label_t> result_labels{0, 1};
+    ASSERT_EQ(result_labels, sc.getResultLabels());
+
+    const std::vector<std::vector<label_t>> ops_labels{{0, 2, 3},
+                                                       {3, 2, 0, 2},
+                                                       {1}};
+    for (const auto &[op_pos, op_labels]: enumerate(ops_labels)) {
+        ASSERT_EQ(op_labels, sc.operandLabels(op_pos));
+    }
+
+
+//    sc.getResultLabels()
+
 //
 //    vector<label_t> op_labels0{0, 1, 2};
 //    ASSERT_TRUE(op_labels0 == sc.getOperandsLabels().at(0));
