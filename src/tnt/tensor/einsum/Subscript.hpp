@@ -8,6 +8,7 @@
 #include <numeric>
 #include <algorithm>
 #include <memory>
+#include <ostream>
 
 #include "tnt/util/All.hpp"
 #include "tnt/util/UndirectedGraph.hpp"
@@ -494,6 +495,21 @@ namespace tnt::tensor::einsum {
             return norm_operand_labels;
         }
 
+    public:
+        friend std::ostream &operator<<(std::ostream &os, const Subscript &subscript) {
+            os << "_all_labels: " << subscript._all_labels << " _operands_labels: " << subscript._operands_labels
+               << " _result_labels: " << subscript._result_labels << " _original_op_poss: "
+               << subscript._original_op_poss << " _sub_subscripts: " << subscript._sub_subscripts
+               << " _distinct_operands_labels: " << subscript._distinct_operands_labels << " _label_poss_in_operands: "
+               << subscript._label_poss_in_operands << " _label_pos_in_result: " << subscript._label_pos_in_result
+               << " _operands_with_label: " << subscript._operands_with_label << " _unique_non_result_labels: "
+               << subscript._unique_non_result_labels << " _operands_with_unique_non_result_labels: "
+               << subscript._operands_with_unique_non_result_labels << " _operands_without_unique_non_result_labels: "
+               << subscript._operands_without_unique_non_result_labels << " _independent_label_subsets: "
+               << subscript._independent_label_subsets << " _unique_non_result_contractions: "
+               << subscript._unique_non_result_contractions;
+            return os;
+        }
 
     };
 }
