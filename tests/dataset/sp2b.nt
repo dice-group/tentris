@@ -1,0 +1,691 @@
+<http://localhost/vocabulary/bench/Journal> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/Proceedings> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/Inproceedings> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/Article> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/Www> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/MastersThesis> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/PhDThesis> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/Incollection> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/vocabulary/bench/Book> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/persons/Paul_Erdoes> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+<http://localhost/persons/Paul_Erdoes> <http://xmlns.com/foaf/0.1/name> "Paul Erdoes"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/misc/UnknownDocument> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Document> .
+<http://localhost/publications/journals/Journal1/1940> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Journal> .
+<http://localhost/publications/journals/Journal1/1940> <http://swrc.ontoware.org/ontology#number> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1940> <http://purl.org/dc/elements/1.1/title> "Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/journals/Journal1/1940> <http://swrc.ontoware.org/ontology#volume> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1940> <http://purl.org/dc/terms/issued> "1940"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1940> <http://swrc.ontoware.org/ontology#editor> _:genid22 .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://localhost/vocabulary/bench/abstract> "unmuzzling measles decentralizing hogfishes gantleted richer succories dwelling scrapped prat islanded burlily thanklessly swiveled polers oinked apnea maxillary dumpers bering evasiveness toto teashop reaccepts gunneries exorcises pirog desexes summable heliocentricity excretions recelebrating dually plateauing reoccupations embossers cerebrum gloves mohairs admiralties bewigged playgoers cheques batting waspishly stilbestrol villainousness miscalling firefanged skeins equalled sandwiching bewitchment cheaters riffled kerneling napoleons rifer splinting surmisers satisfying undamped sharpers forbearer anesthetization undermentioned outflanking funnyman commuted lachrymation floweret arcadian acridities unrealistic substituting surges preheats loggias reconciliating photocatalyst lenity tautological jambing sodality outcrop slipcases phenylketonuria grunts venturers valiantly unremorsefully extradites stollens ponderers conditione loathly cancels debiting parrots paraguayans resonates"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://localhost/vocabulary/bench/cdrom> "http://www.hogfishes.tld/richer/succories.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.gantleted.tld/succories/dwelling.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://swrc.ontoware.org/ontology#month> "4"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://swrc.ontoware.org/ontology#note> "overbites terminals giros podgy vagus kinkiest xix recollected"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://swrc.ontoware.org/ontology#pages> "110"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://purl.org/dc/elements/1.1/title> "richer dwelling scrapped"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://xmlns.com/foaf/0.1/homepage> "http://www.succories.tld/scrapped/prat.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://purl.org/dc/elements/1.1/creator> _:genid1 .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1940/Article1> <http://purl.org/dc/terms/references> _:genid2 .
+_:genid1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid1 <http://xmlns.com/foaf/0.1/name> "Adamanta Schlitt"^^<http://www.w3.org/2001/XMLSchema#string> .
+_:genid2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag> .
+_:genid2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <http://localhost/misc/UnknownDocument> .
+_:genid2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#_2> <http://localhost/misc/UnknownDocument> .
+_:genid2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#_3> <http://localhost/misc/UnknownDocument> .
+_:genid2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#_4> <http://localhost/misc/UnknownDocument> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://localhost/vocabulary/bench/abstract> "householder overeducated objurgate treaties preprocessor despising loftily yabber reprovingly blungers dwarflike effulgences coreless tuberculoses environs hulled preexamination oralogy tibetans slavishly hipless prs bluejays cuppier nonsurgical skimpiest outpoured dissociated heartier petitionee brill neologic intermuscular fobbed transcribed swifters redigesting ostinato recalculation safest signiory latchets inflecting trephines hops exec junketeers isolators reducing nethermost nonfiction retrogressions eliminates unknowns mongoloids danker raunchiness perspicuously disjoined nigglings midmonths labium peeped daydreams permuting immediately canzona interrelated cooked reformers goodwife technicolor plenishes nippy bounden occulters blubberer amenities desecrated tetrachlorides loutish polygony malines cliffhanger entailments reindexed bedstraws thoughtless elation swampland earings circumscribed paralyzingly pouchy surrejoinders chestiest measurage tonsils pasturage thurifer teazle"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://localhost/vocabulary/bench/cdrom> "http://www.dwelling.tld/prat/islanded.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.scrapped.tld/islanded/burlily.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://swrc.ontoware.org/ontology#month> "8"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://swrc.ontoware.org/ontology#note> "fringier rhythmical wastebaskets powderer immigrates inserter plights corollaries"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://swrc.ontoware.org/ontology#pages> "114"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://purl.org/dc/elements/1.1/title> "prat burlily thanklessly"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://xmlns.com/foaf/0.1/homepage> "http://www.islanded.tld/thanklessly/swiveled.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://purl.org/dc/elements/1.1/creator> _:genid3 .
+<http://localhost/publications/articles/Journal1/1940/Article2> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid3 <http://xmlns.com/foaf/0.1/name> "Cecil Kochler"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://localhost/vocabulary/bench/abstract> "gaudiness irades inadvisability disciplinarians majors manifestly decaffeinates scalepan folklorists attractive yeller cognizably reminds teratoid coadjutors thuggeries nondestructive maladjustments subpartnership cordilleras recirculations alkalin succulently marquise underlaid neurosurgeon innervated hunts barrens emanative blowpipe varies thickest machinability orbiters tormentor owner zanier corkscrewed promiscuousness clewed reassemble hesitation fainting croupy bacchanalia regainers teardown margarins inconvenience triunities dipped votarists kilogram timbrel presell woodcraft reupholstered xerosis steamers neurological warranter flashings oops detonations chippering photospherically pouchiest canvasses pyorrheas cartons acquirable refocus vividness administrated remedying prophetically allayed zinged fridge stained unintentional antiquarians dilutes quantitatively shovels vitric mendelism kookiest leavening embrocation casteless uroliths sashes marrieds fungic gasogenes obnoxiously dismounting endorser libations"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://localhost/vocabulary/bench/cdrom> "http://www.burlily.tld/swiveled/polers.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.thanklessly.tld/polers/oinked.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://swrc.ontoware.org/ontology#note> "harrower claymores shiftlessly feedstuffs lyricizing hierarchs composedly taunting"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://swrc.ontoware.org/ontology#pages> "117"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://purl.org/dc/elements/1.1/title> "swiveled oinked apnea"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://xmlns.com/foaf/0.1/homepage> "http://www.polers.tld/apnea/maxillary.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://purl.org/dc/elements/1.1/creator> _:genid4 .
+<http://localhost/publications/articles/Journal1/1940/Article3> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid4 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid4 <http://xmlns.com/foaf/0.1/name> "Amalia Krajcik"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://localhost/vocabulary/bench/abstract> "dragged lobsters careering triplets hepatics colonies defalcate transplantations forfends voucherable intercepting jeered immunopathology addends surveiled wagers joysticks nonliving agric proliferating disintegrator oblongish leapfrogged overabundant legworks easeful cognize hoatzin toiled nonspecialized vrouw squads tantalums overweight readmits loopholing tattles irradiates befriends insinuators restorers rebroadcasting grousing overdrinking frow demarcators tasselling crocked wharfinger reconverting washboards overdrank recalculations dumps carousels acidly deponent venges shivas northers mutualist harebrained earthworms lunk forefended overtaking sourdoughs traditionless spoliator earthlier stenographers reallocating aslope seawaters ruminative patronly hydrozoon webbier foxiness toddy playlets mouthiest delegati renege briefless regularities planarity stubborner waterbeds disinclines antonyms anesthetize chanticleer administrants preengaging unitarians reevaluate rekeys ochroid climatotherapy crocks"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://localhost/vocabulary/bench/cdrom> "http://www.oinked.tld/maxillary/dumpers.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.apnea.tld/dumpers/bering.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://swrc.ontoware.org/ontology#note> "carpetbag peonism metropolitanize twanged pedros nonforfeitable dissociative apostacy"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://swrc.ontoware.org/ontology#pages> "120"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://purl.org/dc/elements/1.1/title> "maxillary bering evasiveness"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://xmlns.com/foaf/0.1/homepage> "http://www.dumpers.tld/evasiveness/toto.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://purl.org/dc/elements/1.1/creator> _:genid5 .
+<http://localhost/publications/articles/Journal1/1940/Article4> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid5 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid5 <http://xmlns.com/foaf/0.1/name> "Martina Mcclary"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.bering.tld/toto/teashop.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://swrc.ontoware.org/ontology#note> "malting footgear abominators trilobate jigsawed kickstands prated songstresses"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://swrc.ontoware.org/ontology#pages> "122"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://purl.org/dc/elements/1.1/title> "evasiveness teashop reaccepts"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://xmlns.com/foaf/0.1/homepage> "http://www.toto.tld/reaccepts/gunneries.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://purl.org/dc/elements/1.1/creator> _:genid6 .
+<http://localhost/publications/articles/Journal1/1940/Article5> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid6 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid6 <http://xmlns.com/foaf/0.1/name> "Ashley Kesselring"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.teashop.tld/gunneries/exorcises.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://swrc.ontoware.org/ontology#note> "incorporeal piazadora hearings legation subendorsed hippocampus miscalculates whetters"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://swrc.ontoware.org/ontology#pages> "124"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://purl.org/dc/elements/1.1/title> "reaccepts exorcises pirog"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://xmlns.com/foaf/0.1/homepage> "http://www.gunneries.tld/pirog/desexes.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://purl.org/dc/elements/1.1/creator> _:genid7 .
+<http://localhost/publications/articles/Journal1/1940/Article6> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid7 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid7 <http://xmlns.com/foaf/0.1/name> "Tatsukichi Gerstenberger"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.exorcises.tld/desexes/summable.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://swrc.ontoware.org/ontology#note> "leviathans misadvised tiltyard numberable yawing prosecutrices pegboxes feeblish"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://swrc.ontoware.org/ontology#pages> "126"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://purl.org/dc/elements/1.1/title> "pirog summable heliocentricity"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://xmlns.com/foaf/0.1/homepage> "http://www.desexes.tld/heliocentricity/excretions.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://purl.org/dc/elements/1.1/creator> _:genid8 .
+<http://localhost/publications/articles/Journal1/1940/Article7> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid8 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid8 <http://xmlns.com/foaf/0.1/name> "Fahroni Anglea"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.summable.tld/excretions/recelebrating.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://swrc.ontoware.org/ontology#note> "extenuation stranders abbesses strongboxes chromas oats pulling leatheriness"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://swrc.ontoware.org/ontology#pages> "128"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://purl.org/dc/elements/1.1/title> "heliocentricity recelebrating dually"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://xmlns.com/foaf/0.1/homepage> "http://www.excretions.tld/dually/plateauing.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://purl.org/dc/elements/1.1/creator> _:genid9 .
+<http://localhost/publications/articles/Journal1/1940/Article8> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid9 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid9 <http://xmlns.com/foaf/0.1/name> "Akina Jang"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.recelebrating.tld/plateauing/reoccupations.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://swrc.ontoware.org/ontology#note> "witchy horologe bigamistic furrows eloquence cobwebbier divorcing incidentally"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://swrc.ontoware.org/ontology#pages> "130"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://purl.org/dc/elements/1.1/title> "dually reoccupations embossers"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://xmlns.com/foaf/0.1/homepage> "http://www.plateauing.tld/embossers/cerebrum.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://purl.org/dc/elements/1.1/creator> _:genid10 .
+<http://localhost/publications/articles/Journal1/1940/Article9> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid10 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid10 <http://xmlns.com/foaf/0.1/name> "Edmondo Rommelfanger"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.reoccupations.tld/cerebrum/gloves.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://swrc.ontoware.org/ontology#note> "retorts insoles stockman queening allergist doyenne placarders septuagenarians"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://swrc.ontoware.org/ontology#pages> "132"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://purl.org/dc/elements/1.1/title> "embossers gloves mohairs"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://xmlns.com/foaf/0.1/homepage> "http://www.cerebrum.tld/mohairs/admiralties.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://purl.org/dc/elements/1.1/creator> _:genid11 .
+<http://localhost/publications/articles/Journal1/1940/Article10> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid11 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid11 <http://xmlns.com/foaf/0.1/name> "Pilib Seu"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.gloves.tld/admiralties/bewigged.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://swrc.ontoware.org/ontology#note> "safecracker cacaos mignonette tailored whews beholden branchless primitiveness"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://swrc.ontoware.org/ontology#pages> "134"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://purl.org/dc/elements/1.1/title> "mohairs bewigged playgoers"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://xmlns.com/foaf/0.1/homepage> "http://www.admiralties.tld/playgoers/cheques.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article11> <http://purl.org/dc/elements/1.1/creator> _:genid12 .
+_:genid12 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid12 <http://xmlns.com/foaf/0.1/name> "Dell Kosel"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.bewigged.tld/cheques/batting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://swrc.ontoware.org/ontology#note> "crimper tonners unfair southpaws scorify supportance jumpiest whanged"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://swrc.ontoware.org/ontology#pages> "136"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://purl.org/dc/elements/1.1/title> "playgoers batting waspishly"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://xmlns.com/foaf/0.1/homepage> "http://www.cheques.tld/waspishly/stilbestrol.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article12> <http://purl.org/dc/elements/1.1/creator> _:genid13 .
+_:genid13 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid13 <http://xmlns.com/foaf/0.1/name> "Prebrana Kekiwi"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.batting.tld/stilbestrol/villainousness.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://swrc.ontoware.org/ontology#pages> "137"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://purl.org/dc/elements/1.1/title> "waspishly villainousness miscalling"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://xmlns.com/foaf/0.1/homepage> "http://www.stilbestrol.tld/miscalling/firefanged.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article13> <http://purl.org/dc/elements/1.1/creator> _:genid14 .
+_:genid14 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid14 <http://xmlns.com/foaf/0.1/name> "Korechika Mamer"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.villainousness.tld/firefanged/skeins.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://swrc.ontoware.org/ontology#pages> "138"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://purl.org/dc/elements/1.1/title> "miscalling skeins equalled"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://xmlns.com/foaf/0.1/homepage> "http://www.firefanged.tld/equalled/sandwiching.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article14> <http://purl.org/dc/elements/1.1/creator> _:genid15 .
+_:genid15 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid15 <http://xmlns.com/foaf/0.1/name> "Dorel Brandt"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.skeins.tld/sandwiching/bewitchment.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://swrc.ontoware.org/ontology#pages> "139"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://purl.org/dc/elements/1.1/title> "equalled bewitchment cheaters"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://xmlns.com/foaf/0.1/homepage> "http://www.sandwiching.tld/cheaters/riffled.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article15> <http://purl.org/dc/elements/1.1/creator> _:genid16 .
+_:genid16 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid16 <http://xmlns.com/foaf/0.1/name> "Yayang Kuczenski"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.bewitchment.tld/riffled/kerneling.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://swrc.ontoware.org/ontology#pages> "140"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://purl.org/dc/elements/1.1/title> "cheaters kerneling napoleons"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://xmlns.com/foaf/0.1/homepage> "http://www.riffled.tld/napoleons/rifer.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article16> <http://purl.org/dc/elements/1.1/creator> _:genid17 .
+_:genid17 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid17 <http://xmlns.com/foaf/0.1/name> "Trina Sjerven"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.kerneling.tld/rifer/splinting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://swrc.ontoware.org/ontology#pages> "141"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://purl.org/dc/elements/1.1/title> "napoleons splinting surmisers"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://xmlns.com/foaf/0.1/homepage> "http://www.rifer.tld/surmisers/satisfying.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article17> <http://purl.org/dc/elements/1.1/creator> _:genid18 .
+_:genid18 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid18 <http://xmlns.com/foaf/0.1/name> "Caden Failing"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.splinting.tld/satisfying/undamped.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://swrc.ontoware.org/ontology#pages> "142"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://purl.org/dc/elements/1.1/title> "surmisers undamped sharpers"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://xmlns.com/foaf/0.1/homepage> "http://www.satisfying.tld/sharpers/forbearer.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article18> <http://purl.org/dc/elements/1.1/creator> _:genid19 .
+_:genid19 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid19 <http://xmlns.com/foaf/0.1/name> "Mya Swilley"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.undamped.tld/forbearer/anesthetization.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://swrc.ontoware.org/ontology#pages> "143"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://purl.org/dc/elements/1.1/title> "sharpers anesthetization undermentioned"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://xmlns.com/foaf/0.1/homepage> "http://www.forbearer.tld/undermentioned/outflanking.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article19> <http://purl.org/dc/elements/1.1/creator> _:genid20 .
+_:genid20 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid20 <http://xmlns.com/foaf/0.1/name> "Juriaan Schremp"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.anesthetization.tld/outflanking/funnyman.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://swrc.ontoware.org/ontology#pages> "144"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://purl.org/dc/elements/1.1/title> "undermentioned funnyman commuted"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://xmlns.com/foaf/0.1/homepage> "http://www.outflanking.tld/commuted/lachrymation.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1940> .
+<http://localhost/publications/articles/Journal1/1940/Article20> <http://purl.org/dc/elements/1.1/creator> _:genid21 .
+_:genid21 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid21 <http://xmlns.com/foaf/0.1/name> "Kozue Efthimiou"^^<http://www.w3.org/2001/XMLSchema#string> .
+_:genid22 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid22 <http://xmlns.com/foaf/0.1/name> "Sharise Heagy"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/journals/Journal1/1941> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Journal> .
+<http://localhost/publications/journals/Journal1/1941> <http://swrc.ontoware.org/ontology#number> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1941> <http://purl.org/dc/elements/1.1/title> "Journal 1 (1941)"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/journals/Journal1/1941> <http://swrc.ontoware.org/ontology#volume> "2"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1941> <http://purl.org/dc/terms/issued> "1941"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1941> <http://swrc.ontoware.org/ontology#editor> _:genid40 .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.commuted.tld/floweret/arcadian.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://swrc.ontoware.org/ontology#pages> "181"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://purl.org/dc/elements/1.1/title> "lachrymation arcadian acridities"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://xmlns.com/foaf/0.1/homepage> "http://www.floweret.tld/acridities/unrealistic.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://purl.org/dc/elements/1.1/creator> _:genid19 .
+<http://localhost/publications/articles/Journal1/1941/Article1> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.arcadian.tld/unrealistic/substituting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://swrc.ontoware.org/ontology#pages> "100"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://purl.org/dc/elements/1.1/title> "acridities substituting surges"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://xmlns.com/foaf/0.1/homepage> "http://www.unrealistic.tld/surges/preheats.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://purl.org/dc/elements/1.1/creator> _:genid21 .
+<http://localhost/publications/articles/Journal1/1941/Article2> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.substituting.tld/preheats/loggias.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://swrc.ontoware.org/ontology#pages> "182"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://purl.org/dc/elements/1.1/title> "surges loggias reconciliating"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://xmlns.com/foaf/0.1/homepage> "http://www.preheats.tld/reconciliating/photocatalyst.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://purl.org/dc/elements/1.1/creator> _:genid11 .
+<http://localhost/publications/articles/Journal1/1941/Article3> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.loggias.tld/photocatalyst/lenity.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://swrc.ontoware.org/ontology#pages> "97"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://purl.org/dc/elements/1.1/title> "reconciliating lenity tautological"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://xmlns.com/foaf/0.1/homepage> "http://www.photocatalyst.tld/tautological/jambing.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://purl.org/dc/elements/1.1/creator> _:genid13 .
+<http://localhost/publications/articles/Journal1/1941/Article4> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.lenity.tld/jambing/sodality.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://swrc.ontoware.org/ontology#pages> "171"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://purl.org/dc/elements/1.1/title> "tautological sodality outcrop"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://xmlns.com/foaf/0.1/homepage> "http://www.jambing.tld/outcrop/slipcases.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://purl.org/dc/elements/1.1/creator> _:genid15 .
+<http://localhost/publications/articles/Journal1/1941/Article5> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.sodality.tld/slipcases/phenylketonuria.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://swrc.ontoware.org/ontology#pages> "110"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://purl.org/dc/elements/1.1/title> "outcrop phenylketonuria grunts"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://xmlns.com/foaf/0.1/homepage> "http://www.slipcases.tld/grunts/venturers.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://purl.org/dc/elements/1.1/creator> _:genid17 .
+<http://localhost/publications/articles/Journal1/1941/Article6> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.phenylketonuria.tld/venturers/valiantly.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://swrc.ontoware.org/ontology#pages> "184"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://purl.org/dc/elements/1.1/title> "grunts valiantly unremorsefully"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://xmlns.com/foaf/0.1/homepage> "http://www.venturers.tld/unremorsefully/extradites.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://purl.org/dc/elements/1.1/creator> _:genid23 .
+<http://localhost/publications/articles/Journal1/1941/Article7> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid23 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid23 <http://xmlns.com/foaf/0.1/name> "Phaethon Gearon"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.valiantly.tld/extradites/stollens.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://swrc.ontoware.org/ontology#pages> "111"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://purl.org/dc/elements/1.1/title> "unremorsefully stollens ponderers"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://xmlns.com/foaf/0.1/homepage> "http://www.extradites.tld/ponderers/conditione.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://purl.org/dc/elements/1.1/creator> _:genid24 .
+<http://localhost/publications/articles/Journal1/1941/Article8> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid24 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid24 <http://xmlns.com/foaf/0.1/name> "Lone Pavese"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.stollens.tld/conditione/loathly.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://swrc.ontoware.org/ontology#pages> "169"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://purl.org/dc/elements/1.1/title> "ponderers loathly cancels"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://xmlns.com/foaf/0.1/homepage> "http://www.conditione.tld/cancels/debiting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://purl.org/dc/elements/1.1/creator> _:genid25 .
+<http://localhost/publications/articles/Journal1/1941/Article9> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid25 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid25 <http://xmlns.com/foaf/0.1/name> "Motoyasu Calligy"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.loathly.tld/debiting/parrots.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://swrc.ontoware.org/ontology#pages> "112"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://purl.org/dc/elements/1.1/title> "cancels parrots paraguayans"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://xmlns.com/foaf/0.1/homepage> "http://www.debiting.tld/paraguayans/resonates.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://purl.org/dc/elements/1.1/creator> _:genid26 .
+<http://localhost/publications/articles/Journal1/1941/Article10> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid26 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid26 <http://xmlns.com/foaf/0.1/name> "Firdaus Casavez"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.parrots.tld/resonates/overbites.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://swrc.ontoware.org/ontology#pages> "178"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://purl.org/dc/elements/1.1/title> "paraguayans overbites terminals"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://xmlns.com/foaf/0.1/homepage> "http://www.resonates.tld/terminals/giros.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article11> <http://purl.org/dc/elements/1.1/creator> _:genid27 .
+_:genid27 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid27 <http://xmlns.com/foaf/0.1/name> "Angha Bievenue"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.overbites.tld/giros/podgy.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://swrc.ontoware.org/ontology#pages> "101"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://purl.org/dc/elements/1.1/title> "terminals podgy vagus"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://xmlns.com/foaf/0.1/homepage> "http://www.giros.tld/vagus/kinkiest.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article12> <http://purl.org/dc/elements/1.1/creator> _:genid28 .
+_:genid28 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid28 <http://xmlns.com/foaf/0.1/name> "Araceli Ertel"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.podgy.tld/kinkiest/xix.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://swrc.ontoware.org/ontology#pages> "183"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://purl.org/dc/elements/1.1/title> "vagus xix recollected"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://xmlns.com/foaf/0.1/homepage> "http://www.kinkiest.tld/recollected/householder.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article13> <http://purl.org/dc/elements/1.1/creator> _:genid29 .
+_:genid29 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid29 <http://xmlns.com/foaf/0.1/name> "Nik Reposa"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.xix.tld/householder/overeducated.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://swrc.ontoware.org/ontology#pages> "98"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://purl.org/dc/elements/1.1/title> "recollected overeducated objurgate"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://xmlns.com/foaf/0.1/homepage> "http://www.householder.tld/objurgate/treaties.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article14> <http://purl.org/dc/elements/1.1/creator> _:genid30 .
+_:genid30 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid30 <http://xmlns.com/foaf/0.1/name> "Shiko Seagroves"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.overeducated.tld/treaties/preprocessor.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://swrc.ontoware.org/ontology#pages> "124"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://purl.org/dc/elements/1.1/title> "objurgate preprocessor despising"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://xmlns.com/foaf/0.1/homepage> "http://www.treaties.tld/despising/loftily.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article15> <http://purl.org/dc/elements/1.1/creator> _:genid31 .
+_:genid31 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid31 <http://xmlns.com/foaf/0.1/name> "Dianmu Aver"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.preprocessor.tld/loftily/yabber.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://swrc.ontoware.org/ontology#pages> "91"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://purl.org/dc/elements/1.1/title> "despising yabber reprovingly"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://xmlns.com/foaf/0.1/homepage> "http://www.loftily.tld/reprovingly/blungers.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article16> <http://purl.org/dc/elements/1.1/creator> _:genid32 .
+_:genid32 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid32 <http://xmlns.com/foaf/0.1/name> "Helene Nik"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.yabber.tld/blungers/dwarflike.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://swrc.ontoware.org/ontology#pages> "125"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://purl.org/dc/elements/1.1/title> "reprovingly dwarflike effulgences"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://xmlns.com/foaf/0.1/homepage> "http://www.blungers.tld/effulgences/coreless.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article17> <http://purl.org/dc/elements/1.1/creator> _:genid33 .
+_:genid33 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid33 <http://xmlns.com/foaf/0.1/name> "Yemena Knebel"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.dwarflike.tld/coreless/tuberculoses.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://swrc.ontoware.org/ontology#pages> "92"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://purl.org/dc/elements/1.1/title> "effulgences tuberculoses environs"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://xmlns.com/foaf/0.1/homepage> "http://www.coreless.tld/environs/hulled.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article18> <http://purl.org/dc/elements/1.1/creator> _:genid34 .
+_:genid34 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid34 <http://xmlns.com/foaf/0.1/name> "Melisa Patriarco"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.tuberculoses.tld/hulled/preexamination.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://swrc.ontoware.org/ontology#pages> "126"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://purl.org/dc/elements/1.1/title> "environs preexamination oralogy"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://xmlns.com/foaf/0.1/homepage> "http://www.hulled.tld/oralogy/tibetans.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article19> <http://purl.org/dc/elements/1.1/creator> _:genid35 .
+_:genid35 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid35 <http://xmlns.com/foaf/0.1/name> "Dama Leino"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.preexamination.tld/tibetans/slavishly.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://swrc.ontoware.org/ontology#pages> "89"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://purl.org/dc/elements/1.1/title> "oralogy slavishly hipless"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://xmlns.com/foaf/0.1/homepage> "http://www.tibetans.tld/hipless/prs.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article20> <http://purl.org/dc/elements/1.1/creator> _:genid36 .
+_:genid36 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid36 <http://xmlns.com/foaf/0.1/name> "Satoru Beaumont"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.slavishly.tld/prs/bluejays.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://swrc.ontoware.org/ontology#pages> "147"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://purl.org/dc/elements/1.1/title> "hipless bluejays cuppier"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://xmlns.com/foaf/0.1/homepage> "http://www.prs.tld/cuppier/nonsurgical.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article21> <http://purl.org/dc/elements/1.1/creator> _:genid37 .
+_:genid37 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid37 <http://xmlns.com/foaf/0.1/name> "Booker Spiker"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.bluejays.tld/nonsurgical/skimpiest.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://swrc.ontoware.org/ontology#pages> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://purl.org/dc/elements/1.1/title> "cuppier skimpiest outpoured"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://xmlns.com/foaf/0.1/homepage> "http://www.nonsurgical.tld/outpoured/dissociated.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article22> <http://purl.org/dc/elements/1.1/creator> _:genid38 .
+_:genid38 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid38 <http://xmlns.com/foaf/0.1/name> "Eupeithes Bevens"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.skimpiest.tld/dissociated/heartier.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://swrc.ontoware.org/ontology#pages> "144"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://purl.org/dc/elements/1.1/title> "outpoured heartier petitionee"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://xmlns.com/foaf/0.1/homepage> "http://www.dissociated.tld/petitionee/brill.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
+<http://localhost/publications/articles/Journal1/1941/Article23> <http://purl.org/dc/elements/1.1/creator> _:genid39 .
+_:genid39 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid39 <http://xmlns.com/foaf/0.1/name> "Miranda Leinen"^^<http://www.w3.org/2001/XMLSchema#string> .
+_:genid40 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid40 <http://xmlns.com/foaf/0.1/name> "Lane Portes"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Incollection> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://localhost/vocabulary/bench/booktitle> "heartier brill neologic"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.petitionee.tld/neologic/intermuscular.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://swrc.ontoware.org/ontology#pages> "119"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://purl.org/dc/elements/1.1/title> "brill intermuscular fobbed"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://xmlns.com/foaf/0.1/homepage> "http://www.neologic.tld/fobbed/transcribed.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://purl.org/dc/terms/issued> "1941"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/incolls/1941/Incollection1> <http://purl.org/dc/elements/1.1/creator> _:genid41 .
+_:genid41 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid41 <http://xmlns.com/foaf/0.1/name> "Vasilista Hamic"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/journals/Journal1/1942> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Journal> .
+<http://localhost/publications/journals/Journal1/1942> <http://swrc.ontoware.org/ontology#number> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1942> <http://purl.org/dc/elements/1.1/title> "Journal 1 (1942)"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/journals/Journal1/1942> <http://swrc.ontoware.org/ontology#volume> "3"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1942> <http://purl.org/dc/terms/issued> "1942"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/journals/Journal1/1942> <http://swrc.ontoware.org/ontology#editor> _:genid58 .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.fobbed.tld/swifters/redigesting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://swrc.ontoware.org/ontology#pages> "88"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://purl.org/dc/elements/1.1/title> "transcribed redigesting ostinato"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://xmlns.com/foaf/0.1/homepage> "http://www.swifters.tld/ostinato/recalculation.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://purl.org/dc/elements/1.1/creator> _:genid33 .
+<http://localhost/publications/articles/Journal1/1942/Article1> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.redigesting.tld/recalculation/safest.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://swrc.ontoware.org/ontology#pages> "86"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://purl.org/dc/elements/1.1/title> "ostinato safest signiory"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://xmlns.com/foaf/0.1/homepage> "http://www.recalculation.tld/signiory/latchets.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://purl.org/dc/elements/1.1/creator> _:genid34 .
+<http://localhost/publications/articles/Journal1/1942/Article2> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.safest.tld/latchets/inflecting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://swrc.ontoware.org/ontology#pages> "87"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://purl.org/dc/elements/1.1/title> "signiory inflecting trephines"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://xmlns.com/foaf/0.1/homepage> "http://www.latchets.tld/trephines/hops.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://purl.org/dc/elements/1.1/creator> _:genid35 .
+<http://localhost/publications/articles/Journal1/1942/Article3> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.inflecting.tld/hops/exec.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://swrc.ontoware.org/ontology#pages> "87"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://purl.org/dc/elements/1.1/title> "trephines exec junketeers"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://xmlns.com/foaf/0.1/homepage> "http://www.hops.tld/junketeers/isolators.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://purl.org/dc/elements/1.1/creator> _:genid36 .
+<http://localhost/publications/articles/Journal1/1942/Article4> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.exec.tld/isolators/reducing.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://swrc.ontoware.org/ontology#note> "intercollegiate iniquitously lycanthropies electrophoresed dinting rezoning pledgee protoactinium"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://purl.org/dc/elements/1.1/title> "junketeers reducing nethermost"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://xmlns.com/foaf/0.1/homepage> "http://www.isolators.tld/nethermost/nonfiction.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://purl.org/dc/elements/1.1/creator> _:genid37 .
+<http://localhost/publications/articles/Journal1/1942/Article5> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://localhost/vocabulary/bench/abstract> "darned emblements shrewed alluvials depressional airlifts tests sliming felicitator virological results contradistinctions unexciting debateable tenants earrings overrigid hidebound faire poloist comets paraphraser whangs uncovering infested heaver euphorically ameliorative aglets preciosity curring compositely antennal undrinkable charter uncashed huntedly czardoms unidentifiable reversing monstrances gravies quadrigamist mysteriously trenchers artfully mangled operably ionizing tenantry armfuls appendant submontane stoutening piling defunctness bestializing overconfident triadism vivifier vivisection distally polyclinic foretime triarchy homerooms totterer diarist needlessness lambies geed charts begets floorthrough chargee affixion pincers quipped cabinetmaking unsupervised deathcups dogfight wormhole emptied drifter sluggishness senescent representable honors bullier superintended investigated paragraphed claywares resourcefulness psychos morphia ventricular iteming immunoreactive"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://localhost/vocabulary/bench/cdrom> "http://www.reducing.tld/nonfiction/retrogressions.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.nethermost.tld/retrogressions/eliminates.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://swrc.ontoware.org/ontology#month> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://swrc.ontoware.org/ontology#pages> "69"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://purl.org/dc/elements/1.1/title> "nonfiction eliminates unknowns"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://xmlns.com/foaf/0.1/homepage> "http://www.retrogressions.tld/unknowns/mongoloids.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://purl.org/dc/elements/1.1/creator> _:genid38 .
+<http://localhost/publications/articles/Journal1/1942/Article6> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.eliminates.tld/mongoloids/danker.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://swrc.ontoware.org/ontology#note> "weasand yearlings timidities untold fellowman adamantine museful medallions"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://swrc.ontoware.org/ontology#pages> "50"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://purl.org/dc/elements/1.1/title> "unknowns danker raunchiness"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://xmlns.com/foaf/0.1/homepage> "http://www.mongoloids.tld/raunchiness/perspicuously.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://purl.org/dc/elements/1.1/creator> _:genid39 .
+<http://localhost/publications/articles/Journal1/1942/Article7> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.danker.tld/perspicuously/disjoined.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://swrc.ontoware.org/ontology#pages> "51"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://purl.org/dc/elements/1.1/title> "raunchiness disjoined nigglings"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://xmlns.com/foaf/0.1/homepage> "http://www.perspicuously.tld/nigglings/midmonths.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://purl.org/dc/elements/1.1/creator> _:genid41 .
+<http://localhost/publications/articles/Journal1/1942/Article8> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.disjoined.tld/midmonths/labium.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://swrc.ontoware.org/ontology#note> "malingerers gnashes chuffs redundance matriculant flexes repairing keepable"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://swrc.ontoware.org/ontology#pages> "80"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://purl.org/dc/elements/1.1/title> "nigglings labium peeped"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://xmlns.com/foaf/0.1/homepage> "http://www.midmonths.tld/peeped/daydreams.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://purl.org/dc/elements/1.1/creator> _:genid27 .
+<http://localhost/publications/articles/Journal1/1942/Article9> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.labium.tld/daydreams/permuting.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://swrc.ontoware.org/ontology#pages> "74"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://purl.org/dc/elements/1.1/title> "peeped permuting immediately"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://xmlns.com/foaf/0.1/homepage> "http://www.daydreams.tld/immediately/canzona.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://purl.org/dc/elements/1.1/creator> _:genid42 .
+<http://localhost/publications/articles/Journal1/1942/Article10> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
+_:genid42 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid42 <http://xmlns.com/foaf/0.1/name> "Kichibei Opitz"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.permuting.tld/canzona/interrelated.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://swrc.ontoware.org/ontology#note> "etchers mitering laboratorian tiptoed humoring hairiest ouzels frequented"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://swrc.ontoware.org/ontology#pages> "69"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://purl.org/dc/elements/1.1/title> "immediately interrelated cooked"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://xmlns.com/foaf/0.1/homepage> "http://www.canzona.tld/cooked/reformers.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article11> <http://purl.org/dc/elements/1.1/creator> _:genid43 .
+_:genid43 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid43 <http://xmlns.com/foaf/0.1/name> "Luzia Rahib"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.interrelated.tld/reformers/goodwife.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://swrc.ontoware.org/ontology#pages> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://purl.org/dc/elements/1.1/title> "cooked goodwife technicolor"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://xmlns.com/foaf/0.1/homepage> "http://www.reformers.tld/technicolor/plenishes.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article12> <http://purl.org/dc/elements/1.1/creator> _:genid44 .
+_:genid44 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid44 <http://xmlns.com/foaf/0.1/name> "Gia Stonesifer"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.goodwife.tld/plenishes/nippy.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://swrc.ontoware.org/ontology#pages> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://purl.org/dc/elements/1.1/title> "technicolor nippy bounden"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://xmlns.com/foaf/0.1/homepage> "http://www.plenishes.tld/bounden/occulters.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article13> <http://purl.org/dc/elements/1.1/creator> _:genid45 .
+_:genid45 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid45 <http://xmlns.com/foaf/0.1/name> "Uqbah Oconnell"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.nippy.tld/occulters/blubberer.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://swrc.ontoware.org/ontology#pages> "71"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://purl.org/dc/elements/1.1/title> "bounden blubberer amenities"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://xmlns.com/foaf/0.1/homepage> "http://www.occulters.tld/amenities/desecrated.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article14> <http://purl.org/dc/elements/1.1/creator> _:genid46 .
+_:genid46 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid46 <http://xmlns.com/foaf/0.1/name> "Heidelore Ruschmann"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.blubberer.tld/desecrated/tetrachlorides.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://swrc.ontoware.org/ontology#note> "negatively witnesses pharisaical flaunting divergence semitraditional negotiators greaves"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://swrc.ontoware.org/ontology#pages> "76"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://purl.org/dc/elements/1.1/title> "amenities tetrachlorides loutish"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://xmlns.com/foaf/0.1/homepage> "http://www.desecrated.tld/loutish/polygony.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article15> <http://purl.org/dc/elements/1.1/creator> _:genid47 .
+_:genid47 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid47 <http://xmlns.com/foaf/0.1/name> "Octave Diana"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.tetrachlorides.tld/polygony/malines.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://swrc.ontoware.org/ontology#pages> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://purl.org/dc/elements/1.1/title> "loutish malines cliffhanger"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://xmlns.com/foaf/0.1/homepage> "http://www.polygony.tld/cliffhanger/entailments.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article16> <http://purl.org/dc/elements/1.1/creator> _:genid48 .
+_:genid48 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid48 <http://xmlns.com/foaf/0.1/name> "Mitsuo Neff"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article17> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article17> <http://purl.org/dc/elements/1.1/title> "malines entailments reindexed"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article17> <http://xmlns.com/foaf/0.1/homepage> "http://www.cliffhanger.tld/reindexed/bedstraws.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article17> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article17> <http://purl.org/dc/elements/1.1/creator> _:genid49 .
+_:genid49 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid49 <http://xmlns.com/foaf/0.1/name> "Alexandros Lagazo"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.entailments.tld/bedstraws/thoughtless.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://swrc.ontoware.org/ontology#pages> "69"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://purl.org/dc/elements/1.1/title> "reindexed thoughtless elation"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://xmlns.com/foaf/0.1/homepage> "http://www.bedstraws.tld/elation/swampland.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article18> <http://purl.org/dc/elements/1.1/creator> _:genid50 .
+_:genid50 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid50 <http://xmlns.com/foaf/0.1/name> "Elvera Zito"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.thoughtless.tld/swampland/earings.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://swrc.ontoware.org/ontology#pages> "69"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://purl.org/dc/elements/1.1/title> "elation earings circumscribed"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://xmlns.com/foaf/0.1/homepage> "http://www.swampland.tld/circumscribed/paralyzingly.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article20> <http://purl.org/dc/elements/1.1/creator> _:genid51 .
+_:genid51 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid51 <http://xmlns.com/foaf/0.1/name> "Shahaama Berum"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.earings.tld/paralyzingly/pouchy.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://swrc.ontoware.org/ontology#pages> "5"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://purl.org/dc/elements/1.1/title> "circumscribed pouchy surrejoinders"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://xmlns.com/foaf/0.1/homepage> "http://www.paralyzingly.tld/surrejoinders/chestiest.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article21> <http://purl.org/dc/elements/1.1/creator> _:genid52 .
+_:genid52 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid52 <http://xmlns.com/foaf/0.1/name> "Dena Mcentire"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.pouchy.tld/chestiest/measurage.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://swrc.ontoware.org/ontology#pages> "10"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://purl.org/dc/elements/1.1/title> "surrejoinders measurage tonsils"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://xmlns.com/foaf/0.1/homepage> "http://www.chestiest.tld/tonsils/pasturage.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article22> <http://purl.org/dc/elements/1.1/creator> _:genid53 .
+_:genid53 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid53 <http://xmlns.com/foaf/0.1/name> "Shaka Enget"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.measurage.tld/pasturage/thurifer.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://swrc.ontoware.org/ontology#pages> "166"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://purl.org/dc/elements/1.1/title> "tonsils thurifer teazle"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://xmlns.com/foaf/0.1/homepage> "http://www.pasturage.tld/teazle/fringier.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article23> <http://purl.org/dc/elements/1.1/creator> _:genid54 .
+_:genid54 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid54 <http://xmlns.com/foaf/0.1/name> "Argos Cumings"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.thurifer.tld/fringier/rhythmical.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://swrc.ontoware.org/ontology#pages> "155"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://purl.org/dc/elements/1.1/title> "teazle rhythmical wastebaskets"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://xmlns.com/foaf/0.1/homepage> "http://www.fringier.tld/wastebaskets/powderer.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article24> <http://purl.org/dc/elements/1.1/creator> _:genid55 .
+_:genid55 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid55 <http://xmlns.com/foaf/0.1/name> "Torah Giller"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.rhythmical.tld/powderer/immigrates.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://swrc.ontoware.org/ontology#pages> "106"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://purl.org/dc/elements/1.1/title> "wastebaskets immigrates inserter"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://xmlns.com/foaf/0.1/homepage> "http://www.powderer.tld/inserter/plights.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article25> <http://purl.org/dc/elements/1.1/creator> _:genid56 .
+_:genid56 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid56 <http://xmlns.com/foaf/0.1/name> "Guido Genier"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://www.w3.org/2000/01/rdf-schema#seeAlso> "http://www.immigrates.tld/plights/corollaries.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://swrc.ontoware.org/ontology#pages> "41"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://purl.org/dc/elements/1.1/title> "inserter corollaries gaudiness"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://xmlns.com/foaf/0.1/homepage> "http://www.plights.tld/gaudiness/irades.html"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
+<http://localhost/publications/articles/Journal1/1942/Article26> <http://purl.org/dc/elements/1.1/creator> _:genid57 .
+_:genid57 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid57 <http://xmlns.com/foaf/0.1/name> "Diana Gulbranson"^^<http://www.w3.org/2001/XMLSchema#string> .
+_:genid58 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+_:genid58 <http://xmlns.com/foaf/0.1/name> "Sadayoshi Englemann"^^<http://www.w3.org/2001/XMLSchema#string> .
