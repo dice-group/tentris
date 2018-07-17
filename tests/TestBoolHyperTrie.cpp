@@ -71,7 +71,7 @@ TEST(TestBoolHyperTrie, test_mult_write_read1) {
     }
 }
 
-TEST(TestBoolHyperTrie, DISABLED_test_read_empty_key) {
+TEST(TestBoolHyperTrie, DISABLED_test_read_full_slice) {
     Key_t key{5, 10, 8};
     bool value = true;
 
@@ -208,7 +208,7 @@ TEST(TestBoolHyperTrie, calc_card) {
     ASSERT_EQ(trie.getCard(1), 3);
 }
 
-TEST(TestBoolHyperTrie, load_data100000) {
+TEST(TestBoolHyperTrie, load_data10000) {
     // data
     Key_t key{0, 0, 0};
 
@@ -218,26 +218,23 @@ TEST(TestBoolHyperTrie, load_data100000) {
 
     const clock_t i1 = clock();
     // load data
-    for (auto i : range(10000000)) {
-        key[0] = key_part_t(rand() %50000 +1);
-        key[1] = key_part_t(rand() %50000 +1);
-        key[2] = key_part_t(rand() %50000 +1);
+    for (auto i : range(500)) {
+        key[0] = key_part_t(rand() %300 +1);
+        key[1] = key_part_t(rand() %400 +1);
+        key[2] = key_part_t(rand() %500 +1);
         trie.set(key, true);
         if (i % 10000 == 0){
             std::cout << "triples: " << i << std::endl;
         }
     }
-    printf("triples loaded: %d", int(trie.size()));
-    printf("distinct subjects: %d", int(trie.getCard(0)));
-    printf("distinct predicates: %d", int(trie.getCard(1)));
-    printf("distinct objects: %d", int(trie.getCard(2)));
+
+    printf("triples loaded: %d\n", int(trie.size()));
+    printf("distinct subjects: %d\n", int(trie.getCard(0)));
+    printf("distinct predicates: %d\n", int(trie.getCard(1)));
+    printf("distinct objects: %d\n", int(trie.getCard(2)));
 
     double elapsed_secs = double(clock() - i1) / CLOCKS_PER_SEC;
     std::cout << "time: " << elapsed_secs << " s" << std::endl;
-    int i;
-    std::cin >> i;
-
-
 }
 
 
