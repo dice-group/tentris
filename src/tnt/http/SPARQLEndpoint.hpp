@@ -37,6 +37,9 @@ HTTP_PROTOTYPE(SPARQLEndpoint)
             if (not hasQuery.isEmpty()) {
                 const std::string sparqlQuery = hasQuery.get();
                 const tnt::util::container::NDMap<unsigned long> result = _store.query(sparqlQuery);
+                for (const auto &item : sparqlQuery) {
+                    std::cout << item << std::endl;
+                }
 
                 auto stream = response.stream(Code::Ok);
                 stream << "{\"found\":\"";

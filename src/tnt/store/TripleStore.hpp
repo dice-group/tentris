@@ -60,6 +60,7 @@ namespace tnt::store {
         NDMap<size_t> query(std::string sparql) {
             using namespace tnt::util::types;
             using Operands =  typename std::vector<BoolHyperTrie *>;
+            using namespace tensor::einsum;
             sparql::SPARQLParser parser{sparql};
 
             std::vector<std::vector<std::optional<Term>>> op_keys = parser.getOperandKeys();
@@ -81,7 +82,7 @@ namespace tnt::store {
 
                 if (count)
                     try {
-                        BoolHyperTrie * operand = std::get<BoolHyperTrie *>(trie.get(id_op_key));
+                        BoolHyperTrie *operand = std::get<BoolHyperTrie *>(trie.get(id_op_key));
                         operands.push_back(operand);
 
 
@@ -89,15 +90,21 @@ namespace tnt::store {
                         return {}; // a triple pattern has an empty solution.
                     }
             }
-            tensor::einsum::Subscript subscript = parser.getSubscript();
-            const tensor::einsum::Subscript &optimized = subscript.optimized();
-            if (optimized.getSubSubscripts().empty()){
-                tnt::tensor::einsum::operators::Einsum einsumOp{optimized};
+            // TODO: add support for distinct
+            Subscript subscript = parser.getSubscript();
+            Subscript optimized = subscript.optimized();
+            if (optimized.getSubSubscripts().empty()) {
+                operators::Einsum<size_t> einsumOp{optimized};
                 return einsumOp.getResult(operands);
-            } else{
-                tnt::tensor::einsum::operators::CrossProduct crossprodOp{optimized};
-                const tensor::einsum::operators::CrossProduct::CrossProductResult &result = crossprodOp.getResult(operands);
-                // TODO: go on here
+            } else {
+                operators::CrossProduct<size_t> crossprodOp{optimized};
+                operators::CrossProductResult<size_t> result = crossprodOp.getResult(operands);
+                NDMap<size_t> result_array{};
+                for (const auto &[key, count] : result) {
+                    result_array[key] = count;
+
+                }
+                return result_array;
             }
             return {};
         }

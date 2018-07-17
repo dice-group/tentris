@@ -11,6 +11,9 @@
 
 namespace tnt::tensor::einsum::operators {
 
+    template<typename T>
+    class CrossProductResult;
+
     /**
      * This is a cross product operator that takes in any number of operands and maps every of their dimensions into an
      * result dimension. The Mapping is defind by an sparsetensor::einsum::Subscript.
@@ -30,7 +33,7 @@ namespace tnt::tensor::einsum::operators {
         /**
          * Every sub-Subscript (Subscript) is calculated by an Einsum Operator.
          */
-        std::vector<Einsum < T>> predecessors{};
+        std::vector<tnt::tensor::einsum::operators::Einsum<T>> predecessors{};
     public:
         /**
          * Constructor
@@ -39,13 +42,11 @@ namespace tnt::tensor::einsum::operators {
          */
         explicit CrossProduct(const Subscript &subscript) : _subscript{subscript} {
             for (const std::shared_ptr<Subscript> &sub_subscript : subscript.getSubSubscripts()) {
-                predecessors.push_back({*sub_subscript});
+                predecessors.push_back(Einsum<T>{*sub_subscript});
             }
         }
 
-        class CrossProductResult;
-
-        CrossProductResult getResult(const Operands &operands) {
+        CrossProductResult<T> getResult(const Operands &operands) {
             std::vector<NDMap<T>> predecessor_results{};
             predecessor_results.reserve(predecessors.size());
 
@@ -58,132 +59,139 @@ namespace tnt::tensor::einsum::operators {
                 // if one of the results is 0 the cross product will be zero. So no more calculation is needed.
                 if (not predecessor_results.at(i).size()) {
                     // TODO: when parallel -> cancel all other threads.
-                    return CrossProductResult{};
+                    throw "no result";
                 }
             }
-            return CrossProductResult{predecessor_results, _subscript};
-            // return new CrossProductTensor<T>(predecessor_results, bracketed_subscript);
+            return CrossProductResult<T>{predecessor_results, _subscript};
         }
+    };
 
-        class CrossProductResult {
-            std::vector<NDMap<T>> &_operands;
-            std::vector<std::tuple<size_t, size_t>> pos_mappings{};
-            size_t _size{};
-            size_t _width{};
-        public:
-            CrossProductResult() = default;
 
-            CrossProductResult(std::vector<NDMap<T>> &operands, const Subscript &subscript) :
-                    _operands{operands} {
+    template<typename T>
+    class CrossProductResult {
+        using Operands = tnt::tensor::hypertrie::Operands;
+        template<typename V>
+        using NDMap = tnt::util::container::NDMap<V>;
+        const std::vector<NDMap<T>> &_operands;
+        std::vector<std::vector<std::tuple<size_t, size_t>>> pos_mappings{};
+        size_t _size{};
+        size_t _width{};
+    public:
+        CrossProductResult(const std::vector<NDMap<T>> &operands, const Subscript &subscript) :
+                _operands{operands} {
 
-                // check if there is any input
-                if (operands.size() == 0) {
+            // check if there is any input
+            if (operands.size() == 0) {
+                return;
+            }
+
+            // check if any input is zero
+            for (const NDMap<T> &op : operands) {
+                if (not op.size()) {
                     return;
                 }
-
-                // check if any input is zero
-                for (const NDMap<T> &op : operands) {
-                    if (not op.size()) {
-                        return;
-                    }
-                }
-
-                // calculate result mapping
-                const std::vector<label_t> &res_labels = subscript.getResultLabels();
-                for (const auto &[op_pos, op] : operands) {
-                    std::vector<std::tuple<size_t, size_t>> op_to_res_pos{};
-                    for (const auto &[label_pos_in_op, label] : enumerate(subscript.operandLabels(op_pos)))
-                        if (const size_t label_pos_in_res = tnt::util::container::search(res_labels, label);
-                                label_pos_in_res != tnt::util::container::NOT_FOUND)
-                            op_to_res_pos.push_back({label_pos_in_op, label_pos_in_res});
-
-                    pos_mappings.emplace_back(op_to_res_pos);
-                }
-
-                // calculate number of generated entries
-                _size = 1;
-                for (const NDMap<T> &operand : _operands) {
-                    _size *= operand.size();
-                }
-
-                //
-                _width = res_labels.size();
             }
 
+            // calculate result mapping
+            const std::vector<label_t> &res_labels = subscript.getResultLabels();
+            for (const auto &op_pos : range(op_pos_t(operands.size()))) {
+                std::vector<std::tuple<size_t, size_t>> op_to_res_pos{};
+                for (const auto &[label_pos_in_op, label] : enumerate(subscript.operandLabels(op_pos)))
+                    if (const size_t label_pos_in_res = tnt::util::container::search(res_labels, label);
+                            label_pos_in_res != tnt::util::container::NOT_FOUND)
+                        op_to_res_pos.push_back({label_pos_in_op, label_pos_in_res});
 
-            class iterator {
-                using op_c_iter_t = typename NDMap<T>::const_iterator;
-                const CrossProductResult &_result;
-                std::vector<op_c_iter_t> _begins;
-                std::vector<op_c_iter_t> _ends;
-                size_t _id{};
-                std::tuple<Key_t, T> result_binding_with_count;
-
-            public:
-                explicit iterator(const CrossProductResult &result, bool ended = false) : _result{result} {
-                    if (ended)
-                        _id = _result._size;
-                    else
-                        for (const NDMap<T> &operand : result._operands) {
-                            _begins.emplace_back(operand.cbegin());
-                            _ends.emplace_back(operand.cend());
-                        }
-                    result_binding_with_count = {Key_t(_result._width), {}};
-                }
-
-                std::tuple<Key_t, T> &operator*() {
-                    // reset the value
-                    Key_t &key = std::get<0>(result_binding_with_count);
-                    T &value = std::get<1>(result_binding_with_count);
-                    value = 1;
-
-                    // iterate inputs
-                    for (const auto &[entry, pos_mapping] : zip(_begins, _result.pos_mappings)) {
-                        const auto &[binding, count] = entry;
-
-                        // set the value
-                        value *= count;
-                        // set key at right positions
-                        for (const auto &[pos_in_op, pos_in_res] : pos_mapping)
-                            key[pos_in_res] = binding[pos_in_op];
-                    }
-
-                    return result_binding_with_count;
-                }
-
-                iterator &operator++() {
-                    ++_id;
-                    for (auto &[i, iter_and_end] : enumerate(zip(_begins, _ends))) {
-                        auto &[iter, end_] = iter_and_end;
-                        ++iter;
-                        if (iter == end_) {
-                            iter = _result._operands[i];
-                        } else {
-                            break;
-                        }
-                    }
-                    return *this;
-                }
-
-                bool operator==(const iterator &rhs) const {
-                    return rhs._id == _id;
-                }
-
-                bool operator!=(const iterator &rhs) const {
-                    return rhs._id != _id;
-                }
-            };
-
-            iterator begin() {
-
-                return {*this};
+                pos_mappings.emplace_back(op_to_res_pos);
             }
 
-            iterator end() {
-                return {*this, true};
+            // calculate number of generated entries
+            _size = 1;
+            for (const NDMap<T> &operand : _operands) {
+                _size *= operand.size();
             }
 
+            //
+            _width = res_labels.size();
+        }
+
+
+        class iterator {
+            using op_c_iter_t = typename NDMap<T>::const_iterator;
+            const CrossProductResult &_result;
+            std::vector<op_c_iter_t> _begins;
+            std::vector<op_c_iter_t> _ends;
+            size_t _id{};
+            std::tuple<Key_t, T> result_binding_with_count;
+
+        public:
+            explicit iterator(const CrossProductResult &result, bool ended = false) : _result{result} {
+                if (ended)
+                    _id = _result._size;
+                else
+                    for (const NDMap<T> &operand : result._operands) {
+                        _begins.emplace_back(operand.cbegin());
+                        _ends.emplace_back(operand.cend());
+                    }
+                result_binding_with_count = {Key_t(_result._width), {}};
+            }
+
+            std::tuple<Key_t, T> &operator*() {
+                // reset the value
+                Key_t &key = std::get<0>(result_binding_with_count);
+                T &value = std::get<1>(result_binding_with_count);
+                value = 1;
+
+                // iterate inputs
+                for (const auto &[entry, pos_mapping] : zip(_begins, _result.pos_mappings)) {
+                    const auto &[binding, count] = *entry;
+
+                    // set the value
+                    value *= count;
+                    // set key at right positions
+                    for (const auto &[pos_in_op, pos_in_res] : pos_mapping)
+                        key[pos_in_res] = binding.at(pos_in_op);
+                }
+
+                return result_binding_with_count;
+            }
+
+            iterator &operator++() {
+                ++_id;
+                for (auto &&[i, iter_and_end] : enumerate(zip(_begins, _ends))) {
+//                    const int &i =std::get<0>(iterrer);
+//                    std::tuple<op_c_iter_t, op_c_iter_t> iter_and_end = std::get<1>(iterrer);
+//
+//                    const op_c_iter_t &iter = std::get<0>(iter_and_end);
+//                    const op_c_iter_t &end_ = std::get<1>(iter_and_end);
+                    auto &&[iter, end_] = iter_and_end;
+                    ++iter;
+                    if (iter == end_) {
+                        iter = _result._operands[i].cbegin();
+                    } else {
+                        break;
+                    }
+                }
+                return *this;
+            }
+
+            bool operator==(const iterator &rhs) const {
+                return rhs._id == _id;
+            }
+
+            bool operator!=(const iterator &rhs) const {
+                return rhs._id != _id;
+            }
         };
+
+        iterator begin() {
+
+            return iterator{*this};
+        }
+
+        iterator end() {
+            return iterator{*this, true};
+        }
+
     };
 }
 

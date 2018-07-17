@@ -92,8 +92,9 @@ namespace tnt::tensor::einsum {
                                                     _unique_non_result_labels, _label_poss_in_operands);
         }
 
-        Subscript() = default;
     public:
+        Subscript() = default;
+        Subscript(const Subscript &subscript) = default;
         Subscript(std::vector<raw_subscript> operands, raw_subscript result) {
             std::tie(_operands_labels, _result_labels, _all_labels) = normalizeRawSubscripts(operands, result);
 
