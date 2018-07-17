@@ -11,7 +11,7 @@ int main() {
 
     int thr = std::thread::hardware_concurrency();
     Address addr(Ipv4::any(), port);
-
+    cout << "Serving at " << addr.host() << ":" << addr.port() << " ." << endl;
     cout << "Using " << thr << " threads to handle Requests." << endl;
 
     auto server = std::make_shared<Http::Endpoint>(addr);
