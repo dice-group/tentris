@@ -1,37 +1,45 @@
 #include <gtest/gtest.h>
 
-//using tnt::tensor::shape_t;
-//using tnt::operations::raw_subscript;
-//using tnt::operations::einsum;
-//
-//
-//TEST(TestEinsum, simple_call) {
-//    shape_t shape{2, 2};
-//
-//    HyperTrieTensor<int> tensor_0{shape};
-//    tensor_0.set({0, 0}, 1);
-//    tensor_0.set({0, 1}, 2);
-//    tensor_0.set({1, 0}, 3);
-//    tensor_0.set({1, 1}, 5);
-//
-//    HyperTrieTensor<int> tensor_1{shape};
-//    tensor_1.set({0, 0}, 7);
-//    tensor_1.set({0, 1}, 11);
-//    tensor_1.set({1, 0}, 13);
-//    tensor_1.set({1, 1}, 17);
-//
-//    vector<HyperTrieTensor<int> *> operands{&tensor_0, &tensor_1};
-//
-//    vector<raw_subscript> op_sc{{0, 1},
-//                                {1, 2}};
-//    raw_subscript res_sc{0, 2};
-//
-//    CrossProductTensor<int> *const result = einsum<int>(operands, op_sc, res_sc);
-//    for (const auto &non_zero : *result) {
-//        std::cout << non_zero << std::endl;
-//    }
-//
-//}
+#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/tensor/einsum/operator/Einsum.hpp"
+#include "tnt/tensor/einsum/Subscript.hpp"
+
+using namespace tnt::util::types;
+using namespace tnt::tensor::hypertrie;
+using namespace tnt::tensor::einsum::operators;
+using namespace tnt::tensor::einsum;
+template<typename T>
+using NDMap = tnt::util::container::NDMap<T>;
+
+
+TEST(TestEinsum, simple_call) {
+
+    BoolHyperTrie tensor_0{2};
+    tensor_0.set({0, 0}, true);
+    tensor_0.set({0, 1}, true);
+    tensor_0.set({1, 0}, true);
+    tensor_0.set({1, 1}, true);
+
+    BoolHyperTrie tensor_1{2};
+    tensor_1.set({0, 0}, true);
+    tensor_1.set({0, 1}, true);
+    tensor_1.set({1, 0}, true);
+    tensor_1.set({1, 1}, true);
+
+    std::vector<BoolHyperTrie *> operands{&tensor_0, &tensor_1};
+
+    std::vector<raw_subscript> op_sc{{0, 1},
+                                     {1, 2}};
+    raw_subscript res_sc{0, 2};
+
+    Einsum<int> einsum_op{Subscript{op_sc, res_sc}};
+    NDMap<int> result = einsum_op.getResult(operands);
+
+    for (const auto &non_zero : result) {
+        std::cout << non_zero << std::endl;
+    }
+
+}
 
 
 int main(int argc, char **argv) {
