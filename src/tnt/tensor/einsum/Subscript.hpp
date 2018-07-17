@@ -25,7 +25,7 @@ namespace tnt::tensor::einsum {
 
     /**
      * Representation of the subscript of a expression in einstein summation convention.
-     * This provides also  brackets out all independently computable parts and resulting in a
+     * This provides also  bracketing of independently computable parts and resulting in a
      * cross product of the bracketed parts.
      */
     class Subscript {
@@ -51,6 +51,10 @@ namespace tnt::tensor::einsum {
         std::vector<std::set<label_t>> _independent_label_subsets;
         std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> _unique_non_result_contractions;
 
+        /**
+         * This function must be called if _operands_labels, _result_labels or _all_labels where changed. The user is
+         * responsible to keep _operands_labels, _result_labels and _all_labels valid.
+         */
         void updateFields() {
             _distinct_operands_labels = {};
             _distinct_operands_labels.reserve(numberOfOperands());
@@ -94,12 +98,18 @@ namespace tnt::tensor::einsum {
 
     public:
         Subscript() = default;
+
         Subscript(const Subscript &subscript) = default;
+
+        /**
+         * Generate a subscript from operands' labels and result's labels.
+         * @param operands a vector that contains for every operands a raw_subscript, i.e. a vector of labels
+         * @param result a raw_subscript, i.e. a vector of labels for the result
+         */
         Subscript(std::vector<raw_subscript> operands, raw_subscript result) {
             std::tie(_operands_labels, _result_labels, _all_labels) = normalizeRawSubscripts(operands, result);
 
-            _original_op_poss = std::vector<op_pos_t>{};
-            _original_op_poss.reserve(numberOfOperands());
+            _original_op_poss = std::vector<op_pos_t>(numberOfOperands());
             std::iota(_original_op_poss.begin(), _original_op_poss.end(), 0);
 
             _sub_subscripts = {};
@@ -112,42 +122,93 @@ namespace tnt::tensor::einsum {
         }
 
 
+        /**
+         * Returns the number of operands that this subscript has.
+         * @return number of operands
+         */
         inline size_t numberOfOperands() const {
             return _operands_labels.size();
         }
 
+        /**
+         * Returns an "label dependency graph". It has labels as vertices. Two labels are connected by an edge iff they
+         * are present at at least one common operand.
+         * @return label dependency graph
+         */
         inline const UndirectedGraph<label_t> &getLabelDependencyGraph() const {
             return _label_dependency_graph;
         }
 
+        /**
+         * Sets of labels that share no common operand between the sets.
+         * @return independent label sets
+         */
         inline const std::vector<std::set<label_t>> &getIndependentLabelSubsets() const {
             return _independent_label_subsets;
         }
 
+        /**
+         * A set of all labels used at the operands. (All labels used at the result must also occur at an operand.)
+         * @return  all labels
+         */
         inline const std::set<label_t> &getAllLabels() const {
             return _all_labels;
         }
 
+        /**
+         * a vector of reuslt labels.
+         * @return
+         */
         inline const std::vector<label_t> &getResultLabels() const {
             return _result_labels;
         }
 
+        /**
+         * A vector of the operands positions in the root subscript that this subscript was derived from.
+         * @return by default this returns a sequence 0 ... number_of_ops -1 if this is the root subscript. Otherwise
+         * any sequence that is a possibly shorter poermutation of that squence.
+         */
         inline const std::vector<op_pos_t> &getOriginalOpPoss() const {
             return _original_op_poss;
         }
 
-        inline const std::vector<std::shared_ptr<Subscript>> &getSubSubscripts() const {
+        /**
+         * Get a vector of sub-subscripts. They are only available for subscripts that were created by calling
+         * optimized() on another subscript. They are the subscripts that must be applied to the operands before this
+         * subscript may be applied to their those resulting operands.
+         * @return vector of sub subscripts.
+         */
+        inline const std::vector<std::shared_ptr<Subscript>> &getSubSubscripts() const noexcept {
             return _sub_subscripts;
         }
 
+        /**
+         * A vector with positions of operands that have unique labels that don't occur in result. A unique label is an
+         * label that is only present at one operand.
+         * @return set of operand positions
+         */
         inline const std::vector<op_pos_t> &getOperandsWithUniqueNonResultLabels() const {
             return _operands_with_unique_non_result_labels;
         }
 
+        /**
+         * A vector with positions of operands that do NOT have unique labels that don't occur in result. A unique label is an
+         * label that is only present at one operand.
+         * @return set of operand positions
+         */
         inline const std::vector<op_pos_t> &getOperandsWithoutUniqueNonResultLabels() const {
             return _operands_without_unique_non_result_labels;
         }
 
+        /**
+         * A map that gives for a position of an operand all diagonals on unique labels that don't occur in result. A
+         * unique label is an label that is only present at one operand. The diagonals are encoded as a vectors of
+         * key_part_pos_t that are part of a diagonal. Every operand can have multiple of such diagonals.
+         *
+         * Only operand positions that are in getOperandsWithUniqueNonResultLabels() are certain to be contained in the
+         * set.
+         * @return
+         */
         inline const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &getUniqueNonResultContractions() const {
             return _unique_non_result_contractions;
         }
@@ -162,11 +223,24 @@ namespace tnt::tensor::einsum {
             return _operands_with_label.at(label);
         }
 
+        /**
+         * The position of an label in the result.
+         * @param label  the label
+         * @return position in the result
+         * @throws out_of_range if label is not used in the result
+         */
         inline const label_pos_t &labelPosInResult(const label_t &label) const {
             return _label_pos_in_result.at(label);
         }
 
-        inline const std::vector<label_pos_t> labelPossInOperand(const op_pos_t &op_pos, const label_t &label) const {
+        /**
+         * Get the positions of an label in an operand.
+         * @param op_pos the position of the operand
+         * @param label the label
+         * @return a vector of label's positions in the operand
+         */
+        inline const std::vector<label_pos_t>
+        labelPossInOperand(const op_pos_t &op_pos, const label_t &label) const noexcept {
             try {
                 return _label_poss_in_operands.at(std::make_tuple(op_pos, label));
             } catch (...) {
@@ -174,29 +248,64 @@ namespace tnt::tensor::einsum {
             }
         }
 
+        /**
+         * Get the labels of an Operand.
+         * @param op_pos position of the operand
+         * @return a vector of labels
+         * @throws out_of_range if the operand position is out of range
+         */
         inline const std::vector<label_pos_t> &operandLabels(const op_pos_t &op_pos) const {
             return _operands_labels.at(op_pos);
         }
 
+        /**
+         * Get the distinct labels of an Operand.
+         * @param op_pos position of the operand
+         * @return a set of labels
+         * @throws out_of_range if the operand position is out of range
+         */
         inline const std::set<label_pos_t> &distinctOperandLabels(const op_pos_t &op_pos) const {
             return _distinct_operands_labels.at(op_pos);
         }
 
+        /**
+         * Get all diagonals on unique labels that don't occur in result for an operand position. A
+         * unique label is an label that is only present at one operand. The diagonals are encoded as a vectors of
+         * key_part_pos_t that are part of a diagonal. Every operand can have multiple of such diagonals.
+         *
+         * @return vector of diagonals. A diagonal is a vector of label positions that have the same label in an operand.
+         * @throws out_of_range if the operand position has no unique non-result labels
+         */
         inline const std::vector<std::vector<label_pos_t>> &uniqueNonResultContractions(const op_pos_t &op_pos) const {
             return _unique_non_result_contractions.at(op_pos);
         }
 
+        /**
+         * Generates the subscript that arises from removing a label from all operands and the result. Operands that
+         * result in scalars (no labels left) are removed. The original op position is saved in getOriginalOpPoss(). If
+         * this is called repeatedly on the result the original op position refer always to the first subscript.
+         * @param label the label to be removed.
+         * @return a subscript without the given label.
+         */
         Subscript removeLabel(const label_t &label) const {
             if (not _all_labels.count(label))
                 return *this;
             else {
                 Subscript subscript{};
 
+                // remove the label from _all_labels
                 subscript._all_labels = {};
                 std::copy_if(_all_labels.begin(), _all_labels.end(),
                              std::inserter(subscript._all_labels, subscript._all_labels.begin()),
                              [&](const label_t &l) { return l != label; });
 
+                // remove the label from _result_labels
+                subscript._result_labels = {};
+                std::copy_if(_result_labels.begin(), _result_labels.end(),
+                             std::back_inserter(subscript._result_labels),
+                             [&](const label_t &l) { return l != label; });
+
+                // remove the label from _operands_labels
                 subscript._operands_labels = {};
                 subscript._original_op_poss = {};
                 for (const auto &[op_pos, op_labels] : enumerate(_operands_labels)) {
@@ -212,9 +321,14 @@ namespace tnt::tensor::einsum {
                 subscript.updateFields();
                 return subscript;
             }
-
         }
 
+        /**
+         * Returns an optimized subscript. It is equal to this if it is already optimal. Otherwise the subscript has is
+         * bracketed into cross products. The original operands are then used in the new operands. The subscripts for the
+         * new operands may be retrieved from the new Subscript by getSubSubscripts().
+         * @return optimized Subscript or this
+         */
         Subscript optimized() const {
             std::vector<std::shared_ptr<Subscript>> sub_subscripts{};
             std::vector<std::vector<label_t>> new_operands_labels{};
@@ -235,6 +349,13 @@ namespace tnt::tensor::einsum {
             }
         }
 
+        /**
+         * Returns an subscript that uses only labels form this that are present in label_subset. If the labels of an
+         * operand result to be empty by doing so it is removed. The original op pos of the resulting Subscript refer to
+         * to the original op pos as used in this subscript.
+         * @param label_subset a set of labels that are allowed in the new subscript
+         * @return a SubSubscript
+         */
         Subscript extractSubscript(const std::set<label_t> &label_subset) const {
             std::vector<std::vector<label_t>> operands_labels;
             std::vector<op_pos_t> original_op_poss;
@@ -373,25 +494,7 @@ namespace tnt::tensor::einsum {
             return norm_operand_labels;
         }
 
-//    public:
-//        friend ::std::ostream &operator<<(::std::ostream &out, ::tnt::operations::Subscript &subscript) {
-//            out << "<Subscript: \n"
-//                << "all_labels=" << subscript._all_labels
-//                << ",\n\t"
-//                << "operands_labels = \n\t\t" << subscript._operands_labels
-//                << ",\n\t"
-//                << "distinct_operands_labels = \n\t\t" << subscript._distinct_operands_labels
-//                << ",\n\t"
-//                << "result_labels = \n\t\t" << subscript._result_labels
-//                << ",\n\t"
-//                << "label_poss_in_operand = \n\t\t" << subscript._label_poss_in_operands
-//                << ",\n\t"
-//                << "label_pos_in_result = \n\t\t" << subscript._label_pos_in_result
-//                << ",\n\t"
-//                << "independent_label_subsets = \n\t\t" << subscript._independent_label_subsets
-//                << "\n>";
-//            return out;
-//        }
+
     };
 }
 
