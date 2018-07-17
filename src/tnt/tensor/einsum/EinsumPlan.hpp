@@ -16,7 +16,7 @@ namespace tnt::tensor::einsum {
     class EinsumPlan {
         using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
-        const Subscript &_subscript;
+        const Subscript _subscript;
         const std::vector<label_t> &_result_labels;
     public:
         class Step;

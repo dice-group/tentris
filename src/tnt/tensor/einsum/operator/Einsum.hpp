@@ -43,7 +43,7 @@ namespace tnt::tensor::einsum::operators {
         explicit Einsum(const Subscript &subscript) : _plan{subscript} {}
 
 
-        const NDMap<OUT_COUNT_T> &getResult(const Operands &operands) {
+        NDMap<OUT_COUNT_T> getResult(const Operands &operands) {
             return calcEinsum(extractRelevantOperands(operands));
         }
 
@@ -99,7 +99,7 @@ namespace tnt::tensor::einsum::operators {
         Operands extractRelevantOperands(const Operands &all_operands) const {
             Operands operands{};
             for (const op_pos_t &op_pos : _plan.getSubscript().getOriginalOpPoss()) {
-                operands.push_back(operands.at(op_pos));
+                operands.push_back(all_operands.at(op_pos));
             }
             return operands;
         }
