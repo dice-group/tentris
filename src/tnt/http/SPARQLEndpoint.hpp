@@ -61,38 +61,45 @@ HTTP_PROTOTYPE(SPARQLEndpoint)
     void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
         using namespace Pistache;
         using namespace Pistache::Http;
-        if (request.method() == Method::Get and request.resource().compare("/sparql") == 0) {
+            if (request.method() == Method::Get and request.resource().compare("/sparql") == 0) {
 
-            const Optional<std::string> &hasQuery = request.query().get("query");
-            Uri::Query query = request.query();
+                const Optional<std::string> &hasQuery = request.query().get("query");
+                Uri::Query query = request.query();
 
 
-            response.headers().add<SPARQLJSON>();
+                response.headers().add<SPARQLJSON>();
 
-            if (not hasQuery.isEmpty()) {
-                const std::string sparqlQuery = urlDecode(hasQuery.get());
-                const tnt::util::container::NDMap<unsigned long> result = _store.query(sparqlQuery);
-                for (const auto &item : sparqlQuery) {
-                    std::cout << item << std::endl;
-                }
+                if (not hasQuery.isEmpty()) {
+                    const std::string sparqlQuery = urlDecode(hasQuery.get());
+                    try {
 
-                auto stream = response.stream(Code::Ok);
-                stream << "{\"found\":\"";
-                stream << sparqlQuery.data();
-                stream << "\"}";
+                        const tnt::util::container::NDMap<unsigned long> result = _store.query(sparqlQuery);
+                    } catch (const std::exception &exc) {
+                        std::cout << exc.what() << std::endl;
+                        response.send(Code::Internal_Server_Error);
+                    }
+                    for (const auto &item : sparqlQuery) {
+                        std::cout << item << std::endl;
+                    }
+
+                    auto stream = response.stream(Code::Ok);
+                    stream << "{\"found\":\"";
+                    stream << sparqlQuery.data();
+                    stream << "\"}";
 //            for (const auto &[key, value] : result) {
 //                stream << key << " " << value << "\n";
 //            }
-                stream << ends;
+                    stream << ends;
+                } else {
+                    auto stream = response.stream(Code::Ok);
+                    stream << "{\"found\":\"None\"}";
+                    stream << ends;
+                }
             } else {
-                auto stream = response.stream(Code::Ok);
-                stream << "{\"found\":\"None\"}";
-                stream << ends;
+                response.send(Code::I_m_a_teapot);
             }
-        } else {
-            response.send(Code::I_m_a_teapot);
+
         }
-    }
-};
+    };
 
 #endif //HEALTHCHECK_HPP

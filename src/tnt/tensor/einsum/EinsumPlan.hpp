@@ -12,6 +12,7 @@
 
 namespace tnt::tensor::einsum {
     using namespace tnt::util::types;
+
     class EinsumPlan {
         using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
@@ -20,8 +21,9 @@ namespace tnt::tensor::einsum {
     public:
         class Step;
 
-        explicit EinsumPlan(const Subscript &subscript) : _subscript(subscript),
-                                                          _result_labels{subscript.getResultLabels()} {}
+        explicit EinsumPlan(const Subscript &subscript) :
+                _subscript(subscript),
+                _result_labels{subscript.getResultLabels()} {}
 
         Step getInitialStep(const Operands &operands) const {
             return Step{_subscript, _subscript.getResultLabels(), operands};
@@ -50,7 +52,7 @@ namespace tnt::tensor::einsum {
                  const std::set<label_t> &label_candidates, const Operands &operands) :
                     _subscript(subscript),
                     _result_labels(result_labels),
-                    label{getMinCardLabel(operands)},
+                    label{getMinCardLabel(operands, label_candidates)},
                     _label_candidates{getSubset(label_candidates, label)},
                     all_done{bool(_label_candidates.size())} {}
 
@@ -111,14 +113,14 @@ namespace tnt::tensor::einsum {
 
         private:
 
-            label_t getMinCardLabel(const Operands &operands) {
-                if (_label_candidates.size() == 1) {
-                    return *_label_candidates.begin();
+            label_t getMinCardLabel(const Operands &operands, const std::set<label_t> &label_candidates) {
+                if (label_candidates.size() == 1) {
+                    return *label_candidates.begin();
                 } else {
 
-                    label_t min_label = *_label_candidates.begin();
+                    label_t min_label = *label_candidates.begin();
                     double min_cardinality = INFINITY;
-                    for (const label_t &label: _label_candidates) {
+                    for (const label_t &label: label_candidates) {
                         if (const double label_cardinality = calcCard(operands, label); label_cardinality <
                                                                                         min_cardinality) {
                             min_cardinality = label_cardinality;
@@ -127,6 +129,10 @@ namespace tnt::tensor::einsum {
                     }
                     return min_label;
                 }
+            }
+
+            inline label_t getMinCardLabel(const Operands &operands) {
+                return getMinCardLabel(operands, _label_candidates);
             }
 
             /**
