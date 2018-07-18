@@ -45,12 +45,16 @@ namespace tnt::tensor::einsum {
         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
         std::map<label_t, label_pos_t> _label_pos_in_result;
         std::map<label_t, std::vector<op_pos_t>> _operands_with_label;
+        std::set<label_t> _lonely_non_result_labels;
+        std::vector<op_pos_t> _operands_with_lonely_non_result_labels;
+        std::vector<op_pos_t> _operands_without_lonely_non_result_labels;
+        std::map<op_pos_t, std::vector<label_pos_t>> _lonely_non_result_contractions_by_op;
         std::set<label_t> _unique_non_result_labels;
         std::vector<op_pos_t> _operands_with_unique_non_result_labels;
         std::vector<op_pos_t> _operands_without_unique_non_result_labels;
+        std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> _unique_non_result_contractions_by_op;
         UndirectedGraph<label_t> _label_dependency_graph;
         std::vector<std::set<label_t>> _independent_label_subsets;
-        std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> _unique_non_result_contractions;
 
         /**
          * This function must be called if _operands_labels, _result_labels or _all_labels where changed. The user is
@@ -70,31 +74,19 @@ namespace tnt::tensor::einsum {
                 _label_pos_in_result[pos] = label;
 
             _operands_with_label = {};
-            for (const auto &[op_pos, labels] : enumerate(_operands_labels))
+            for (const auto &[op_pos, labels] : enumerate(_distinct_operands_labels))
                 for (const label_t &label : labels)
                     _operands_with_label[label].push_back(op_pos_t(op_pos));
 
-            _unique_non_result_labels = _calcNonResultSingleOperandLabels(_operands_with_label, _result_labels);
-
-            _operands_with_unique_non_result_labels = std::vector<op_pos_t>{};
-            _operands_without_unique_non_result_labels = std::vector<op_pos_t>{};
-            for (const auto &[op_pos, labels] : enumerate(_distinct_operands_labels)) {
-                std::vector<label_t> intersect;
-                std::set_intersection(labels.cbegin(), labels.cend(), _unique_non_result_labels.cbegin(),
-                                      _unique_non_result_labels.cend(), std::back_inserter(intersect));
-                if (intersect.size())
-                    _operands_with_unique_non_result_labels.push_back(op_pos_t(op_pos));
-                else
-                    _operands_without_unique_non_result_labels.push_back(op_pos_t(op_pos));
-            }
+            std::tie(_lonely_non_result_labels, _operands_with_lonely_non_result_labels,
+                      _operands_without_lonely_non_result_labels, _lonely_non_result_contractions_by_op,
+                      _unique_non_result_labels, _operands_with_unique_non_result_labels,
+                      _operands_without_unique_non_result_labels, _unique_non_result_contractions_by_op) = _calcUniqueAndLonelyNonResultLabels(
+                    _operands_with_label, _label_poss_in_operands, _label_pos_in_result, numberOfOperands());
 
             _label_dependency_graph = calcLabelDependencyGraph(_distinct_operands_labels);
 
             _independent_label_subsets = _label_dependency_graph.getConnectedComponents();
-
-            _unique_non_result_contractions =
-                    calcUniqueNonResultContractions(_operands_with_unique_non_result_labels, _distinct_operands_labels,
-                                                    _unique_non_result_labels, _label_poss_in_operands);
         }
 
     public:
@@ -184,8 +176,10 @@ namespace tnt::tensor::einsum {
         }
 
         /**
-         * A vector with positions of operands that have unique labels that don't occur in result. A unique label is an
-         * label that is only present at one operand.
+         * A vector with positions of operands that have unique labels that don't occur in result.
+         *
+         * A unique label is a  label that is only present at one operand but there it must be present at least twice. If it is present only
+         * once it is an lonely label.
          * @return set of operand positions
          */
         inline const std::vector<op_pos_t> &getOperandsWithUniqueNonResultLabels() const {
@@ -193,8 +187,10 @@ namespace tnt::tensor::einsum {
         }
 
         /**
-         * A vector with positions of operands that do NOT have unique labels that don't occur in result. A unique label is an
-         * label that is only present at one operand.
+         * A vector with positions of operands that do NOT have unique labels that don't occur in result.
+         *
+         * A unique label is a label that is only present at one operand but there it must be present at least twice. If it is present only
+         * once it is an lonely label.
          * @return set of operand positions
          */
         inline const std::vector<op_pos_t> &getOperandsWithoutUniqueNonResultLabels() const {
@@ -202,16 +198,59 @@ namespace tnt::tensor::einsum {
         }
 
         /**
-         * A map that gives for a position of an operand all diagonals on unique labels that don't occur in result. A
-         * unique label is an label that is only present at one operand. The diagonals are encoded as a vectors of
-         * key_part_pos_t that are part of a diagonal. Every operand can have multiple of such diagonals.
+         * A vector with positions of operands that have lonely labels that don't occur in result.
+         *
+         * A lonely label is a label that is only present at one operand and there only once. If it is present multiple times it is an
+         * unique label.
+         * @return set of operand positions
+         */
+        inline const std::vector<op_pos_t> &getOperandsWithLonelyNonResultLabels() const {
+            return _operands_with_lonely_non_result_labels;
+        }
+
+        /**
+        * A vector with positions of operands that do NOT have lonely labels that don't occur in result.
+        *
+        * A lonely label is a label that is only present at one operand and there only once. If it is present multiple times it is an
+        * unique label.
+        * @return set of operand positions
+        */
+        inline const std::vector<op_pos_t> &getOperandsWithoutLonelyNonResultLabels() const {
+            return _operands_without_lonely_non_result_labels;
+        }
+
+        /**
+         * A map that gives for a position of an operand all diagonals on unique labels that don't occur in result.
+         *
+         * A unique label is a label that is only present at one operand but there it must be present at least twice.
+         * If it is present only once it is an lonely label.
+         *
+         * The diagonals are encoded as a vectors of key_part_pos_t that are part of a diagonal. Every operand can have
+         * multiple of such diagonals.
          *
          * Only operand positions that are in getOperandsWithUniqueNonResultLabels() are certain to be contained in the
          * set.
          * @return
          */
         inline const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &getUniqueNonResultContractions() const {
-            return _unique_non_result_contractions;
+            return _unique_non_result_contractions_by_op;
+        }
+
+        /**
+         * A map that gives for a position of an operand all diagonals on lonely labels that don't occur in result.
+         *
+         * A lonely label is a label that is only present at one operand and there only once. If it is present multiple
+         * times it is an unique label.
+         *
+         * The diagonals are encoded by their position in the operand. All positions of lonely non operand labels are
+         * stored in a vector by the operands position.
+         *
+         * Only operand positions that are in getOperandsWithLonelyNonResultLabels() are certain to be contained in the
+         * set.
+         * @return
+         */
+        inline const std::map<op_pos_t,std::vector<label_pos_t>> &getLonleyNonResultContractions() const {
+            return _lonely_non_result_contractions_by_op;
         }
 
         /**
@@ -267,18 +306,6 @@ namespace tnt::tensor::einsum {
          */
         inline const std::set<label_pos_t> &distinctOperandLabels(const op_pos_t &op_pos) const {
             return _distinct_operands_labels.at(op_pos);
-        }
-
-        /**
-         * Get all diagonals on unique labels that don't occur in result for an operand position. A
-         * unique label is an label that is only present at one operand. The diagonals are encoded as a vectors of
-         * key_part_pos_t that are part of a diagonal. Every operand can have multiple of such diagonals.
-         *
-         * @return vector of diagonals. A diagonal is a vector of label positions that have the same label in an operand.
-         * @throws out_of_range if the operand position has no unique non-result labels
-         */
-        inline const std::vector<std::vector<label_pos_t>> &uniqueNonResultContractions(const op_pos_t &op_pos) const {
-            return _unique_non_result_contractions.at(op_pos);
         }
 
         /**
@@ -419,6 +446,63 @@ namespace tnt::tensor::einsum {
             return unique_non_result_contractions;
         }
 
+        static auto
+        _calcUniqueAndLonelyNonResultLabels(const std::map<label_t, std::vector<op_pos_t>> &operands_with_label,
+                                            const std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> &label_poss_in_operands,
+                                            const std::map<label_t, label_pos_t> &label_pos_in_result,
+                                            const size_t &numberOfOprands)
+        -> std::tuple<std::set<label_t>, std::vector<op_pos_t>, std::vector<op_pos_t>, std::map<op_pos_t, std::vector<label_pos_t>>,
+                std::set<label_t>, std::vector<op_pos_t>, std::vector<op_pos_t>, std::map<op_pos_t, std::vector<std::vector<label_pos_t>>>> {
+            std::set<label_t> lonely_non_result_labels;
+            std::vector<op_pos_t> operands_with_lonely_non_result_labels;
+            std::vector<op_pos_t> operands_without_lonely_non_result_labels;
+            std::map<op_pos_t, std::vector<label_pos_t>> lonely_non_result_contractions_by_op;
+            std::set<label_t> unique_non_result_labels;
+            std::vector<op_pos_t> operands_with_unique_non_result_labels;
+            std::vector<op_pos_t> operands_without_unique_non_result_labels;
+            std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> unique_non_result_contractions_by_op;
+
+
+            // go by label thru the operands
+            for (const auto &[label, ops_with_label] : operands_with_label) {
+                // check if the label is only at one operand an dif it is not at the result
+                if (ops_with_label.size() == 1 and not label_pos_in_result.count(label)) {
+                    const op_pos_t &op_pos = ops_with_label[0];
+                    const std::vector<label_pos_t> &label_poss_in_op = label_poss_in_operands.at({op_pos, label});
+                    // check if the label is only once at the operand it is an lonely label ...
+                    if (label_poss_in_op.size() == 1) {
+                        lonely_non_result_labels.insert(label);
+                        std::vector<label_pos_t> &contractions = lonely_non_result_contractions_by_op[op_pos];
+                        const label_pos_t &label_position = label_poss_in_op[0];
+                        contractions.push_back(label_position);
+                    } else { // label_poss_in_op.size() > 1
+                        // ... otherwise it is just unique
+                        unique_non_result_labels.insert(label);
+                        std::vector<std::vector<label_pos_t>> &contractions = unique_non_result_contractions_by_op[op_pos];
+                        contractions.push_back(label_poss_in_op);
+                    }
+                }
+            }
+            // go thru all op_pos
+            for (const op_pos_t &op_pos : range(op_pos_t(numberOfOprands))) {
+                // write out if a op has non result lonely labels or not
+                if (lonely_non_result_contractions_by_op.count(op_pos))
+                    operands_with_lonely_non_result_labels.push_back(op_pos);
+                else
+                    operands_without_lonely_non_result_labels.push_back(op_pos);
+
+                // write out if a op has non result unique labels or not
+                if (unique_non_result_contractions_by_op.count(op_pos))
+                    operands_with_unique_non_result_labels.push_back(op_pos);
+                else
+                    operands_without_unique_non_result_labels.push_back(op_pos);
+            }
+
+            return {lonely_non_result_labels, operands_with_lonely_non_result_labels,
+                    operands_without_lonely_non_result_labels, lonely_non_result_contractions_by_op,
+                    unique_non_result_labels, operands_with_unique_non_result_labels,
+                    operands_without_unique_non_result_labels, unique_non_result_contractions_by_op};
+        }
 
         static std::set<label_t>
         _calcNonResultSingleOperandLabels(const std::map<label_t, std::vector<op_pos_t>> &operands_with_label,
@@ -502,12 +586,16 @@ namespace tnt::tensor::einsum {
                << subscript._original_op_poss << " _sub_subscripts: " << subscript._sub_subscripts
                << " _distinct_operands_labels: " << subscript._distinct_operands_labels << " _label_poss_in_operands: "
                << subscript._label_poss_in_operands << " _label_pos_in_result: " << subscript._label_pos_in_result
-               << " _operands_with_label: " << subscript._operands_with_label << " _unique_non_result_labels: "
+               << " _operands_with_label: " << subscript._operands_with_label << " _lonely_non_result_labels: "
+               << subscript._lonely_non_result_labels << " _operands_with_lonely_non_result_labels: "
+               << subscript._operands_with_lonely_non_result_labels << " _operands_without_lonely_non_result_labels: "
+               << subscript._operands_without_lonely_non_result_labels << " _lonely_non_result_contractions_by_op: "
+               << subscript._lonely_non_result_contractions_by_op << " _unique_non_result_labels: "
                << subscript._unique_non_result_labels << " _operands_with_unique_non_result_labels: "
                << subscript._operands_with_unique_non_result_labels << " _operands_without_unique_non_result_labels: "
-               << subscript._operands_without_unique_non_result_labels << " _independent_label_subsets: "
-               << subscript._independent_label_subsets << " _unique_non_result_contractions: "
-               << subscript._unique_non_result_contractions;
+               << subscript._operands_without_unique_non_result_labels << " _unique_non_result_contractions_by_op: "
+               << subscript._unique_non_result_contractions_by_op <<  " _independent_label_subsets: "
+               << subscript._independent_label_subsets;
             return os;
         }
 
