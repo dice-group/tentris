@@ -82,7 +82,7 @@ namespace tnt::tensor::einsum::operators {
                 Join join{result_key, operands, step};
 
                 for (auto[next_operands, next_result_key] : join) {
-                    EinsumPlan::Step next_step = step.nextStep(operands);
+                    EinsumPlan::Step next_step = step.nextStep(next_operands);
                     // start next recursive step.
                     rekEinsum(next_operands, next_result_key, next_step, result);
                 }

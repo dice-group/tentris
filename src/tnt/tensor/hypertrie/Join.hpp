@@ -40,7 +40,7 @@ namespace tnt::tensor::hypertrie {
         // TODO: do that via template
         const std::optional<key_pos_t> _result_key_pos; ///< an optional position in the result key where to write the binding to
 
-        std::vector<op_pos_t> _diagonal2result_pos; ///< an position mapping from _diagonals to _results
+        std::map<op_pos_t, op_pos_t> _diagonal2result_pos; ///< an position mapping from _diagonals to _results
 
 
     public:
@@ -79,19 +79,22 @@ namespace tnt::tensor::hypertrie {
             }
 
             // narrow the range of the diagonals
-            std::tie(_min_keypart, _max_keypart) =  BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
+            std::tie(_min_keypart, _max_keypart) = BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
 
             // calculate the position mapping from diagonals to result
             // TODO: move that to PlanStep
-            _diagonal2result_pos = std::vector<op_pos_t>(next_op_position.size());
-            for (size_t i = 0, j = 0; i < op_poss.size(); ++i) {
-                auto pos_of_join_in_operands = op_poss[i];
+
+            for (size_t i = 0, j = 0; i < op_poss.size() and j < next_op_position.size();) {
+                auto pos_of_join_in_operands = op_poss.at(i);
                 auto pos_of_result_in_operands = next_op_position.at(j);
                 if (pos_of_join_in_operands == pos_of_result_in_operands) {
                     _diagonal2result_pos[i] = pos_of_join_in_operands;
                     ++j;
+                    ++i;
+                } else if (pos_of_join_in_operands < pos_of_result_in_operands) {
+                    ++i;
                 } else {
-                    _diagonal2result_pos[i] = OP_POS_MAX;
+                    ++j;
                 }
             }
         }
@@ -112,7 +115,7 @@ namespace tnt::tensor::hypertrie {
 
             bool _ended{};  ///< if the end was reached.
 
-            std::vector<std::tuple<op_pos_t, op_pos_t>> _reorderedDiagonals2result_pos{};  ///< Mapping from reordered diagonal to result positions.
+            std::map<op_pos_t, op_pos_t> _reorderedDiagonals2result_pos{};  ///< Mapping from reordered diagonal to result positions.
         public:
 
             iterator(Join &join, bool ended = false) :
@@ -136,15 +139,18 @@ namespace tnt::tensor::hypertrie {
                     const std::vector<size_t> _inv_sort_order = ::tnt::util::container::invPermutation(_sort_order);
 
                     // calculate the mapping from the reordered Diagonals to the result from it
-                    for (size_t posInReorderedDiagonals = 0;
-                         posInReorderedDiagonals < _inv_sort_order.size(); ++posInReorderedDiagonals) {
-                        auto positionOfReorderedDiagonalInDiagonals = _inv_sort_order[posInReorderedDiagonals];
-                        auto positionOfDiagonalInResult = join._diagonal2result_pos[positionOfReorderedDiagonalInDiagonals];
-                        if (positionOfDiagonalInResult != OP_POS_MAX) {
-                            _reorderedDiagonals2result_pos.emplace_back(
-                                    std::make_tuple(posInReorderedDiagonals, positionOfDiagonalInResult));
-                        }
+                    for (const auto &[diagonal_pos, result_pos] : _join._diagonal2result_pos) {
+                        _reorderedDiagonals2result_pos[_sort_order[diagonal_pos]] = result_pos;
                     }
+//                    for (size_t posInReorderedDiagonals = 0;
+//                         posInReorderedDiagonals < _inv_sort_order.size(); ++posInReorderedDiagonals) {
+//                        auto positionOfReorderedDiagonalInDiagonals = _inv_sort_order[posInReorderedDiagonals];
+//                        auto positionOfDiagonalInResult = std::find(join._diagonal2result_pos.begin(), join._diagonal2result_pos.end(),positionOfReorderedDiagonalInDiagonals);
+//                        if (positionOfDiagonalInResult != join._diagonal2result_pos.end()) {
+//                            _reorderedDiagonals2result_pos.emplace_back(
+//                                    std::make_tuple(posInReorderedDiagonals, *positionOfDiagonalInResult));
+//                        }
+//                    }
                     // find the first result
                     _current_key_part = _diagonals[0].first();
                     findNextMatch();
