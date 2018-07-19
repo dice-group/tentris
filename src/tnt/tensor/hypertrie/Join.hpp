@@ -27,76 +27,41 @@ namespace tnt::tensor::hypertrie {
         using Key_t =  tnt::util::types::Key_t;
         using EinsumPlan = tnt::tensor::einsum::EinsumPlan;
 
+        const Key_t &_key; ///< a key that is copied each time the iterator returns a result
+
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
 
         key_part_t _max_keypart = KEY_PART_MIN; ///< a upper bound to the key parts that are candidates for this join
 
+        // TODO: do that via template
+        const std::optional<key_pos_t> &_result_key_pos; ///< an optional position in the result key where to write the binding to
+
+        const std::map<op_pos_t, op_pos_t> &_diagonal2result_pos; ///< an position mapping from _diagonals to _results
+
         Operands _result; ///< Operands that are copied each time the iterator returns a result
 
-        const Key_t &_key; ///< a key that is copied each time the iterator returns a result
-
         std::vector<BoolHyperTrie::DiagonalView> _diagonals{}; ///< diagonals that are used in the join
-
-        // TODO: do that via template
-        const std::optional<key_pos_t> _result_key_pos; ///< an optional position in the result key where to write the binding to
-
-        std::map<op_pos_t, op_pos_t> _diagonal2result_pos; ///< an position mapping from _diagonals to _results
 
 
     public:
 
         Join(const Key_t &key, const Operands &operands, const EinsumPlan::Step &step) :
-                Join{key, operands, step.getOperandPositions(), step.getKeyPartPoss(), step.getPosOfOperandsInResult(),
-                     step.getResulKeyPos()} {}
+                _key{key},
+                _result_key_pos{step.getResulKeyPos()},
+                _diagonal2result_pos{step.getDiagonal2ResultMapping()} {
 
-        /**
-         *
-         * @param key the current key that maybe gets updated.
-         * @param operands the current operands
-         * @param op_poss the positions of the joining BoolHyperTrie in operands
-         * @param key_part_posss the joining key part positions of each join operand.
-         * @param next_op_position the positions in operands that will be in the result
-         * @param result_key_pos
-         */
-        Join(const Key_t &key,
-             const Operands &operands,
-             const std::vector<op_pos_t> &op_poss,
-             const std::vector<std::vector<key_pos_t >> &key_part_posss,
-             const std::vector<op_pos_t> &next_op_position,
-             const std::optional<key_pos_t> result_key_pos) :
-                _result{}, _key{key}, _result_key_pos{result_key_pos} {
-
-            std::cout << _result_key_pos.has_value() << std::endl;
-            std::cout << result_key_pos.has_value() << std::endl;
             // write operands into _result
-            for (const op_pos_t &pos : next_op_position) {
+            for (const op_pos_t &pos : step.getPosOfOperandsInResult()) {
                 _result.push_back(operands.at(pos));
             }
 
             // initialize diagonals with the operands and their positions to join on.
-            for (const auto &[op_pos, key_part_poss] : zip(op_poss, key_part_posss)) {
+            for (const auto &[op_pos, key_part_poss] : zip(step.getOperandPositions(), step.getKeyPartPoss())) {
                 _diagonals.emplace_back(BoolHyperTrie::DiagonalView{operands[op_pos], key_part_poss});
             }
 
             // narrow the range of the diagonals
             std::tie(_min_keypart, _max_keypart) = BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
-
-            // calculate the position mapping from diagonals to result
-            // TODO: move that to PlanStep
-
-            for (size_t i = 0, j = 0; i < op_poss.size() and j < next_op_position.size();) {
-                auto pos_of_join_in_operands = op_poss.at(i);
-                auto pos_of_result_in_operands = next_op_position.at(j);
-                if (pos_of_join_in_operands == pos_of_result_in_operands) {
-                    _diagonal2result_pos[i] = pos_of_join_in_operands;
-                    ++j;
-                    ++i;
-                } else if (pos_of_join_in_operands < pos_of_result_in_operands) {
-                    ++i;
-                } else {
-                    ++j;
-                }
-            }
         }
 
 
@@ -135,22 +100,11 @@ namespace tnt::tensor::hypertrie {
 
                     ::tnt::util::container::applyPermutation(_diagonals, _sort_order);
 
-                    // get the inverse sort order
-                    const std::vector<size_t> _inv_sort_order = ::tnt::util::container::invPermutation(_sort_order);
-
                     // calculate the mapping from the reordered Diagonals to the result from it
+                    // (that means just apply the permutation to the image of the map)
                     for (const auto &[diagonal_pos, result_pos] : _join._diagonal2result_pos) {
                         _reorderedDiagonals2result_pos[_sort_order[diagonal_pos]] = result_pos;
                     }
-//                    for (size_t posInReorderedDiagonals = 0;
-//                         posInReorderedDiagonals < _inv_sort_order.size(); ++posInReorderedDiagonals) {
-//                        auto positionOfReorderedDiagonalInDiagonals = _inv_sort_order[posInReorderedDiagonals];
-//                        auto positionOfDiagonalInResult = std::find(join._diagonal2result_pos.begin(), join._diagonal2result_pos.end(),positionOfReorderedDiagonalInDiagonals);
-//                        if (positionOfDiagonalInResult != join._diagonal2result_pos.end()) {
-//                            _reorderedDiagonals2result_pos.emplace_back(
-//                                    std::make_tuple(posInReorderedDiagonals, *positionOfDiagonalInResult));
-//                        }
-//                    }
                     // find the first result
                     _current_key_part = _diagonals[0].first();
                     findNextMatch();

@@ -43,7 +43,7 @@ namespace tnt::tensor::einsum {
         private:
             mutable std::map<label_t, Subscript> subscript_cache;
             const Subscript &_subscript;
-            const  std::map<label_t, label_pos_t> &_result_label_poss;
+            const std::map<label_t, label_pos_t> &_result_label_poss;
         public:
             const label_t label;
         private:
@@ -51,13 +51,59 @@ namespace tnt::tensor::einsum {
         public:
             const bool all_done;
         private:
-            Step(const Subscript &subscript, const  std::map<label_t, label_pos_t> &result_label_poss, const Operands &operands,
+            const std::vector<op_pos_t> &_op_poss;
+            std::optional<key_pos_t> _result_pos;
+            std::map<op_pos_t, op_pos_t> _diagonal2result_pos;
+            std::vector<std::vector<key_pos_t>> _joinee_key_part_poss; ///< the joining key part positions of each join operand.
+            std::vector<op_pos_t> _next_op_position;
+
+        private:
+
+
+            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+                 const Operands &operands,
                  const std::set<label_t> &label_candidates) :
                     _subscript{subscript},
                     _result_label_poss{result_label_poss},
                     label{getMinCardLabel(operands, label_candidates)},
                     _label_candidates{getSubset(label_candidates, label)},
-                    all_done{not bool(label_candidates.size())} {}
+                    all_done{not bool(label_candidates.size())},
+                    _op_poss{_subscript.operandsWithLabel(label)} {
+                if (not all_done) {
+
+                    try {
+                        _result_pos = _result_label_poss.at(label);
+                    } catch (...) {
+                        _result_pos = std::nullopt;
+                    }
+
+
+                    // the joining key part positions of each join operand.
+                    _joinee_key_part_poss.reserve(_op_poss.size());
+                    for (const op_pos_t &op_pos : _op_poss) {
+                        _joinee_key_part_poss.emplace_back(_subscript.labelPossInOperand(op_pos, label));
+                    }
+
+                    // TODO: only if label was left
+                    const Subscript &subsc = _subscript.removeLabel(label);
+                    _next_op_position = subsc.getOriginalOpPoss();
+
+
+                    for (size_t i = 0, j = 0; i < _op_poss.size() and j < _next_op_position.size();) {
+                        auto pos_of_join_in_operands = _op_poss.at(i);
+                        auto pos_of_result_in_operands = _next_op_position.at(j);
+                        if (pos_of_join_in_operands == pos_of_result_in_operands) {
+                            _diagonal2result_pos[i] = pos_of_join_in_operands;
+                            ++j;
+                            ++i;
+                        } else if (pos_of_join_in_operands < pos_of_result_in_operands) {
+                            ++i;
+                        } else {
+                            ++j;
+                        }
+                    }
+                }
+            }
 
             template<typename T>
             static std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
@@ -70,7 +116,8 @@ namespace tnt::tensor::einsum {
 
         public:
 
-            Step(const Subscript &subscript, const  std::map<label_t, label_pos_t> &result_label_poss, const Operands &operands) :
+            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+                 const Operands &operands) :
                     Step(subscript, result_label_poss, operands, subscript.getAllLabels()) {}
 
             inline const std::map<label_t, label_pos_t> &getResultLabels() const {
@@ -95,30 +142,32 @@ namespace tnt::tensor::einsum {
             }
 
             inline const std::vector<op_pos_t> &getOperandPositions() const {
-                return _subscript.operandsWithLabel(label);
+                return _op_poss;
             }
 
-            std::vector<std::vector<key_pos_t>> getKeyPartPoss() const {
-                std::vector<std::vector<key_pos_t>> key_part_poss{};
-                key_part_poss.reserve(getOperandPositions().size());
-                for (const op_pos_t &op_pos : getOperandPositions()) {
-                    key_part_poss.emplace_back(_subscript.labelPossInOperand(op_pos, label));
-                }
-                return key_part_poss;
+            inline const std::vector<std::vector<key_pos_t>> &getKeyPartPoss() const {
+                return _joinee_key_part_poss;
             };
 
-            std::vector<op_pos_t> getPosOfOperandsInResult() const {
-                const Subscript &subscript = _subscript.removeLabel(label);
-                const std::vector<op_pos_t> &result_ops = subscript.getOriginalOpPoss();
-                return {result_ops};
+            inline const std::vector<op_pos_t> &getPosOfOperandsInResult() const {
+                return _next_op_position;
             }
 
-            std::optional<key_pos_t> getResulKeyPos() const {
-                try {
-                    return _result_label_poss.at(label);
-                } catch (...) {
-                    return std::nullopt;
-                }
+            /**
+             * Returns a mapping from {0..n}->{0..r} where n is the number of operands with label and r is the number of
+             * non-scalar hypertries that result from the operation described by this plan.
+             * @return a map that like defined above
+             */
+            inline const std::map<op_pos_t, op_pos_t> &getDiagonal2ResultMapping() const {
+                return _diagonal2result_pos;
+            }
+
+            /**
+             * An optional position in the key that the key_part that fullfill this step must be written if it exists.
+             * @return an optional position in the key_part.
+             */
+            inline const std::optional<key_pos_t> &getResulKeyPos() const {
+                return _result_pos;
             }
 
 
