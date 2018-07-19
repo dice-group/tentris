@@ -27,7 +27,7 @@ namespace tnt::tensor::einsum {
                 _result_labels{subscript.getResultLabels()} {}
 
         Step getInitialStep(const Operands &operands) const {
-            return Step{_subscript, _subscript.getResultLabels(), operands};
+            return Step{_subscript, _subscript.getLabelPosInResult(), operands};
         }
 
         inline const Subscript &getSubscript() const {
@@ -43,7 +43,7 @@ namespace tnt::tensor::einsum {
         private:
             mutable std::map<label_t, Subscript> subscript_cache;
             const Subscript &_subscript;
-            const std::vector<label_t> &_result_labels;
+            const  std::map<label_t, label_pos_t> &_result_label_poss;
         public:
             const label_t label;
         private:
@@ -51,13 +51,13 @@ namespace tnt::tensor::einsum {
         public:
             const bool all_done;
         private:
-            Step(const Subscript &subscript, const std::vector<label_t> &result_labels, const Operands &operands,
+            Step(const Subscript &subscript, const  std::map<label_t, label_pos_t> &result_label_poss, const Operands &operands,
                  const std::set<label_t> &label_candidates) :
                     _subscript{subscript},
-                    _result_labels{result_labels},
+                    _result_label_poss{result_label_poss},
                     label{getMinCardLabel(operands, label_candidates)},
                     _label_candidates{getSubset(label_candidates, label)},
-                    all_done{bool(not _label_candidates.size())} {}
+                    all_done{not bool(label_candidates.size())} {}
 
             template<typename T>
             static std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
@@ -70,15 +70,15 @@ namespace tnt::tensor::einsum {
 
         public:
 
-            Step(const Subscript &subscript, const std::vector<label_t> &result_labels, const Operands &operands) :
-                    Step(subscript, result_labels, operands, subscript.getAllLabels()) {}
+            Step(const Subscript &subscript, const  std::map<label_t, label_pos_t> &result_label_poss, const Operands &operands) :
+                    Step(subscript, result_label_poss, operands, subscript.getAllLabels()) {}
 
-            inline const std::vector<label_t> &getResultLabels() const {
-                return _result_labels;
+            inline const std::map<label_t, label_pos_t> &getResultLabels() const {
+                return _result_label_poss;
             }
 
             inline size_t getResultSize() const {
-                return _result_labels.size();
+                return _result_label_poss.size();
             }
 
             Step nextStep(const Operands &operands) const {
@@ -86,10 +86,10 @@ namespace tnt::tensor::einsum {
                     throw "Must not be called if all_done is true";
                 auto found = subscript_cache.find(label);
                 if (found != subscript_cache.end()) {
-                    return {found->second, _result_labels, operands, _label_candidates};
+                    return {found->second, _result_label_poss, operands, _label_candidates};
                 } else {
                     const auto &result = subscript_cache.emplace(label, _subscript.removeLabel(label));
-                    return {result.first->second, _result_labels, operands, _label_candidates};
+                    return {result.first->second, _result_label_poss, operands, _label_candidates};
                 }
 
             }
@@ -115,7 +115,7 @@ namespace tnt::tensor::einsum {
 
             std::optional<key_pos_t> getResulKeyPos() const {
                 try {
-                    return _subscript.labelPosInResult(label);
+                    return _result_label_poss.at(label);
                 } catch (...) {
                     return std::nullopt;
                 }
@@ -193,7 +193,7 @@ namespace tnt::tensor::einsum {
 
         public:
             friend std::ostream &operator<<(std::ostream &os, const Step &step) {
-                os << "_subscript: " << step._subscript << "\n" << " _result_labels: " << step._result_labels
+                os << "_subscript: " << step._subscript << "\n" << " _result_label_poss: " << step._result_label_poss
                    << " label: "
                    << step.label << " _label_candidates: " << step._label_candidates << " all_done: " << step.all_done;
                 return os;

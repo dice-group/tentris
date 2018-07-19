@@ -273,6 +273,10 @@ namespace tnt::tensor::einsum {
             return _label_pos_in_result.at(label);
         }
 
+        inline const std::map<label_t, label_pos_t> &getLabelPosInResult() const {
+            return _label_pos_in_result;
+        }
+
         /**
          * Get the positions of an label in an operand.
          * @param op_pos the position of the operand
