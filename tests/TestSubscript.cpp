@@ -90,8 +90,8 @@ TEST(TestSubscript, check_non_result_single_operand_labels) {
                 ASSERT_EQ(label, operand_labels.at(label_pos));
             }
 
-            for (const label_pos_t & label_pos : range(label_pos_t(operand_labels.size()))){
-                if(std::find(contraction.begin(), contraction.end(), label_pos) == contraction.end()){
+            for (const label_pos_t &label_pos : range(label_pos_t(operand_labels.size()))) {
+                if (std::find(contraction.begin(), contraction.end(), label_pos) == contraction.end()) {
                     ASSERT_NE(operand_labels.at(label_pos), label);
                 }
             }
@@ -110,6 +110,25 @@ TEST(TestSubscript, check_non_result_single_operand_labels) {
     }
     std::cout << lonelyContr << std::endl;
 
+}
+
+TEST(TestSubscript, remove_label) {
+    std::vector<std::vector<label_t >> raw_op_sc{
+            {3, 0, 1},
+            {1, 2, 3, 2},
+            {0}
+    };
+    std::vector<label_t> raw_res_sc{0, 1, 2};
+
+    std::cout << "raw_op_labels:\n\t" << raw_op_sc << std::endl;
+    std::cout << "raw_res_labels:\n\t" << raw_res_sc << std::endl;
+
+    Subscript sc{raw_op_sc, raw_res_sc};
+    std::cout << sc << std::endl;
+
+    Subscript sc_wo0 = sc.removeLabel(0);
+
+    std::cout << sc_wo0 << std::endl;
 }
 
 //TEST(TestSubscript, optimize) {

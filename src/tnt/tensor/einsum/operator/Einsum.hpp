@@ -58,7 +58,7 @@ namespace tnt::tensor::einsum::operators {
             // plan first step
             EinsumPlan::Step step = _plan.getInitialStep(operands);
             NDMap<OUT_COUNT_T> result{};
-            Key_t result_key = Key_t(step.getResultSize());
+            Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
             // start recursion
             rekEinsum(operands, result_key, step, result);
             return result;

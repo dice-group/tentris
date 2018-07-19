@@ -40,6 +40,8 @@ namespace tnt::tensor::einsum {
 
 
         class Step {
+        private:
+            mutable std::map<label_t, Subscript> subscript_cache;
             const Subscript &_subscript;
             const std::vector<label_t> &_result_labels;
         public:
@@ -50,12 +52,12 @@ namespace tnt::tensor::einsum {
             const bool all_done;
         private:
             Step(const Subscript &subscript, const std::vector<label_t> &result_labels, const Operands &operands,
-                             const std::set<label_t> &label_candidates) :
+                 const std::set<label_t> &label_candidates) :
                     _subscript{subscript},
                     _result_labels{result_labels},
                     label{getMinCardLabel(operands, label_candidates)},
                     _label_candidates{getSubset(label_candidates, label)},
-                    all_done{bool(not _label_candidates.size())}{}
+                    all_done{bool(not _label_candidates.size())} {}
 
             template<typename T>
             static std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
@@ -82,7 +84,14 @@ namespace tnt::tensor::einsum {
             Step nextStep(const Operands &operands) const {
                 if (all_done)
                     throw "Must not be called if all_done is true";
-                return {_subscript, _result_labels, operands, _label_candidates};
+                auto found = subscript_cache.find(label);
+                if (found != subscript_cache.end()) {
+                    return {found->second, _result_labels, operands, _label_candidates};
+                } else {
+                    const auto &result = subscript_cache.emplace(label, _subscript.removeLabel(label));
+                    return {result.first->second, _result_labels, operands, _label_candidates};
+                }
+
             }
 
             inline const std::vector<op_pos_t> &getOperandPositions() const {
@@ -184,7 +193,8 @@ namespace tnt::tensor::einsum {
 
         public:
             friend std::ostream &operator<<(std::ostream &os, const Step &step) {
-                os << "_subscript: " << step._subscript << "\n" << " _result_labels: " << step._result_labels << " label: "
+                os << "_subscript: " << step._subscript << "\n" << " _result_labels: " << step._result_labels
+                   << " label: "
                    << step.label << " _label_candidates: " << step._label_candidates << " all_done: " << step.all_done;
                 return os;
             }

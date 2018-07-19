@@ -38,7 +38,7 @@ namespace tnt::tensor::hypertrie {
         std::vector<BoolHyperTrie::DiagonalView> _diagonals{}; ///< diagonals that are used in the join
 
         // TODO: do that via template
-        const std::optional<key_pos_t> &_result_key_pos; ///< an optional position in the result key where to write the binding to
+        const std::optional<key_pos_t> _result_key_pos; ///< an optional position in the result key where to write the binding to
 
         std::vector<op_pos_t> _diagonal2result_pos; ///< an position mapping from _diagonals to _results
 
@@ -63,11 +63,12 @@ namespace tnt::tensor::hypertrie {
              const std::vector<op_pos_t> &op_poss,
              const std::vector<std::vector<key_pos_t >> &key_part_posss,
              const std::vector<op_pos_t> &next_op_position,
-             const std::optional<key_pos_t> &result_key_pos) :
+             const std::optional<key_pos_t> result_key_pos) :
                 _result{}, _key{key}, _result_key_pos{result_key_pos} {
 
+            std::cout << _result_key_pos.has_value() << std::endl;
+            std::cout << result_key_pos.has_value() << std::endl;
             // write operands into _result
-            // TODO: here some references leak
             for (const op_pos_t &pos : next_op_position) {
                 _result.push_back(operands.at(pos));
             }
@@ -187,12 +188,13 @@ namespace tnt::tensor::hypertrie {
             std::tuple<std::vector<BoolHyperTrie *>, std::vector<uint64_t>> operator*() {
                 // build the result
                 std::vector<BoolHyperTrie *> result = _join._result;
-                for (auto &&[revJoinee_pos, result_pos] : _reorderedDiagonals2result_pos) {
+                for (auto &[revJoinee_pos, result_pos] : _reorderedDiagonals2result_pos) {
                     result[result_pos] = _diagonals[revJoinee_pos].minValue();
                 }
 
                 // set the entry in the key
                 Key_t key = _join._key;
+                std::cout << _join._result_key_pos.has_value() << std::endl;
                 if (_join._result_key_pos)
                     key[*_join._result_key_pos] = _current_key_part;
 

@@ -605,7 +605,7 @@ namespace tnt::tensor::hypertrie {
                             min_size = child_size;
                         }
                     }
-                    _max_ind = _edges[_min_key_pos].size() - 1;
+                    _max_ind = _edges->at(_min_key_pos).size() - 1;
 
                     // calculate the positions of the key to use
                     PosCalc *pos_calc = PosCalc::getInstance(trie->depth())->use(_min_key_pos);
