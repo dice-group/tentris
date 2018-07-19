@@ -135,12 +135,12 @@ namespace tnt::util::container {
          * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
          * If it is not present the position where to insert the key is returned.
          * @param key key to check
-         * @param minInd the minimum index where to look
-         * @param maxInd the maximum index where to look
+         * @param min_ind the minimum index where to look
+         * @param max_ind the maximum index where to look
          * @return if there is an entry for that key or not.
          */
-        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min_ind, size_t max_ind) const {
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min_ind, max_ind);
             if (ind == this->_keys.size() or key != this->_keys[ind]) {
                 return std::make_tuple(false, ind);
             } else {

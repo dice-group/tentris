@@ -60,35 +60,32 @@ namespace tnt::tensor::hypertrie {
          */
         Join(const Key_t &key,
              const Operands &operands,
-             const std::vector<op_pos_t> op_poss,
+             const std::vector<op_pos_t> &op_poss,
              const std::vector<std::vector<key_pos_t >> &key_part_posss,
-             const std::vector<op_pos_t> next_op_position,
+             const std::vector<op_pos_t> &next_op_position,
              const std::optional<key_pos_t> &result_key_pos) :
-                _result(op_poss.size()), _key{key}, _result_key_pos{result_key_pos} {
+                _result{}, _key{key}, _result_key_pos{result_key_pos} {
 
             // write operands into _result
-            for (size_t i = 0; i < next_op_position.size(); ++i) {
-                _result[i] = operands[next_op_position[i]];
+            // TODO: here some references leak
+            for (const op_pos_t &pos : next_op_position) {
+                _result.push_back(operands.at(pos));
             }
 
             // initialize diagonals with the operands and their positions to join on.
-            auto &&key_part_poss = key_part_posss.cbegin();
-            for (const op_pos_t &op_pos : op_poss) {
-                _diagonals.emplace_back(BoolHyperTrie::DiagonalView{operands[op_pos], *key_part_poss});
-                ++key_part_poss;
+            for (const auto &[op_pos, key_part_poss] : zip(op_poss, key_part_posss)) {
+                _diagonals.emplace_back(BoolHyperTrie::DiagonalView{operands[op_pos], key_part_poss});
             }
 
             // narrow the range of the diagonals
-            const std::tuple<size_t, size_t> &min_max = BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
-            _min_keypart = std::get<0>(min_max);
-            _max_keypart = std::get<1>(min_max);
+            std::tie(_min_keypart, _max_keypart) =  BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
 
             // calculate the position mapping from diagonals to result
             // TODO: move that to PlanStep
             _diagonal2result_pos = std::vector<op_pos_t>(next_op_position.size());
             for (size_t i = 0, j = 0; i < op_poss.size(); ++i) {
                 auto pos_of_join_in_operands = op_poss[i];
-                auto pos_of_result_in_operands = next_op_position[j];
+                auto pos_of_result_in_operands = next_op_position.at(j);
                 if (pos_of_join_in_operands == pos_of_result_in_operands) {
                     _diagonal2result_pos[i] = pos_of_join_in_operands;
                     ++j;

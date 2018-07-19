@@ -5,6 +5,7 @@
 #include <memory>
 #include <exception>
 #include <cmath>
+#include <ostream>
 
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include "tnt/util/All.hpp"
@@ -48,13 +49,13 @@ namespace tnt::tensor::einsum {
         public:
             const bool all_done;
         private:
-            Step(const Subscript &subscript, const std::vector<label_t> &result_labels,
-                 const std::set<label_t> &label_candidates, const Operands &operands) :
-                    _subscript(subscript),
-                    _result_labels(result_labels),
+            Step(const Subscript &subscript, const std::vector<label_t> &result_labels, const Operands &operands,
+                             const std::set<label_t> &label_candidates) :
+                    _subscript{subscript},
+                    _result_labels{result_labels},
                     label{getMinCardLabel(operands, label_candidates)},
                     _label_candidates{getSubset(label_candidates, label)},
-                    all_done{bool(_label_candidates.size())} {}
+                    all_done{bool(not _label_candidates.size())}{}
 
             template<typename T>
             static std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
@@ -68,7 +69,7 @@ namespace tnt::tensor::einsum {
         public:
 
             Step(const Subscript &subscript, const std::vector<label_t> &result_labels, const Operands &operands) :
-                    Step(subscript, result_labels, subscript.getAllLabels(), operands) {}
+                    Step(subscript, result_labels, operands, subscript.getAllLabels()) {}
 
             inline const std::vector<label_t> &getResultLabels() const {
                 return _result_labels;
@@ -81,7 +82,7 @@ namespace tnt::tensor::einsum {
             Step nextStep(const Operands &operands) const {
                 if (all_done)
                     throw "Must not be called if all_done is true";
-                return {_subscript, _result_labels, _label_candidates, operands};
+                return {_subscript, _result_labels, operands, _label_candidates};
             }
 
             inline const std::vector<op_pos_t> &getOperandPositions() const {
@@ -98,8 +99,9 @@ namespace tnt::tensor::einsum {
             };
 
             std::vector<op_pos_t> getPosOfOperandsInResult() const {
-                const std::vector<op_pos_t> &result_ops = _subscript.removeLabel(label).getOriginalOpPoss();
-                return result_ops;
+                const Subscript &subscript = _subscript.removeLabel(label);
+                const std::vector<op_pos_t> &result_ops = subscript.getOriginalOpPoss();
+                return {result_ops};
             }
 
             std::optional<key_pos_t> getResulKeyPos() const {
@@ -178,6 +180,13 @@ namespace tnt::tensor::einsum {
                                          std::multiplies<size_t>())
                        // prefer smaller min_dim cardinality
                        + (1 - (1 / min_dim_cardinality));
+            }
+
+        public:
+            friend std::ostream &operator<<(std::ostream &os, const Step &step) {
+                os << "_subscript: " << step._subscript << "\n" << " _result_labels: " << step._result_labels << " label: "
+                   << step.label << " _label_candidates: " << step._label_candidates << " all_done: " << step.all_done;
+                return os;
             }
 
         };

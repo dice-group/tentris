@@ -75,6 +75,7 @@ namespace tnt::tensor::einsum::operators {
         void
         rekEinsum(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step,
                   NDMap<OUT_COUNT_T> &result) {
+            std::cout << step << std::endl;
             // there are steps left
             if (not step.all_done) {
                 // calculate next operands and result_key from current operands, step, label and resultKey

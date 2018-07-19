@@ -33,8 +33,8 @@ namespace tnt::util::container {
     template<typename T>
     inline std::vector<size_t> invPermutation(const std::vector<T> &permutation) {
         std::vector<size_t> inv_permutation(permutation.size());
-        for (size_t i = 0; i < permutation.size(); i++)
-            inv_permutation[permutation[i] - 1] = i + 1;
+        for (const auto &[i, perm] : enumerate(permutation))
+            inv_permutation[perm] = i;
         return inv_permutation;
     }
 

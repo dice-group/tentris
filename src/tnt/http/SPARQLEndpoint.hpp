@@ -61,6 +61,7 @@ HTTP_PROTOTYPE(SPARQLEndpoint)
     void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
         using namespace Pistache;
         using namespace Pistache::Http;
+        try {
             if (request.method() == Method::Get and request.resource().compare("/sparql") == 0) {
 
                 const Optional<std::string> &hasQuery = request.query().get("query");
@@ -73,14 +74,15 @@ HTTP_PROTOTYPE(SPARQLEndpoint)
                     const std::string sparqlQuery = urlDecode(hasQuery.get());
                     try {
 
-                        const tnt::util::container::NDMap<unsigned long> result = _store.query(sparqlQuery);
+                        tnt::util::container::NDMap<unsigned long> result = _store.query(sparqlQuery);
+                        for (const auto &item : result) {
+                            std::cout << item << std::endl;
+                        }
                     } catch (const std::exception &exc) {
                         std::cout << exc.what() << std::endl;
                         response.send(Code::Internal_Server_Error);
                     }
-                    for (const auto &item : sparqlQuery) {
-                        std::cout << item << std::endl;
-                    }
+
 
                     auto stream = response.stream(Code::Ok);
                     stream << "{\"found\":\"";
@@ -99,7 +101,12 @@ HTTP_PROTOTYPE(SPARQLEndpoint)
                 response.send(Code::I_m_a_teapot);
             }
 
+        } catch (const std::exception &exc) {
+            std::cout << exc.what() << std::endl;
+            response.send(Code::Internal_Server_Error);
         }
+
+    }
     };
 
 #endif //HEALTHCHECK_HPP

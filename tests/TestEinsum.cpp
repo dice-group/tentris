@@ -32,9 +32,13 @@ TEST(TestEinsum, simple_call) {
                                      {1, 2}};
     raw_subscript res_sc{0, 2};
 
-    Einsum<int> einsum_op{Subscript{op_sc, res_sc}};
+    const Subscript &subscript = Subscript{op_sc, res_sc};
+    std::cout << subscript << std::endl;
+    Einsum<int> einsum_op{subscript};
+    
     NDMap<int> result = einsum_op.getResult(operands);
 
+    std::cout << "results:" << std::endl;
     for (const auto &non_zero : result) {
         std::cout << non_zero << std::endl;
     }

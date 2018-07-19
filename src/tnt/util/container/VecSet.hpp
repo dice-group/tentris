@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <tuple>
 
 #include "BinarySearch.hpp"
 
@@ -53,7 +54,7 @@ namespace tnt::util::container {
             return search<KEY_t>(_keys, key) != NOT_FOUND;
         }
 
-        inline const KEY_t &byInd(size_t index) const {
+        inline const KEY_t &keyByInd(size_t index) const {
             return _keys.at(index);
         }
 
@@ -68,6 +69,45 @@ namespace tnt::util::container {
          */
         inline size_t getInd(const KEY_t &key) {
             return search<KEY_t>(_keys, key);
+        }
+
+        /**
+  * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
+  * If it is not present the position where to insert the key is returned.
+  * @param key key to check
+  * @param minInd the minimum index where to look
+  * @param maxInd the maximum index where to look
+  * @return if there is an entry for that key or not.
+  */
+        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+            if (ind == this->_keys.size() or key != this->_keys[ind]) {
+                return std::make_tuple(false, ind);
+            } else {
+                return std::make_tuple(true, ind);
+            }
+        }
+
+        /**
+         * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
+         * If it is not present the position of the next smaller value is returned. If it would be before the first element,
+         * SIZE_MAX is returned.
+         * @param key key to check
+         * @param minInd the minimum index where to look
+         * @param maxInd the maximum index where to look
+         * @return if there is an entry for that key or not.
+         */
+        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+            if (ind == this->_keys.size() or key != this->_keys[ind]) {
+                if (ind == 0) {
+                    return std::make_tuple(false, SIZE_MAX);
+                } else {
+                    return std::make_tuple(false, ind - 1);
+                }
+            } else {
+                return std::make_tuple(true, ind);
+            }
         }
 
         inline iterator begin() {
