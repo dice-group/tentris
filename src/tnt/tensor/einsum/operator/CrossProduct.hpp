@@ -158,11 +158,6 @@ namespace tnt::tensor::einsum::operators {
             iterator &operator++() {
                 ++_id;
                 for (auto &&[i, iter_and_end] : enumerate(zip(_begins, _ends))) {
-//                    const int &i =std::get<0>(iterrer);
-//                    std::tuple<op_c_iter_t, op_c_iter_t> iter_and_end = std::get<1>(iterrer);
-//
-//                    const op_c_iter_t &iter = std::get<0>(iter_and_end);
-//                    const op_c_iter_t &end_ = std::get<1>(iter_and_end);
                     auto &&[iter, end_] = iter_and_end;
                     ++iter;
                     if (iter == end_) {

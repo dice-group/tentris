@@ -24,7 +24,7 @@ namespace tnt::store {
         BoolHyperTrie trie{3};
 
     public:
-        const TermStore &getTermIndex() const {
+        TermStore &getTermIndex() {
             return termIndex;
         }
 

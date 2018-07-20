@@ -92,11 +92,11 @@ namespace tnt::tensor::einsum::operators {
         }
 
         /**
-             * Extracts the operands needed for the given Einsum Operator.
-             * @param operands all operands that are input to this CrossProduct
-             * @param einsum the Einsum Operator that the operands shall be extracted
-             * @return the operands relevant for the given Einsum Operator
-             */
+         * Extracts the operands needed for the given Einsum Operator.
+         * @param operands all operands that are input to this CrossProduct
+         * @param einsum the Einsum Operator that the operands shall be extracted
+         * @return the operands relevant for the given Einsum Operator
+         */
         Operands extractRelevantOperands(const Operands &all_operands) const {
             Operands operands{};
             for (const op_pos_t &op_pos : _plan.getSubscript().getOriginalOpPoss()) {
