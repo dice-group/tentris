@@ -9,7 +9,7 @@
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/util/container/NDMap.hpp"
-#include "tnt/store/SPARQL/SPARQLParser.hpp"
+#include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
 #include "tnt/tensor/einsum/operator/CrossProduct.hpp"
 
@@ -61,9 +61,9 @@ namespace tnt::store {
             using namespace tnt::util::types;
             using Operands =  typename std::vector<BoolHyperTrie *>;
             using namespace tensor::einsum;
-            sparql::SPARQLParser parser{sparql};
+            sparql::ParsedSPARQL parsedSPARQL{sparql};
 
-            std::vector<std::vector<std::optional<Term>>> op_keys = parser.getOperandKeys();
+            std::vector<std::vector<std::optional<Term>>> op_keys = parsedSPARQL.getOperandKeys();
             Operands operands;
             for (const auto &op_key : op_keys) {
                 std::vector<std::optional<key_part_t >> id_op_key(3);
@@ -91,7 +91,7 @@ namespace tnt::store {
                     }
             }
             // TODO: add support for distinct
-            Subscript subscript = parser.getSubscript();
+            Subscript subscript = parsedSPARQL.getSubscript();
             Subscript optimized = subscript.optimized();
             if (optimized.getSubSubscripts().empty()) {
                 operators::Einsum<size_t> einsumOp{optimized};

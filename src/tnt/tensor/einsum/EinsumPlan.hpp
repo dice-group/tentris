@@ -15,20 +15,31 @@ namespace tnt::tensor::einsum {
     using namespace tnt::util::types;
 
     class EinsumPlan {
+    public:
+        class Step;
+
+    private:
         using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
         const Subscript _subscript;
         const std::vector<label_t> &_result_labels;
+        mutable Step *initial_step = nullptr;
     public:
-        class Step;
-
         explicit EinsumPlan(const Subscript &subscript) :
                 _subscript(subscript),
                 _result_labels{subscript.getResultLabels()} {}
 
-        Step getInitialStep(const Operands &operands) const {
-            return Step{_subscript, _subscript.getLabelPosInResult(), operands};
+        ~EinsumPlan() {
+            if (initial_step != nullptr)
+                delete initial_step;
         }
+
+        Step &getInitialStep(const Operands &operands) const {
+            if (initial_step == nullptr)
+                initial_step = new Step{_subscript, _subscript.getLabelPosInResult(), operands};
+            return *initial_step;
+        }
+
 
         inline const Subscript &getSubscript() const {
             return _subscript;
@@ -41,7 +52,7 @@ namespace tnt::tensor::einsum {
 
         class Step {
         private:
-            mutable std::map<label_t, Subscript> subscript_cache;
+            mutable std::map<label_t, Step> next_step_cache;
             const Subscript &_subscript;
             const std::map<label_t, label_pos_t> &_result_label_poss;
         public:
@@ -59,6 +70,50 @@ namespace tnt::tensor::einsum {
 
         private:
 
+            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+                 const label_t min_card_label,
+                 const std::set<label_t> &label_candidates) :
+                    _subscript{subscript},
+                    _result_label_poss{result_label_poss},
+                    label{min_card_label},
+                    _label_candidates{getSubset(label_candidates, label)},
+                    all_done{not bool(label_candidates.size())} {
+                if (not all_done) {
+                    _op_poss = _subscript.operandsWithLabel(label);
+                    auto found = _result_label_poss.find(label);
+                    if (found != result_label_poss.end())
+                        _result_pos = {found->second};
+                    else
+                        _result_pos = std::nullopt;
+
+
+                    // the joining key part positions of each join operand.
+                    _joinee_key_part_poss.reserve(_op_poss.size());
+                    for (const op_pos_t &op_pos : _op_poss) {
+                        _joinee_key_part_poss.emplace_back(_subscript.labelPossInOperand(op_pos, label));
+                    }
+
+                    // TODO: only if label was left
+                    const Subscript &subsc = _subscript.removeLabel(label);
+                    _next_op_position = subsc.getOriginalOpPoss();
+
+
+                    for (size_t i = 0, j = 0; i < _op_poss.size() and j < _next_op_position.size();) {
+                        auto pos_of_join_in_operands = _op_poss.at(i);
+                        auto pos_of_result_in_operands = _next_op_position.at(j);
+                        if (pos_of_join_in_operands == pos_of_result_in_operands) {
+                            _diagonal2result_pos[i] = pos_of_join_in_operands;
+                            ++j;
+                            ++i;
+                        } else if (pos_of_join_in_operands < pos_of_result_in_operands) {
+                            ++i;
+                        } else {
+                            ++j;
+                        }
+                    }
+                }
+            }
+
 
             Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
                  const Operands &operands,
@@ -71,7 +126,7 @@ namespace tnt::tensor::einsum {
                 if (not all_done) {
                     _op_poss = _subscript.operandsWithLabel(label);
                     auto found = _result_label_poss.find(label);
-                    if(found != result_label_poss.end())
+                    if (found != result_label_poss.end())
                         _result_pos = {found->second};
                     else
                         _result_pos = std::nullopt;
@@ -127,15 +182,19 @@ namespace tnt::tensor::einsum {
                 return _result_label_poss.size();
             }
 
-            Step nextStep(const Operands &operands) const {
+            Step &nextStep(const Operands &operands) const {
                 if (all_done)
-                    throw "Must not be called if all_done is true";
-                auto found = subscript_cache.find(label);
-                if (found != subscript_cache.end()) {
-                    return {found->second, _result_label_poss, operands, _label_candidates};
+                    throw std::invalid_argument("Must not be called if all_done is true");
+                label_t label_ = getMinCardLabel(operands, _label_candidates);
+
+                auto found = next_step_cache.find(label_);
+                if (found != next_step_cache.end()) {
+                    return found->second;
                 } else {
-                    const auto &result = subscript_cache.emplace(label, _subscript.removeLabel(label));
-                    return {result.first->second, _result_label_poss, operands, _label_candidates};
+                    const auto &result = next_step_cache.emplace(label_, Step{_subscript.removeLabel(label),
+                                                                             _result_label_poss, label_,
+                                                                             _label_candidates});
+                    return result.first->second;
                 }
 
             }
@@ -172,7 +231,7 @@ namespace tnt::tensor::einsum {
 
         private:
 
-            label_t getMinCardLabel(const Operands &operands, const std::set<label_t> &label_candidates) {
+            label_t getMinCardLabel(const Operands &operands, const std::set<label_t> &label_candidates) const {
                 if (label_candidates.size() == 1) {
                     return *label_candidates.begin();
                 } else {
@@ -249,6 +308,8 @@ namespace tnt::tensor::einsum {
 
         };
     };
+
+
 };
 
 

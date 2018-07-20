@@ -26,7 +26,7 @@ namespace tnt::store::sparql {
         REDUCE
     };
 
-    class SPARQLParser {
+    class ParsedSPARQL {
 
         std::string _sparql_str;
         std::istringstream _str_stream;
@@ -46,7 +46,7 @@ namespace tnt::store::sparql {
 
     public:
 
-        SPARQLParser(std::string sparql_str) :
+        ParsedSPARQL(std::string sparql_str) :
                 _sparql_str{sparql_str},
                 _str_stream{sparql_str},
                 _input{_str_stream},
@@ -114,6 +114,14 @@ namespace tnt::store::sparql {
 
         }
 
+        SelectModifier getSelectModifier() const {
+            return select_modifier;
+        }
+
+        const std::vector<Variable> &getQueryVariables() const {
+            return query_variables;
+        }
+
 
         auto getSubscript() -> tensor::einsum::Subscript {
             using namespace tnt::tensor::einsum;
@@ -156,10 +164,6 @@ namespace tnt::store::sparql {
                 op_keys.push_back(op_key);
             }
             return op_keys;
-        }
-
-        auto getSelectModifier() -> SelectModifier {
-            return select_modifier;
         }
 
     private:

@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "tnt/store/SPARQL/SPARQLParser.hpp"
+#include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 
 
 TEST(TestSPARQLParser, da) {
     using namespace tnt::store::sparql;
-    SPARQLParser{"PREFIX  dc:  <http://purl.org/dc/elements/1.1/>"
+    ParsedSPARQL{"PREFIX  dc:  <http://purl.org/dc/elements/1.1/>"
                  "PREFIX  ns:  <http://example.org/ns#>"
                  "SELECT  ?title ?price "
                  "WHERE   { ?x ns:price true ."
