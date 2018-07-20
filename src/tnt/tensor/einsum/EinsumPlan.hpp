@@ -51,7 +51,7 @@ namespace tnt::tensor::einsum {
         public:
             const bool all_done;
         private:
-            const std::vector<op_pos_t> &_op_poss;
+            std::vector<op_pos_t> _op_poss;
             std::optional<key_pos_t> _result_pos;
             std::map<op_pos_t, op_pos_t> _diagonal2result_pos;
             std::vector<std::vector<key_pos_t>> _joinee_key_part_poss; ///< the joining key part positions of each join operand.
@@ -67,15 +67,14 @@ namespace tnt::tensor::einsum {
                     _result_label_poss{result_label_poss},
                     label{getMinCardLabel(operands, label_candidates)},
                     _label_candidates{getSubset(label_candidates, label)},
-                    all_done{not bool(label_candidates.size())},
-                    _op_poss{_subscript.operandsWithLabel(label)} {
+                    all_done{not bool(label_candidates.size())} {
                 if (not all_done) {
-
-                    try {
-                        _result_pos = _result_label_poss.at(label);
-                    } catch (...) {
+                    _op_poss = _subscript.operandsWithLabel(label);
+                    auto found = _result_label_poss.find(label);
+                    if(found != result_label_poss.end())
+                        _result_pos = {found->second};
+                    else
                         _result_pos = std::nullopt;
-                    }
 
 
                     // the joining key part positions of each join operand.
