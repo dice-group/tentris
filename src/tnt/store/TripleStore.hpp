@@ -5,6 +5,7 @@
 #include <serd-0/serd/serd.h>
 #include <string>
 #include <optional>
+#include <LRUCache11.hpp>
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
