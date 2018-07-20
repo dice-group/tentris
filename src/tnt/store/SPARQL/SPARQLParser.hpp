@@ -37,7 +37,7 @@ namespace tnt::store::sparql {
         SparqlParser::QueryContext *_query;
 
         std::map<std::string, std::string> prefixes{};
-        SelectModifier p_select_modifier;
+        SelectModifier select_modifier;
         std::vector<Variable> query_variables{};
         std::set<Variable> variables{};
         std::set<Variable> anonym_variables{};
@@ -63,7 +63,7 @@ namespace tnt::store::sparql {
 
 
                 SparqlParser::SelectQueryContext *select = _query->selectQuery();
-                p_select_modifier = getSelectModifier(select);
+                select_modifier = getSelectModifier(select);
                 bool all_vars = false;
                 if (std::vector<SparqlParser::VarContext *> vars = select->var(); not vars.empty())
                     for (auto &var : vars)
@@ -156,6 +156,10 @@ namespace tnt::store::sparql {
                 op_keys.push_back(op_key);
             }
             return op_keys;
+        }
+
+        auto getSelectModifier() -> SelectModifier {
+            return select_modifier;
         }
 
     private:

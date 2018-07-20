@@ -46,17 +46,17 @@ namespace tnt::store {
 
         constexpr static const auto getLiteral = [](const SerdNode *literal, const SerdNode *type_node,
                                                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
-            std::optional<std::__cxx11::string> type = (type_node != nullptr)
-                                                       ? std::optional<std::__cxx11::string>{{(char *) (type_node->buf),
-                                                                                                     size_t(type_node->n_chars)}}
-                                                       : std::nullopt;
-            std::optional<std::__cxx11::string> lang = (lang_node != nullptr)
-                                                       ? std::optional<std::__cxx11::string>{{(char *) (lang_node->buf),
-                                                                                                     size_t(lang_node->n_chars)}}
-                                                       : std::nullopt;
+            std::optional<std::string> type = (type_node != nullptr)
+                                              ? std::optional<std::string>{{(char *) (type_node->buf),
+                                                                                   size_t(type_node->n_chars)}}
+                                              : std::nullopt;
+            std::optional<std::string> lang = (lang_node != nullptr)
+                                              ? std::optional<std::string>{{(char *) (lang_node->buf),
+                                                                                   size_t(lang_node->n_chars)}}
+                                              : std::nullopt;
 
             return std::unique_ptr<Term>{
-                    new Literal{std::__cxx11::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
+                    new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
         };
 
         constexpr static const SerdStatementSink writeTriple = [](void *handle,
