@@ -185,8 +185,8 @@ namespace tnt::store::sparql {
                 if (auto *stringLiteral1 = string_node->STRING_LITERAL1(); stringLiteral1) {
                     auto literal1 = stringLiteral1->getText();
 
-                    static std::regex double_quote{"\""};
-                    static std::regex single_quote("\\'");
+                    static std::regex double_quote{"\"",std::regex::optimize};
+                    static std::regex single_quote("\\'",std::regex::optimize);
 
                     std::string temp;
 

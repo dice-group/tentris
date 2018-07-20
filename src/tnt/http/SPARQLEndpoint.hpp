@@ -72,8 +72,6 @@ namespace tnt::http {
 
         SPARQLEndpoint() {}
 
-        SPARQLEndpoint(std::string path_to_nt_file) { _store->loadRDF(path_to_nt_file); }
-
         void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
             using namespace Pistache;
             using namespace Pistache::Http;
@@ -86,25 +84,25 @@ namespace tnt::http {
                     // check if there is actually an query
                     if (not hasQuery.isEmpty()) {
                         const std::string sparqlQuery = urlDecode(hasQuery.get());
-                        try { // execute the query
-                            tnt::util::container::NDMap<size_t> result = _store->query(sparqlQuery);
-                            // TODO: use json instead
-                            auto stream = response.stream(Code::Ok);
-                            for (const auto &item : result) {
-                                for (const auto &binding : item.first) {
-                                    const std::string &materilizedBinding = _store->getTermIndex().inv().at(
-                                            binding).operator*().getIdentifier();
-                                    stream << materilizedBinding.c_str() << " ";
-                                }
+                            try { // execute the query
+                                tnt::util::container::NDMap<size_t> result = _store->query(sparqlQuery);
+                                // TODO: use json instead
+                                auto stream = response.stream(Code::Ok);
+                                for (const auto &item : result) {
+                                    for (const auto &binding : item.first) {
+                                        const std::string &materilizedBinding = _store->getTermIndex().inv().at(
+                                                binding).operator*().getIdentifier();
+                                        stream << materilizedBinding.c_str() << " ";
+                                    }
 
-                                stream << ".\n";
+                                    stream << ".\n";
+                                }
+                                stream << ends;
+                            } catch (
+                                    const std::exception &exc) { // if the execution of the query should fail return an internal server error
+                                std::cout << exc.what() << std::endl;
+                                response.send(Code::Internal_Server_Error);
                             }
-                            stream << ends;
-                        } catch (
-                                const std::exception &exc) { // if the execution of the query should fail return an internal server error
-                            std::cout << exc.what() << std::endl;
-                            response.send(Code::Internal_Server_Error);
-                        }
 
 
                     } else {

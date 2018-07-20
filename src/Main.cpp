@@ -29,7 +29,7 @@ int main() {
             .threads(thr)
             .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
     server->init(opts);
-    server->setHandler(Http::make_handler<SPARQLEndpoint>(path_to_nt_file));
+    server->setHandler(Http::make_handler<SPARQLEndpoint>());
     server->serve();
 
     std::cout << "Shutdowning server" << std::endl;
