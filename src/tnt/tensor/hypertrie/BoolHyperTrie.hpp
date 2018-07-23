@@ -196,10 +196,32 @@ namespace tnt::tensor::hypertrie {
                     current_subtrie = current_subtrie->getInnerEdges(pos_calc->key_to_subkey_pos(key_pos)).at(key_part);
                     pos_calc = pos_calc->use(key_pos);
                 } else {
-                    current_subtrie->getLeafEdges().contains(key_part);
+                    if (not current_subtrie->getLeafEdges().contains(key_part))
+                        throw "not contained";
+                    else
+                        return {true};
+
                 }
             }
             return {current_subtrie};
+        }
+
+        void hasFullDiag(const key_part_t &key_part) const {
+            BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
+            std::set<key_pos_t> key_poss_set{};
+            for (const key_pos_t &key_pos : range(key_pos_t(this->depth())))
+                key_poss_set.emplace(key_pos);
+            PosCalc *pos_calc = PosCalc::getInstance(_depth);
+            while (not key_poss_set.empty()) {
+                key_pos_t key_pos = extractPosOfMinCardKeyPos(key_poss_set, pos_calc);
+                if (current_subtrie->_depth > 1) {
+                    current_subtrie = current_subtrie->getInnerEdges(pos_calc->key_to_subkey_pos(key_pos)).at(key_part);
+                    pos_calc = pos_calc->use(key_pos);
+                } else {
+                    if (not current_subtrie->getLeafEdges().contains(key_part))
+                        throw "not contained";
+                }
+            }
         }
 
 
@@ -640,9 +662,7 @@ namespace tnt::tensor::hypertrie {
                     }
                     _max_ind = _children->_inner_edges.at(_min_key_pos).size() - 1;
 
-                    auto found = std::find(_positions.begin(), _positions.end(), _min_key_pos);
-                    _positions.erase(found);
-
+                    _positions.resize(size_t(trie->depth()) - 1);
 
                     setMinMax_p = &setMinMax_III;
                     first_lower_p = &first_lower_III;
@@ -732,7 +752,7 @@ namespace tnt::tensor::hypertrie {
                     current_key_part = childrens_keys.at(ind);
                     const BoolHyperTrie *child = childrens_values.at(ind);
                     try {
-                        child->get(view._positions, current_key_part);
+                        child->hasFullDiag(current_key_part);
                         view._min_ind = ind;
                         view._size = view._max_ind - ind + 1;
                         view._min = current_key_part;
