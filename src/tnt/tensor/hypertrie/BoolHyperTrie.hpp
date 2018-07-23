@@ -75,8 +75,7 @@ namespace tnt::tensor::hypertrie {
         explicit BoolHyperTrie(key_pos_t depth) : _depth(depth),
                                                   children{(depth > 1)
                                                            ? Children{._inner_edges =std::vector<inner_edges>(depth)}
-                                                           : Children{._leaf_edges =leaf_edges{}}} {
-        }
+                                                           : Children{._leaf_edges =leaf_edges{}}} {}
 
         /**
          * Get the depth of the BoolHyperTrie.
@@ -105,7 +104,7 @@ namespace tnt::tensor::hypertrie {
          * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() 
          */
         inner_edges &getInnerEdges(const key_pos_t &subkey_pos) {
-            return std::get<std::vector<inner_edges>>(this->_subtries).at(subkey_pos);
+            return children._inner_edges.at(subkey_pos);
         }
 
         /**
@@ -114,7 +113,7 @@ namespace tnt::tensor::hypertrie {
          * @return a set of leaf edges.
          */
         inline leaf_edges &getLeafEdges() {
-            return std::get<leaf_edges>(this->_subtries);
+            return children._leaf_edges;
         }
 
         /**
@@ -268,9 +267,9 @@ namespace tnt::tensor::hypertrie {
         inline key_part_t getMinKeyPart(const key_pos_t &key_pos = 0) {
             try {
                 if (this->_depth == 1) {
-                    return std::get<leaf_edges>(this->_subtries).min();
+                    return children._leaf_edges.min();
                 } else {
-                    return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).min();
+                    return children._inner_edges.at(key_pos).min();
                 }
             } catch (...) {}
             return KEY_PART_MAX;
@@ -284,9 +283,9 @@ namespace tnt::tensor::hypertrie {
         inline key_part_t getMaxKeyPart(const key_pos_t &key_pos = 0) const {
             try {
                 if (this->_depth == 1) {
-                    return std::get<leaf_edges>(this->_subtries).max();
+                    return children._leaf_edges.max();
                 } else {
-                    return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).min();
+                    return children._inner_edges.at(key_pos).min();
                 }
             } catch (...) {}
             return KEY_PART_MIN;
@@ -299,9 +298,9 @@ namespace tnt::tensor::hypertrie {
          */
         inline size_t getCard(const key_pos_t &key_pos) const {
             if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).size();
+                return children._leaf_edges.size();
             } else {
-                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).size();
+                return children._inner_edges.at(key_pos).size();
             }
         }
 
@@ -501,35 +500,35 @@ namespace tnt::tensor::hypertrie {
 
         std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> begin_(const key_pos_t &key_pos) {
             if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).begin();
+                return children._leaf_edges.begin();
             } else {
-                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).begin();
+                return children._inner_edges.at(key_pos).begin();
             }
         }
 
         std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
             if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).end();
+                return children._leaf_edges.end();
             } else {
-                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).end();
+                return children._inner_edges.at(key_pos).end();
             }
         }
 
         std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
         lower_bound(key_part_t min_key_part = KEY_PART_MIN, key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).lower_bound(min_key_part);
+                return children._leaf_edges.lower_bound(min_key_part);
             } else {
-                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).lower_bound(min_key_part);
+                return children._inner_edges.at(key_pos).lower_bound(min_key_part);
             }
         }
 
         std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
         upper_bound(key_part_t max_key_part = KEY_PART_MAX, key_pos_t key_pos = 0) {
             if (this->_depth == 1) {
-                return std::get<leaf_edges>(this->_subtries).upper_bound(max_key_part);
+                return children._leaf_edges.upper_bound(max_key_part);
             } else {
-                return std::get<std::vector<inner_edges>>(this->_subtries).at(key_pos).upper_bound(max_key_part);
+                return children._inner_edges.at(key_pos).upper_bound(max_key_part);
             }
         }
 
@@ -544,10 +543,7 @@ namespace tnt::tensor::hypertrie {
             const BoolHyperTrie *_trie;
 
             std::vector<key_pos_t> _positions;
-            union {
-                leaf_edges *_leafs;
-                std::vector<inner_edges> *_edges;
-            };
+            union Children &_children;
             key_part_t _min = 0;
             key_part_t _max = KEY_PART_MAX;
             size_t _min_ind;
@@ -566,16 +562,15 @@ namespace tnt::tensor::hypertrie {
              */
             DiagonalView(const BoolHyperTrie *trie, const std::vector<key_pos_t> &positions) :
                     _trie{trie}, _positions{positions}, _min_ind{0},
-                    _max_ind{SIZE_MAX}, _size{_trie->size()} {
+                    _max_ind{SIZE_MAX}, _size{_trie->size()}, _children{const_cast<Children&>(trie->children)} {
                 if (trie->depth() == 1) {
                     // trie has depth 1, so positions is assumed to be < 0 >.
                     // handle VecSet instead of VecMap
                     // result is bool
 
-                    _leafs = const_cast<leaf_edges *>(&std::get<leaf_edges>(_trie->_subtries));
-                    _min = _leafs->min();
-                    _max = _leafs->max();
-                    _max_ind = _leafs->size() - 1;
+                    _min = _children._leaf_edges.min();
+                    _max = _children._leaf_edges.max();
+                    _max_ind = _children._leaf_edges.size() - 1;
 
                     setMinMax_p = &setMinMax_I;
                     first_lower_p = &first_lower_I;
@@ -585,14 +580,12 @@ namespace tnt::tensor::hypertrie {
                 } else if (trie->depth() > positions.size()) {
                     // trie has depth greater than 1, but not all positions are used.
                     // So the result is a trie again.
-                    _edges = const_cast<std::vector<inner_edges> *>(&std::get<std::vector<inner_edges>>(
-                            _trie->_subtries));
                     size_t min_size = SIZE_MAX;
 
                     // iterate all key_positions
                     for (const key_pos_t &key_pos : _positions) {
 
-                        const inner_edges &children = _edges->at(key_pos);
+                        const inner_edges &children = _children._inner_edges.at(key_pos);
                         // find greatest min
                         if (const key_part_t &current_min = children.min(); _min < current_min)
                             _min = current_min;
@@ -606,7 +599,7 @@ namespace tnt::tensor::hypertrie {
                             min_size = child_size;
                         }
                     }
-                    _max_ind = _edges->at(_min_key_pos).size() - 1;
+                    _max_ind = _children._inner_edges.at(_min_key_pos).size() - 1;
 
                     // calculate the positions of the key to use
                     PosCalc *pos_calc = PosCalc::getInstance(trie->depth())->use(_min_key_pos);
@@ -626,14 +619,12 @@ namespace tnt::tensor::hypertrie {
                 } else {
                     // trie has depth greater than 1 and uses all positions.
                     // So the result is bool
-                    _edges = const_cast<std::vector<inner_edges> *>(&std::get<std::vector<inner_edges>>(
-                            _trie->_subtries));
                     size_t min_size = SIZE_MAX;
 
                     // iterate all key_positions
-                    for (const size_t &key_pos : range(_edges->size())) {
+                    for (const size_t &key_pos : range(_children._inner_edges.size())) {
 
-                        const inner_edges &children = _edges->at(key_pos);
+                        const inner_edges &children = _children._inner_edges.at(key_pos);
                         // find greatest min
                         if (const key_part_t &current_min = children.min(); _min < current_min)
                             _min = current_min;
@@ -647,7 +638,7 @@ namespace tnt::tensor::hypertrie {
                             min_size = child_size;
                         }
                     }
-                    _max_ind = _edges->at(_min_key_pos).size() - 1;
+                    _max_ind = _children._inner_edges.at(_min_key_pos).size() - 1;
 
                     auto found = std::find(_positions.begin(), _positions.end(), _min_key_pos);
                     _positions.erase(found);
@@ -681,13 +672,14 @@ namespace tnt::tensor::hypertrie {
              */
         private:
             static key_part_t first_lower_I(DiagonalView &view, const key_part_t &key_part) {
-                size_t ind = (key_part == view._leafs->_keys.at(view._min_ind))
+                const leaf_edges &leafs = view._children._leaf_edges;
+                size_t ind = (key_part == leafs._keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::search(view._leafs->_keys, key_part, view._min_ind, view._max_ind);
+                             : tnt::util::container::search(leafs._keys, key_part, view._min_ind, view._max_ind);
                 view._min_ind = ind;
                 if (ind != tnt::util::container::NOT_FOUND) {
                     view._size = view._max_ind - ind + 1;
-                    view._min = view._leafs->keyByInd(ind);
+                    view._min = leafs.keyByInd(ind);
                     return view._min;
                 } else {
                     view._size = 0;
@@ -696,7 +688,7 @@ namespace tnt::tensor::hypertrie {
             }
 
             static key_part_t first_lower_II(DiagonalView &view, const key_part_t &key_part) {
-                inner_edges &children = view._edges->at(view._min_key_pos);
+                inner_edges &children = view._children._inner_edges.at(view._min_key_pos);
                 const std::vector<key_part_t> &childrens_keys = children.keys();
                 const std::vector<BoolHyperTrie *> &childrens_values = children.values();
 
@@ -725,7 +717,7 @@ namespace tnt::tensor::hypertrie {
             }
 
             static key_part_t first_lower_III(DiagonalView &view, const key_part_t &key_part) {
-                inner_edges &children = view._edges->at(view._min_key_pos);
+                inner_edges &children = view._children._inner_edges.at(view._min_key_pos);
                 const std::vector<key_part_t> &childrens_keys = children.keys();
                 const std::vector<BoolHyperTrie *> &childrens_values = children.values();
 
@@ -740,7 +732,6 @@ namespace tnt::tensor::hypertrie {
                     current_key_part = childrens_keys.at(ind);
                     const BoolHyperTrie *child = childrens_values.at(ind);
                     try {
-                        // TODO: implement diagonal key retrieval in HyperTrie directly.
                         child->get(view._positions, current_key_part);
                         view._min_ind = ind;
                         view._size = view._max_ind - ind + 1;
@@ -796,10 +787,11 @@ namespace tnt::tensor::hypertrie {
              */
         private:
             static bool containsAndUpdateLower_I(DiagonalView &view, const key_part_t &key_part) {
-                size_t ind = tnt::util::container::insert_pos(view._leafs->_keys, key_part, view._min_ind,
+                const leaf_edges &leafs = view._children._leaf_edges;
+                size_t ind = tnt::util::container::insert_pos(leafs._keys, key_part, view._min_ind,
                                                               view._max_ind);
                 if (ind != view._max_ind + 1) {
-                    view._min = view._leafs->keyByInd(ind);
+                    view._min = leafs.keyByInd(ind);
                     view._min_ind = ind;
                     view._size = view._max_ind - ind + 1;
                     return view._min == key_part;
@@ -811,7 +803,7 @@ namespace tnt::tensor::hypertrie {
             }
 
             static bool containsAndUpdateLower_II(DiagonalView &view, const key_part_t &key_part) {
-                inner_edges &children = view._edges->at(view._min_key_pos);
+                inner_edges &children = view._children._inner_edges.at(view._min_key_pos);
                 const std::vector<key_part_t> &childrens_keys = children.keys();
                 const std::vector<BoolHyperTrie *> &childrens_values = children.values();
 
@@ -848,7 +840,7 @@ namespace tnt::tensor::hypertrie {
             }
 
             static bool containsAndUpdateLower_III(DiagonalView &view, const key_part_t &key_part) {
-                inner_edges &children = view._edges->at(view._min_key_pos);
+                inner_edges &children = view._children._inner_edges.at(view._min_key_pos);
                 const std::vector<key_part_t> &childrens_keys = children.keys();
                 const std::vector<BoolHyperTrie *> &childrens_values = children.values();
 
@@ -911,15 +903,15 @@ namespace tnt::tensor::hypertrie {
 
             static void setMinMax_I(DiagonalView &view, key_part_t &min, key_part_t &max) {
                 // calc min
-                if (view._leafs->keyByInd(view._min_ind) != min) {
-                    view._min_ind = std::get<1>(view._leafs->containsAndInd(min, view._min_ind, view._max_ind));;
-                    view._min = view._leafs->keyByInd(view._min_ind);
+                if (view._children._leaf_edges.keyByInd(view._min_ind) != min) {
+                    view._min_ind = std::get<1>(view._children._leaf_edges.containsAndInd(min, view._min_ind, view._max_ind));;
+                    view._min = view._children._leaf_edges.keyByInd(view._min_ind);
                     min = view._min;
                 }
                 // calc max
-                if (view._leafs->keyByInd(view._max_ind) != max) {
-                    view._max_ind = std::get<1>(view._leafs->containsAndIndLower(max, view._min_ind, view._max_ind));
-                    view._max = view._leafs->keyByInd(view._max_ind);
+                if (view._children._leaf_edges.keyByInd(view._max_ind) != max) {
+                    view._max_ind = std::get<1>(view._children._leaf_edges.containsAndIndLower(max, view._min_ind, view._max_ind));
+                    view._max = view._children._leaf_edges.keyByInd(view._max_ind);
                     max = view._max;
                 }
                 if (min <= max) {
@@ -930,7 +922,7 @@ namespace tnt::tensor::hypertrie {
             }
 
             static void setMinMax_III(DiagonalView &view, key_part_t &min, key_part_t &max) {
-                const inner_edges &children = view._edges->at(view._min_key_pos);
+                const inner_edges &children = view._children._inner_edges.at(view._min_key_pos);
                 // calc min
                 if (children.keyByInd(view._min_ind) != min) {
                     view._min_ind = std::get<1>(children.containsAndInd(min, view._min_ind, view._max_ind));;
