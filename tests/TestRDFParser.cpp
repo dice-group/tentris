@@ -14,8 +14,9 @@ TEST(TestRDFParser, da) {
         tnt::store::NTripleParser triple_it{path};
 
         for (auto &&triple : triple_it)
-            std::cout << triple << std::endl;
+            std::cout << triple << "\n";
     }
+    std::cout << std::endl;
 
 }
 

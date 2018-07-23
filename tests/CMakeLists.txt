@@ -2,6 +2,7 @@ find_package(GTest REQUIRED)
 
 link_libraries(GTest::GTest GTest::Main)
 
+
 #add_executable(TestCrossProductTensor TestCrossProductTensor.cpp)
 #add_executable(TestDiagonal TestDiagonal.cpp)
 add_executable(TestEinsum TestEinsum.cpp)
