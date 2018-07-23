@@ -2,9 +2,9 @@
 #define TNT_SPARQLPARSER_HPP
 
 // ---> move to own library to remove it from global namespace
-#include "tnt/store/SPARQL/antlr/SparqlParser.cpp"
-#include "tnt/store/SPARQL/antlr/SparqlLexer.cpp"
-#include "tnt/store/SPARQL/antlr/SparqlBaseListener.cpp"
+#include <SparqlParser.cpp>
+#include <SparqlLexer.cpp>
+#include <SparqlBaseListener.cpp>
 // <--- move to own library to remove it from global namespace
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include <antlr4-runtime.h>

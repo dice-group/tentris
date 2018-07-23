@@ -55,6 +55,12 @@ target_include_directories(libsparsetensor INTERFACE
         src/
         )
 
+#make an interface library from the code
+add_library(antlr4_sparql INTERFACE)
+target_include_directories(antlr4_sparql INTERFACE
+        grammar/
+        )
+
 # set all linkables
 link_libraries(
         stdc++fs # for #include <filesystem>
@@ -63,6 +69,7 @@ link_libraries(
         cppitertools
         lru
         libsparsetensor
+        antlr4_sparql
         antlr4-runtime
         antlr4_interface
         ${Pistache_LIBRARY}
