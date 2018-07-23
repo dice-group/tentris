@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <optional>
 
 
 namespace tnt::util::types {
@@ -40,6 +41,7 @@ namespace tnt::util::types {
     using key_part_t = ::uint64_t;
 
     using Key_t = ::std::vector<key_part_t>;
+    using SliceKey_t = ::std::vector<std::optional<key_part_t>>;
 
 #define KEY_PART_MAX (UINT64_MAX)
 

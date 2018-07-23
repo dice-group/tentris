@@ -33,6 +33,7 @@ namespace tnt::tensor::hypertrie {
 
     class BoolHyperTrie {
         using Key_t = tnt::util::types::Key_t;
+        using SliceKey_t = tnt::util::types::SliceKey_t;
         using key_pos_t = tnt::util::types::key_pos_t;
         using key_part_t = tnt::util::types::key_part_t;
         using subkey_mask_t = tnt::util::types::subkey_mask_t;
@@ -100,19 +101,29 @@ namespace tnt::tensor::hypertrie {
          * Returns the inner edges for a given position of this BoolHyperTrie.
          * @param subkey_pos key_position in this hypertrie. May differ from the position in an parent BoolHyperTrie.
          * @return a map of inner_edges.
-         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
-         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() 
+         * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth()
          */
-        inner_edges &getInnerEdges(const key_pos_t &subkey_pos) {
+        inline inner_edges &getInnerEdges(const key_pos_t &subkey_pos) {
             return children._inner_edges.at(subkey_pos);
         }
 
+    public:
+        inline const inner_edges &getInnerEdges(const key_pos_t &subkey_pos) const {
+            return children._inner_edges.at(subkey_pos);
+        }
+
+    private:
         /**
          * Returns leaf edges.
          * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is not 1
          * @return a set of leaf edges.
          */
         inline leaf_edges &getLeafEdges() {
+            return children._leaf_edges;
+        }
+
+    public:
+        inline const leaf_edges &getLeafEdges() const {
             return children._leaf_edges;
         }
 
@@ -135,10 +146,9 @@ namespace tnt::tensor::hypertrie {
          * @param key_pos position of the key_part
          * @param key_part a key_part that must not be in use at this position and BoolHyperTrie.
          * @return a pointer to the created child BoolHyperTrie
-         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
          * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth()
          */
-        inline BoolHyperTrie *insertNewChild(const key_pos_t &key_pos, const key_part_t &key_part) {
+        inline BoolHyperTrie *createNewChild(const key_pos_t &key_pos, const key_part_t &key_part) {
             inner_edges &edges = getInnerEdges(key_pos);
             // no value was passed. So create a new sub HyperTrie of _depth this->_depth -1 and add it.
             BoolHyperTrie *child_ = new BoolHyperTrie(this->_depth - (key_pos_t(1)));
@@ -151,14 +161,39 @@ namespace tnt::tensor::hypertrie {
          * Get an child of an inner node at the given position and for the given key_part.
          * @param key_pos position of the key_part
          * @param key_part key_part where to look for the child
-         * @return the child
-         * @throws std::exception::bad_variant_access if the depth of this BoolHyperTrie is 1
+         * @return the child or an nullpoint if it doesn't exist
          * @throws std::out_of_range if not 1 <= subkey_pos <= this->depth() or the key doesn't exist
          */
         BoolHyperTrie *getInnerChild(const key_pos_t &key_pos, const key_part_t &key_part) {
             inner_edges &edges = getInnerEdges(key_pos);
             // find child
-            return edges.at(key_part);
+            try {
+                return edges.at(key_part);
+
+            } catch (std::out_of_range ex) {
+                return nullptr;
+            }
+        }
+
+        /**
+         * Checks weather a value for key is set. It removes thereby entries from the key.
+         * @param key
+         * @return
+         */
+        inline bool get_internal(Key_t key) const {
+            // copy the key to a set
+            BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
+            while (not key.empty()) {
+                if (current_subtrie->_depth > 1) {
+                    key_pos_t min_card_key_pos = current_subtrie->getMinCardKeyPos();
+                    current_subtrie = current_subtrie->getInnerChild(min_card_key_pos, key.at(min_card_key_pos));
+                    if (current_subtrie == nullptr)
+                        return false;
+                    key.erase(key.begin() + min_card_key_pos);
+                } else {
+                    return current_subtrie->getLeafEdges().contains(key.at(0));
+                }
+            }
         }
 
     public:
@@ -169,12 +204,11 @@ namespace tnt::tensor::hypertrie {
          * @return a sub BoolHyperTrie or a value depending on the length of the key.
          * @throws the entry doesn't exist
          */
-        std::variant<BoolHyperTrie *, bool> get(const Key_t &key) const {
-            std::vector<std::optional<key_part_t>> intern_key(this->_depth);
-            for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
-                intern_key[key_pos] = {key[key_pos]};
-            }
-            return get(intern_key);
+        inline bool get(const Key_t &key) const {
+            assert(key.size() == this->depth());
+            // copy the key to a set
+            std::vector<key_part_t> intern_key{key};
+            return get_internal(intern_key);
         }
 
         /**
@@ -182,48 +216,88 @@ namespace tnt::tensor::hypertrie {
          * key_part. All other key_parts are variable.
          * @param key_positions positions that have a key part
          * @param key_part the key part
-         * @return the subtrie for the given key
-         * @throws the entry doesn't exist
+         * @return the subtrie for the given key or a nullptr
          */
-        std::variant<BoolHyperTrie *, bool>
-        get(const std::vector<key_pos_t> &key_positions, const key_part_t &key_part) const {
+        inline BoolHyperTrie *
+        getDiagonal(const std::vector<key_pos_t> &key_positions, const key_part_t &key_part) const {
+            assert(key_positions.size() < this->depth());
             BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
-            std::set<key_pos_t> key_poss_set(key_positions.begin(), key_positions.end());
-            PosCalc *pos_calc = PosCalc::getInstance(_depth);
-            while (not key_poss_set.empty()) {
-                key_pos_t key_pos = extractPosOfMinCardKeyPos(key_poss_set, pos_calc);
-                if (current_subtrie->_depth > 1) {
-                    current_subtrie = current_subtrie->getInnerEdges(pos_calc->key_to_subkey_pos(key_pos)).at(key_part);
-                    pos_calc = pos_calc->use(key_pos);
-                } else {
-                    if (not current_subtrie->getLeafEdges().contains(key_part))
-                        throw "not contained";
-                    else
-                        return {true};
 
-                }
+            std::set<key_pos_t> key_poss(key_positions.begin(), key_positions.end());
+            PosCalc *pos_calc = PosCalc::getInstance(_depth);
+            while (not key_poss.empty()) {
+                key_pos_t key_pos = extractPosOfMinCardKeyPos(key_poss, pos_calc);
+                current_subtrie = current_subtrie->getInnerEdges(pos_calc->key_to_subkey_pos(key_pos)).at(key_part);
+                if (current_subtrie == nullptr)
+                    return nullptr;
+
+                pos_calc = pos_calc->use(key_pos);
             }
-            return {current_subtrie};
+            return current_subtrie;
         }
 
-        void hasFullDiag(const key_part_t &key_part) const {
-            BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
-            std::set<key_pos_t> key_poss_set{};
-            for (const key_pos_t &key_pos : range(key_pos_t(this->depth())))
-                key_poss_set.emplace(key_pos);
-            PosCalc *pos_calc = PosCalc::getInstance(_depth);
-            while (not key_poss_set.empty()) {
-                key_pos_t key_pos = extractPosOfMinCardKeyPos(key_poss_set, pos_calc);
-                if (current_subtrie->_depth > 1) {
-                    current_subtrie = current_subtrie->getInnerEdges(pos_calc->key_to_subkey_pos(key_pos)).at(key_part);
-                    pos_calc = pos_calc->use(key_pos);
-                } else {
-                    if (not current_subtrie->getLeafEdges().contains(key_part))
-                        throw "not contained";
-                }
-            }
+        bool getFullDiagonal(const key_part_t &key_part) const {
+            // copy the key to a vector
+            std::vector<key_part_t> intern_key(this->depth(), key_part);
+            return get_internal(intern_key);
         }
 
+    private:
+        /**
+         * Retrieves for a set of key parts at their positions (given in a map: position -> key_part) the stored
+         * sub-hypertrie.
+         * @param non_slice_key_parts
+         * @return pointer to the subhypertrie or nullptr if it doesn't exist
+         */
+        inline BoolHyperTrie *getSlice_internal(std::map<key_pos_t, key_part_t> &non_slice_key_parts) const {
+            assert(non_slice_key_parts.size() < this->size());
+            // get child while there are non slice parts in the subkey.
+            BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
+            PosCalc *pos_calc = PosCalc::getInstance(this->_depth);
+
+            while (not non_slice_key_parts.empty()) {
+                key_pos_t min_card_key_pos = current_subtrie->getMinCardKeyPos(non_slice_key_parts, pos_calc);
+                key_pos_t min_card_subkey_pos = pos_calc->key_to_subkey_pos(min_card_key_pos);
+
+                current_subtrie = current_subtrie->getInnerChild(min_card_subkey_pos,
+                                                                 non_slice_key_parts.at(min_card_key_pos));
+                if (current_subtrie == nullptr)
+                    return nullptr;
+
+                non_slice_key_parts.erase(min_card_key_pos);
+                pos_calc = pos_calc->use(min_card_key_pos);
+            }
+            return current_subtrie;
+        }
+
+    public:
+        inline BoolHyperTrie *getSlice(const SliceKey_t &key) const {
+            assert(std::count(key.begin(), key.end(), std::nullopt) != 0);
+
+            // extract non_slice_key_parts
+            std::map<key_pos_t, key_part_t> non_slice_key_parts{};
+            for (key_pos_t key_pos : range(key_pos_t(key.size())))
+                if (key.at(key_pos).has_value())
+                    non_slice_key_parts[key_pos] = *key.at(key_pos);
+
+            // get child while there are non slice parts in the subkey.
+            BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
+            PosCalc *pos_calc = PosCalc::getInstance(this->_depth);
+
+            while (not non_slice_key_parts.empty()) {
+                key_pos_t min_card_key_pos = current_subtrie->getMinCardKeyPos(non_slice_key_parts, pos_calc);
+                key_pos_t min_card_subkey_pos = pos_calc->key_to_subkey_pos(min_card_key_pos);
+
+                current_subtrie = current_subtrie->getInnerChild(min_card_subkey_pos,
+                                                                 non_slice_key_parts.at(min_card_key_pos));
+                if (current_subtrie == nullptr)
+                    return nullptr;
+
+                non_slice_key_parts.erase(min_card_key_pos);
+                pos_calc = pos_calc->use(min_card_key_pos);
+            }
+            return current_subtrie;
+        }
 
         /**
          * Get an value or sub BoolHyperTrie by a key.
@@ -231,53 +305,17 @@ namespace tnt::tensor::hypertrie {
          * not set resulting in a slice.
          * @return a sub BoolHyperTrie or a value depending if the key contains slices.
          */
-        std::variant<BoolHyperTrie *, bool> get(const std::vector<std::optional<key_part_t>> &key) const {
-            if (this->empty()) {
-                throw "hypertrie is emtpy.";
-            }
+        [[deprecated]]
+        inline std::variant<BoolHyperTrie *, bool> get(const SliceKey_t &key) const {
+            const auto slice_count = std::count(key.begin(), key.end(), std::nullopt);
 
-            // extract non_slice_key_parts
-            std::map<key_pos_t, key_part_t> non_slice_key_parts{};
-            for (key_pos_t key_pos = 0; key_pos < key.size(); ++key_pos) {
-                if (key[key_pos]) {
-                    non_slice_key_parts[key_pos] = *key[key_pos];
-                }
-            }
-
-            if (non_slice_key_parts.empty()) {
-                throw "empty slices are currently not supported.";
-                //return {variant<HyperTrie<bool> *, T>{this}}; // TODO: is there a problem with this?
+            if (slice_count == 0) {
+                Key_t key_internal(this->depth());
+                for (const auto &[pos, key_part] : enumerate(key))
+                    key_internal[pos] = *key.at(pos);
+                return {get_internal(key_internal)};
             } else {
-                // get child while there are non slice parts in the subkey.
-                BoolHyperTrie *current_subtrie = const_cast<BoolHyperTrie *>(this);
-                PosCalc *posCalc = PosCalc::getInstance(this->_depth);
-                while (not non_slice_key_parts.empty()) {
-                    if (non_slice_key_parts.size() == 1) {
-                        const auto&[key_pos, key_part] = *non_slice_key_parts.cbegin();
-
-                        if (current_subtrie->_depth == 1) {
-                            leaf_edges &entries = current_subtrie->getLeafEdges();
-                            if (entries.contains(key_part))
-                                return true;
-                            else
-                                throw "No value stored for given Key.";
-                        } else {
-                            key_pos_t subkey_pos = posCalc->key_to_subkey_pos(key_pos);
-
-                            return current_subtrie->getInnerChild(subkey_pos, non_slice_key_parts[key_pos]);
-                        }
-                    } else {
-                        key_pos_t min_card_key_pos = current_subtrie->getMinCardKeyPos(non_slice_key_parts, posCalc);
-                        key_pos_t min_card_subkey_pos = posCalc->key_to_subkey_pos(min_card_key_pos);
-
-                        current_subtrie = current_subtrie->getInnerChild(min_card_subkey_pos,
-                                                                         non_slice_key_parts.at(min_card_key_pos));
-
-                        non_slice_key_parts.erase(min_card_key_pos);
-                        posCalc = posCalc->use(min_card_key_pos);
-                    }
-                }
-                throw "Is never reached.";
+                return {getSlice(key)};
             }
         }
 
@@ -339,27 +377,8 @@ namespace tnt::tensor::hypertrie {
             return cards;
         }
 
-        /**
-         * Given a map that has key_pos keys, return the key_pos out of them with the minimum cardinality.
-         * @param map_from_key_pos a map that has key_pos as keys
-         * @param posCalc a position calculator
-         * @return the minimum key position.
-         */
-        key_pos_t getMinCardKeyPos(const std::map<key_pos_t, key_part_t> &map_from_key_pos,
-                                   const PosCalc *posCalc) const {
-            size_t min_card = SIZE_MAX;
-            key_pos_t min_card_key_pos = 0;
-            for (const key_pos_t &key_pos : keys(map_from_key_pos)) {
-                size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
-                if (card < min_card) {
-                    min_card = card;
-                    min_card_key_pos = key_pos;
-                }
-            }
-            return min_card_key_pos;
-        }
-
-        key_pos_t extractPosOfMinCardKeyPos(std::set<key_pos_t> &key_poss, const PosCalc *posCalc) const {
+        template<typename T>
+        key_pos_t extractPosOfMinCardKeyPos(T &key_poss, const PosCalc *posCalc) const {
             size_t min_card = SIZE_MAX;
             auto min_key_pos_ = key_poss.begin();
             auto min_key_pos = *min_key_pos_;
@@ -374,6 +393,44 @@ namespace tnt::tensor::hypertrie {
             key_poss.erase(min_key_pos_);
             return min_key_pos;
         }
+
+
+        template<typename T>
+        key_pos_t getMinCardKeyPos(const T &map_from_key_pos,
+                                   const PosCalc *posCalc) const {
+            size_t min_card = SIZE_MAX;
+            key_pos_t min_card_key_pos = 0;
+            for (const key_pos_t &key_pos : map_from_key_pos) {
+                size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
+                if (card < min_card) {
+                    min_card = card;
+                    min_card_key_pos = key_pos;
+                }
+            }
+            return min_card_key_pos;
+        }
+
+        /**
+         * Given a map that has key_pos keys, return the key_pos out of them with the minimum cardinality.
+         * @param map_from_key_pos a map that has key_pos as keys
+         * @param posCalc a position calculator
+         * @return the minimum key position.
+         */
+        template<typename V>
+        key_pos_t getMinCardKeyPos(const std::map<key_pos_t, V> &map_from_key_pos,
+                                   const PosCalc *posCalc) const {
+            size_t min_card = SIZE_MAX;
+            key_pos_t min_card_key_pos = 0;
+            for (const key_pos_t &key_pos : keys(map_from_key_pos)) {
+                size_t card = getCard(posCalc->key_to_subkey_pos(key_pos));
+                if (card < min_card) {
+                    min_card = card;
+                    min_card_key_pos = key_pos;
+                }
+            }
+            return min_card_key_pos;
+        }
+
 
         /**
          * Given a map that has key_pos keys, return the key_pos out of them with the minimum cardinality.
@@ -431,16 +488,18 @@ namespace tnt::tensor::hypertrie {
                     PosCalc *next_pos_calc = pos_calc->use(key_pos);
                     const auto &finished_child = finished_subtries.find(next_pos_calc->getSubKeyMask());
 
-                    try {
-                        // get the child at the current position.
-                        BoolHyperTrie *child_ = getInnerChild(pos_calc->key_to_subkey_pos(key_pos), key_part);
+
+                    // get the child at the current position.
+
+                    if (BoolHyperTrie *child_ = getInnerChild(pos_calc->key_to_subkey_pos(key_pos), key_part);
+                            child_ != nullptr) {
                         // the child exists ...
                         // ... and the subtrie starting with the child was not already finished:
                         if (finished_child == finished_subtries.end()) {
                             // call this function for the child
                             child_->set_rek(key, finished_subtries, next_pos_calc);
                         }
-                    } catch (...) {
+                    } else {
                         // the child does not exist ...
                         // ... and the subtrie starting with the child was already finished:
                         if (finished_child != finished_subtries.end()) {
@@ -450,7 +509,7 @@ namespace tnt::tensor::hypertrie {
 
                         } else { // ... and the subtrie starting with the child was not already finished:
                             // set a new child and call this function for the child
-                            BoolHyperTrie *new_child = this->insertNewChild(pos_calc->key_to_subkey_pos(key_pos),
+                            BoolHyperTrie *new_child = this->createNewChild(pos_calc->key_to_subkey_pos(key_pos),
                                                                             key_part);
                             new_child->set_rek(key, finished_subtries, next_pos_calc);
                         }
@@ -473,9 +532,8 @@ namespace tnt::tensor::hypertrie {
                 throw "Key length must match HyperTrie->_depth";
             }
             // check if there is already another value for this subkey.
-            try {
-                get(key); // fails if key is not stored
-                if (value) {
+            if (get(key)) {
+                if (not value) {
                     // cache for already created sub HyperTries.
                     std::unordered_map<subkey_mask_t, BoolHyperTrie *> finished_subtries{};
 
@@ -486,10 +544,8 @@ namespace tnt::tensor::hypertrie {
                     // remove subkey recursively
                     del_rek(key, finished_subtries, pos_calc);
                     return;
-                } else {
-                    throw "Delete not supported yet.";
                 }
-            } catch (...) {
+            } else {
                 if (value) {
                     // cache for already created sub HyperTries.
                     std::unordered_map<subkey_mask_t, BoolHyperTrie *> finished_subtries{};
@@ -500,12 +556,8 @@ namespace tnt::tensor::hypertrie {
 
                     // store subkey recursively
                     set_rek(key, finished_subtries, pos_calc);
-                } else {
-                    return;
                 }
             }
-
-
         }
 
         void del(const Key_t &coords) {
@@ -716,19 +768,20 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
+                                                                view._max_ind);
                 while (ind != view._max_ind + 1) {
 
                     current_key_part = childrens_keys.at(ind);
                     const BoolHyperTrie *child = childrens_values.at(ind);
-                    try {
-                        view._result = std::get<BoolHyperTrie *>(child->get(view._positions, current_key_part));
+                    view._result = child->getDiagonal(view._positions, current_key_part);
+                    if (view._result != nullptr) {
                         view._min_ind = ind;
                         view._size = view._max_ind - ind + 1;
                         view._min = current_key_part;
                         return current_key_part;
-                    } catch (...) {}
-                    ++ind;
+                    } else
+                        ++ind;
                 }
                 view._size = 0;
                 return KEY_PART_MAX;
@@ -745,21 +798,20 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
+                                                                view._max_ind);
 
                 while (ind != view._max_ind + 1) {
 
                     current_key_part = childrens_keys.at(ind);
                     const BoolHyperTrie *child = childrens_values.at(ind);
-                    try {
-                        child->hasFullDiag(current_key_part);
+                    if (child->getFullDiagonal(current_key_part)) {
                         view._min_ind = ind;
                         view._size = view._max_ind - ind + 1;
                         view._min = current_key_part;
                         return current_key_part;
-                    } catch (...) {}
-
-                    ++ind;
+                    } else
+                        ++ind;
                 }
                 view._size = 0;
                 return KEY_PART_MAX;
@@ -831,20 +883,21 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
+                                                                view._max_ind);
 
 
                 if (ind != view._max_ind + 1) {
                     current_key_part = childrens_keys.at(ind);
                     if (current_key_part == key_part) {
                         const BoolHyperTrie *child = childrens_values.at(ind);
-                        try {
-                            view._result = std::get<BoolHyperTrie *>(child->get(view._positions, current_key_part));
+                        view._result = child->getDiagonal(view._positions, current_key_part);
+                        if (view._result != nullptr) {
                             view._min_ind = ind;
                             view._size = view._max_ind - ind + 1;
                             view._min = current_key_part;
                             return true;
-                        } catch (...) {}
+                        }
                     }
                 }
                 if (ind != view._max_ind + 1) {
@@ -868,20 +921,20 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
+                                                                view._max_ind);
 
 
                 if (ind != view._max_ind + 1) {
                     current_key_part = childrens_keys.at(ind);
                     if (current_key_part == key_part) {
                         const BoolHyperTrie *child = childrens_values.at(ind);
-                        try {
-                            child->get(view._positions, current_key_part);
+                        if (child->getDiagonal(view._positions, current_key_part)) {
                             view._min_ind = ind;
                             view._size = view._max_ind - ind + 1;
                             view._min = current_key_part;
                             return true;
-                        } catch (...) {}
+                        }
                     }
                 }
                 if (ind != view._max_ind + 1) {

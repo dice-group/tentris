@@ -75,7 +75,7 @@ namespace tnt::util::container {
          * @param key key where to set the value
          * @param value value to be set
          */
-        void setItem(const KEY_t &key, const VALUE_t &value) {
+        void setItem(const KEY_t &key, const VALUE_t &value) noexcept {
             size_t pos = insert_pos<KEY_t>(_keys, key);
             if (pos != _keys.size() and _keys[pos] == key) {
                 _values[pos] = value;

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
-#include <ctime>
 
 using namespace tnt::util::types;
 using namespace tnt::tensor::hypertrie;
@@ -148,7 +147,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
         trie.set(key, value);
     }
 
-    Key_t subkey_0 = Key_t{0};
+    SliceKey_t subkey_0 = SliceKey_t{0, std::nullopt, std::nullopt, std::nullopt};
     const std::variant<BoolHyperTrie *, bool> &subtrie_0_ = trie.get(subkey_0);
 
     BoolHyperTrie *subtrie_0 = std::get<BoolHyperTrie *>(subtrie_0_);
@@ -157,7 +156,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
     ASSERT_EQ(subtrie_0->size(), 2);
 
 
-    Key_t subkey_4 = Key_t{4};
+    SliceKey_t subkey_4 = SliceKey_t{4, std::nullopt, std::nullopt};
     const std::variant<BoolHyperTrie *, bool> &subtrie_04_ = subtrie_0->get(subkey_4);
 
     BoolHyperTrie *subtrie_04 = std::get<BoolHyperTrie *>(subtrie_04_);
@@ -166,7 +165,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
     ASSERT_EQ(subtrie_04->size(), 1);
 
 
-    Key_t subkey_8 = Key_t{8};
+    SliceKey_t subkey_8 = SliceKey_t{8, std::nullopt};
     const std::variant<BoolHyperTrie *, bool> &subtrie_048_ = subtrie_04->get(subkey_8);
 
     BoolHyperTrie *subtrie_048 = std::get<BoolHyperTrie *>(subtrie_048_);
@@ -175,7 +174,7 @@ TEST(TestBoolHyperTrie, test_multi_level_read) {
     ASSERT_EQ(subtrie_048->size(), 1);
 
 
-    Key_t subkey_9 = Key_t{9};
+    SliceKey_t subkey_9 = SliceKey_t{9};
     const std::variant<BoolHyperTrie *, bool> &subtrie_0489_ = subtrie_048->get(subkey_9);
 
     bool safed_value = std::get<bool>(subtrie_0489_);
@@ -219,11 +218,11 @@ TEST(TestBoolHyperTrie, load_data10000) {
     const clock_t i1 = clock();
     // load data
     for (auto i : range(500)) {
-        key[0] = key_part_t(rand() %300 +1);
-        key[1] = key_part_t(rand() %400 +1);
-        key[2] = key_part_t(rand() %500 +1);
+        key[0] = key_part_t(rand() % 300 + 1);
+        key[1] = key_part_t(rand() % 400 + 1);
+        key[2] = key_part_t(rand() % 500 + 1);
         trie.set(key, true);
-        if (i % 10000 == 0){
+        if (i % 10000 == 0) {
             std::cout << "triples: " << i << std::endl;
         }
     }
