@@ -639,6 +639,9 @@ namespace tnt::tensor::hypertrie {
                         }
                     }
                     _max_ind = _edges->at(_min_key_pos).size() - 1;
+                    
+                    auto found = std::find(_positions.begin(), _positions.end(), _min_key_pos);
+                    _positions.erase(found);
 
                     setMinMax_p = &setMinMax_III;
                     first_lower_p = &first_lower_III;
