@@ -19,6 +19,17 @@
 #include "tnt/util/All.hpp"
 
 namespace tnt::tensor::hypertrie {
+    class BoolHyperTrie;
+
+    union Children {
+        using key_part_t = tnt::util::types::key_part_t;
+        using inner_edges = tnt::util::container::VecMap<key_part_t, BoolHyperTrie *>;
+        using leaf_edges = tnt::util::container::VecSet<key_part_t>;
+        std::vector<inner_edges> _inner_edges;
+        leaf_edges _leaf_edges;
+
+        ~Children() {};
+    };
 
     class BoolHyperTrie {
         using Key_t = tnt::util::types::Key_t;
@@ -48,25 +59,23 @@ namespace tnt::tensor::hypertrie {
          * the non-zero elements a map that holds the subtries for that position. The map stores then for every key_part
          * used at any key to a non-zero element at that position the proper subBoolHyperTrie.
          */
-        std::variant<std::vector<inner_edges>, leaf_edges> _subtries{};
+        Children children;
 
 
     public:
         /**
          * The default constructor creates a empty BoolHyperTrie with depth = 1.
          */
-        BoolHyperTrie() : _depth(1), _subtries{leaf_edges{}} {}
+        BoolHyperTrie() : _depth(1), children{._leaf_edges = leaf_edges{}} {}
 
         /**
          * Creates a empty BoolHyperTrie with given depth.
          * @param depth depth of the BoolHyperTrie
          */
-        explicit BoolHyperTrie(key_pos_t depth) : _depth(depth), _subtries{} {
-            if (depth > 1) {
-                _subtries = std::vector<inner_edges>(depth);
-            } else {
-                _subtries = leaf_edges{};
-            }
+        explicit BoolHyperTrie(key_pos_t depth) : _depth(depth),
+                                                  children{(depth > 1)
+                                                           ? Children{._inner_edges =std::vector<inner_edges>(depth)}
+                                                           : Children{._leaf_edges =leaf_edges{}}} {
         }
 
         /**
@@ -241,7 +250,7 @@ namespace tnt::tensor::hypertrie {
                         key_pos_t min_card_subkey_pos = posCalc->key_to_subkey_pos(min_card_key_pos);
 
                         current_subtrie = current_subtrie->getInnerChild(min_card_subkey_pos,
-                                                                         non_slice_key_parts[min_card_key_pos]);
+                                                                         non_slice_key_parts.at(min_card_key_pos));
 
                         non_slice_key_parts.erase(min_card_key_pos);
                         posCalc = posCalc->use(min_card_key_pos);
@@ -640,6 +649,10 @@ namespace tnt::tensor::hypertrie {
                     }
                     _max_ind = _edges->at(_min_key_pos).size() - 1;
 
+                    auto found = std::find(_positions.begin(), _positions.end(), _min_key_pos);
+                    _positions.erase(found);
+
+
                     setMinMax_p = &setMinMax_III;
                     first_lower_p = &first_lower_III;
                     containsAndUpdateLower_p = &containsAndUpdateLower_III;
@@ -697,7 +710,7 @@ namespace tnt::tensor::hypertrie {
                     current_key_part = childrens_keys.at(ind);
                     const BoolHyperTrie *child = childrens_values.at(ind);
                     try {
-                        view._result = std::get<BoolHyperTrie *>(child->get(view._positions,current_key_part));
+                        view._result = std::get<BoolHyperTrie *>(child->get(view._positions, current_key_part));
                         view._min_ind = ind;
                         view._size = view._max_ind - ind + 1;
                         view._min = current_key_part;
@@ -728,7 +741,7 @@ namespace tnt::tensor::hypertrie {
                     const BoolHyperTrie *child = childrens_values.at(ind);
                     try {
                         // TODO: implement diagonal key retrieval in HyperTrie directly.
-                        child->get(view._positions,current_key_part);
+                        child->get(view._positions, current_key_part);
                         view._min_ind = ind;
                         view._size = view._max_ind - ind + 1;
                         view._min = current_key_part;
@@ -814,7 +827,7 @@ namespace tnt::tensor::hypertrie {
                     if (current_key_part == key_part) {
                         const BoolHyperTrie *child = childrens_values.at(ind);
                         try {
-                            view._result =  std::get<BoolHyperTrie *>(child->get(view._positions, current_key_part));
+                            view._result = std::get<BoolHyperTrie *>(child->get(view._positions, current_key_part));
                             view._min_ind = ind;
                             view._size = view._max_ind - ind + 1;
                             view._min = current_key_part;
