@@ -11,6 +11,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+
+# find boost
+find_package(Boost)
+
 # build antlr4
 # set variable pointing to the antlr tool that supports C++
 set(ANTLR4CPP_JAR_LOCATION ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
@@ -64,6 +68,7 @@ link_libraries(
         antlr4_sparql
         antlr4-runtime
         antlr4_interface
+        Boost::boost # header only boost libraries
         ${Pistache_LIBRARY}
 )
 
