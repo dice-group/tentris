@@ -14,6 +14,27 @@
 namespace tnt::tensor::einsum {
     using namespace tnt::util::types;
 
+    namespace {
+        template<typename T>
+        std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
+            std::set<label_t> sub_set;
+            std::copy_if(interable.cbegin(), interable.cend(),
+                         std::inserter(sub_set, sub_set.begin()),
+                         [&](const label_t &l) { return remove_ != l; });
+            return sub_set;
+        }
+
+        template<typename T>
+
+        std::set<T> setMinus(std::set<T> plusSet, std::set<T> minusSet1, std::set<T> minusSet2) {
+            std::set<T> result{};
+            for (const T &item : plusSet)
+                if (not minusSet1.count(item) and not minusSet2.count(item))
+                    result.insert(item);
+            return result;
+        }
+    };
+
     class EinsumPlan {
     public:
         class Step;
@@ -36,7 +57,9 @@ namespace tnt::tensor::einsum {
 
         Step &getInitialStep(const Operands &operands) const {
             if (initial_step == nullptr)
-                initial_step = new Step{_subscript, _subscript.getLabelPosInResult(), operands};
+                initial_step = new Step{_subscript, _subscript.getLabelPosInResult(), operands,
+                                        setMinus(_subscript.getAllLabels(), _subscript.getUniqueNonResultLabels(),
+                                                 _subscript.getLonelyNonResultLabels())};
             return *initial_step;
         }
 
@@ -67,6 +90,7 @@ namespace tnt::tensor::einsum {
             std::map<op_pos_t, op_pos_t> _diagonal2result_pos;
             std::vector<std::vector<key_pos_t>> _joinee_key_part_poss; ///< the joining key part positions of each join operand.
             std::vector<op_pos_t> _next_op_position;
+            std::vector<std::vector<label_pos_t>> _unique_labels;
 
         private:
 
@@ -111,19 +135,21 @@ namespace tnt::tensor::einsum {
                             ++j;
                         }
                     }
+                } else {
+                    for (const std::vector<std::vector<label_pos_t>> &unique :
+                            values(_subscript.getUniqueNonResultContractions())) {
+                        _unique_labels.push_back(unique[0]);
+                    }
                 }
             }
 
-            template<typename T>
-            static std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
-                std::set<label_t> sub_set;
-                std::copy_if(interable.cbegin(), interable.cend(),
-                             std::inserter(sub_set, sub_set.begin()),
-                             [&](const label_t &l) { return remove_ != l; });
-                return sub_set;
-            }
 
         public:
+
+            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+                 const Operands &operands, const std::set<label_t> &label_candidates) :
+                    Step(subscript, result_label_poss, getMinCardLabel(operands, label_candidates, subscript),
+                         label_candidates) {}
 
             Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
                  const Operands &operands) :
@@ -184,6 +210,9 @@ namespace tnt::tensor::einsum {
                 return _result_pos;
             }
 
+            const std::vector<std::vector<label_pos_t>> &getUniqueNonResultContractions() const {
+                return _unique_labels;
+            }
 
         private:
 
@@ -250,7 +279,7 @@ namespace tnt::tensor::einsum {
                 const double d = min_dim_cardinality
                                  * i2
                                  / i1;
-                                       // prefer smaller min_dim cardinality
+                // prefer smaller min_dim cardinality
 //                                       + (1 - (1 / min_dim_cardinality))
 //                                 + (double(1) / double(op_poss.size()));
                 return d;

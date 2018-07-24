@@ -752,7 +752,8 @@ namespace tnt::tensor::hypertrie {
             static key_part_t first_lower_I(DiagonalView &view, const key_part_t &key_part) {
                 size_t ind = (key_part == view._leaf_edges->_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::search(view._leaf_edges->_keys, key_part, view._min_ind, view._max_ind);
+                             : tnt::util::container::search(view._leaf_edges->_keys, key_part, view._min_ind,
+                                                            view._max_ind);
                 view._min_ind = ind;
                 if (ind != tnt::util::container::NOT_FOUND) {
                     view._size = view._max_ind - ind + 1;
@@ -1062,6 +1063,46 @@ namespace tnt::tensor::hypertrie {
                         break;
                 }
                 return std::make_tuple(min_, max_);
+            }
+
+            class iterator {
+                DiagonalView &_view;
+                bool _ended;
+                key_part_t current_key_part;
+
+            public:
+                iterator(DiagonalView &view, bool ended = false) : _view{view}, _ended(ended) {}
+
+                iterator &operator++() {
+                    if (not _ended) {
+                        key_part_t next = _view.first();
+                        if (next > _view._max)
+                            _ended = true;
+                    }
+                    return *this;
+                }
+
+                BoolHyperTrie *operator*() {
+                    // build the result
+                    return _view._result;
+                }
+
+                inline bool operator==(const iterator &rhs) const {
+                    // careful, it doesn't check if it is tested against another iterator for the same Join.
+                    return ((rhs._ended and _ended));
+                }
+
+                inline bool operator!=(const iterator &rhs) const {
+                    return not this->operator==(rhs);
+                }
+            };
+
+            iterator begin() {
+                return iterator{*this};
+            }
+
+            iterator end() {
+                return iterator{*this, true};
             }
         };
     };

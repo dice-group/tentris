@@ -176,6 +176,14 @@ namespace tnt::tensor::einsum {
             return _sub_subscripts;
         }
 
+        const std::set<label_t> &getUniqueNonResultLabels() const {
+            return _unique_non_result_labels;
+        }
+
+        const std::set<label_t> &getLonelyNonResultLabels() const {
+            return _lonely_non_result_labels;
+        }
+
         /**
          * A vector with positions of operands that have unique labels that don't occur in result.
          *
@@ -236,6 +244,7 @@ namespace tnt::tensor::einsum {
         inline const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &getUniqueNonResultContractions() const {
             return _unique_non_result_contractions_by_op;
         }
+
 
         /**
          * A map that gives for a position of an operand all diagonals on lonely labels that don't occur in result.

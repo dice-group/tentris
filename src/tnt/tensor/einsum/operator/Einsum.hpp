@@ -87,8 +87,28 @@ namespace tnt::tensor::einsum::operators {
                     rekEinsum(next_operands, next_result_key, next_step, result);
                 }
             } else { // there are no steps left
-                result[result_key] += OUT_COUNT_T(1);
+                if (not operands.empty()) {
+                    OUT_COUNT_T value = contract(operands, step);
+                    result[result_key] += OUT_COUNT_T(value);
+                } else {
+                    result[result_key] += OUT_COUNT_T(1);
+                }
             }
+        }
+
+        OUT_COUNT_T contract(const Operands &operands, const EinsumPlan::Step &step) {
+            const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
+            std::vector<size_t> results(operands.size());
+            for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
+                const auto &[op, unique_contraction] = op_and_contr;
+
+                if (not unique_contraction.empty() and op->depth() == 3)
+                    for (const BoolHyperTrie *hyperTrie : BoolHyperTrie::DiagonalView{op, unique_contraction})
+                        results[op_pos] += hyperTrie->size();
+                else
+                    results[op_pos] += op->size();
+            }
+            return std::accumulate(results.begin(), results.end(), 0);
         }
 
         /**
