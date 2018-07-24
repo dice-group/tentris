@@ -87,10 +87,10 @@ namespace tnt::tensor::einsum::operators {
                     rekEinsum(next_operands, next_result_key, next_step, result);
                 }
             } else { // there are no steps left
-                if (not operands.empty()) {
+                if (not operands.empty()) { // there are lonely and/or unique labels left.
                     OUT_COUNT_T value = contract(operands, step);
-                    result[result_key] += OUT_COUNT_T(value);
-                } else {
+                    result[result_key] += value;
+                } else { // no labels left
                     result[result_key] += OUT_COUNT_T(1);
                 }
             }
