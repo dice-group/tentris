@@ -42,7 +42,7 @@ namespace tnt::tensor::einsum::operators {
          */
         explicit CrossProduct(const Subscript &subscript) : _subscript{subscript} {
             for (const std::shared_ptr<Subscript> &sub_subscript : subscript.getSubSubscripts()) {
-                predecessors.push_back(Einsum<T>{*sub_subscript});
+//                predecessors.push_back(Einsum<T>{*sub_subscript});
             }
         }
 
@@ -54,7 +54,7 @@ namespace tnt::tensor::einsum::operators {
             // get results from all predecessors
             for (size_t i : range(predecessors.size())) {
                 // get the result
-                predecessor_results.emplace_back(predecessors.at(i).getResult(operands));
+//                predecessor_results.emplace_back(predecessors.at(i).getResult(operands));
 
                 // if one of the results is 0 the cross product will be zero. So no more calculation is needed.
                 if (not predecessor_results.at(i).size()) {

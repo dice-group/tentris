@@ -95,8 +95,8 @@ namespace tnt::store {
             Subscript subscript = parsedSPARQL.getSubscript();
             Subscript optimized = subscript.optimized();
             if (optimized.getSubSubscripts().empty()) {
-                operators::Einsum<size_t> einsumOp{optimized};
-                return einsumOp.getResult(operands);
+//                operators::Einsum<size_t> einsumOp{optimized};
+//                return einsumOp.getResult(operands);
             } else {
                 operators::CrossProduct<size_t> crossprodOp{optimized};
                 operators::CrossProductResult<size_t> result = crossprodOp.getResult(operands);

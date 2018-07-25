@@ -4,8 +4,8 @@ set (tnt_VERSION_MAJOR 0)
 set (tnt_VERSION_MINOR firecracker)
 
 set(CMAKE_CXX_STANDARD 17)
-set(BUILD_SHARED_LIBS OFF)
-SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
+#set(BUILD_SHARED_LIBS OFF)
+#SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -13,8 +13,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
 # find boost
-find_package(Boost)
-
+find_package(Boost  REQUIRED COMPONENTS context)
+IF (Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+ENDIF()
+message("Boost libraries: ${Boost_LIBRARIES}")
 # build antlr4
 # set variable pointing to the antlr tool that supports C++
 set(ANTLR4CPP_JAR_LOCATION ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
@@ -69,6 +72,7 @@ link_libraries(
         antlr4-runtime
         antlr4_interface
         Boost::boost # header only boost libraries
+        boost_context
         ${Pistache_LIBRARY}
 )
 
