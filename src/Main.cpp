@@ -1,13 +1,18 @@
 
 #include "tnt/store/TripleStore.hpp"
 #include "tnt/http/SPARQLEndpoint.hpp"
+#include "config/InitialConfig.cpp"
 
-int main() {
+
+int main(int argc, char *argv[]) {
     using namespace std;
     using namespace Pistache;
     using namespace tnt::http;
-    Port port(9080);
-    std::string path_to_nt_file{"../tests/dataset/sp2b.nt"};
+
+    InitialConfig initialConfig{argc, argv};
+
+    Port port(initialConfig.port);
+    std::string path_to_nt_file{initialConfig.dataBaseFile};
 
     int thr = std::thread::hardware_concurrency();
     Address addr(Ipv4::any(), port);
