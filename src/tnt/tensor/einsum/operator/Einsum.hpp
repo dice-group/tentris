@@ -140,11 +140,8 @@ namespace tnt::tensor::einsum::operators {
         }
 
         class iterator {
-        public:
             const bool _ended;
             const std::unique_ptr<yield_pull<RESULT_TYPE>> _results;
-            RESULT_TYPE result;
-            const bool _last_element{false};
         public:
             explicit iterator(const Einsum &einsum, bool ended = false) :
                     _ended{ended},
@@ -156,16 +153,12 @@ namespace tnt::tensor::einsum::operators {
             }
 
             const RESULT_TYPE &operator*() {
-                return result;
+                return _results.get();
             }
 
             iterator &operator++() {
-                if (_last_element)
-                    _ended = true;
-                if (not _ended) {
-                    result = _results->get();
-                    _last_element = not(*_results);
-                }
+                _results();
+                _ended = not(*_results);
                 return *this;
             }
 
