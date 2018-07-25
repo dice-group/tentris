@@ -136,11 +136,11 @@ namespace tnt::store {
             _value = {_identifier.data() + 1, identifier.size()};
         }
 
-        bool hasLang() {
+        bool hasLang() const {
             return _lang != nullptr;
         }
 
-        bool hasType() {
+        bool hasType() const {
             return _type != nullptr;
         }
 

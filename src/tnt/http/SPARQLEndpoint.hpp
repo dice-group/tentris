@@ -9,6 +9,7 @@
 #include <tuple>
 #include <utility>
 #include <c++/8/charconv>
+#include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 
 tnt::store::TripleStore *_store;
 
@@ -75,34 +76,26 @@ namespace tnt::http {
         void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
             using namespace Pistache;
             using namespace Pistache::Http;
+            using ParsedSPARQL = tnt::store::sparql::ParsedSPARQL;
             try { // if something fails return an internal server error
                 // only answer sparql querys to GET /sparql
                 if (request.method() == Method::Get and request.resource().compare("/sparql") == 0) {
                     response.headers().add<SPARQLJSON>();
-
                     const Optional<std::string> &hasQuery = request.query().get("query");
                     // check if there is actually an query
                     if (not hasQuery.isEmpty()) {
                         const std::string sparqlQuery = urlDecode(hasQuery.get());
-                            try { // execute the query
-                                tnt::util::container::NDMap<size_t> result = _store->query(sparqlQuery);
-                                // TODO: use json instead
-                                auto stream = response.stream(Code::Ok);
-                                for (const auto &item : result) {
-                                    for (const auto &binding : item.first) {
-                                        const std::string &materilizedBinding = _store->getTermIndex().inv().at(
-                                                binding).operator*().getIdentifier();
-                                        stream << materilizedBinding.c_str() << " ";
-                                    }
-
-                                    stream << ".\n";
-                                }
-                                stream << ends;
-                            } catch (
-                                    const std::exception &exc) { // if the execution of the query should fail return an internal server error
-                                std::cout << exc.what() << std::endl;
-                                response.send(Code::Internal_Server_Error);
-                            }
+                        try { // execute the query
+                            ParsedSPARQL parsedSPARQL{sparqlQuery};
+                            const std::vector<Variable> &vars = parsedSPARQL.getQueryVariables();
+                            tnt::util::container::NDMap<size_t> result = _store->query(sparqlQuery);
+                            auto stream = response.stream(Code::Ok);
+                            stream_out(vars, result, stream);
+                        } catch (
+                                const std::exception &exc) { // if the execution of the query should fail return an internal server error
+                            std::cout << exc.what() << std::endl;
+                            response.send(Code::Internal_Server_Error);
+                        }
 
 
                     } else {
@@ -117,6 +110,77 @@ namespace tnt::http {
                 response.send(Code::Internal_Server_Error);
             }
 
+        }
+
+        void stream_out(const std::vector<Variable> &vars, const util::container::NDMap<unsigned long> &result,
+                        Pistache::Http::ResponseStream &stream) const {
+            stream << "{\n";
+            std::string commaSeparatedVars = "";
+            bool firstTime = true;
+            for (const auto &var : vars) {
+                                std::string separator = " , ";
+                                if (firstTime) {
+                                    firstTime = false;
+                                    separator = "";
+                                }
+                                commaSeparatedVars.append(separator + "\"" + var._var_name + "\"");
+                            }
+            std::string s = "\"head\": { \"vars\": [" + commaSeparatedVars +
+                                     "] },\n\"results\": {\n\"bindings\": [";
+            stream << s.c_str();
+            bool firstResult = true;
+            for (const auto &[key, count] : result) {
+                                s = "{";
+                                bool firstKey = true;
+                                for (const auto &[binding, var] : zip(key, vars)) {
+                                    store::Term &term = *_store->getTermIndex().inv().at(
+                                            binding);
+                                    const std::string &materializedBinding = term.getIdentifier();
+
+                                    const store::Term::NodeType &termType = term.type();
+                                    std::string type = "\"\"";
+                                    switch (termType) {
+                                        case store::Term::URI:
+                                            type = "\"uri\"";
+                                            break;
+                                        case store::Term::BNode:
+                                            type = "\"bnode\"";
+                                            break;
+                                        case store::Term::Literal:
+                                            type = "\"literal\"";
+                                            break;
+                                    } //todo check default
+
+                                    std::string t = ",\n";
+                                    if (firstKey) {
+                                        t = "";
+                                        firstKey = false;
+                                    }
+
+                                    s += t + "\"" + var._var_name + "\": { ";
+                                    s += "\"type\": " + type;
+                                    s += ", \"value\":" + materializedBinding;
+                                    if (termType == store::Term::Literal) {
+                                        const store::Literal &literal = static_cast<store::Literal &>(term);
+                                        if (literal.hasType())
+                                            s += "\", datatype\":" + (std::string) literal.getType();
+                                        else if (literal.hasLang())
+                                            s += "\", xml:lang\":" + (std::string) literal.getLang();
+                                    }
+                                    s += "}";
+                                }
+                                s += "}";
+
+                                for ([[maybe_unused]]  const auto& c : range(count+1)) {
+                                    if (firstResult) {
+                                        firstResult = false;
+                                        stream << "\n" << s.c_str();
+                                    } else
+                                        stream << ",\n" << s.c_str();
+                                }
+                            }
+            stream << "\n]}\n}\n";
+            stream << Pistache::Http::ends;
         }
     };
 
