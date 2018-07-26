@@ -33,6 +33,9 @@ namespace tnt::tensor::einsum {
                     result.insert(item);
             return result;
         }
+
+        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
+        using Operands =  typename std::vector<BoolHyperTrie *>;
     };
 
     class EinsumPlan {
@@ -40,8 +43,7 @@ namespace tnt::tensor::einsum {
         class Step;
 
     private:
-        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
-        using Operands =  typename std::vector<BoolHyperTrie *>;
+
         const Subscript _subscript;
         const std::vector<label_t> &_result_labels;
         mutable Step *initial_step = nullptr;
@@ -126,7 +128,7 @@ namespace tnt::tensor::einsum {
                         auto pos_of_join_in_operands = _op_poss.at(i);
                         auto pos_of_result_in_operands = _next_op_position.at(j);
                         if (pos_of_join_in_operands == pos_of_result_in_operands) {
-                            _diagonal2result_pos[i] = pos_of_join_in_operands;
+                            _diagonal2result_pos[i] = j;
                             ++j;
                             ++i;
                         } else if (pos_of_join_in_operands < pos_of_result_in_operands) {
@@ -141,7 +143,7 @@ namespace tnt::tensor::einsum {
                         if (const auto found = map.find(op_pos);
                                 found != map.cend()) {
                             _unique_labels.push_back(found->second.at(0));
-                        } else{
+                        } else {
                             _unique_labels.push_back({});
                         }
                     }

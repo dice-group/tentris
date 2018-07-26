@@ -105,7 +105,8 @@ namespace tnt::store {
             const ParsedSPARQL &sparql = parseSPARQL(sparql_.getSparqlStr());
             std::vector<std::vector<std::optional<Term>>> op_keys = sparql.getOperandKeys();
             std::vector<SliceKey_t> slice_keys{};
-
+            std::cout << op_keys << std::endl;
+            std::cout << sparql.getSubscript() << std::endl;
             for (const auto &op_key : op_keys) {
                 SliceKey_t slice_key(3, std::nullopt);
                 bool no_slices = true;
@@ -129,7 +130,7 @@ namespace tnt::store {
                 } else
                     slice_keys.push_back(slice_key);
             }
-
+            std::cout << slice_keys <<std::endl;
             Subscript subscript = sparql.getSubscript();
             Subscript optimized = subscript.optimized();
             if (optimized.getSubSubscripts().empty()) {
@@ -168,6 +169,8 @@ namespace tnt::store {
 
     auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
+        if (type_node != nullptr)
+        std::cout << type_node->buf <<std::endl;
         std::optional<std::string> type = (type_node != nullptr)
                                           ? std::optional<std::string>{{(char *) (type_node->buf),
                                                                                size_t(type_node->n_chars)}}
@@ -176,7 +179,9 @@ namespace tnt::store {
                                           ? std::optional<std::string>{{(char *) (lang_node->buf),
                                                                                size_t(lang_node->n_chars)}}
                                           : std::nullopt;
-
+        Literal l{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type};
+        if (type_node != nullptr)
+            std::cout << l.getType() <<std::endl;
         return std::unique_ptr<Term>{
                 new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
     };

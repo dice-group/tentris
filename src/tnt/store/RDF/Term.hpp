@@ -139,7 +139,7 @@ namespace tnt::store {
             } else if (type and type != "http://www.w3.org/2001/XMLSchema#string") {
                 // string tags shall not be stored as they are implicit
                 _identifier = "\"" + identifier + "\"^^<" + *type + ">";
-                _type = {_identifier.data() + 1 + identifier.size() + 3, type->size()};
+                _type = {_identifier.data() + 1 + identifier.size() + 4, type->size()};
             } else {
                 _identifier = "\"" + identifier + "\"";
             }

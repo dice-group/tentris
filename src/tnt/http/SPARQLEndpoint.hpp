@@ -145,74 +145,71 @@ namespace tnt::http {
         template<typename VALUE_TYPE>
         void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> &results,
                         ResponseStream &stream) const {
-            stream << "{\n";
-            std::string commaSeparatedVars = "";
+            stream << "{\"head\":{\"vars\":[";
             bool firstTime = true;
             for (const auto &var : vars) {
-                std::string separator = " , ";
                 if (firstTime) {
                     firstTime = false;
-                    separator = "";
+                    stream << "\"" << var._var_name.c_str() << "\"";
+                } else {
+                    stream << ",\"" << var._var_name.c_str() << "\"";
                 }
-                commaSeparatedVars.append(separator + "\"" + var._var_name + "\"");
             }
-            std::string s = "\"head\": { \"vars\": [" + commaSeparatedVars +
-                            "] },\n\"results\": {\n\"bindings\": [";
-            stream << s.c_str();
+            stream << "]},\"results\":{\"bindings\":[";
             bool firstResult = true;
             for (const auto &result : results) {
                 const Key_t &key = getKey<VALUE_TYPE>(result);
-                s = "{";
+                std::stringstream json_result{};
+                json_result << "{";
                 bool firstKey = true;
                 for (const auto &[binding, var] : zip(key, vars)) {
-                    store::Term &term = *_store->getTermIndex().inv().at(
-                            binding);
-                    const std::string &materializedBinding = term.getIdentifier();
+                    store::Term &term = *_store->getTermIndex().inv().at(binding);
+
+
+                    if (firstKey) {
+                        firstKey = false;
+                    } else {
+                        json_result << ",";
+                    }
+
+                    json_result << "\"" << var._var_name << "\":{";
 
                     const store::Term::NodeType &termType = term.type();
-                    std::string type = "\"\"";
                     switch (termType) {
                         case store::Term::URI:
-                            type = "\"uri\"";
+                            json_result << "\"type\":\"uri\"";
                             break;
                         case store::Term::BNode:
-                            type = "\"bnode\"";
+                            json_result << "\"type\":\"bnode\"";
                             break;
                         case store::Term::Literal:
-                            type = "\"literal\"";
+                            json_result << "\"type\":\"literal\"";
                             break;
                     } //todo check default
 
-                    std::string t = ",\n";
-                    if (firstKey) {
-                        t = "";
-                        firstKey = false;
-                    }
-
-                    s += t + "\"" + var._var_name + "\": { ";
-                    s += "\"type\": " + type;
-                    s += ", \"value\":" + materializedBinding;
+                    json_result << ",\"value\":\"" << term.get_value();
                     if (termType == store::Term::Literal) {
                         const store::Literal &literal = static_cast<store::Literal &>(term);
                         if (literal.hasType())
-                            s += "\", datatype\":" + (std::string) literal.getType();
+                            json_result << "\",\"datatype\":\"" << literal.getType();
                         else if (literal.hasLang())
-                            s += "\", xml:lang\":" + (std::string) literal.getLang();
+                            json_result << "\",\"xml:lang\":" << literal.getLang();
                     }
-                    s += "}";
+                    json_result << "\"}";
                 }
-                s += "}";
+                json_result << "}";
 
+                std::string json_result_binding = json_result.str();
+                std::cout << json_result_binding << std::endl;
                 for ([[maybe_unused]]  const auto &c : range(getCount<VALUE_TYPE>(result))) {
                     if (firstResult) {
                         firstResult = false;
-                        stream << "\n" << s.c_str();
+                        stream << json_result_binding.c_str();
                     } else
-                        stream << ",\n" << s.c_str();
+                        stream << "," << json_result_binding.c_str();
                 }
             }
-            stream << "\n]}\n}\n";
-            stream << ends;
+            stream << "]}}\n" << ends;
         }
     };
 
