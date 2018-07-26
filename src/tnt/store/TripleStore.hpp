@@ -46,7 +46,7 @@ namespace tnt::store {
         void loadRDF(std::string file_path);
 
         void add(std::tuple<std::string, std::string, std::string> triple) {
-            add(parse(std::get<0>(triple)), parse(std::get<1>(triple)), parse(std::get<2>(triple)));
+            add(parseTerm(std::get<0>(triple)), parseTerm(std::get<1>(triple)), parseTerm(std::get<2>(triple)));
         }
 
         void add(std::tuple<std::unique_ptr<Term>, std::unique_ptr<Term>, std::unique_ptr<Term>> triple) {
@@ -66,9 +66,9 @@ namespace tnt::store {
         }
 
         bool contains(std::tuple<std::string, std::string, std::string> triple) {
-            const std::unique_ptr<Term> &subject = parse(std::get<0>(triple));
-            const std::unique_ptr<Term> &predicate = parse(std::get<1>(triple));
-            const std::unique_ptr<Term> &object = parse(std::get<2>(triple));
+            const std::unique_ptr<Term> &subject = parseTerm(std::get<0>(triple));
+            const std::unique_ptr<Term> &predicate = parseTerm(std::get<1>(triple));
+            const std::unique_ptr<Term> &object = parseTerm(std::get<2>(triple));
             return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
 
@@ -230,6 +230,7 @@ namespace tnt::store {
     void TripleStore::loadRDF(std::string file_path) {
         SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, NULL, NULL, NULL, &serd_callback, NULL);
         serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
+        std::cout << termIndex << std::endl;
     }
 
     template<>

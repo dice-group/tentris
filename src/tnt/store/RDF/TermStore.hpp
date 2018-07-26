@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <tuple>
+#include <ostream>
 
 namespace tnt::store {
     class TermStore {
@@ -51,9 +52,11 @@ namespace tnt::store {
             bool operator()(const std::unique_ptr<Term> &a, const std::unique_ptr<Term> &b) const {
                 return a->getIdentifier().compare(b->getIdentifier()) < 0;
             }
+
             bool operator()(const std::unique_ptr<Term> &a, const Term &b) const {
                 return a->getIdentifier().compare(b.getIdentifier()) < 0;
             }
+
             bool operator()(const Term &a, const std::unique_ptr<Term> &b) const {
                 return a.getIdentifier().compare(b->getIdentifier()) < 0;
             }
@@ -72,9 +75,10 @@ namespace tnt::store {
         }
 
         const key_part_t &at(const Term &term) const {
-            std::unique_ptr<Term> temp_term{new Term{term}};
+            std::unique_ptr<Term> temp_term = std::unique_ptr<Term>{new Term{term}};
 
-            return _term2id.at(temp_term);
+            const unsigned long &id_ = _term2id.at(temp_term);
+            return id_;
         }
 
         bool contains(const std::unique_ptr<Term> &term) const {
@@ -97,7 +101,7 @@ namespace tnt::store {
         }
 
         const key_part_t &operator[](const std::string &term) {
-            return (*this)[parse(term)];
+            return (*this)[parseTerm(term)];
         }
 
         RevTermStore &inv() {
@@ -116,6 +120,14 @@ namespace tnt::store {
         void clear() noexcept {
             _id2term.clear();
             _term2id.clear();
+        }
+
+        friend std::ostream &operator<<(std::ostream &os, const TermStore &store) {
+            for(const auto &str_p: values(store._id2term)){
+                os << *str_p << "\n";
+            }
+            os << std::endl;
+            return os;
         }
     };
 };

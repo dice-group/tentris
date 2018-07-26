@@ -12,6 +12,13 @@
 
 namespace tnt::store {
 
+    namespace {
+        static const std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
+
+        static const std::regex is_uri_regex{"^<(?:.*)>$", std::regex::optimize};
+
+        static const std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$", std::regex::optimize};
+    }
 
     class Term {
     public:
@@ -30,7 +37,6 @@ namespace tnt::store {
         std::string_view _type = nullptr;
 
 
-
         explicit Term(std::string identifier) : _identifier(identifier) {};
 
         explicit Term(NodeType node_type) : _node_type{node_type} {};
@@ -38,6 +44,7 @@ namespace tnt::store {
         Term(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
     public:
         Term(const Term &term) = default;
+
         const std::string &getIdentifier() const {
             return _identifier;
         }
@@ -95,26 +102,29 @@ namespace tnt::store {
         explicit Literal(std::string identifier) : Term{identifier, NodeType::Literal} {
 
             std::match_results<std::string::const_iterator> mr;
-
+            match_regex:
             // check if the regex matched
             if (std::regex_match(_identifier, mr, literal_regex)) {
                 // get a iterator to the beginning of the matched string
                 const std::basic_string<char>::const_iterator &identifer_it = mr[0].first;
-
-                if (const auto &literal_group = mr[1]; literal_group.matched) {
-                    // extract the literal
-                    _value = {_identifier.data() + 1, (size_t) literal_group.length()};
-                    // check if it has a language tag
-                    if (const auto &lang_group = mr[2]; lang_group.matched) {
-                        char *lang_raw = _identifier.data() + (lang_group.first - identifer_it);
-                        _lang = {lang_raw, (size_t) lang_group.length()};
-                        // check if it has a type tag
-                    } else if (const auto &type_group = mr[3]; type_group.matched) {
+                if (const auto &type_group = mr[3]; type_group.matched){
+                    if(type_group.str() == "http://www.w3.org/2001/XMLSchema#string") {
+                        _identifier = std::string{_identifier, 0, size_t(type_group.first - identifer_it - 3)};
+                        goto match_regex;
+                    } else{
                         char *type_raw = _identifier.data() + (type_group.first - identifer_it);
                         _type = {type_raw, (size_t) type_group.length()};
                     }
-                    return;
+                } else if (const auto &lang_group = mr[2]; lang_group.matched) {
+                    char *lang_raw = _identifier.data() + (lang_group.first - identifer_it);
+                    _lang = {lang_raw, (size_t) lang_group.length()};
+                    // check if it has a type tag
                 }
+
+                const auto &literal_group = mr[1];
+                assert(literal_group.matched);
+                _value = {_identifier.data() + 1, (size_t) literal_group.length()};
+                return;
             }
             throw std::invalid_argument{"Literal string was malformed."};
 
@@ -126,7 +136,7 @@ namespace tnt::store {
             if (lang) {
                 _identifier = "\"" + identifier + "\"@" + *lang;
                 _lang = {_identifier.data() + 1 + identifier.size() + 2, lang->size()};
-            } else if (type and not(type->compare("http://www.w3.org/2001/XMLSchema#string") == 0)) {
+            } else if (type and type != "http://www.w3.org/2001/XMLSchema#string") {
                 // string tags shall not be stored as they are implicit
                 _identifier = "\"" + identifier + "\"^^<" + *type + ">";
                 _type = {_identifier.data() + 1 + identifier.size() + 3, type->size()};
@@ -153,13 +163,7 @@ namespace tnt::store {
         }
     };
 
-    static const std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
-
-    static const std::regex is_uri_regex{"^<(?:.*)>$", std::regex::optimize};
-
-    static const std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$", std::regex::optimize};
-
-    std::unique_ptr<Term> parse(const std::string &term) {
+    std::unique_ptr<Term> parseTerm(const std::string &term) {
         if (std::regex_match(term, is_literal_regex))
             return std::unique_ptr<Term>{new Literal{term}};
         else if (std::regex_match(term, is_uri_regex))
