@@ -108,9 +108,6 @@ namespace tnt::store::sparql {
 
                 if (not query_variables.size())
                     throw std::invalid_argument{"Empty query variables is not allowed."};
-                std::cout << "query variables" << query_variables << std::endl;
-                std::cout << "variables" << variables << std::endl;
-                std::cout << "bgps" << bgps << std::endl;
                 if (std::set<Variable> var_set{query_variables.begin(), query_variables.end()};
                         not std::includes(variables.cbegin(), variables.cend(), var_set.cbegin(), var_set.cend()))
                     throw std::invalid_argument{"query variables must be a subset of BGP variables."};

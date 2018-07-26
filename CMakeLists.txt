@@ -4,8 +4,8 @@ set (tnt_VERSION_MAJOR 0)
 set (tnt_VERSION_MINOR firecracker)
 
 set(CMAKE_CXX_STANDARD 17)
-#set(BUILD_SHARED_LIBS OFF)
-#SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
+set(BUILD_SHARED_LIBS OFF)
+SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -78,7 +78,7 @@ link_libraries(
 
 # main executable target
 add_executable(tnt_exec src/Main.cpp)
-#add_dependencies(tnt_exec antlr4cpp)
+add_dependencies(tnt_exec antlr4cpp)
 
 enable_testing() # enable this to enable testing
 if (CMAKE_TESTING_ENABLED)

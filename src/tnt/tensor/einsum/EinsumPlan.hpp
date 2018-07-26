@@ -236,7 +236,6 @@ namespace tnt::tensor::einsum {
                     for (const label_t &label: label_candidates) {
                         if (const double label_cardinality = calcCard(operands, label, sc); label_cardinality <
                                                                                             min_cardinality) {
-                            std::cout << "label: " << label << " card: " << label_cardinality << std::endl;
                             min_cardinality = label_cardinality;
                             min_label = label;
                         }

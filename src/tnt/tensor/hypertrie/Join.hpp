@@ -154,7 +154,6 @@ namespace tnt::tensor::hypertrie {
 
                 // set the entry in the key
                 Key_t key = _join._key;
-                std::cout << _join._result_key_pos.has_value() << std::endl;
                 if (_join._result_key_pos)
                     key[*_join._result_key_pos] = _current_key_part;
 
