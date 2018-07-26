@@ -11,6 +11,7 @@
 #include <cinttypes>
 #include <memory>
 #include <variant>
+#include <optional>
 
 
 std::ostream &operator<<(std::ostream &os, const uint8_t &element) {
@@ -30,6 +31,15 @@ std::ostream &operator<<(std::ostream &os, const std::variant<T1, T2> &t) {
         os << std::get<T1>(t);
     else
         os << std::get<T2>(t);
+    return os;
+}
+
+template<typename T>
+std::ostream &operator<<(std::ostream &os, const std::optional<T> &t) {
+    if (t.has_value())
+        os << *t;
+    else
+        os << "nullopt";
     return os;
 }
 
