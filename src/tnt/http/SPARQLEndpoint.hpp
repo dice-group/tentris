@@ -16,6 +16,8 @@ tnt::store::TripleStore *_store;
 namespace tnt::http {
 
     namespace {
+        using namespace Pistache;
+        using namespace Pistache::Http;
         using namespace tnt::util::types;
         using namespace tensor::einsum;
         using namespace tensor::einsum::operators;
@@ -87,8 +89,7 @@ namespace tnt::http {
         SPARQLEndpoint() {}
 
         void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
-            using namespace Pistache;
-            using namespace Pistache::Http;
+
             using ParsedSPARQL = tnt::store::sparql::ParsedSPARQL;
             try { // if something fails return an internal server error
                 // only answer sparql querys to GET /sparql
@@ -97,19 +98,37 @@ namespace tnt::http {
                     const Optional<std::string> &hasQuery = request.query().get("query");
                     // check if there is actually an query
                     if (not hasQuery.isEmpty()) {
+
                         const std::string sparqlQueryStr = urlDecode(hasQuery.get());
+
                         try { // execute the query
-                            ParsedSPARQL sparqlQuery{sparqlQueryStr};
-                            const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
-                            yield_pull<INT_VALUES> results = _store->query<INT_VALUES>(sparqlQuery);
-                            auto stream = response.stream(Code::Ok);
-                            stream_out(vars, results, stream);
+                            const ParsedSPARQL &sparqlQuery = _store->parseSPARQL(sparqlQueryStr);
+                            switch (sparqlQuery.getSelectModifier()) {
+                                case SelectModifier::NONE: {
+                                    const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
+                                    yield_pull<INT_VALUES> results = _store->query<INT_VALUES>(sparqlQuery);
+                                    auto stream = response.stream(Code::Ok);
+                                    stream_out<INT_VALUES>(vars, results, stream);
+                                    break;
+                                }
+                                case SelectModifier::DISTINCT: {
+//                                    const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
+//                                    yield_pull<BOOL_VALUES> results = _store->query<BOOL_VALUES>(sparqlQuery);
+//                                    // TODO
+//                                    auto stream = response.stream(Code::Ok);
+//                                    stream_out<BOOL_VALUES>(vars, results, stream);
+                                    break;
+                                }
+                                default:
+                                    response.send(Code::Not_Implemented);
+                            }
+
+
                         } catch (
                                 const std::exception &exc) { // if the execution of the query should fail return an internal server error
                             std::cout << exc.what() << std::endl;
                             response.send(Code::Internal_Server_Error);
                         }
-
 
                     } else {
                         auto stream = response.send(Code::Not_Found);
@@ -125,7 +144,8 @@ namespace tnt::http {
 
         }
 
-        void stream_out(const std::vector<Variable> &vars, yield_pull<INT_VALUES> &results,
+        template<typename VALUE_TYPE>
+        void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> &results,
                         ResponseStream &stream) const {
             stream << "{\n";
             std::string commaSeparatedVars = "";
@@ -136,13 +156,14 @@ namespace tnt::http {
                     firstTime = false;
                     separator = "";
                 }
-                    commaSeparatedVars.append(separator + "\"" + var._var_name + "\"");
+                commaSeparatedVars.append(separator + "\"" + var._var_name + "\"");
             }
             std::string s = "\"head\": { \"vars\": [" + commaSeparatedVars +
                             "] },\n\"results\": {\n\"bindings\": [";
             stream << s.c_str();
             bool firstResult = true;
-            for (const auto &[key, count] : results) {
+            for (const auto &result : results) {
+                const Key_t &key = getKey<VALUE_TYPE>(result);
                 s = "{";
                 bool firstKey = true;
                 for (const auto &[binding, var] : zip(key, vars)) {
@@ -184,7 +205,7 @@ namespace tnt::http {
                 }
                 s += "}";
 
-                for ([[maybe_unused]]  const auto &c : range(count + 1)) {
+                for ([[maybe_unused]]  const auto &c : range(getCount<VALUE_TYPE>(result))) {
                     if (firstResult) {
                         firstResult = false;
                         stream << "\n" << s.c_str();
@@ -193,9 +214,10 @@ namespace tnt::http {
                 }
             }
             stream << "\n]}\n}\n";
-            stream << Pistache::Http::ends;
+            stream << ends;
         }
     };
+
 
 }
 #endif //HEALTHCHECK_HPP

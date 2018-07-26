@@ -29,8 +29,34 @@ namespace tnt::tensor::einsum::operators {
     using yield_push = typename boost::coroutines2::coroutine<RESULT_TYPE>::push_type;
     template<typename RESULT_TYPE>
     using yield_pull = typename boost::coroutines2::coroutine<RESULT_TYPE>::pull_type;
-    using INT_VALUES = std::tuple<const Key_t &, size_t>;
+    using INT_VALUES = const std::tuple<const Key_t &, size_t>;
     using BOOL_VALUES = const Key_t &;
+
+    template<typename VALUE_TYPE>
+    const Key_t &getKey(const VALUE_TYPE &result);
+
+    template<>
+    inline const Key_t &getKey<INT_VALUES>(const INT_VALUES &result) {
+        return std::get<0>(result);
+    }
+
+    template<>
+    inline const Key_t &getKey<BOOL_VALUES>(const BOOL_VALUES &result) {
+        return result;
+    }
+
+    template<typename VALUE_TYPE>
+    size_t getCount(const VALUE_TYPE &result);
+
+    template<>
+    inline size_t getCount<INT_VALUES>(const INT_VALUES &result) {
+        return std::get<1>(result);
+    }
+
+    template<>
+    inline size_t getCount<BOOL_VALUES>(const BOOL_VALUES &result) {
+        return 1;
+    }
 
 
     /**
@@ -197,7 +223,7 @@ namespace tnt::tensor::einsum::operators {
             else
                 results[op_pos] += op->size();
         }
-        return std::accumulate(results.begin(), results.end(), size_t(0));
+        return std::accumulate(results.begin(), results.end(), size_t(1), std::multiplies<size_t>());
     }
 
     template<>

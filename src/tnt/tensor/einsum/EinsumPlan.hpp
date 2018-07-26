@@ -136,6 +136,15 @@ namespace tnt::tensor::einsum {
                         }
                     }
                 } else {
+                    for (const auto &op_pos: range(subscript.numberOfOperands())) {
+                        const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &map = _subscript.getUniqueNonResultContractions();
+                        if (const auto found = map.find(op_pos);
+                                found != map.cend()) {
+                            _unique_labels.push_back(found->second.at(0));
+                        } else{
+                            _unique_labels.push_back({});
+                        }
+                    }
                     for (const std::vector<std::vector<label_pos_t>> &unique :
                             values(_subscript.getUniqueNonResultContractions())) {
                         _unique_labels.push_back(unique[0]);
