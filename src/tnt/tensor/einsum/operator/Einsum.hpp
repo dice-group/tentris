@@ -18,10 +18,6 @@
 
 namespace tnt::tensor::einsum::operators {
     namespace {
-        template<typename RESULT_TYPE>
-        using yield_push = typename boost::coroutines2::coroutine<RESULT_TYPE>::push_type;
-        template<typename RESULT_TYPE>
-        using yield_pull = typename boost::coroutines2::coroutine<RESULT_TYPE>::pull_type;
         using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using SliceKey_t = tnt::util::types::SliceKey_t;
         template<typename T>
@@ -29,9 +25,12 @@ namespace tnt::tensor::einsum::operators {
         using Join = tnt::tensor::hypertrie::Join;
         using Operands = tnt::tensor::hypertrie::Operands;
     }
-
+    template<typename RESULT_TYPE>
+    using yield_push = typename boost::coroutines2::coroutine<RESULT_TYPE>::push_type;
+    template<typename RESULT_TYPE>
+    using yield_pull = typename boost::coroutines2::coroutine<RESULT_TYPE>::pull_type;
     using INT_VALUES = std::tuple<const Key_t &, size_t>;
-    using BOOL_VALUES = bool;
+    using BOOL_VALUES = const Key_t &;
 
 
     /**
@@ -46,24 +45,27 @@ namespace tnt::tensor::einsum::operators {
          * The evaluation plan for this->subscript.
          */
         const EinsumPlan _plan;
-        mutable std::vector<Slice> _predecessors;
-        mutable Operands _operands;
+        mutable std::vector<Slice> _predecessors{};
+        mutable Operands _operands{};
         mutable bool _operands_generated = false;
         mutable bool _may_have_results = false;
 
     public:
+
         /**
          * Constructor.
          * @param subscript its subscript.
          * @param slice_keys the key to its operators
          * @param trie the tries that shall be sliced.
          */
-        Einsum(const Subscript &subscript, std::vector<SliceKey_t> slice_keys, std::vector<BoolHyperTrie *> tries)
+        Einsum(const Subscript &subscript, const std::vector<SliceKey_t> &slice_keys, const std::vector<BoolHyperTrie *> &tries)
                 : _plan{subscript} {
             for (const auto &[slice_key, trie] : zip(slice_keys, tries)) {
                 _predecessors.push_back({slice_key, trie});
             }
         }
+
+        Einsum(Einsum&&) = default;
 
     protected:
         /**

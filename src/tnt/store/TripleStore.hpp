@@ -6,6 +6,9 @@
 #include <string>
 #include <optional>
 #include <LRUCache11.hpp>
+#include <boost/bind.hpp>
+#include <boost/coroutine2/all.hpp>
+#include <vector>
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
@@ -16,11 +19,22 @@
 
 
 namespace tnt::store {
-    class TripleStore {
-        using key_part_t = tnt::util::types::key_part_t;
+    namespace {
+        using namespace tnt::util::types;
+        using namespace tensor::einsum;
+        using namespace tensor::einsum::operators;
+        using namespace tnt::store::sparql;
         using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
+        using Operands =  typename std::vector<BoolHyperTrie *>;
+        using key_part_t = tnt::util::types::key_part_t;
         template<typename V>
         using NDMap = tnt::util::container::NDMap<V>;
+    }
+    class TripleStore {
+        mutable std::map<std::string, std::unique_ptr<ParsedSPARQL>> parsed_query_cache{};
+        mutable std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> operator_tree_cache{};
+
+
         TermStore termIndex{};
         BoolHyperTrie trie{3};
 
@@ -58,74 +72,96 @@ namespace tnt::store {
             return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
 
-        NDMap<size_t> query(std::string sparql) {
-            using namespace tnt::util::types;
-            using Operands =  typename std::vector<BoolHyperTrie *>;
-            using namespace tensor::einsum;
-            sparql::ParsedSPARQL parsedSPARQL{sparql};
+        const ParsedSPARQL &parseSPARQL(const std::string &sparql) {
+            try {
+                return *parsed_query_cache.at(sparql).get();
+            } catch (...) {
+                auto inserted = parsed_query_cache.emplace(sparql,
+                                                           std::unique_ptr<ParsedSPARQL>{new ParsedSPARQL{sparql}});
+                return *inserted.first->second.get();
+            }
+        }
 
-            std::vector<std::vector<std::optional<Term>>> op_keys = parsedSPARQL.getOperandKeys();
-            Operands operands;
+
+        Einsum<INT_VALUES> &getOperatorTree(const std::string &sparql, const Subscript &optimized,
+                                            std::vector<SliceKey_t> &slice_keys) const {
+            try {
+                return *operator_tree_cache.at(sparql).get();
+            } catch (...) {
+                const std::vector<BoolHyperTrie *> tries(slice_keys.size(), &const_cast<BoolHyperTrie &>(trie));
+                auto inserted = operator_tree_cache.emplace(sparql, std::unique_ptr<Einsum<INT_VALUES>>{
+                        new Einsum<INT_VALUES>{optimized, slice_keys, tries}});
+                return *inserted.first->second.get();
+            }
+        }
+
+
+        template<typename RETURN_TYPE>
+        yield_pull<RETURN_TYPE> query(const ParsedSPARQL &sparql_) {
+            const ParsedSPARQL &sparql = parseSPARQL(sparql_.getSparqlStr());
+            std::vector<std::vector<std::optional<Term>>> op_keys = sparql.getOperandKeys();
+            std::vector<SliceKey_t> slice_keys{};
+
             for (const auto &op_key : op_keys) {
-                std::vector<std::optional<key_part_t >> id_op_key(3);
-                int count = 0;
-                for (const auto &[pos, op_key_part] : enumerate(op_key)) {
-                    if (op_key_part) {
-                        ++count;
+                SliceKey_t slice_key(3, std::nullopt);
+                bool no_slices = true;
+                for (const auto &[pos, op_key_part] : enumerate(op_key))
+                    if (op_key_part.has_value())
                         try {
                             key_part_t ind = termIndex.at(*op_key_part);
-                            id_op_key[pos] = {ind};
-                        } catch (...) {
-                            return {}; // a keypart was not in the index so the result is zero anyways.
+                            slice_key[pos] = {ind};
+                        } catch (...) { // a keypart was not in the index so the result is zero anyways.
+                            return yield_pull<RETURN_TYPE>(
+                                    [&]([[maybe_unused]]yield_push<RETURN_TYPE> &yield) { return; });
                         }
-                    }
-                }
+                    else
+                        no_slices = false;
 
-                if (count)
-                    try {
-                        BoolHyperTrie *operand = std::get<BoolHyperTrie *>(trie.get(id_op_key));
-                        operands.push_back(operand);
+                if (no_slices) {
+                    if (not std::get<bool>(trie.get(slice_key))) // one triple without variables was not in storeF
 
-
-                    } catch (...) {
-                        return {}; // a triple pattern has an empty solution.
-                    }
+                        return yield_pull<RETURN_TYPE>(
+                                [&]([[maybe_unused]]yield_push<RETURN_TYPE> &yield) { return; });
+                } else
+                    slice_keys.push_back(slice_key);
             }
+
             // TODO: add support for distinct
-            Subscript subscript = parsedSPARQL.getSubscript();
+            Subscript subscript = sparql.getSubscript();
             Subscript optimized = subscript.optimized();
             if (optimized.getSubSubscripts().empty()) {
-                operators::Einsum<size_t> einsumOp{optimized};
-                return einsumOp.getResult(operands);
+                const Einsum<INT_VALUES> &einsumOp = getOperatorTree(sparql.getSparqlStr(), optimized, slice_keys);
+
+                return yield_pull<RETURN_TYPE>(boost::bind(&Einsum<INT_VALUES>::get, &einsumOp, _1));
             } else {
-                operators::CrossProduct<size_t> crossprodOp{optimized};
-                operators::CrossProductResult<size_t> result = crossprodOp.getResult(operands);
-                NDMap<size_t> result_array{};
-                for (const auto &[key, count] : result) {
-                    result_array[key] = count;
-
-                }
-                return result_array;
+                // TODO: implement cross product
+//                operators::CrossProduct<size_t> crossprodOp{optimized};
+//                operators::CrossProductResult<size_t> result = crossprodOp.getResult(operands);
+//                NDMap<size_t> result_array{};
+//                for (const auto &[key, count] : result) {
+//                    result_array[key] = count;
+//
+//                }
+//                return result_array;
+                return yield_pull<RETURN_TYPE>(
+                        [&]([[maybe_unused]]yield_push<RETURN_TYPE> &yield) { return; });
             }
-            return {};
         }
 
-        inline size_t size() const {
-            return trie.size();
-        }
+
     };
 
     auto getBNode(const SerdNode *node) -> std::unique_ptr<Term> {
         std::ostringstream bnode_str;
         bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_chars)};
         return std::unique_ptr<Term>{new BNode{bnode_str.str()}};
-    };
+    }
 
     auto getURI(const SerdNode *node) -> std::unique_ptr<Term> {
         std::ostringstream uri_str;
         uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_chars)} << ">";
         return std::unique_ptr<Term>{new URIRef{uri_str.str()}};
-    };
+    }
 
     auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
@@ -185,12 +221,12 @@ namespace tnt::store {
         }
         store->add(std::move(subject_term), std::move(predicate_term), std::move(object_term));
         return SERD_SUCCESS;
-    };
+    }
+
 
     void TripleStore::loadRDF(std::string file_path) {
         SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, NULL, NULL, NULL, &serd_callback, NULL);
         serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
     }
 };
-
 #endif //TNT_STORE_TRIPLESTORE

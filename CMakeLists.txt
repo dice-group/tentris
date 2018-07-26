@@ -78,7 +78,7 @@ link_libraries(
 
 # main executable target
 add_executable(tnt_exec src/Main.cpp)
-add_dependencies(tnt_exec antlr4cpp)
+#add_dependencies(tnt_exec antlr4cpp)
 
 enable_testing() # enable this to enable testing
 if (CMAKE_TESTING_ENABLED)

@@ -18,6 +18,11 @@
 
 
 namespace tnt::store::sparql {
+
+    namespace {
+        using namespace tnt::util::types;
+        using namespace tnt::tensor::einsum;
+    };
     enum SelectModifier {
         NONE,
         DISTINCT,
@@ -41,6 +46,8 @@ namespace tnt::store::sparql {
         std::set<Variable> anonym_variables{};
         std::set<std::vector<std::variant<Variable, Term>>> bgps;
         uint next_anon_var_id = 0;
+        Subscript _subscript;
+        std::vector<std::vector<std::optional<Term>>> _operand_keys;
 
     public:
 
@@ -107,6 +114,43 @@ namespace tnt::store::sparql {
                 if (std::set<Variable> var_set{query_variables.begin(), query_variables.end()};
                         not std::includes(variables.cbegin(), variables.cend(), var_set.cbegin(), var_set.cend()))
                     throw std::invalid_argument{"query variables must be a subset of BGP variables."};
+
+
+                // generate subscript
+                std::map<Variable, label_t> var_to_label{};
+                for (const auto &[id, var] : enumerate(variables)) {
+                    var_to_label[var] = id;
+                }
+                std::vector<std::vector<label_t>> ops_labels{};
+                for (const auto &bgp : bgps) {
+                    std::vector<label_t> op_labels{};
+                    int count = 0;
+                    for (const std::variant<Variable, Term> &res : bgp)
+                        if (std::holds_alternative<Variable>(res)) {
+                            op_labels.push_back(var_to_label[std::get<Variable>(res)]);
+                            ++count;
+                        }
+                    if (count) // removes operands without labels/variables
+                        ops_labels.push_back(op_labels);
+                }
+
+                std::vector<label_t> result_labels{};
+                for (const auto &query_variable : query_variables) {
+                    result_labels.push_back(var_to_label[query_variable]);
+                }
+
+                _subscript = Subscript{ops_labels, result_labels};
+
+                // generate operand keys
+                for (const auto &bgp : bgps) {
+                    std::vector<std::optional<Term>> op_key{};
+                    for (const std::variant<Variable, Term> &res : bgp)
+                        if (std::holds_alternative<Term>(res))
+                            op_key.push_back({std::get<Term>(res)});
+                        else
+                            op_key.push_back(std::nullopt);
+                    _operand_keys.push_back(op_key);
+                }
             } else
                 throw std::invalid_argument{"query could not be parsed."};
 
@@ -120,48 +164,16 @@ namespace tnt::store::sparql {
             return query_variables;
         }
 
-
-        auto getSubscript() -> tensor::einsum::Subscript {
-            using namespace tnt::tensor::einsum;
-            using namespace tnt::util::types;
-            std::map<Variable, label_t> var_to_label{};
-            for (const auto &[id, var] : enumerate(variables)) {
-                var_to_label[var] = id;
-            }
-            std::vector<std::vector<label_t>> ops_labels{};
-            for (const auto &bgp : bgps) {
-                std::vector<label_t> op_labels{};
-                int count = 0;
-                for (const std::variant<Variable, Term> &res : bgp)
-                    if (std::holds_alternative<Variable>(res)) {
-                        op_labels.push_back(var_to_label[std::get<Variable>(res)]);
-                        ++count;
-                    }
-                if (count) // removes operands without labels/variables
-                    ops_labels.push_back(op_labels);
-            }
-
-            std::vector<label_t> result_labels{};
-            for (const auto &query_variable : query_variables) {
-                result_labels.push_back(var_to_label[query_variable]);
-            }
-
-            return Subscript{ops_labels, result_labels};
+        const std::string &getSparqlStr() const {
+            return _sparql_str;
         }
 
-        auto getOperandKeys() -> std::vector<std::vector<std::optional<Term>>> {
-            using namespace tnt::util::types;
-            std::vector<std::vector<std::optional<Term>>> op_keys;
-            for (const auto &bgp : bgps) {
-                std::vector<std::optional<Term>> op_key{};
-                for (const std::variant<Variable, Term> &res : bgp)
-                    if (std::holds_alternative<Term>(res))
-                        op_key.push_back({std::get<Term>(res)});
-                    else
-                        op_key.push_back(std::nullopt);
-                op_keys.push_back(op_key);
-            }
-            return op_keys;
+        auto getSubscript() const -> const tensor::einsum::Subscript &{
+            return _subscript;
+        }
+
+        const std::vector<std::vector<std::optional<Term>>> &getOperandKeys() const {
+            return _operand_keys;
         }
 
     private:
@@ -187,8 +199,8 @@ namespace tnt::store::sparql {
                 if (auto *stringLiteral1 = string_node->STRING_LITERAL1(); stringLiteral1) {
                     auto literal1 = stringLiteral1->getText();
 
-                    static std::regex double_quote{"\"",std::regex::optimize};
-                    static std::regex single_quote("\\'",std::regex::optimize);
+                    static std::regex double_quote{"\"", std::regex::optimize};
+                    static std::regex single_quote("\\'", std::regex::optimize);
 
                     std::string temp;
 
@@ -334,3 +346,4 @@ namespace tnt::store::sparql {
 
 
 #endif //TNT_SPARQLPARSER_HPP
+

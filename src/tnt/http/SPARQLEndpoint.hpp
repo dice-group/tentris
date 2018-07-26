@@ -15,6 +15,19 @@ tnt::store::TripleStore *_store;
 
 namespace tnt::http {
 
+    namespace {
+        using namespace tnt::util::types;
+        using namespace tensor::einsum;
+        using namespace tensor::einsum::operators;
+        using namespace tnt::store::sparql;
+        using namespace Pistache::Http;
+        using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
+        using Operands =  typename std::vector<BoolHyperTrie *>;
+        using key_part_t = tnt::util::types::key_part_t;
+        template<typename V>
+        using NDMap = tnt::util::container::NDMap<V>;
+    }
+
 
     /**
      * Content-Type for SPARQL OUTPUT JSON FORMAT
@@ -84,13 +97,13 @@ namespace tnt::http {
                     const Optional<std::string> &hasQuery = request.query().get("query");
                     // check if there is actually an query
                     if (not hasQuery.isEmpty()) {
-                        const std::string sparqlQuery = urlDecode(hasQuery.get());
+                        const std::string sparqlQueryStr = urlDecode(hasQuery.get());
                         try { // execute the query
-                            ParsedSPARQL parsedSPARQL{sparqlQuery};
-                            const std::vector<Variable> &vars = parsedSPARQL.getQueryVariables();
-                            tnt::util::container::NDMap<size_t> result = _store->query(sparqlQuery);
+                            ParsedSPARQL sparqlQuery{sparqlQueryStr};
+                            const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
+                            yield_pull<INT_VALUES> results = _store->query<INT_VALUES>(sparqlQuery);
                             auto stream = response.stream(Code::Ok);
-                            stream_out(vars, result, stream);
+                            stream_out(vars, results, stream);
                         } catch (
                                 const std::exception &exc) { // if the execution of the query should fail return an internal server error
                             std::cout << exc.what() << std::endl;
@@ -112,73 +125,73 @@ namespace tnt::http {
 
         }
 
-        void stream_out(const std::vector<Variable> &vars, const util::container::NDMap<unsigned long> &result,
-                        Pistache::Http::ResponseStream &stream) const {
+        void stream_out(const std::vector<Variable> &vars, yield_pull<INT_VALUES> &results,
+                        ResponseStream &stream) const {
             stream << "{\n";
             std::string commaSeparatedVars = "";
             bool firstTime = true;
             for (const auto &var : vars) {
-                                std::string separator = " , ";
-                                if (firstTime) {
-                                    firstTime = false;
-                                    separator = "";
-                                }
-                                commaSeparatedVars.append(separator + "\"" + var._var_name + "\"");
-                            }
+                std::string separator = " , ";
+                if (firstTime) {
+                    firstTime = false;
+                    separator = "";
+                }
+                    commaSeparatedVars.append(separator + "\"" + var._var_name + "\"");
+            }
             std::string s = "\"head\": { \"vars\": [" + commaSeparatedVars +
-                                     "] },\n\"results\": {\n\"bindings\": [";
+                            "] },\n\"results\": {\n\"bindings\": [";
             stream << s.c_str();
             bool firstResult = true;
-            for (const auto &[key, count] : result) {
-                                s = "{";
-                                bool firstKey = true;
-                                for (const auto &[binding, var] : zip(key, vars)) {
-                                    store::Term &term = *_store->getTermIndex().inv().at(
-                                            binding);
-                                    const std::string &materializedBinding = term.getIdentifier();
+            for (const auto &[key, count] : results) {
+                s = "{";
+                bool firstKey = true;
+                for (const auto &[binding, var] : zip(key, vars)) {
+                    store::Term &term = *_store->getTermIndex().inv().at(
+                            binding);
+                    const std::string &materializedBinding = term.getIdentifier();
 
-                                    const store::Term::NodeType &termType = term.type();
-                                    std::string type = "\"\"";
-                                    switch (termType) {
-                                        case store::Term::URI:
-                                            type = "\"uri\"";
-                                            break;
-                                        case store::Term::BNode:
-                                            type = "\"bnode\"";
-                                            break;
-                                        case store::Term::Literal:
-                                            type = "\"literal\"";
-                                            break;
-                                    } //todo check default
+                    const store::Term::NodeType &termType = term.type();
+                    std::string type = "\"\"";
+                    switch (termType) {
+                        case store::Term::URI:
+                            type = "\"uri\"";
+                            break;
+                        case store::Term::BNode:
+                            type = "\"bnode\"";
+                            break;
+                        case store::Term::Literal:
+                            type = "\"literal\"";
+                            break;
+                    } //todo check default
 
-                                    std::string t = ",\n";
-                                    if (firstKey) {
-                                        t = "";
-                                        firstKey = false;
-                                    }
+                    std::string t = ",\n";
+                    if (firstKey) {
+                        t = "";
+                        firstKey = false;
+                    }
 
-                                    s += t + "\"" + var._var_name + "\": { ";
-                                    s += "\"type\": " + type;
-                                    s += ", \"value\":" + materializedBinding;
-                                    if (termType == store::Term::Literal) {
-                                        const store::Literal &literal = static_cast<store::Literal &>(term);
-                                        if (literal.hasType())
-                                            s += "\", datatype\":" + (std::string) literal.getType();
-                                        else if (literal.hasLang())
-                                            s += "\", xml:lang\":" + (std::string) literal.getLang();
-                                    }
-                                    s += "}";
-                                }
-                                s += "}";
+                    s += t + "\"" + var._var_name + "\": { ";
+                    s += "\"type\": " + type;
+                    s += ", \"value\":" + materializedBinding;
+                    if (termType == store::Term::Literal) {
+                        const store::Literal &literal = static_cast<store::Literal &>(term);
+                        if (literal.hasType())
+                            s += "\", datatype\":" + (std::string) literal.getType();
+                        else if (literal.hasLang())
+                            s += "\", xml:lang\":" + (std::string) literal.getLang();
+                    }
+                    s += "}";
+                }
+                s += "}";
 
-                                for ([[maybe_unused]]  const auto& c : range(count+1)) {
-                                    if (firstResult) {
-                                        firstResult = false;
-                                        stream << "\n" << s.c_str();
-                                    } else
-                                        stream << ",\n" << s.c_str();
-                                }
-                            }
+                for ([[maybe_unused]]  const auto &c : range(count + 1)) {
+                    if (firstResult) {
+                        firstResult = false;
+                        stream << "\n" << s.c_str();
+                    } else
+                        stream << ",\n" << s.c_str();
+                }
+            }
             stream << "\n]}\n}\n";
             stream << Pistache::Http::ends;
         }

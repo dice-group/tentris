@@ -24,7 +24,7 @@ namespace tnt::tensor::einsum::operators {
     public:
         const TYPE type;
 
-        Slice(SliceKey_t key, BoolHyperTrie *trie) :
+        Slice(const SliceKey_t &key, const BoolHyperTrie *trie) :
                 _key{key}, _trie{trie},
                 type{(std::count(key.begin(), key.end(), std::nullopt) > 0) ? HYPERTRIE : SCALAR} {}
 
