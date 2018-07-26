@@ -32,8 +32,8 @@ namespace tnt::store {
     }
     class TripleStore {
         mutable std::map<std::string, std::unique_ptr<ParsedSPARQL>> parsed_query_cache{};
-        mutable std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> operator_tree_cache{};
-
+        mutable std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> distinct_operator_tree_cache{};
+        mutable std::map<std::string, std::unique_ptr<Einsum<BOOL_VALUES>>> default_operator_tree_cache{};
 
         TermStore termIndex{};
         BoolHyperTrie trie{3};
@@ -82,18 +82,22 @@ namespace tnt::store {
             }
         }
 
-
-        Einsum<INT_VALUES> &getOperatorTree(const std::string &sparql, const Subscript &optimized,
+        template<typename RETURN_TYPE>
+        Einsum<RETURN_TYPE> &getOperatorTree(const std::string &sparql, const Subscript &optimized,
                                             std::vector<SliceKey_t> &slice_keys) const {
             try {
-                return *operator_tree_cache.at(sparql).get();
+                return *getOperatorTreeCache<RETURN_TYPE>().at(sparql).get();
             } catch (...) {
                 const std::vector<BoolHyperTrie *> tries(slice_keys.size(), &const_cast<BoolHyperTrie &>(trie));
-                auto inserted = operator_tree_cache.emplace(sparql, std::unique_ptr<Einsum<INT_VALUES>>{
-                        new Einsum<INT_VALUES>{optimized, slice_keys, tries}});
+                auto inserted = getOperatorTreeCache<RETURN_TYPE>().emplace(sparql, std::unique_ptr<Einsum<RETURN_TYPE>>{
+                        new Einsum<RETURN_TYPE>{optimized, slice_keys, tries}});
                 return *inserted.first->second.get();
             }
         }
+
+
+        template<typename RETURN_TYPE>
+        std::map<std::string, std::unique_ptr<Einsum<RETURN_TYPE>>> &getOperatorTreeCache() const;
 
 
         template<typename RETURN_TYPE>
@@ -126,13 +130,12 @@ namespace tnt::store {
                     slice_keys.push_back(slice_key);
             }
 
-            // TODO: add support for distinct
             Subscript subscript = sparql.getSubscript();
             Subscript optimized = subscript.optimized();
             if (optimized.getSubSubscripts().empty()) {
-                const Einsum<INT_VALUES> &einsumOp = getOperatorTree(sparql.getSparqlStr(), optimized, slice_keys);
+                const Einsum<RETURN_TYPE> &einsumOp = getOperatorTree<RETURN_TYPE>(sparql.getSparqlStr(), optimized, slice_keys);
 
-                return yield_pull<RETURN_TYPE>(boost::bind(&Einsum<INT_VALUES>::get, &einsumOp, _1));
+                return yield_pull<RETURN_TYPE>(boost::bind(&Einsum<RETURN_TYPE>::get, &einsumOp, _1));
             } else {
                 // TODO: implement cross product
 //                operators::CrossProduct<size_t> crossprodOp{optimized};
@@ -227,6 +230,16 @@ namespace tnt::store {
     void TripleStore::loadRDF(std::string file_path) {
         SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, NULL, NULL, NULL, &serd_callback, NULL);
         serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
+    }
+
+    template<>
+    std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> &TripleStore::getOperatorTreeCache() const{
+        return distinct_operator_tree_cache;
+    }
+
+    template<>
+    std::map<std::string, std::unique_ptr<Einsum<BOOL_VALUES>>> &TripleStore::getOperatorTreeCache() const{
+        return default_operator_tree_cache;
     }
 };
 #endif //TNT_STORE_TRIPLESTORE

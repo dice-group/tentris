@@ -103,20 +103,18 @@ namespace tnt::http {
 
                         try { // execute the query
                             const ParsedSPARQL &sparqlQuery = _store->parseSPARQL(sparqlQueryStr);
+                            const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
                             switch (sparqlQuery.getSelectModifier()) {
                                 case SelectModifier::NONE: {
-                                    const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
                                     yield_pull<INT_VALUES> results = _store->query<INT_VALUES>(sparqlQuery);
                                     auto stream = response.stream(Code::Ok);
                                     stream_out<INT_VALUES>(vars, results, stream);
                                     break;
                                 }
                                 case SelectModifier::DISTINCT: {
-//                                    const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
-//                                    yield_pull<BOOL_VALUES> results = _store->query<BOOL_VALUES>(sparqlQuery);
-//                                    // TODO
-//                                    auto stream = response.stream(Code::Ok);
-//                                    stream_out<BOOL_VALUES>(vars, results, stream);
+                                    yield_pull<BOOL_VALUES> results = _store->query<BOOL_VALUES>(sparqlQuery);
+                                    auto stream = response.stream(Code::Ok);
+                                    stream_out<BOOL_VALUES>(vars, results, stream);
                                     break;
                                 }
                                 default:

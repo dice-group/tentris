@@ -84,14 +84,15 @@ namespace tnt::tensor::einsum::operators {
          * @param slice_keys the key to its operators
          * @param trie the tries that shall be sliced.
          */
-        Einsum(const Subscript &subscript, const std::vector<SliceKey_t> &slice_keys, const std::vector<BoolHyperTrie *> &tries)
+        Einsum(const Subscript &subscript, const std::vector<SliceKey_t> &slice_keys,
+               const std::vector<BoolHyperTrie *> &tries)
                 : _plan{subscript} {
             for (const auto &[slice_key, trie] : zip(slice_keys, tries)) {
                 _predecessors.push_back({slice_key, trie});
             }
         }
 
-        Einsum(Einsum&&) = default;
+        Einsum(Einsum &&) = default;
 
     protected:
         /**
@@ -243,16 +244,63 @@ namespace tnt::tensor::einsum::operators {
                 const EinsumPlan::Step &next_step = step.nextStep(next_operands);
                 // start next recursive step.
                 rekEinsum(yield, next_operands, next_result_key, next_step);
-//                yield_pull<RESULT_TYPE> results{boost::bind(&rekEinsum, _1, next_operands, next_result_key, next_step)};
-//                for (const RESULT_TYPE &result : results) {
-//                    yield(result);
-//                }
             }
         } else { // there are no steps left
             if (not operands.empty()) { // there are lonely and/or unique labels left.
-                yield({result_key, contract<size_t>(operands, step)});
+                const size_t i = contract<size_t>(operands, step);
+                if (i > 0)
+                    yield({result_key, i});
             } else { // no labels left
                 yield({result_key, 1});
+            }
+        }
+    };
+
+    template<>
+    template<>
+    bool Einsum<BOOL_VALUES>::contract<bool>(const Operands &operands, const EinsumPlan::Step &step) {
+        const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
+        std::vector<bool> results(operands.size(), false);
+        for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
+            const auto &[op, unique_contraction] = op_and_contr;
+
+            if (not unique_contraction.empty() and op->depth() == 3)
+                for ([[maybe_unused]]const BoolHyperTrie *hyperTrie :
+                        BoolHyperTrie::DiagonalView{op, unique_contraction}) {
+                    results[op_pos] = true;
+                    break;
+                }
+            else
+                results[op_pos] = true;
+        }
+        return std::accumulate(results.begin(), results.end(), true, std::logical_and<bool>());
+    }
+
+    template<>
+    void Einsum<BOOL_VALUES>::rekEinsum(
+            yield_push<BOOL_VALUES> &yield,
+            const Operands &operands,
+            const Key_t &result_key,
+            const EinsumPlan::Step &step) {
+        using RESULT_TYPE = std::tuple<Key_t, size_t>;
+        std::cout << step << std::endl;
+        // there are steps left
+        if (not step.all_done) {
+            // calculate next operands and result_key from current operands, step, label and resultKey
+            Join join{result_key, operands, step};
+
+            for (const auto&[next_operands, next_result_key] : join) {
+                const EinsumPlan::Step &next_step = step.nextStep(next_operands);
+                // start next recursive step.
+                rekEinsum(yield, next_operands, next_result_key, next_step);
+            }
+        } else { // there are no steps left
+            if (not operands.empty()) {
+                if (contract<bool>(operands, step)) { // there are lonely and/or unique labels left.
+                    yield(result_key);
+                }
+            } else { // no labels left
+                yield(result_key);
             }
         }
     };
