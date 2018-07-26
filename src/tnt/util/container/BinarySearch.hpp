@@ -93,7 +93,6 @@ namespace tnt::util::container {
      */
     template<typename T>
     inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value, size_t low, size_t high) {
-        // TODO: siehe Klebezettel am Monitor
         if (low > high)
             return sorted_vector.size();
         else if (low == high)
@@ -131,9 +130,13 @@ namespace tnt::util::container {
     template<typename T>
     inline size_t search(const std::vector<T> &sorted_vector, const T &value, size_t low, size_t high) {
         if (low > high)
-            return sorted_vector.size();
+            return NOT_FOUND;
         else if (low == high)
-            return low;
+            if (sorted_vector.at(low) == value) {
+                return low;
+            } else {
+                return NOT_FOUND;
+            }
         else {
             size_t size = high - low + 1;
             size_t probe;

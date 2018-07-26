@@ -649,7 +649,8 @@ namespace tnt::tensor::hypertrie {
                     _max_ind = _leaf_edges->size() - 1;
 
                     setMinMax_p = &setMinMax_I;
-                    first_lower_p = &first_lower_I;
+                    first_lower_p = &first_from_lower_bound_I;
+                    increment_current_until_hit_p = &increment_current_until_hit_I;
                     containsAndUpdateLower_p = &containsAndUpdateLower_I;
 
 
@@ -683,7 +684,6 @@ namespace tnt::tensor::hypertrie {
                     // calculate the positions of the key to use
                     PosCalc *pos_calc = PosCalc::getInstance(trie->depth())->use(min_key_pos);
                     std::vector<key_pos_t> sub_key_poss{};
-                    sub_key_poss.reserve(pos_calc->subkey_length);
                     for (const key_pos_t &pos : positions) {
                         if (pos != min_key_pos) {
                             sub_key_poss.emplace_back(pos_calc->key_to_subkey_pos(pos));
@@ -692,7 +692,8 @@ namespace tnt::tensor::hypertrie {
                     _positions = sub_key_poss;
 
                     setMinMax_p = &setMinMax_III;
-                    first_lower_p = &first_lower_II;
+                    first_lower_p = &first_from_lower_bound_II;
+                    increment_current_until_hit_p = &increment_current_until_hit_II;
                     containsAndUpdateLower_p = &containsAndUpdateLower_II;
 
                 } else {
@@ -723,7 +724,8 @@ namespace tnt::tensor::hypertrie {
                     _max_ind = _inner_edges->size() - 1;
 
                     setMinMax_p = &setMinMax_III;
-                    first_lower_p = &first_lower_III;
+                    first_lower_p = &first_from_lower_bound_III;
+                    increment_current_until_hit_p = &increment_current_until_hit_III;
                     containsAndUpdateLower_p = &containsAndUpdateLower_III;
                 }
 
@@ -734,14 +736,26 @@ namespace tnt::tensor::hypertrie {
 
             }
 
+            /**
+             * Minimal key in range.
+             * @return
+             */
             inline key_part_t lower() const {
                 return _min;
             }
 
+            /**
+             * Maximum key in range.
+             * @return
+             */
             inline key_part_t upper() const {
                 return _max;
             }
 
+            /**
+             * Size of the range.
+             * @return
+             */
             inline const size_t &size() const {
                 return _size;
             }
@@ -749,15 +763,22 @@ namespace tnt::tensor::hypertrie {
             /*
              */
         private:
-            static key_part_t first_lower_I(DiagonalView &view, const key_part_t &key_part) {
-                size_t ind = (key_part == view._leaf_edges->_keys.at(view._min_ind))
-                             ? view._min_ind
-                             : tnt::util::container::search(view._leaf_edges->_keys, key_part, view._min_ind,
-                                                            view._max_ind);
-                view._min_ind = ind;
-                if (ind != tnt::util::container::NOT_FOUND) {
-                    view._size = view._max_ind - ind + 1;
-                    view._min = view._leaf_edges->keyByInd(ind);
+            static key_part_t first_from_lower_bound_I(DiagonalView &view, const key_part_t &lower) {
+                if (lower != view._leaf_edges->_keys.at(view._min_ind)) {
+                    view._min_ind = tnt::util::container::insert_pos(view._leaf_edges->_keys, lower, view._min_ind,
+                                                                     view._max_ind);
+                    return increment_current_until_hit_I(view);
+
+                } else {
+                    view._min = lower;
+                    return lower;
+                }
+            }
+
+            static key_part_t increment_current_until_hit_I(DiagonalView &view) {
+                if (view._min_ind != view._max_ind + 1) {
+                    view._size = view._max_ind - view._min_ind + 1;
+                    view._min = view._leaf_edges->keyByInd(view._min_ind);
                     return view._min;
                 } else {
                     view._size = 0;
@@ -765,63 +786,77 @@ namespace tnt::tensor::hypertrie {
                 }
             }
 
-            static key_part_t first_lower_II(DiagonalView &view, const key_part_t &key_part) {
+            static key_part_t first_from_lower_bound_II(DiagonalView &view, const key_part_t &lower) {
+                const std::vector<key_part_t> &children_keys = view._inner_edges->keys();
+
+                if (lower != children_keys.at(view._min_ind)) {
+                    view._min_ind = tnt::util::container::insert_pos(children_keys, lower, view._min_ind,
+                                                                     view._max_ind);
+                    return increment_current_until_hit_II(view);
+                } else {
+                    view._min = lower;
+                    return lower;
+                }
+            }
+
+            static key_part_t
+            increment_current_until_hit_II(DiagonalView &view) {
                 const std::vector<key_part_t> &children_keys = view._inner_edges->keys();
                 const std::vector<BoolHyperTrie *> &children_values = view._inner_edges->values();
+                key_part_t current_key_part;
+                while (view._min_ind != view._max_ind + 1) {
 
-                key_part_t current_key_part = key_part;
-
-                size_t ind = (current_key_part == children_keys.at(view._min_ind))
-                             ? view._min_ind
-                             : tnt::util::container::insert_pos(children_keys, key_part, view._min_ind,
-                                                                view._max_ind);
-                while (ind != view._max_ind + 1) {
-
-                    current_key_part = children_keys.at(ind);
-                    const BoolHyperTrie *child = children_values.at(ind);
+                    current_key_part = children_keys.at(view._min_ind);
+                    const BoolHyperTrie *child = children_values.at(view._min_ind);
                     view._result = child->getDiagonal(view._positions, current_key_part);
                     if (view._result != nullptr) {
-                        view._min_ind = ind;
-                        view._size = view._max_ind - ind + 1;
+                        view._min_ind = view._min_ind;
+                        view._size = view._max_ind - view._min_ind + 1;
                         view._min = current_key_part;
                         return current_key_part;
                     } else
-                        ++ind;
+                        ++view._min_ind;
                 }
                 view._size = 0;
                 return KEY_PART_MAX;
-
-
             }
 
-            static key_part_t first_lower_III(DiagonalView &view, const key_part_t &key_part) {
+            static key_part_t first_from_lower_bound_III(DiagonalView &view, const key_part_t &lower) {
+                const std::vector<key_part_t> &childrens_keys = view._inner_edges->keys();
+
+                if (lower != childrens_keys.at(view._min_ind)) {
+                    view._min_ind = tnt::util::container::insert_pos(childrens_keys, lower, view._min_ind,
+                                                                     view._max_ind);
+                    return increment_current_until_hit_III(view);
+                } else {
+                    view._min = lower;
+                    return lower;
+                }
+            }
+
+            static key_part_t increment_current_until_hit_III(DiagonalView &view) {
                 const std::vector<key_part_t> &childrens_keys = view._inner_edges->keys();
                 const std::vector<BoolHyperTrie *> &childrens_values = view._inner_edges->values();
 
-                key_part_t current_key_part = key_part;
+                key_part_t current_key_part;
+                while (view._min_ind != view._max_ind + 1) {
 
-                size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
-                             ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
-                                                                view._max_ind);
-
-                while (ind != view._max_ind + 1) {
-
-                    current_key_part = childrens_keys.at(ind);
-                    const BoolHyperTrie *child = childrens_values.at(ind);
+                    current_key_part = childrens_keys.at(view._min_ind);
+                    const BoolHyperTrie *child = childrens_values.at(view._min_ind);
                     if (child->getFullDiagonal(current_key_part)) {
-                        view._min_ind = ind;
-                        view._size = view._max_ind - ind + 1;
+                        view._size = view._max_ind - view._min_ind + 1;
                         view._min = current_key_part;
                         return current_key_part;
                     } else
-                        ++ind;
+                        ++view._min_ind;
                 }
                 view._size = 0;
                 return KEY_PART_MAX;
             }
 
             key_part_t (*first_lower_p)(DiagonalView &view, const key_part_t &);
+
+            key_part_t (*increment_current_until_hit_p)(DiagonalView &view);
 
         public:
             /**
@@ -855,7 +890,6 @@ namespace tnt::tensor::hypertrie {
              * @return the child HyperTrie
              */
             inline BoolHyperTrie *minValue() {
-                // todo: think about if it is sufficient to return BoolHyperTries.
                 return _result;
             }
 
@@ -966,11 +1000,7 @@ namespace tnt::tensor::hypertrie {
         public:
             inline key_part_t incrementMin() {
                 ++_min_ind;
-                if (_min_ind <= _max_ind) {
-                    return (this->first_lower_p)(*this, _min_ind);
-                } else {
-                    return _min = KEY_PART_MAX;
-                }
+                return (this->increment_current_until_hit_p)(*this);
             }
 
         private:

@@ -164,9 +164,7 @@ namespace tnt::tensor::hypertrie {
 
             inline bool operator==(const iterator &rhs) const {
                 // careful, it doesn't check if it is tested against another iterator for the same Join.
-                return ((rhs._ended and _ended) or
-                        (rhs._current_key_part == _current_key_part) or
-                        (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part));
+                return (rhs._ended and _ended);
             }
 
             inline bool operator!=(const iterator &rhs) const {

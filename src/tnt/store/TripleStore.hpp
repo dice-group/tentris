@@ -83,14 +83,15 @@ namespace tnt::store {
         }
 
         template<typename RETURN_TYPE>
-        Einsum<RETURN_TYPE> &getOperatorTree(const std::string &sparql, const Subscript &optimized,
-                                            std::vector<SliceKey_t> &slice_keys) const {
+        Einsum<RETURN_TYPE> &getOperatorTree(const std::string &sparql, const Subscript &subscript,
+                                             std::vector<SliceKey_t> &slice_keys) const {
             try {
                 return *getOperatorTreeCache<RETURN_TYPE>().at(sparql).get();
             } catch (...) {
                 const std::vector<BoolHyperTrie *> tries(slice_keys.size(), &const_cast<BoolHyperTrie &>(trie));
-                auto inserted = getOperatorTreeCache<RETURN_TYPE>().emplace(sparql, std::unique_ptr<Einsum<RETURN_TYPE>>{
-                        new Einsum<RETURN_TYPE>{optimized, slice_keys, tries}});
+                auto inserted = getOperatorTreeCache<RETURN_TYPE>()
+                        .emplace(sparql, std::unique_ptr<Einsum<RETURN_TYPE>>{
+                                new Einsum<RETURN_TYPE>{subscript, slice_keys, tries}});
                 return *inserted.first->second.get();
             }
         }
@@ -130,26 +131,13 @@ namespace tnt::store {
                 } else
                     slice_keys.push_back(slice_key);
             }
-            std::cout << slice_keys <<std::endl;
+            std::cout << slice_keys << std::endl;
             Subscript subscript = sparql.getSubscript();
-            Subscript optimized = subscript.optimized();
-            if (optimized.getSubSubscripts().empty()) {
-                const Einsum<RETURN_TYPE> &einsumOp = getOperatorTree<RETURN_TYPE>(sparql.getSparqlStr(), optimized, slice_keys);
+            const Einsum<RETURN_TYPE> &einsumOp
+                    = getOperatorTree<RETURN_TYPE>(sparql.getSparqlStr(), subscript, slice_keys);
 
-                return yield_pull<RETURN_TYPE>(boost::bind(&Einsum<RETURN_TYPE>::get, &einsumOp, _1));
-            } else {
-                // TODO: implement cross product
-//                operators::CrossProduct<size_t> crossprodOp{optimized};
-//                operators::CrossProductResult<size_t> result = crossprodOp.getResult(operands);
-//                NDMap<size_t> result_array{};
-//                for (const auto &[key, count] : result) {
-//                    result_array[key] = count;
-//
-//                }
-//                return result_array;
-                return yield_pull<RETURN_TYPE>(
-                        [&]([[maybe_unused]]yield_push<RETURN_TYPE> &yield) { return; });
-            }
+            return yield_pull<RETURN_TYPE>(boost::bind(&Einsum<RETURN_TYPE>::get, &einsumOp, _1));
+            // TODO: implement cross product
         }
 
 
@@ -170,7 +158,7 @@ namespace tnt::store {
     auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
         if (type_node != nullptr)
-        std::cout << type_node->buf <<std::endl;
+            std::cout << type_node->buf << std::endl;
         std::optional<std::string> type = (type_node != nullptr)
                                           ? std::optional<std::string>{{(char *) (type_node->buf),
                                                                                size_t(type_node->n_chars)}}
@@ -181,7 +169,7 @@ namespace tnt::store {
                                           : std::nullopt;
         Literal l{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type};
         if (type_node != nullptr)
-            std::cout << l.getType() <<std::endl;
+            std::cout << l.getType() << std::endl;
         return std::unique_ptr<Term>{
                 new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
     };
@@ -239,12 +227,12 @@ namespace tnt::store {
     }
 
     template<>
-    std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> &TripleStore::getOperatorTreeCache() const{
+    std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> &TripleStore::getOperatorTreeCache() const {
         return distinct_operator_tree_cache;
     }
 
     template<>
-    std::map<std::string, std::unique_ptr<Einsum<BOOL_VALUES>>> &TripleStore::getOperatorTreeCache() const{
+    std::map<std::string, std::unique_ptr<Einsum<BOOL_VALUES>>> &TripleStore::getOperatorTreeCache() const {
         return default_operator_tree_cache;
     }
 };

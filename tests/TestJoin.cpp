@@ -27,8 +27,8 @@ TEST(TestJoin, simple_call) {
 
 
     std::vector <raw_subscript> op_sc{{1},
-                                 {1,0},
-                                 {1}};
+                                      {1,0},
+                                      {1}};
     raw_subscript res_sc{0};
 
     Subscript subscript{op_sc, res_sc};
@@ -44,14 +44,40 @@ TEST(TestJoin, simple_call) {
         std::cout << *it << std::endl;
         ++it;
     }
+}
 
-    
+TEST(TestJoin, simple_call2) {
+    BoolHyperTrie tensor_0{3};
+    tensor_0.set({4,9,11}, true);
+    tensor_0.set({5,33,54}, true);
+    tensor_0.set({2,32,51}, true);
+
+    BoolHyperTrie tensor_1{1};
+    tensor_1.set({3}, true);
+    tensor_1.set({4}, true);
+    tensor_1.set({5}, true);
 
 
 
 
+    std::vector <raw_subscript> op_sc{{0,1,2},
+                                      {0},
+                                      };
+    raw_subscript res_sc{0};
 
-
+    Subscript subscript{op_sc, res_sc};
+    const tnt::tensor::einsum::EinsumPlan plan{subscript};
+    const Operands ops{&tensor_0, &tensor_1};
+    tnt::tensor::einsum::EinsumPlan::Step step = plan.getInitialStep(ops);
+    std::cout << step << std::endl;
+    std::vector<size_t> key(1, 100000);
+    Join join{key, ops, step};
+    Join::iterator it = join.begin();
+    Join::iterator anEnd = join.end();
+    while(it != anEnd){
+        std::cout << *it << std::endl;
+        ++it;
+    }
 }
 
 
