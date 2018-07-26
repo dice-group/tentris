@@ -5,7 +5,22 @@
 using namespace tnt::util::types;
 using namespace tnt::tensor::hypertrie;
 
-TEST(TestBoolHyperTrie, test_single_write_read) {
+TEST(TestBoolHyperTrie, test_single_write_read0) {
+
+    Key_t key{5};
+    bool value = true;
+
+    BoolHyperTrie trie{uint8_t(key.size())};
+
+    trie.set(key, value);
+
+    std::variant<BoolHyperTrie *, bool> stored_value_ = trie.get(key);
+
+    bool stored_value = std::get<bool>(stored_value_);
+    ASSERT_EQ(stored_value, value);
+}
+
+TEST(TestBoolHyperTrie, test_single_write_read1) {
 
     Key_t key{5, 10, 8};
     bool value = 1;

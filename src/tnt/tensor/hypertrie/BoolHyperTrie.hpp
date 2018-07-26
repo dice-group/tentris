@@ -841,7 +841,7 @@ namespace tnt::tensor::hypertrie {
              * @return the new minimal key_part
              */
             inline key_part_t first() {
-                return (this->first_lower_p)(*this, _min_ind);
+                return (this->first_lower_p)(*this, _min);
             }
 
             /*
@@ -1055,10 +1055,11 @@ namespace tnt::tensor::hypertrie {
                 auto temp_max = max_;
                 for (int times = 0; times < 2; ++times) { // do it twice
                     for (DiagonalView &diag : diagonals) {
-                        diag.setMinMax(min_, max_);
                         if (diag._size == 0)
                             return std::make_tuple(min_, max_);
+                        diag.setMinMax(min_, max_);
                     }
+
                     if ((temp_min == min_) and (temp_max == max_))
                         break;
                 }

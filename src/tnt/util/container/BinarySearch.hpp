@@ -62,7 +62,7 @@ namespace tnt::util::container {
     inline size_t search(const std::vector<T> &sorted_vector, const T &value, size_t low = 0) {
         size_t probe = sorted_vector.size();
         if (low >= probe)
-            return probe;
+            return NOT_FOUND;
         else {
             size_t size = probe - low;
             while (size > 0) {

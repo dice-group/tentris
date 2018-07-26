@@ -1,72 +1,55 @@
 #include <gtest/gtest.h>
 
-#include "hypertrie/Join.hpp"
+#include "tnt/tensor/einsum/EinsumPlan.hpp"
+#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/tensor/hypertrie/Join.hpp"
 
-using sparsetensor::tensor::shape_t;
-using sparsetensor::operations::raw_subscript;
-using sparsetensor::operations::Subscript;
-using sparsetensor::operations::EvalPlan;
+using namespace tnt::util::types;
+using namespace tnt::tensor::hypertrie;
+using namespace tnt::tensor::einsum;
 
 
-TEST(TestJoin, simple_call
-) {
-using namespace sparsetensor::hypertrie;
-key_pos_t depth = 2;
+TEST(TestJoin, simple_call) {
+    BoolHyperTrie tensor_0{1};
+    tensor_0.set({0}, true);
+    tensor_0.set({1}, true);
+    tensor_0.set({2}, true);
 
-HyperTrie<int> tensor_0{depth};
-tensor_0.set({
-0, 0}, 1);
-tensor_0.set({
-0, 1}, 2);
-tensor_0.set({
-1, 0}, 3);
-tensor_0.set({
-1, 1}, 5);
+    BoolHyperTrie tensor_1{2};
+    tensor_1.set({2,7}, true);
+    tensor_1.set({3,8}, true);
+    tensor_1.set({4,9}, true);
 
-HyperTrie<int> tensor_1{depth};
-tensor_1.set({
-0, 0}, 7);
-tensor_1.set({
-0, 1}, 11);
-tensor_1.set({
-1, 0}, 13);
-tensor_1.set({
-1, 1}, 17);
+    BoolHyperTrie tensor_2{1};
+    tensor_2.set({2}, true);
+    tensor_2.set({6}, true);
 
-vector<variant < HyperTrie < int> *, int >> operands{
-&tensor_0, &tensor_1};
 
-vector <raw_subscript> op_sc{{0, 1},
-                             {1, 2}};
-raw_subscript res_sc{0, 2};
 
-Subscript subscript{op_sc, res_sc};
+    std::vector <raw_subscript> op_sc{{1},
+                                 {1,0},
+                                 {1}};
+    raw_subscript res_sc{0};
 
-EvalPlan plan{subscript};
-auto[step, label] = plan.firstStep(operands);
+    Subscript subscript{op_sc, res_sc};
+    const tnt::tensor::einsum::EinsumPlan plan{subscript};
+    const Operands ops{&tensor_0, &tensor_1, &tensor_2};
+    tnt::tensor::einsum::EinsumPlan::Step step = plan.getInitialStep(ops);
+    std::cout << step << std::endl;
+    std::vector<size_t> key(1, 100000);
+    Join join{key, ops, step};
+    Join::iterator it = join.begin();
+    Join::iterator anEnd = join.end();
+    while(it != anEnd){
+        std::cout << *it << std::endl;
+        ++it;
+    }
 
-std::cout << "step: " <<label <<
-std::endl;
+    
 
-Key_t key(depth);
 
-Join<int> join{operands, step, label, key};
 
-typename sparsetensor::hypertrie::Join<int>::Iterator it_begin = join.begin();
-typename sparsetensor::hypertrie::Join<int>::Iterator it_end = join.end();
 
-for(;it_begin !=
-it_end;
-++it_begin){
-auto &&[operands, key] = *it_begin;
-std::cout << key <<
-std::endl;
-std::cout << *std::get<HyperTrie < int> *>(operands.at(0)) <<
-std::endl;
-std::cout << *std::get<HyperTrie < int> *>(operands.at(1)) << std::endl <<
-std::endl;
-
-}
 
 
 }
