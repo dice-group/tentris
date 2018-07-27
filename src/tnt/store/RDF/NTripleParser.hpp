@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <optional>
 #include <future>
-#include <iostream>           // std::cout
-#include <thread>             // std::thread
-#include <mutex>              // std::mutex, std::unique_lock
+#include <iostream>
+#include <thread>
+#include <mutex>
 
 namespace tnt::store {
 

@@ -285,7 +285,6 @@ namespace tnt::tensor::einsum::operators {
         // there are steps left
         if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
-            std::cout << step << std::endl;
             Join join{result_key, operands, step};
             for (const auto&[next_operands, next_result_key] : join) {
                 const EinsumPlan::Step &next_step = step.nextStep(next_operands);
@@ -317,7 +316,6 @@ namespace tnt::tensor::einsum::operators {
             rekEinsumBoolNonResult(yield, operands, result_key, step);
         } else if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
-            std::cout << step << std::endl;
             Join join{result_key, operands, step};
             for (const auto&[next_operands, next_result_key] : join) {
                 const EinsumPlan::Step &next_step = step.nextStep(next_operands);

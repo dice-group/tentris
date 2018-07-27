@@ -200,7 +200,6 @@ namespace tnt::http {
                 json_result << "}";
 
                 std::string json_result_binding = json_result.str();
-                std::cout << json_result_binding << std::endl;
                 for ([[maybe_unused]]  const auto &c : range(getCount<VALUE_TYPE>(result))) {
                     if (firstResult) {
                         firstResult = false;

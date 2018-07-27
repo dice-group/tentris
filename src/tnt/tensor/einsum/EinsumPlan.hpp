@@ -249,8 +249,6 @@ namespace tnt::tensor::einsum {
             static label_t
             getMinCardLabel(const Operands &operands, const std::set<label_t> &label_candidates,
                             const std::set<label_t> &unused_result_labels, const Subscript &sc) {
-                std::cout << "getMinCardLabel: \n" << "  operands " << operands <<
-                          "\n  sc ops: " << sc._operands_labels << std::endl;
                 const std::set<label_t> &candidates_to_be_used = (not unused_result_labels.empty())
                                                                  ? unused_result_labels : label_candidates;
                 unused_result_labels.size();

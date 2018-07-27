@@ -151,12 +151,10 @@ namespace tnt::tensor::hypertrie {
                             goto continue_outer_loop;
                         }
                     }
-                    std::cout << *this << std::endl;
                     return;
                 }
                 // the end was reached
                 _ended = true;
-                std::cout << *this << std::endl;
             }
 
             iterator &operator++() {
@@ -187,7 +185,6 @@ namespace tnt::tensor::hypertrie {
                 if(((rhs._ended and _ended) or
                     (rhs._current_key_part == _current_key_part) or
                     (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part)))
-                    std::cout << "";
                 return ((rhs._ended and _ended) or
                         (rhs._current_key_part == _current_key_part) or
                         (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part));
