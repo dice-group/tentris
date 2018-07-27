@@ -94,7 +94,6 @@ namespace tnt::tensor::einsum::operators {
 
         Einsum(Einsum &&) = default;
 
-    protected:
         /**
          * Prepares the arguments for the recursive calculation of the results.
          * @param operands vector of tensors
@@ -125,6 +124,7 @@ namespace tnt::tensor::einsum::operators {
         template<typename COUNT_TYPE>
         static COUNT_TYPE contract(const Operands &operands, const EinsumPlan::Step &step);
 
+    private:
         /**
          * Extracts the operands needed for the given Einsum Operator.
          * @param operands all operands that are input to this CrossProduct
@@ -276,6 +276,35 @@ namespace tnt::tensor::einsum::operators {
         return std::accumulate(results.begin(), results.end(), true, std::logical_and<bool>());
     }
 
+    void rekEinsumBoolNonResult(
+            yield_push<BOOL_VALUES> &yield,
+            const Operands &operands,
+            const Key_t &result_key,
+            const EinsumPlan::Step &step) {
+        using RESULT_TYPE = std::tuple<Key_t, size_t>;
+        // there are steps left
+        if (not step.all_done) {
+            // calculate next operands and result_key from current operands, step, label and resultKey
+            std::cout << step << std::endl;
+            Join join{result_key, operands, step};
+            for (const auto&[next_operands, next_result_key] : join) {
+                const EinsumPlan::Step &next_step = step.nextStep(next_operands);
+                // start next recursive step.
+                rekEinsumBoolNonResult(yield, next_operands, next_result_key, next_step);
+                break;
+            }
+        } else { // there are no steps left
+            if (not operands.empty()) {
+                if (Einsum<BOOL_VALUES>::contract<bool>(operands,step)) {
+                    // there are lonely and/or unique labels left.
+                    yield(result_key);
+                }
+            } else { // no labels left
+                yield(result_key);
+            }
+        }
+    };
+
     template<>
     void Einsum<BOOL_VALUES>::rekEinsum(
             yield_push<BOOL_VALUES> &yield,
@@ -284,7 +313,9 @@ namespace tnt::tensor::einsum::operators {
             const EinsumPlan::Step &step) {
         using RESULT_TYPE = std::tuple<Key_t, size_t>;
         // there are steps left
-        if (not step.all_done) {
+        if (step.result_labels_done) {
+            rekEinsumBoolNonResult(yield, operands, result_key, step);
+        } else if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
             std::cout << step << std::endl;
             Join join{result_key, operands, step};
