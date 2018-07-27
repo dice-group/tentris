@@ -37,7 +37,9 @@ namespace tnt::tensor::einsum {
 
 
         std::set<label_t> _all_labels;
+    public:
         std::vector<std::vector<label_t>> _operands_labels;
+    private:
         std::vector<label_t> _result_labels;
         std::vector<op_pos_t> _original_op_poss;
         std::vector<std::shared_ptr<Subscript>> _sub_subscripts;
@@ -80,9 +82,10 @@ namespace tnt::tensor::einsum {
                     _operands_with_label[label].push_back(op_pos_t(op_pos));
 
             std::tie(_lonely_non_result_labels, _operands_with_lonely_non_result_labels,
-                      _operands_without_lonely_non_result_labels, _lonely_non_result_contractions_by_op,
-                      _unique_non_result_labels, _operands_with_unique_non_result_labels,
-                      _operands_without_unique_non_result_labels, _unique_non_result_contractions_by_op) = _calcUniqueAndLonelyNonResultLabels(
+                     _operands_without_lonely_non_result_labels, _lonely_non_result_contractions_by_op,
+                     _unique_non_result_labels, _operands_with_unique_non_result_labels,
+                     _operands_without_unique_non_result_labels,
+                     _unique_non_result_contractions_by_op) = _calcUniqueAndLonelyNonResultLabels(
                     _operands_with_label, _label_poss_in_operands, _label_pos_in_result, numberOfOperands());
 
             _label_dependency_graph = calcLabelDependencyGraph(_distinct_operands_labels);
@@ -259,7 +262,7 @@ namespace tnt::tensor::einsum {
          * set.
          * @return
          */
-        inline const std::map<op_pos_t,std::vector<label_pos_t>> &getLonleyNonResultContractions() const {
+        inline const std::map<op_pos_t, std::vector<label_pos_t>> &getLonleyNonResultContractions() const {
             return _lonely_non_result_contractions_by_op;
         }
 
@@ -331,9 +334,9 @@ namespace tnt::tensor::einsum {
          */
         const Subscript &removeLabel(const label_t &label) const {
             auto found = _cache_for_remove_label.find(label);
-            if(found != _cache_for_remove_label.end())
+            if (found != _cache_for_remove_label.end())
                 return found->second;
-            else{
+            else {
                 if (not _all_labels.count(label))
                     throw std::invalid_argument("only labels that are present in an subscript may be removed.");
                 else {
@@ -601,21 +604,8 @@ namespace tnt::tensor::einsum {
 
     public:
         friend std::ostream &operator<<(std::ostream &os, const Subscript &subscript) {
-            os << "_all_labels: " << subscript._all_labels << " _operands_labels: " << subscript._operands_labels
-               << " _result_labels: " << subscript._result_labels << " _original_op_poss: "
-               << subscript._original_op_poss << " _sub_subscripts: " << subscript._sub_subscripts
-               << " _distinct_operands_labels: " << subscript._distinct_operands_labels << " _label_poss_in_operands: "
-               << subscript._label_poss_in_operands << " _label_pos_in_result: " << subscript._label_pos_in_result
-               << " _operands_with_label: " << subscript._operands_with_label << " _lonely_non_result_labels: "
-               << subscript._lonely_non_result_labels << " _operands_with_lonely_non_result_labels: "
-               << subscript._operands_with_lonely_non_result_labels << " _operands_without_lonely_non_result_labels: "
-               << subscript._operands_without_lonely_non_result_labels << " _lonely_non_result_contractions_by_op: "
-               << subscript._lonely_non_result_contractions_by_op << " _unique_non_result_labels: "
-               << subscript._unique_non_result_labels << " _operands_with_unique_non_result_labels: "
-               << subscript._operands_with_unique_non_result_labels << " _operands_without_unique_non_result_labels: "
-               << subscript._operands_without_unique_non_result_labels << " _unique_non_result_contractions_by_op: "
-               << subscript._unique_non_result_contractions_by_op <<  " _independent_label_subsets: "
-               << subscript._independent_label_subsets;
+            os << "Subscript: _operands_labels: " << subscript._operands_labels
+               << " _result_labels: " << subscript._result_labels;
             return os;
         }
 

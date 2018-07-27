@@ -629,6 +629,12 @@ namespace tnt::tensor::hypertrie {
 
             BoolHyperTrie *_result;
 
+        public:
+            friend std::ostream &operator<<(std::ostream &os, const DiagonalView &view) {
+                os << "_positions: " << view._positions << " _min: " << view._min << " _max: " << view._max
+                   << " _min_ind: " << view._min_ind << " _max_ind: " << view._max_ind << " _size: " << view._size;
+                return os;
+            }
 
         public:
             /**
@@ -792,11 +798,8 @@ namespace tnt::tensor::hypertrie {
                 if (lower != children_keys.at(view._min_ind)) {
                     view._min_ind = tnt::util::container::insert_pos(children_keys, lower, view._min_ind,
                                                                      view._max_ind);
-                    return increment_current_until_hit_II(view);
-                } else {
-                    view._min = lower;
-                    return lower;
                 }
+                return increment_current_until_hit_II(view);
             }
 
             static key_part_t
@@ -827,11 +830,8 @@ namespace tnt::tensor::hypertrie {
                 if (lower != childrens_keys.at(view._min_ind)) {
                     view._min_ind = tnt::util::container::insert_pos(childrens_keys, lower, view._min_ind,
                                                                      view._max_ind);
-                    return increment_current_until_hit_III(view);
-                } else {
-                    view._min = lower;
-                    return lower;
                 }
+                return increment_current_until_hit_III(view);
             }
 
             static key_part_t increment_current_until_hit_III(DiagonalView &view) {
@@ -1088,6 +1088,8 @@ namespace tnt::tensor::hypertrie {
                         if (diag._size == 0)
                             return std::make_tuple(min_, max_);
                         diag.setMinMax(min_, max_);
+                        if (diag._size == 0)
+                            return std::make_tuple(min_, max_);
                     }
 
                     if ((temp_min == min_) and (temp_max == max_))

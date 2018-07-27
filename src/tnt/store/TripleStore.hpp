@@ -132,7 +132,7 @@ namespace tnt::store {
                     slice_keys.push_back(slice_key);
             }
             std::cout << slice_keys << std::endl;
-            Subscript subscript = sparql.getSubscript();
+            const Subscript &subscript = sparql.getSubscript();
             const Einsum<RETURN_TYPE> &einsumOp
                     = getOperatorTree<RETURN_TYPE>(sparql.getSparqlStr(), subscript, slice_keys);
 

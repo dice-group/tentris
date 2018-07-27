@@ -17,6 +17,7 @@ namespace tnt::util::container {
     template<typename T, typename Compare>
     std::vector<std::size_t> sortPermutation(const std::vector<T> &vec, const Compare &compare) {
         std::vector<std::size_t> permutation(vec.size());
+
         std::iota(permutation.begin(), permutation.end(), 0);
         std::sort(permutation.begin(), permutation.end(),
                   [&](size_t i, size_t j) { return compare(vec[i], vec[j]); });

@@ -6,6 +6,7 @@
 #include <variant>
 #include <numeric>
 #include <optional>
+#include <ostream>
 
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/util/container/Sort.hpp"
@@ -64,6 +65,16 @@ namespace tnt::tensor::hypertrie {
             std::tie(_min_keypart, _max_keypart) = BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
         }
 
+        friend std::ostream &operator<<(std::ostream &os, const Join &join1) {
+            os << "_key: " << join1._key << " _min_keypart: " << join1._min_keypart << " _max_keypart: "
+               << join1._max_keypart << " _result_key_pos: " << join1._result_key_pos << " _diagonal2result_pos: "
+               << join1._diagonal2result_pos;
+            os << " _diagonals: \n";
+            for(const auto & diag :join1._diagonals)
+                os << "   " << diag << "\n";
+            return os;
+        }
+
 
         /**
          *
@@ -99,16 +110,23 @@ namespace tnt::tensor::hypertrie {
                             });
 
                     ::tnt::util::container::applyPermutation(_diagonals, _sort_order);
+                    const std::vector<size_t> &inv = ::tnt::util::container::invPermutation(_sort_order);
 
                     // calculate the mapping from the reordered Diagonals to the result from it
                     // (that means just apply the permutation to the image of the map)
                     for (const auto &[diagonal_pos, result_pos] : _join._diagonal2result_pos) {
-                        _reorderedDiagonals2result_pos[_sort_order[diagonal_pos]] = result_pos;
+                        _reorderedDiagonals2result_pos[inv[diagonal_pos]] = result_pos;
                     }
                     // find the first result
                     _current_key_part = _diagonals[0].first();
                     findNextMatch();
                 }
+            }
+
+            friend std::ostream &operator<<(std::ostream &os, const iterator &iterator) {
+                os << "_join: " << iterator._join << " _current_key_part: " << iterator._current_key_part
+                   << " _last_key_part: " << iterator._last_key_part << " _ended: " << iterator._ended;
+                return os;
             }
 
             /**
@@ -133,10 +151,12 @@ namespace tnt::tensor::hypertrie {
                             goto continue_outer_loop;
                         }
                     }
+                    std::cout << *this << std::endl;
                     return;
                 }
                 // the end was reached
                 _ended = true;
+                std::cout << *this << std::endl;
             }
 
             iterator &operator++() {
@@ -164,7 +184,13 @@ namespace tnt::tensor::hypertrie {
 
             inline bool operator==(const iterator &rhs) const {
                 // careful, it doesn't check if it is tested against another iterator for the same Join.
-                return (rhs._ended and _ended);
+                if(((rhs._ended and _ended) or
+                    (rhs._current_key_part == _current_key_part) or
+                    (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part)))
+                    std::cout << "";
+                return ((rhs._ended and _ended) or
+                        (rhs._current_key_part == _current_key_part) or
+                        (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part));
             }
 
             inline bool operator!=(const iterator &rhs) const {

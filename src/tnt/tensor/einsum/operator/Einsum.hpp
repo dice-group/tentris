@@ -104,6 +104,7 @@ namespace tnt::tensor::einsum::operators {
             // initialize emtpy result key
             // plan first step
             EinsumPlan::Step step = plan.getInitialStep(operands);
+
             Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
             // start recursion
             rekEinsum(yield, operands, result_key, step);
@@ -285,8 +286,8 @@ namespace tnt::tensor::einsum::operators {
         // there are steps left
         if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
+            std::cout << step << std::endl;
             Join join{result_key, operands, step};
-
             for (const auto&[next_operands, next_result_key] : join) {
                 const EinsumPlan::Step &next_step = step.nextStep(next_operands);
                 // start next recursive step.
