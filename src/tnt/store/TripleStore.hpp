@@ -154,7 +154,6 @@ namespace tnt::store {
 
     auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
-        if (type_node != nullptr)
         std::optional<std::string> type = (type_node != nullptr)
                                           ? std::optional<std::string>{{(char *) (type_node->buf),
                                                                                size_t(type_node->n_chars)}}
