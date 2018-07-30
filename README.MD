@@ -9,7 +9,7 @@ It is based on tensors and tensor algebra. Currently, it supports only SELECT wi
 ### start
 after building run
 ```
-tnt_exec -p 8090 -p my_nt_file.nt
+tnt_exec -p 8090 -f my_nt_file.nt
 ```
 to load the data from the provided `.nt` file and serve SPARQL endpoint at port 8090.
 
