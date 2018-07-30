@@ -1,53 +1,51 @@
 #include <gtest/gtest.h>
-#include "hypertrie/PosCalc.hpp"
+#include "tnt/tensor/hypertrie/PosCalc.hpp"
 
-TEST(TestPosCalc, every_different_instance_must_exist_only_once
-) {
-using namespace sparsetensor::hypertrie;
-vector<bool> vec1 = vector<bool>(3);
+using namespace tnt::tensor::hypertrie;
 
-PosCalc *inst000 = PosCalc::getInstance(vec1);
-PosCalc *inst000x = PosCalc::getInstance(vec1);
+TEST(TestPosCalc, every_different_instance_must_exist_only_once) {
+    std::vector<bool> vec1 = std::vector<bool>(3);
 
-ASSERT_EQ(inst000, inst000x
-);
+    PosCalc *inst000 = PosCalc::getInstance(vec1);
+    PosCalc *inst000x = PosCalc::getInstance(vec1);
 
-PosCalc *inst010 = inst000x->use(1);
+    ASSERT_EQ(inst000, inst000x
+    );
 
-vec1[1] = true;
-PosCalc *inst010x = PosCalc::getInstance(vec1);
+    PosCalc *inst010 = inst000x->use(1);
 
-ASSERT_EQ(inst010, inst010x
-);
+    vec1[1] = true;
+    PosCalc *inst010x = PosCalc::getInstance(vec1);
+
+    ASSERT_EQ(inst010, inst010x
+    );
 }
 
-TEST(TestPosCalc, check_values
-) {
-using namespace sparsetensor::hypertrie;
-vector<bool> vec1 = vector<bool>(3);
+TEST(TestPosCalc, check_values) {
+    std::vector<bool> vec1 = std::vector<bool>(3);
 
-PosCalc *inst000 = PosCalc::getInstance(vec1);
-PosCalc *inst100 = inst000->use(0);
-ASSERT_EQ(inst100
-->key_to_subkey_pos(1), 0);
-ASSERT_EQ(inst100
-->key_to_subkey_pos(2), 1);
+    PosCalc *inst000 = PosCalc::getInstance(vec1);
+    PosCalc *inst100 = inst000->use(0);
+    ASSERT_EQ(inst100
+                      ->key_to_subkey_pos(1), 0);
+    ASSERT_EQ(inst100
+                      ->key_to_subkey_pos(2), 1);
 
-ASSERT_EQ(inst100
-->subkey_to_key_pos(0), 1);
-ASSERT_EQ(inst100
-->subkey_to_key_pos(1), 2);
+    ASSERT_EQ(inst100
+                      ->subkey_to_key_pos(0), 1);
+    ASSERT_EQ(inst100
+                      ->subkey_to_key_pos(1), 2);
 
-PosCalc *inst010 = inst000->use(1);
-ASSERT_EQ(inst010
-->key_to_subkey_pos(0), 0);
-ASSERT_EQ(inst010
-->key_to_subkey_pos(2), 1);
+    PosCalc *inst010 = inst000->use(1);
+    ASSERT_EQ(inst010
+                      ->key_to_subkey_pos(0), 0);
+    ASSERT_EQ(inst010
+                      ->key_to_subkey_pos(2), 1);
 
-ASSERT_EQ(inst010
-->subkey_to_key_pos(0), 0);
-ASSERT_EQ(inst010
-->subkey_to_key_pos(1), 2);
+    ASSERT_EQ(inst010
+                      ->subkey_to_key_pos(0), 0);
+    ASSERT_EQ(inst010
+                      ->subkey_to_key_pos(1), 2);
 }
 
 
