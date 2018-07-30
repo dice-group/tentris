@@ -20,7 +20,7 @@ The endpoint may be queried locally at: `127.0.0.1:8090/sparql?query=*your query
 
 ### usage example
 
-Consider the query below against a SP²Bench data set:
+Consider the query below against a small SP²Bench data set:
 ``` 
 PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX bench: <http://localhost/vocabulary/bench/>
@@ -34,7 +34,7 @@ WHERE {
 
 To run it start TNT with: 
 ```
-tnt_exec -p 3030 -f tests/dataset/sp2b.nt`. 
+tnt_exec -p 3030 -f tests/dataset/sp2b.nt 
 ```
 
 Then visit with a browser of your choice the IRI to see the resul:
@@ -108,6 +108,6 @@ sudo apt install libboost-dev libboost-context-dev
 
 
 
-#### build
+## build
 
 run `cmake CMakeLists.txt && make` in this directory.
