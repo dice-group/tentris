@@ -7,8 +7,8 @@ using namespace tnt::util::types;
 using namespace tnt::tensor::hypertrie;
 using namespace tnt::tensor::einsum::operators;
 using namespace tnt::tensor::einsum;
-template<typename T>
-using NDMap = tnt::util::container::NDMap<T>;
+
+//TODO: reenable
 
 TEST(TestEinsum, stupid) {
     const Subscript &subscript = Subscript{};

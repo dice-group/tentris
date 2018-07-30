@@ -12,10 +12,8 @@
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
-#include "tnt/util/container/NDMap.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
-#include "tnt/tensor/einsum/operator/CrossProduct.hpp"
 
 
 namespace tnt::store {
@@ -27,8 +25,6 @@ namespace tnt::store {
         using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
         using key_part_t = tnt::util::types::key_part_t;
-        template<typename V>
-        using NDMap = tnt::util::container::NDMap<V>;
     }
     class TripleStore {
         mutable std::map<std::string, std::unique_ptr<ParsedSPARQL>> parsed_query_cache{};

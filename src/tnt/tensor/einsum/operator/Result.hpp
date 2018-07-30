@@ -15,13 +15,16 @@
 #include "tnt/util/All.hpp"
 
 namespace tnt::tensor::einsum::operators {
+    namespace {
+        template<typename V>
+        using NDMap = std::set<Key_t, V>;
+    };
 
+    // TODO: reeanble
     template<typename T>
     class Result {
         using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using Join = tnt::tensor::hypertrie::Join;
-        template<typename V>
-        using NDMap = tnt::util::container::NDMap<V>;
         using NewJoin = tnt::tensor::hypertrie::Join;
         using Operands = tnt::tensor::hypertrie::Operands;
     public:

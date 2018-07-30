@@ -10,6 +10,10 @@
 
 
 namespace tnt::tensor::einsum::operators {
+    namespace {
+        template<typename V>
+        using NDMap = std::set<Key_t, V>;
+    };
 
     template<typename T>
     class CrossProductResult;
@@ -21,10 +25,9 @@ namespace tnt::tensor::einsum::operators {
      * @tparam T type of the values hold by processed Tensors (Tensor).
      */
     template<typename T>
+    // TODO: reeanble
     class CrossProduct {
         using Operands = tnt::tensor::hypertrie::Operands;
-        template<typename V>
-        using NDMap = tnt::util::container::NDMap<V>;
     protected:
         /**
          * This is a subscript where independently calculable parts are bracketed into sub-Subscripts (Subscript).
@@ -70,8 +73,6 @@ namespace tnt::tensor::einsum::operators {
     template<typename T>
     class CrossProductResult {
         using Operands = tnt::tensor::hypertrie::Operands;
-        template<typename V>
-        using NDMap = tnt::util::container::NDMap<V>;
         const std::vector<NDMap<T>> &_operands;
         std::vector<std::vector<std::tuple<size_t, size_t>>> pos_mappings{};
         size_t _size{};

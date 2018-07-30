@@ -3,8 +3,6 @@
 
 #include <variant>
 #include <algorithm>
-//#include "tnt/store/RDF/Term.hpp"
-//#include "tnt/store/SPARQL/Variable.hpp"
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 
@@ -40,7 +38,7 @@ namespace tnt::tensor::einsum::operators {
          * Must only be called if this->type == HYPERTRIE.
          * @return
          */
-        BoolHyperTrie * getHyperTrie() {
+        BoolHyperTrie *getHyperTrie() {
             return std::get<BoolHyperTrie *>(_trie->get(_key));
         }
     };

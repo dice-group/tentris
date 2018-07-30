@@ -26,8 +26,6 @@ namespace tnt::http {
         using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
         using key_part_t = tnt::util::types::key_part_t;
-        template<typename V>
-        using NDMap = tnt::util::container::NDMap<V>;
     }
 
 

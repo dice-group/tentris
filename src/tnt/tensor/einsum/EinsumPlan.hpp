@@ -311,9 +311,9 @@ namespace tnt::tensor::einsum {
                                                std::multiplies<size_t>());
                 const double d = min_dim_cardinality
                                  * i2
-                                 / i1;
-                // prefer smaller min_dim cardinality
-//                                       + (1 - (1 / min_dim_cardinality))
+                                 / i1
+//                 prefer smaller min_dim cardinality
+                                       + (1 - (1 / min_dim_cardinality));
 //                                 + (double(1) / double(op_poss.size()));
                 return d;
             }

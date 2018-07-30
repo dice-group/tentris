@@ -869,7 +869,7 @@ namespace tnt::tensor::hypertrie {
             }
 
             /*
-    */
+            */
         public:
             /**
              * Finds the next valid key_part that is greater or equal to this->min(). this->min() is updated alongside..

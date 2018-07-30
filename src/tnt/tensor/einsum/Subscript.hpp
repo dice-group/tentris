@@ -14,12 +14,6 @@
 #include "tnt/util/UndirectedGraph.hpp"
 
 
-//namespace tnt::tensor::einsum {
-//    class Subscript;
-//};
-//
-//::std::ostream &operator<<(::std::ostream &out, ::tnt::tensor::einsum::Subscript &subscript);
-
 namespace tnt::tensor::einsum {
     using namespace tnt::util::types;
 
@@ -43,7 +37,6 @@ namespace tnt::tensor::einsum {
         std::vector<label_t> _result_labels;
         std::vector<op_pos_t> _original_op_poss;
         std::vector<std::shared_ptr<Subscript>> _sub_subscripts;
-        // TODO: remove?
         std::vector<std::set<label_t>> _distinct_operands_labels;
         std::map<std::tuple<op_pos_t, label_t>, std::vector<label_pos_t>> _label_poss_in_operands;
         std::map<label_t, label_pos_t> _label_pos_in_result;
@@ -111,9 +104,6 @@ namespace tnt::tensor::einsum {
 
             _sub_subscripts = {};
 
-            // TODO: add execPlan and remove_labels_cache
-//            self._exec_plan = None
-//            self._remove_labels_cache: Dict[label_t, 'Subscript'] = dict()
 
             updateFields();
         }

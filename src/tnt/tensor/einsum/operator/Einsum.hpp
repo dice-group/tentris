@@ -12,7 +12,6 @@
 #include "tnt/tensor/einsum/EinsumPlan.hpp"
 #include "tnt/tensor/hypertrie/Join.hpp"
 #include "tnt/tensor/einsum/operator/Slice.hpp"
-#include "tnt/util/container/NDMap.hpp"
 #include "tnt/util/All.hpp"
 
 
@@ -20,8 +19,6 @@ namespace tnt::tensor::einsum::operators {
     namespace {
         using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
         using SliceKey_t = tnt::util::types::SliceKey_t;
-        template<typename T>
-        using NDMap = tnt::util::container::NDMap<T>;
         using Join = tnt::tensor::hypertrie::Join;
         using Operands = tnt::tensor::hypertrie::Operands;
     }
