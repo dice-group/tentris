@@ -157,10 +157,8 @@ namespace tnt::store {
                                           ? std::optional<std::string>{{(char *) (lang_node->buf),
                                                                                size_t(lang_node->n_chars)}}
                                           : std::nullopt;
-        Literal l{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type};
-        if (type_node != nullptr)
-        return std::unique_ptr<Term>{
-                new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
+            return std::unique_ptr<Term>{
+                    new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
     };
 
     auto serd_callback(void *handle, SerdStatementFlags flags, const SerdNode *graph, const SerdNode *subject,
