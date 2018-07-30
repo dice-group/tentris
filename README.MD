@@ -50,7 +50,7 @@ Compiling is currently only tested on Ubuntu 18.04 with g++-7 and some g++-8 hea
 
 To compile install the following build tools:
 ```
-sodo apt install build-essential g++7 g++8 cmake
+sudo apt install build-essential g++7 g++8 cmake
 ```
 
 To run tests you need to additionally install gtest:
@@ -94,6 +94,12 @@ antlr4 is downloaded and compiled automatically during the build but requires uu
 
 ```
 sudo apt install uuid-dev
+```
+If you want to deploy tnt without compiling it with by the cmake tartet install antlr4 with:
+
+```
+curl http://www.antlr.org/download/antlr4-cpp-runtime-4.7.1-source.zip  --output antlr4.zip && mkdir antlr4 && unzip -d antlr4 antlr4.zip && cd antlr4 && cmake && make && sudo make install
+sudo ldconfig
 ```
 
 For parsing `.nt` files libserd is required:
