@@ -1,0 +1,75 @@
+*******************************************************************
+************ THE SP^2B SPARQL PERFORMANCE BENCHMARK ***************
+*******************************************************************
+SP^2B is a Performance Benchmark for the SPARQL query language.
+The project homepage at
+
+	http://dbis.informatik.uni-freiburg.de/index.php?project=SP2B
+
+provides more information on the benchmark.
+*******************************************************************
+
+=================================
+******* TABLE OF CONTENTS *******
+=================================
+=  1. Introduction              =
+=  2. Getting Started           =
+=  3. License                   =
+=  4. Project Members           =
+=  5. Contact                   =
+=================================
+
+
+1. Introduction 
+---------------
+SP^2B is a Performance Benchmark for the SPARQL query language.
+The benchmark comprises both a data generator for generating
+arbitrarily large, DBLP-like data sets, and a set of SPARQL
+benchmark queries, which cover a variety of typical SPARQL
+operator constellations and RDF access patterns.
+
+SP^2B is a research project from Freiburg University and has
+been laid out to provide a basis for comparing SPARQL optimization
+approaches in a uniform benchmark scenario. Of course, it can also
+be used to compare SPARQL engines against each other, detect
+deficiencies in existing implementations, and to tune SPARQL
+engines.
+
+
+2. Getting Started
+------------------
+Depending on the type of archive you downloaded from the SP^2B
+homepage, the following subdirectories might be available.
+
+sp2b
+ |
+ |-- ./src       contains the source code of the data generator
+ |-- ./bin       contains precompiled binaries of the data generator
+ |-- ./queries   contains the benchmark queries
+
+If you are just interested in applying the benchmark, you should
+simply use the precompiled binary (we provide binaries for Linux and
+Windows). You will find more detailed information on the individual
+components in the README files in the respective directory.
+
+
+3. License 
+----------
+The SP^2B data generator has been published under the Berkeley
+License and is open source. Detailed licensing information can
+be found in the attached COPYING file. 
+
+
+4. Project Members
+------------------
+- Michael Schmidt (Freiburg University)
+- Thomas Hornung (Freiburg University)
+- Norbert Kuechlin (Freiburg University)
+- Georg Lausen (Freiburg University)
+- Christoph Pinkel (MTC Infomedia OHG)
+
+
+5. Contact
+----------
+Please send bug reports, questions, and general feedback to
+Michael Schmidt [mschmidt@informatik.uni-freiburg.de].

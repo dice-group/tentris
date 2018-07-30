@@ -48,12 +48,6 @@ target_include_directories(cppitertools INTERFACE
         thirdparty/cppitertools
         )
 
-#include cppitertools, see https://github.com/ryanhaining/cppitertools
-add_library(lru INTERFACE)
-target_include_directories(lru INTERFACE
-        thirdparty/mohaps-lrucache11
-        )
-
 #make an interface library from the code
 add_library(libsparsetensor INTERFACE)
 target_include_directories(libsparsetensor INTERFACE
@@ -66,7 +60,6 @@ link_libraries(
         serd-0 # for parsing ntriples
         Threads::Threads # for use of threads
         cppitertools
-        lru
         libsparsetensor
         antlr4_sparql
         antlr4-runtime
