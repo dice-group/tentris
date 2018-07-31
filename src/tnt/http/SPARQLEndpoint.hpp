@@ -3,8 +3,9 @@
 
 #include <pistache/endpoint.h>
 #include <pistache/router.h>
-#include "tnt/store/TripleStore.hpp"
 #include <string>
+#include <sstream>
+#include "tnt/store/TripleStore.hpp"
 #include <pistache/http.h>
 #include <tuple>
 #include <utility>
@@ -57,8 +58,8 @@ namespace tnt::http {
         const char *data = urlEncoded.data();
         while (i < urlEncoded.size()) {
             switch (data[i]) {
-                case ' ':
-                    out << '+';
+                case '+':
+                    out << ' ';
                     ++i;
                     break;
                 case '%':
@@ -74,6 +75,45 @@ namespace tnt::http {
             }
         }
         return out.str();
+    }
+
+
+    // TODO: stream to ouptput instead of writing a stream
+    template<typename S>
+    std::string escapeJsonString(const S &input) {
+        std::ostringstream ss;
+        for (const char &current_char : input) {
+            switch (current_char) {
+                case '\\':
+                    ss << "\\\\";
+                    break;
+                case '"':
+                    ss << "\\\"";
+                    break;
+                case '/':
+                    ss << "\\/";
+                    break;
+                case '\b':
+                    ss << "\\b";
+                    break;
+                case '\f':
+                    ss << "\\f";
+                    break;
+                case '\n':
+                    ss << "\\n";
+                    break;
+                case '\r':
+                    ss << "\\r";
+                    break;
+                case '\t':
+                    ss << "\\t";
+                    break;
+                default:
+                    ss << current_char;
+                    break;
+            }
+        }
+        return ss.str();
     }
 
 
@@ -185,7 +225,7 @@ namespace tnt::http {
                             break;
                     } //todo check default
 
-                    json_result << ",\"value\":\"" << term.get_value();
+                    json_result << ",\"value\":\"" << escapeJsonString(term.get_value());
                     if (termType == store::Term::Literal) {
                         const store::Literal &literal = static_cast<store::Literal &>(term);
                         if (literal.hasType())

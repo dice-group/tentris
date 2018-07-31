@@ -167,7 +167,7 @@ namespace tnt::tensor::einsum::operators {
         }
 
         class iterator {
-            const bool _ended;
+            bool _ended;
             const std::unique_ptr<yield_pull<RESULT_TYPE>> _results;
         public:
             explicit iterator(const Einsum &einsum, bool ended = false) :
