@@ -70,7 +70,7 @@ namespace tnt::tensor::hypertrie {
                << join1._max_keypart << " _result_key_pos: " << join1._result_key_pos << " _diagonal2result_pos: "
                << join1._diagonal2result_pos;
             os << " _diagonals: \n";
-            for(const auto & diag :join1._diagonals)
+            for (const auto &diag :join1._diagonals)
                 os << "   " << diag << "\n";
             return os;
         }
@@ -100,26 +100,30 @@ namespace tnt::tensor::hypertrie {
                     _current_key_part{(not ended) ? join._min_keypart : join._max_keypart + 1},
                     _last_key_part{join._max_keypart},
                     _ended{ended} {
-                if ((not ended) and (_current_key_part <= _last_key_part)) {
-                    // sort the diagonals by size
-                    const std::vector<size_t> _sort_order = tnt::util::container::sortPermutation(
-                            _diagonals, [](const BoolHyperTrie::DiagonalView &a,
-                                           const BoolHyperTrie::DiagonalView &b) {
-                                return a.size() <
-                                       b.size();
-                            });
+                if (not _ended) {
+                    if (_current_key_part <= _last_key_part) {
+                        // sort the diagonals by size
+                        const std::vector<size_t> _sort_order = tnt::util::container::sortPermutation(
+                                _diagonals, [](const BoolHyperTrie::DiagonalView &a,
+                                               const BoolHyperTrie::DiagonalView &b) {
+                                    return a.size() <
+                                           b.size();
+                                });
 
-                    ::tnt::util::container::applyPermutation(_diagonals, _sort_order);
-                    const std::vector<size_t> &inv = ::tnt::util::container::invPermutation(_sort_order);
+                        ::tnt::util::container::applyPermutation(_diagonals, _sort_order);
+                        const std::vector<size_t> &inv = ::tnt::util::container::invPermutation(_sort_order);
 
-                    // calculate the mapping from the reordered Diagonals to the result from it
-                    // (that means just apply the permutation to the image of the map)
-                    for (const auto &[diagonal_pos, result_pos] : _join._diagonal2result_pos) {
-                        _reorderedDiagonals2result_pos[inv[diagonal_pos]] = result_pos;
+                        // calculate the mapping from the reordered Diagonals to the result from it
+                        // (that means just apply the permutation to the image of the map)
+                        for (const auto &[diagonal_pos, result_pos] : _join._diagonal2result_pos) {
+                            _reorderedDiagonals2result_pos[inv[diagonal_pos]] = result_pos;
+                        }
+                        // find the first result
+                        _current_key_part = _diagonals[0].first();
+                        findNextMatch();
+                    } else {
+                        _ended = true;
                     }
-                    // find the first result
-                    _current_key_part = _diagonals[0].first();
-                    findNextMatch();
                 }
             }
 
@@ -137,21 +141,29 @@ namespace tnt::tensor::hypertrie {
              */
             inline void findNextMatch() {
                 // check if the end was reached
-                continue_outer_loop:
+                bool found;
+                // _current_key_part is increased if containsAndUpdateLower returns false
                 while (_current_key_part <= _last_key_part) {
+                    found = true;
                     // iterate all but the first diagonal
                     for (size_t i = 1; i < _diagonals.size(); ++i) {
                         BoolHyperTrie::DiagonalView &diagonal = _diagonals[i];
                         // check if the diagonal contains the current key
                         if (not diagonal.containsAndUpdateLower(_current_key_part)) {
+                            if (diagonal.size() == 0) {
+                                _ended = true;
+                                return;
+                            }
                             // if not, update the current key by searching the next
                             // greaterEqual key to the new lower bound of this diagonal from the first diagonal
                             _current_key_part = _diagonals[0].first(diagonal.lower());
                             // and start over
-                            goto continue_outer_loop;
+                            found = false;
+                            break;
                         }
                     }
-                    return;
+                    if (found)
+                        return;
                 }
                 // the end was reached
                 _ended = true;
@@ -175,19 +187,13 @@ namespace tnt::tensor::hypertrie {
                 if (_join._result_key_pos)
                     key[*_join._result_key_pos] = _current_key_part;
 
-                return {{result},
-                        {key}};
+                return {{result},{key}};
             }
 
 
             inline bool operator==(const iterator &rhs) const {
                 // careful, it doesn't check if it is tested against another iterator for the same Join.
-                if(((rhs._ended and _ended) or
-                    (rhs._current_key_part == _current_key_part) or
-                    (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part)))
-                return ((rhs._ended and _ended) or
-                        (rhs._current_key_part == _current_key_part) or
-                        (_current_key_part > _last_key_part and rhs._current_key_part > rhs._last_key_part));
+                return (_ended and rhs._ended);
             }
 
             inline bool operator!=(const iterator &rhs) const {

@@ -766,6 +766,10 @@ namespace tnt::tensor::hypertrie {
                 return _size;
             }
 
+            void updateSize() {
+                _size = _max_ind - _min_ind + 1;
+            }
+
             /*
              */
         private:
@@ -901,9 +905,15 @@ namespace tnt::tensor::hypertrie {
                                                               view._max_ind);
                 if (ind != view._max_ind + 1) {
                     view._min = view._leaf_edges->keyByInd(ind);
-                    view._min_ind = ind;
-                    view._size = view._max_ind - ind + 1;
-                    return view._min == key_part;
+                    if (view._min == key_part) {
+                        view._min_ind = ind;
+                        view.updateSize();
+                        return true;
+                    } else {
+                        view._min_ind = ind + 1;
+                        view.updateSize();
+                        return false;
+                    }
                 } else {
                     view._min = KEY_PART_MAX;
                     view._size = 0;
@@ -919,8 +929,7 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
-                                                                view._max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind);
 
 
                 if (ind != view._max_ind + 1) {
@@ -930,22 +939,19 @@ namespace tnt::tensor::hypertrie {
                         view._result = child->getDiagonal(view._positions, current_key_part);
                         if (view._result != nullptr) {
                             view._min_ind = ind;
-                            view._size = view._max_ind - ind + 1;
+                            view.updateSize();
                             view._min = current_key_part;
                             return true;
                         }
                     }
-                }
-                if (ind != view._max_ind + 1) {
-
                     view._min_ind = ind + 1;
-                    view._size = view._max_ind - view._min_ind + 1;
-                    view._min = childrens_keys.at(ind);
+                    view.updateSize();
+                    return false;
                 } else {
                     view._size = 0;
-                    return KEY_PART_MAX;
+                    view._min = KEY_PART_MAX;
+                    return false;
                 }
-                return false;
             }
 
             static bool containsAndUpdateLower_III(DiagonalView &view, const key_part_t &key_part) {
@@ -956,8 +962,7 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind,
-                                                                view._max_ind);
+                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind);
 
 
                 if (ind != view._max_ind + 1) {
@@ -966,22 +971,19 @@ namespace tnt::tensor::hypertrie {
                         const BoolHyperTrie *child = childrens_values.at(ind);
                         if (child->getFullDiagonal(current_key_part)) {
                             view._min_ind = ind;
-                            view._size = view._max_ind - ind + 1;
+                            view.updateSize();
                             view._min = current_key_part;
                             return true;
                         }
                     }
-                }
-                if (ind != view._max_ind + 1) {
-
                     view._min_ind = ind + 1;
-                    view._size = view._max_ind - view._min_ind + 1;
-                    view._min = childrens_keys.at(ind);
+                    view.updateSize();
+                    return false;
                 } else {
                     view._size = 0;
-                    view._min = view._max;
+                    view._min = KEY_PART_MAX;
+                    return false;
                 }
-                return false;
             }
 
 
@@ -1010,6 +1012,10 @@ namespace tnt::tensor::hypertrie {
                 if (view._leaf_edges->keyByInd(view._min_ind) != min) {
                     view._min_ind = std::get<1>(
                             view._leaf_edges->containsAndInd(min, view._min_ind, view._max_ind));;
+                    if (view._min_ind > view._max_ind){
+                        view._size = 0;
+                        return;
+                    }
                     view._min = view._leaf_edges->keyByInd(view._min_ind);
                     min = view._min;
                 }
@@ -1017,11 +1023,15 @@ namespace tnt::tensor::hypertrie {
                 if (view._leaf_edges->keyByInd(view._max_ind) != max) {
                     view._max_ind = std::get<1>(
                             view._leaf_edges->containsAndIndLower(max, view._min_ind, view._max_ind));
+                    if (view._min_ind > view._max_ind){
+                        view._size = 0;
+                        return;
+                    }
                     view._max = view._leaf_edges->keyByInd(view._max_ind);
                     max = view._max;
                 }
                 if (min <= max) {
-                    view._size = max - min;
+                    view.updateSize();
                 } else {
                     view._size = 0;
                 }
@@ -1030,7 +1040,11 @@ namespace tnt::tensor::hypertrie {
             static void setMinMax_III(DiagonalView &view, key_part_t &min, key_part_t &max) {
                 // calc min
                 if (view._inner_edges->keyByInd(view._min_ind) != min) {
-                    view._min_ind = std::get<1>(view._inner_edges->containsAndInd(min, view._min_ind, view._max_ind));;
+                    view._min_ind = std::get<1>(view._inner_edges->containsAndInd(min, view._min_ind, view._max_ind));
+                    if (view._min_ind > view._max_ind){
+                        view._size = 0;
+                        return;
+                    }
                     view._min = view._inner_edges->keyByInd(view._min_ind);
                     min = view._min;
                 }
@@ -1038,11 +1052,15 @@ namespace tnt::tensor::hypertrie {
                 if (view._inner_edges->keyByInd(view._max_ind) != max) {
                     view._max_ind = std::get<1>(
                             view._inner_edges->containsAndIndLower(max, view._min_ind, view._max_ind));
+                    if (view._min_ind > view._max_ind){
+                        view._size = 0;
+                        return;
+                    }
                     view._max = view._inner_edges->keyByInd(view._max_ind);
                     max = view._max;
                 }
                 if (min <= max) {
-                    view._size = max - min;
+                    view.updateSize();
                 } else {
                     view._size = 0;
                 }

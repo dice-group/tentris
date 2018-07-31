@@ -81,7 +81,7 @@ namespace tnt::util::container {
   */
         inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
             const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
-            if (ind == this->_keys.size() or key != this->_keys[ind]) {
+            if (ind == (max + 1) or key != this->_keys[ind]) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
@@ -99,7 +99,7 @@ namespace tnt::util::container {
          */
         inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
             const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
-            if (ind == this->_keys.size() or key != this->_keys[ind]) {
+            if (ind == (max + 1) or key != this->_keys[ind]) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);
                 } else {

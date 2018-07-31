@@ -94,10 +94,17 @@ namespace tnt::util::container {
     template<typename T>
     inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value, size_t low, size_t high) {
         if (low > high)
-            return sorted_vector.size();
-        else if (low == high)
-            return low;
-        else {
+            return high + 1;
+        if (low == high) {
+//            if (low >= sorted_vector.size())
+//                return high + 1;
+            if (sorted_vector.at(low) <= value) {
+                return high;
+            } else {
+                return high + 1;
+            }
+
+        } else {
             size_t size = high - low + 1;
             size_t probe;
 
@@ -159,3 +166,4 @@ namespace tnt::util::container {
 }
 
 #endif //SPARSETENSOR_CONTAINER_BINARYSEARCH
+
