@@ -27,8 +27,7 @@ namespace tnt::store {
                 return *(_original._id2term.at(index));
             }
 
-            TermStore &inv()
-            noexcept {
+            TermStore &inv() noexcept {
                 return _original;
             }
 
@@ -105,6 +104,10 @@ namespace tnt::store {
         }
 
         RevTermStore &inv() {
+            return _inverse;
+        }
+
+        const RevTermStore &inv() const {
             return _inverse;
         }
 

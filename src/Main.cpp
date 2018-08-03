@@ -1,5 +1,6 @@
 
 #include "tnt/store/TripleStore.hpp"
+#include "tnt/http/StoreInstance.hpp"
 #include "tnt/http/SPARQLEndpoint.hpp"
 #include "config/InitialConfig.cpp"
 #include <experimental/filesystem>

@@ -38,6 +38,10 @@ namespace tnt::store {
             return termIndex;
         }
 
+        const TermStore &getTermIndex() const {
+            return termIndex;
+        }
+
         void loadRDF(std::string file_path);
 
         void add(std::tuple<std::string, std::string, std::string> triple) {
