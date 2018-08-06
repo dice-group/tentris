@@ -9,6 +9,9 @@
 
 #include "tnt/store/TripleStore.hpp"
 
+#include <iostream>
+#include <exception>
+
 namespace tnt::http {
     namespace {
         using Variable = tnt::store::sparql::Variable;
@@ -16,8 +19,31 @@ namespace tnt::http {
         using namespace tnt::tensor::einsum::operators;
     };
 
+
+    class TimeoutException : public std::exception {
+        ulong _number_of_results;
+        const std::string _what;
+    public:
+        explicit TimeoutException(const ulong &number_of_results = 0)
+                : std::exception{},
+                  _number_of_results{number_of_results},
+                  _what{std::string{"Timed out after writing "} + std::to_string(_number_of_results).c_str() +
+                        " entries"} {}
+
+        const char *what() const throw() {
+            return _what.c_str();
+        }
+    };
+
     template<typename VALUE_TYPE>
-    void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> &results, ResponseStream &stream, const tnt::store::TripleStore &store) {
+    void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> &results, ResponseStream &stream,
+                    const tnt::store::TripleStore &store,
+                    const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
+        ulong result_count = 0;
+        if (time_out < std::chrono::high_resolution_clock::now()) {
+            stream << Pistache::Http::ends;
+            throw TimeoutException{result_count};
+        }
         stream << "{\"head\":{\"vars\":[";
         bool firstTime = true;
         for (const auto &var : vars) {
@@ -30,6 +56,7 @@ namespace tnt::http {
         }
         stream << "]},\"results\":{\"bindings\":[";
         bool firstResult = true;
+
         for (const auto &result : results) {
             const Key_t &key = getKey<VALUE_TYPE>(result);
             std::stringstream json_result{};
@@ -74,11 +101,16 @@ namespace tnt::http {
 
             std::string json_result_binding = json_result.str();
             for ([[maybe_unused]]  const auto &c : range(getCount<VALUE_TYPE>(result))) {
+                if (++result_count % 10 == 0 and time_out < std::chrono::high_resolution_clock::now()) {
+                    stream << Pistache::Http::ends;
+                    throw TimeoutException{result_count};
+                }
                 if (firstResult) {
                     firstResult = false;
                     stream << json_result_binding.c_str();
-                } else
+                } else {
                     stream << "," << json_result_binding.c_str();
+                }
             }
         }
         stream << "]}}\n" << Pistache::Http::ends;

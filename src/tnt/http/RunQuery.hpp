@@ -7,6 +7,8 @@
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "JsonSerializer.hpp"
 
+#include <chrono>
+
 namespace tnt::http {
 
     namespace {
@@ -18,19 +20,20 @@ namespace tnt::http {
         using Code = Pistache::Http::Code;
     };
 
-    void runQuery(ResponseWriter &response, const ParsedSPARQL &sparqlQuery, tnt::store::TripleStore &store) {
+    void runQuery(ResponseWriter &response, const ParsedSPARQL &sparqlQuery, tnt::store::TripleStore &store,
+                  const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
         const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
         switch (sparqlQuery.getSelectModifier()) {
             case SelectModifier::NONE: {
                 yield_pull<INT_VALUES> results = store.query<INT_VALUES>(sparqlQuery);
                 auto stream = response.stream(Code::Ok);
-                stream_out<INT_VALUES>(vars, results, stream, store);
+                stream_out<INT_VALUES>(vars, results, stream, store, time_out);
                 break;
             }
             case SelectModifier::DISTINCT: {
                 yield_pull<BOOL_VALUES> results = store.query<BOOL_VALUES>(sparqlQuery);
                 auto stream = response.stream(Code::Ok);
-                stream_out<BOOL_VALUES>(vars, results, stream, store);
+                stream_out<BOOL_VALUES>(vars, results, stream, store, time_out);
                 break;
             }
             default:

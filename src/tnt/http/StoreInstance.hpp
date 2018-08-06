@@ -5,4 +5,6 @@
 
 tnt::store::TripleStore *_store;
 
+uint __timeout;
+
 #endif //TNT_STOREINSTANCE_HPP
