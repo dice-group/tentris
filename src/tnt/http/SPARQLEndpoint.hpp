@@ -18,7 +18,7 @@
 #include "tnt/http/JsonSerializer.hpp"
 #include "tnt/http/RunQuery.hpp"
 #include "tnt/http/JsonSerializer.hpp"
-
+// #include <sys/resource.h> // for executing system commands
 
 namespace tnt::http {
 
@@ -46,7 +46,12 @@ namespace tnt::http {
         SPARQLEndpoint() {}
 
         void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
-            response.timeoutAfter(std::chrono::seconds(__timeout));
+            const uint oc = open_connections;
+//            const std::string fdCountStr = std::string{"ls -1 /proc/"} + std::to_string(getpid()) + "/fd | wc -l";
+//            std::cout << "command: " << fdCountStr << std::endl;
+//            std::cout << "open connections before request: " << oc << std::endl;
+//            std::cout << "open files: " << std::flush;
+//            std::system(fdCountStr.c_str());
             if (open_connections > 100) {
                 response.send(Code::Service_Unavailable);
                 return;
@@ -84,7 +89,11 @@ namespace tnt::http {
                             } catch (const TimeoutException exc) {
                                 response.timeoutAfter(std::chrono::seconds(0));
                                 std::cout << exc.what() << std::endl;
-                                // open_connections is set by onTimeout
+                                response.headers().add<SPARQLJSON>();
+                                response.send(Http::Code::Request_Timeout);
+                                --open_connections;
+                                const uint oc = open_connections;
+                                std::cout << "open connections: " << oc;
                                 return;
                             } catch (const std::exception &exc) {
                                 // if the execution of the query should fail return an internal server error
@@ -111,15 +120,6 @@ namespace tnt::http {
                 std::cout << "open connections: " << oc;
                 return;
             }
-        }
-
-        void onTimeout(const Http::Request &req, Http::ResponseWriter response) {
-            response.headers().add<SPARQLJSON>();
-            response.send(Http::Code::Request_Timeout);
-            --open_connections;
-            const uint oc = open_connections;
-            std::cout << "open connections: " << oc;
-            return;
         }
 
     };
