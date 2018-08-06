@@ -15,7 +15,7 @@
 #include <iostream>
 #include <queue>
 #include <optional>
-
+#include <exception>
 
 namespace tnt::store::sparql {
 
@@ -27,6 +27,26 @@ namespace tnt::store::sparql {
         NONE,
         DISTINCT,
         REDUCE
+    };
+
+    class LexerErrorListener : public BaseErrorListener {
+    public:
+        LexerErrorListener() {}
+
+        virtual void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line, size_t charPositionInLine,
+                                 const std::string &msg, std::exception_ptr e) override {
+            throw std::invalid_argument{msg};
+        }
+    };
+
+    class ParserErrorListener : public BaseErrorListener {
+    public:
+        ParserErrorListener() {}
+
+        virtual void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line, size_t charPositionInLine,
+                                 const std::string &msg, std::exception_ptr e) override {
+            throw std::invalid_argument{msg};
+        }
     };
 
     class ParsedSPARQL {
@@ -57,8 +77,21 @@ namespace tnt::store::sparql {
                 _input{_str_stream},
                 _lexer{&_input},
                 _tokens{&_lexer},
-                _parser{&_tokens},
-                _query{_parser.query()} {
+                _parser{&_tokens} {
+            // replace the error handler
+            LexerErrorListener lexerErrorListener = LexerErrorListener{};
+            _lexer.removeErrorListeners();
+            _lexer.addErrorListener(&lexerErrorListener);
+
+            ParserErrorListener parserErrorListener = ParserErrorListener{};
+            _parser.removeParseListeners();
+            _parser.removeErrorListeners();
+            _parser.addErrorListener(&parserErrorListener);
+            // check that _query is present
+            _query = _parser.query();
+            if (_query == nullptr)
+                throw std::invalid_argument("The query was not parsable");
+            const bool b = _parser.getBuildParseTree();
             if (_query) {
                 const std::vector<SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
                 for (auto &decl : prefixDecl)
@@ -165,7 +198,7 @@ namespace tnt::store::sparql {
             return _sparql_str;
         }
 
-        auto getSubscript() const -> const tensor::einsum::Subscript &{
+        auto getSubscript() const -> const tensor::einsum::Subscript & {
             return _subscript;
         }
 

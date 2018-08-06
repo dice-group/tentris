@@ -58,7 +58,6 @@ namespace tnt::http {
                 // only answer sparql querys to GET /sparql
                 if (request.method() == Method::Get) {
                     if (request.resource().compare("/sparql") == 0) {
-                        response.headers().add<SPARQLJSON>();
                         const Optional<std::string> &hasQuery = request.query().get("query");
                         // check if there is actually an query
                         if (not hasQuery.isEmpty()) {
@@ -66,12 +65,22 @@ namespace tnt::http {
                             const std::string sparqlQueryStr = urlDecode(hasQuery.get());
 
                             try { // execute the query
-                                const ParsedSPARQL &sparqlQuery = _store->parseSPARQL(sparqlQueryStr);
-                                const std::chrono::time_point<std::chrono::high_resolution_clock> time_out =
-                                        std::chrono::high_resolution_clock::now() + std::chrono::seconds(__timeout);
-                                runQuery(response, sparqlQuery, *_store, time_out);
-                                --open_connections;
-                                return;
+                                try {
+                                    const ParsedSPARQL &sparqlQuery = _store->parseSPARQL(sparqlQueryStr);
+                                    response.headers().add<SPARQLJSON>();
+                                    const std::chrono::time_point<std::chrono::high_resolution_clock> time_out =
+                                            std::chrono::high_resolution_clock::now() + std::chrono::seconds(__timeout);
+                                    runQuery(response, sparqlQuery, *_store, time_out);
+                                    --open_connections;
+                                    return;
+                                } catch (const std::invalid_argument &exc) {
+                                    --open_connections;
+                                    response.send(Code::Bad_Request, "Could not parse the requested query.");
+                                    std::cout << "unparsable query: \n" << sparqlQueryStr << "\n";
+                                    const uint oc = open_connections;
+                                    std::cout << "open connections: " << oc << std::endl;
+                                    return;
+                                }
                             } catch (const TimeoutException exc) {
                                 response.timeoutAfter(std::chrono::seconds(0));
                                 std::cout << exc.what() << std::endl;

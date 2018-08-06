@@ -71,10 +71,17 @@ namespace tnt::store {
             return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
 
+        /**
+         *
+         * @param sparql
+         * @return
+         * @throws std::argument_exception if the sparql string is not parsable.
+         */
         const ParsedSPARQL &parseSPARQL(const std::string &sparql) {
             try {
                 return *parsed_query_cache.at(sparql).get();
             } catch (...) {
+                // may throw if sparql string is not parsable
                 auto inserted = parsed_query_cache.emplace(sparql,
                                                            std::unique_ptr<ParsedSPARQL>{new ParsedSPARQL{sparql}});
                 return *inserted.first->second.get();
@@ -161,8 +168,8 @@ namespace tnt::store {
                                           ? std::optional<std::string>{{(char *) (lang_node->buf),
                                                                                size_t(lang_node->n_chars)}}
                                           : std::nullopt;
-            return std::unique_ptr<Term>{
-                    new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
+        return std::unique_ptr<Term>{
+                new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
     };
 
     auto serd_callback(void *handle, SerdStatementFlags flags, const SerdNode *graph, const SerdNode *subject,
