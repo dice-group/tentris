@@ -13,7 +13,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
 # find boost
-find_package(Boost  REQUIRED COMPONENTS context)
+#SET(Boost_USE_STATIC_LIBS ON)
+ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
+find_package(Boost  REQUIRED COMPONENTS context system log thread log_setup)
 IF (Boost_FOUND)
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 ENDIF()
@@ -66,6 +68,11 @@ link_libraries(
         antlr4_interface
         Boost::boost # header only boost libraries
         boost_context
+        boost_system
+        boost_thread
+        boost_log_setup
+        boost_log
+        ${Boost_LOG_LIBRARY}
         ${Pistache_LIBRARY}
 )
 
