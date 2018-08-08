@@ -12,16 +12,24 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
-
+#include <boost/log/support/date_time.hpp>
 
 void init() {
     boost::log::add_file_log
             (
                     boost::log::keywords::file_name = "TNT_%N.log",
                     boost::log::keywords::rotation_size = 10 * 1024 * 1024,
-                    boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0,
-                                                                                                                0),
-                    boost::log::keywords::format = "%TimeStamp% <%Severity%>: %Message%",
+                    boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
+                    boost::log::keywords::format = (
+                            boost::log::expressions::stream
+                                    << std::setw(8) << std::setfill('0')
+                                    << boost::log::expressions::attr< unsigned int >("LineID")
+                                    << "\t"
+                                    << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp","%Y-%m-%d_%H:%M:%S.%f")
+                                    << "\t: <" << boost::log::trivial::severity
+                                    << "> \t"
+                                    << boost::log::expressions::smessage
+                    ),
                     boost::log::keywords::auto_flush = true
             );
 //

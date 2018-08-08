@@ -19,7 +19,7 @@ namespace tnt::config {
     class InitialConfig {
     private:
 //        todo Check const is possible or not?
-        /*const */boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
+//        boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
     public:
         mutable uint16_t port = 9080;
         mutable std::string dataBaseFile{};
@@ -27,7 +27,7 @@ namespace tnt::config {
 
         InitialConfig(int argc, char *argv[]) {
             const std::string &argValues = ArrayHelper::ArrayToString(argv, argc);
-            logDebug(lg, "Called", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
+            logDebug("Called", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
                      argValues);
 
             int opt = 0;
@@ -38,8 +38,8 @@ namespace tnt::config {
                     case 'p': {
                         const int raw_port_number = atoi(optarg);
                         if (0 > raw_port_number or raw_port_number > 65535) {
-                            logDebug(lg, "Port must be in range [0,65535].");
-                            logDebug(lg, "Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
+                            logDebug("Port must be in range [0,65535].");
+                            logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
                                      GET_VARIABLE_NAME(argv), argValues);
                             exit(EXIT_FAILURE);
                         }
@@ -59,14 +59,14 @@ namespace tnt::config {
                     }
                         break;
                     default: {
-                        logDebug(lg, "Port must be in range [0,65535].");
-                        logDebug(lg, "Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
+                        logDebug("Port must be in range [0,65535].");
+                        logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
                                  GET_VARIABLE_NAME(argv), argValues);
                         exit(EXIT_FAILURE);
                     }
                 }
             }
-            logDebug(lg, "Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
+            logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
                      argValues);
         }
     };
