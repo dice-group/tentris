@@ -17,9 +17,6 @@ namespace tnt::config {
     };
 
     class InitialConfig {
-    private:
-//        todo Check const is possible or not?
-//        boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
     public:
         mutable uint16_t port = 9080;
         mutable std::string dataBaseFile{};
