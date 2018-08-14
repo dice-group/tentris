@@ -13,10 +13,12 @@
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
-
+#include "tnt/store/ParsedSPARQLCache.hpp"
+#include "tnt/store/QueryExecutionPackage.hpp"
 
 namespace tnt::store {
     namespace {
+        using namespace tnt::store::cache;
         using namespace tnt::util::types;
         using namespace tensor::einsum;
         using namespace tensor::einsum::operators;
@@ -25,15 +27,19 @@ namespace tnt::store {
         using Operands =  typename std::vector<BoolHyperTrie *>;
         using key_part_t = tnt::util::types::key_part_t;
     }
+
+
     class TripleStore {
-        mutable std::map<std::string, std::unique_ptr<ParsedSPARQL>> parsed_query_cache{};
-        mutable std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> distinct_operator_tree_cache{};
-        mutable std::map<std::string, std::unique_ptr<Einsum<BOOL_VALUES>>> default_operator_tree_cache{};
 
         TermStore termIndex{};
         BoolHyperTrie trie{3};
+        mutable QueryCache query_cache;
 
     public:
+        explicit TripleStore(uint cache_capacity = 1000) :
+                query_cache{trie, termIndex, cache_capacity} {}
+
+
         TermStore &getTermIndex() {
             return termIndex;
         }
@@ -71,23 +77,6 @@ namespace tnt::store {
             return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
 
-        /**
-         *
-         * @param sparql
-         * @return
-         * @throws std::argument_exception if the sparql string is not parsable.
-         */
-        const ParsedSPARQL &parseSPARQL(const std::string &sparql) {
-            try {
-                return *parsed_query_cache.at(sparql).get();
-            } catch (...) {
-                // may throw if sparql string is not parsable
-                auto inserted = parsed_query_cache.emplace(sparql,
-                                                           std::unique_ptr<ParsedSPARQL>{new ParsedSPARQL{sparql}});
-                return *inserted.first->second.get();
-            }
-        }
-
         template<typename RETURN_TYPE>
         Einsum<RETURN_TYPE> &getOperatorTree(const std::string &sparql, const Subscript &subscript,
                                              std::vector<SliceKey_t> &slice_keys) const {
@@ -107,43 +96,9 @@ namespace tnt::store {
         std::map<std::string, std::unique_ptr<Einsum<RETURN_TYPE>>> &getOperatorTreeCache() const;
 
 
-        template<typename RETURN_TYPE>
-        yield_pull<RETURN_TYPE> query(const ParsedSPARQL &sparql_) {
-            const ParsedSPARQL &sparql = parseSPARQL(sparql_.getSparqlStr());
-            std::vector<std::vector<std::optional<Term>>> op_keys = sparql.getOperandKeys();
-            std::vector<SliceKey_t> slice_keys{};
-            for (const auto &op_key : op_keys) {
-                SliceKey_t slice_key(3, std::nullopt);
-                bool no_slices = true;
-                for (const auto &[pos, op_key_part] : enumerate(op_key))
-                    if (op_key_part.has_value())
-                        try {
-                            key_part_t ind = termIndex.at(*op_key_part);
-                            slice_key[pos] = {ind};
-                        } catch (...) { // a keypart was not in the index so the result is zero anyways.
-                            return yield_pull<RETURN_TYPE>(
-                                    [&]([[maybe_unused]]yield_push<RETURN_TYPE> &yield) { return; });
-                        }
-                    else
-                        no_slices = false;
-
-                if (no_slices) {
-                    if (not std::get<bool>(trie.get(slice_key))) // one triple without variables was not in storeF
-
-                        return yield_pull<RETURN_TYPE>(
-                                [&]([[maybe_unused]]yield_push<RETURN_TYPE> &yield) { return; });
-                } else
-                    slice_keys.push_back(slice_key);
-            }
-            const Subscript &subscript = sparql.getSubscript();
-            const Einsum<RETURN_TYPE> &einsumOp
-                    = getOperatorTree<RETURN_TYPE>(sparql.getSparqlStr(), subscript, slice_keys);
-
-            return yield_pull<RETURN_TYPE>(boost::bind(&Einsum<RETURN_TYPE>::get, &einsumOp, _1));
-            // TODO: implement cross product
+        std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
+            return query_cache.get(sparql);
         }
-
-
     };
 
     auto getBNode(const SerdNode *node) -> std::unique_ptr<Term> {
@@ -223,14 +178,5 @@ namespace tnt::store {
         serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
     }
 
-    template<>
-    std::map<std::string, std::unique_ptr<Einsum<INT_VALUES>>> &TripleStore::getOperatorTreeCache() const {
-        return distinct_operator_tree_cache;
-    }
-
-    template<>
-    std::map<std::string, std::unique_ptr<Einsum<BOOL_VALUES>>> &TripleStore::getOperatorTreeCache() const {
-        return default_operator_tree_cache;
-    }
 };
 #endif //TNT_STORE_TRIPLESTORE

@@ -105,6 +105,11 @@ namespace tnt::tensor::einsum::operators {
         }
 
     public:
+        yield_pull<RESULT_TYPE> get() const {
+            return yield_pull<RESULT_TYPE>(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1));
+        }
+
+    private:
         void get(yield_push<RESULT_TYPE> &yield) const {
             if (not _operands_generated) {
                 _operands_generated = true;
@@ -134,6 +139,7 @@ namespace tnt::tensor::einsum::operators {
             }
         }
 
+    public:
         class iterator {
             bool _ended;
             const std::unique_ptr<yield_pull<RESULT_TYPE>> _results;
@@ -259,7 +265,7 @@ namespace tnt::tensor::einsum::operators {
             }
         } else { // there are no steps left
             if (not operands.empty()) {
-                if (Einsum<BOOL_VALUES>::contract<bool>(operands,step)) {
+                if (Einsum<BOOL_VALUES>::contract<bool>(operands, step)) {
                     // there are lonely and/or unique labels left.
                     yield(result_key);
                 }

@@ -15,9 +15,12 @@
 #include <c++/8/charconv>
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include <chrono>
+#include <tnt/store/ParsedSPARQLCache.hpp>
 #include "tnt/http/JsonSerializer.hpp"
 #include "tnt/http/RunQuery.hpp"
 #include "tnt/http/JsonSerializer.hpp"
+#include "tnt/store/ParsedSPARQLCache.hpp"
+
 // #include <sys/resource.h> // for executing system commands
 
 namespace tnt::http {
@@ -29,6 +32,7 @@ namespace tnt::http {
         using namespace tensor::einsum;
         using namespace tensor::einsum::operators;
         using namespace tnt::store::sparql;
+        using namespace tnt::store::cache;
         using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
         using Operands =  typename std::vector<BoolHyperTrie *>;
         using key_part_t = tnt::util::types::key_part_t;
@@ -71,11 +75,11 @@ namespace tnt::http {
 
                             try { // execute the query
                                 try {
-                                    const ParsedSPARQL &sparqlQuery = _store->parseSPARQL(sparqlQueryStr);
+                                    const std::shared_ptr<QueryExecutionPackage> query_package = _store->query(sparqlQueryStr);
                                     response.headers().add<SPARQLJSON>();
                                     const std::chrono::time_point<std::chrono::high_resolution_clock> time_out =
                                             std::chrono::high_resolution_clock::now() + std::chrono::seconds(__timeout);
-                                    runQuery(response, sparqlQuery, *_store, time_out);
+                                    runQuery(response, query_package, *_store, time_out);
                                     --open_connections;
                                     return;
                                 } catch (const std::invalid_argument &exc) {

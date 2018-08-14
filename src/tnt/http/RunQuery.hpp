@@ -6,6 +6,7 @@
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "JsonSerializer.hpp"
+#include "tnt/store/QueryExecutionPackage.hpp"
 
 #include <chrono>
 
@@ -16,24 +17,26 @@ namespace tnt::http {
         using ResponseWriter = Pistache::Http::ResponseWriter;
         using Variable = tnt::store::sparql::Variable;
         using SelectModifier =  tnt::store::sparql::SelectModifier;
+        using namespace tnt::store::cache;
         using namespace tnt::tensor::einsum::operators;
         using Code = Pistache::Http::Code;
     };
 
-    void runQuery(ResponseWriter &response, const ParsedSPARQL &sparqlQuery, tnt::store::TripleStore &store,
+    void runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
+                  tnt::store::TripleStore &store,
                   const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
+
+        const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
         const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
         switch (sparqlQuery.getSelectModifier()) {
             case SelectModifier::NONE: {
-                yield_pull<INT_VALUES> results = store.query<INT_VALUES>(sparqlQuery);
                 auto stream = response.stream(Code::Ok);
-                stream_out<INT_VALUES>(vars, results, stream, store, time_out);
+                stream_out<INT_VALUES>(vars, query_package->getRegularGenerator(), stream, store, time_out);
                 break;
             }
             case SelectModifier::DISTINCT: {
-                yield_pull<BOOL_VALUES> results = store.query<BOOL_VALUES>(sparqlQuery);
                 auto stream = response.stream(Code::Ok);
-                stream_out<BOOL_VALUES>(vars, results, stream, store, time_out);
+                stream_out<BOOL_VALUES>(vars, query_package->getDistinctGenerator(), stream, store, time_out);
                 break;
             }
             default:

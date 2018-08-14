@@ -5,9 +5,11 @@
 #include <memory>
 #include <list>
 #include <mutex>
+#include <exception>
 
 template<typename K, typename V>
 class SycronizedFactory {
+protected:
     struct Entry {
         Entry(const K &key, const V &value)
                 : key{key}, value{value} {}
@@ -80,7 +82,6 @@ class SycronizedFactory {
     }
 
 
-public:
     /**
      * This method constructs a value from a given key. This must be implemented manually for every
      * specialization of this template. <n />
@@ -89,8 +90,9 @@ public:
      * @param key key to construct value for
      * @return pointer to newly constructed value. The caller is in care of destructing the value.
      */
-    static V *construct(const K &key);
+    V *construct(const K &key);
 
+public:
     SycronizedFactory(uint capacity = 500) : _capacity{capacity} {}
 
     size_t size() const {
@@ -103,17 +105,21 @@ public:
      * after calling this method. So keep its std::shared_pointer or it may be destructed.
      * @param key key to the resource
      * @return the resource for the key
+     * @throw std::invalid_argument it was not possible to construct a value for the key
      */
     std::shared_ptr<V> get(const K &key) {
         std::lock_guard{_cache_mutex};
 
-        if (const auto &[contains, element_p] = unsynced_contains(key); contains) {
+        if (auto &&[contains, element_p] = unsynced_contains(key); contains) {
             unsafe_makeLatest(element_p);
             return (*element_p)->value;
         } else {
             if (_lru_list.size() == _capacity)
                 unsynced_popLeastRecentlyUsed();
-            _lru_list.push_front({key, std::make_shared(construct(key))});
+            V *const new_value = construct(key);
+            if (new_value == nullptr)
+                throw std::invalid_argument("Key was not valid.");
+            _lru_list.push_front({key, std::make_shared(new_value)});
             const Entry_p entry_pos = _lru_list.begin();
             _key_to_pos[entry_pos->key] = entry_pos;
             return entry_pos->value;

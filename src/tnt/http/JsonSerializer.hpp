@@ -36,7 +36,7 @@ namespace tnt::http {
     };
 
     template<typename VALUE_TYPE>
-    void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> &results, ResponseStream &stream,
+    void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> results, ResponseStream &stream,
                     const tnt::store::TripleStore &store,
                     const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
         ulong result_count = 0;

@@ -305,7 +305,6 @@ namespace tnt::tensor::hypertrie {
          * not set resulting in a slice.
          * @return a sub BoolHyperTrie or a value depending if the key contains slices.
          */
-        [[deprecated]]
         inline std::variant<BoolHyperTrie *, bool> get(const SliceKey_t &key) const {
             const auto slice_count = std::count(key.begin(), key.end(), std::nullopt);
 
