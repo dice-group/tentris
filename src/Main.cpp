@@ -14,7 +14,7 @@
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/support/date_time.hpp>
 
-void init() {
+void init_logging() {
     boost::log::add_file_log
             (
                     boost::log::keywords::file_name = "TNT_%N.log",
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     using namespace boost::log::trivial;
     namespace fs = std::experimental::filesystem;
 
-    init();
+    init_logging();
     boost::log::add_common_attributes();
 
     InitialConfig initialConfig{argc, argv};

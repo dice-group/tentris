@@ -15,13 +15,8 @@
 #include <c++/8/charconv>
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include <chrono>
-#include <tnt/store/ParsedSPARQLCache.hpp>
 #include "tnt/http/JsonSerializer.hpp"
 #include "tnt/http/RunQuery.hpp"
-#include "tnt/http/JsonSerializer.hpp"
-#include "tnt/store/ParsedSPARQLCache.hpp"
-
-// #include <sys/resource.h> // for executing system commands
 
 namespace tnt::http {
 
@@ -50,12 +45,6 @@ namespace tnt::http {
         SPARQLEndpoint() {}
 
         void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
-            const uint oc = open_connections;
-//            const std::string fdCountStr = std::string{"ls -1 /proc/"} + std::to_string(getpid()) + "/fd | wc -l";
-//            std::cout << "command: " << fdCountStr << std::endl;
-//            std::cout << "open connections before request: " << oc << std::endl;
-//            std::cout << "open files: " << std::flush;
-//            std::system(fdCountStr.c_str());
             if (open_connections > 100) {
                 response.send(Code::Service_Unavailable);
                 return;

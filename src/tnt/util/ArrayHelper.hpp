@@ -12,7 +12,7 @@ public:
         for (int i = 0; i < len; ++i)
             oss << (i == 0 ? "" : separator) << array[i];
         std::string ret = oss.str();
-        return std::move(ret);
+        return ret;
     }
 };
 
