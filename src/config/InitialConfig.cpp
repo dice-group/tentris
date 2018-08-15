@@ -1,8 +1,11 @@
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <getopt.h>
+#include <sstream>
+#include "tnt/util/ArrayHelper.hpp"
+#include "tnt/util/LogHelper.hpp"
 
 namespace tnt::config {
     namespace {
@@ -14,13 +17,16 @@ namespace tnt::config {
     };
 
     class InitialConfig {
-
     public:
         mutable uint16_t port = 9080;
         mutable std::string dataBaseFile{};
         mutable uint timeout = 180;
 
         InitialConfig(int argc, char *argv[]) {
+            const std::string &argValues = ArrayHelper::ArrayToString(argv, argc);
+            logDebug("Called", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
+                     argValues);
+
             int opt = 0;
             int long_index = 0;
 
@@ -29,7 +35,9 @@ namespace tnt::config {
                     case 'p': {
                         const int raw_port_number = atoi(optarg);
                         if (0 > raw_port_number or raw_port_number > 65535) {
-                            printf("Port must be in range [0,65535].");
+                            logDebug("Port must be in range [0,65535].");
+                            logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
+                                     GET_VARIABLE_NAME(argv), argValues);
                             exit(EXIT_FAILURE);
                         }
                         port = uint16_t(raw_port_number);
@@ -47,11 +55,16 @@ namespace tnt::config {
                         }
                     }
                         break;
-                    default:
-                        printf("Wrong option is set for running the program");
+                    default: {
+                        logDebug("Port must be in range [0,65535].");
+                        logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
+                                 GET_VARIABLE_NAME(argv), argValues);
                         exit(EXIT_FAILURE);
+                    }
                 }
             }
+            logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
+                     argValues);
         }
     };
 };
