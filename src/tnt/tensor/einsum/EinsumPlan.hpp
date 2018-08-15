@@ -11,34 +11,33 @@
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 
-namespace tnt::tensor::einsum {
+namespace {
     using namespace tnt::util::types;
+    using namespace tnt::tensor::hypertrie;
 
-    namespace {
-        template<typename T>
-        std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
-            std::set<label_t> sub_set;
-            std::copy_if(interable.cbegin(), interable.cend(),
-                         std::inserter(sub_set, sub_set.begin()),
-                         [&](const label_t &l) { return remove_ != l; });
-            return sub_set;
-        }
+    //TODO: move to utils
+    template<typename T>
+    std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
+        std::set<label_t> sub_set;
+        std::copy_if(interable.cbegin(), interable.cend(),
+                     std::inserter(sub_set, sub_set.begin()),
+                     [&](const label_t &l) { return remove_ != l; });
+        return sub_set;
+    }
 
-        template<typename T>
+    //TODO: move to utils
+    template<typename T>
+    std::set<T> setMinus(std::set<T> plusSet, std::set<T> minusSet1, std::set<T> minusSet2) {
+        std::set<T> result{};
+        for (const T &item : plusSet)
+            if (not minusSet1.count(item) and not minusSet2.count(item))
+                result.insert(item);
+        return result;
+    }
 
-        std::set<T> setMinus(std::set<T> plusSet, std::set<T> minusSet1, std::set<T> minusSet2) {
-            std::set<T> result{};
-            for (const T &item : plusSet)
-                if (not minusSet1.count(item) and not minusSet2.count(item))
-                    result.insert(item);
-            return result;
-        }
+};
 
-        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
-        using Operands =  typename std::vector<BoolHyperTrie *>;
-    };
-
-
+namespace tnt::tensor::einsum {
     class EinsumPlan {
     public:
         enum STRATEGY {
@@ -196,7 +195,8 @@ namespace tnt::tensor::einsum {
             Step &nextStep(const Operands &operands) const {
                 if (all_done)
                     throw std::invalid_argument("Must not be called if all_done is true");
-                label_t label_ = getMinCardLabel(operands, _label_candidates, _unused_result_labels, _subscript.removeLabel(label));
+                label_t label_ = getMinCardLabel(operands, _label_candidates, _unused_result_labels,
+                                                 _subscript.removeLabel(label));
 
                 auto found = next_step_cache.find(label_);
                 if (found != next_step_cache.end()) {
@@ -312,8 +312,8 @@ namespace tnt::tensor::einsum {
                 const double d = min_dim_cardinality
                                  * i2
                                  / i1
-//                 prefer smaller min_dim cardinality
-                                       + (1 - (1 / min_dim_cardinality));
+                                 //                 prefer smaller min_dim cardinality
+                                 + (1 - (1 / min_dim_cardinality));
 //                                 + (double(1) / double(op_poss.size()));
                 return d;
             }

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+
 #include <boost/coroutine2/all.hpp>
 #include <boost/bind.hpp>
 
@@ -15,15 +16,13 @@
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 
+namespace {
+    using namespace tnt::tensor::hypertrie;
+    using namespace tnt::util::types;
+    using Join = tnt::tensor::hypertrie::Join;
+}
 
 namespace tnt::tensor::einsum::operators {
-    namespace {
-        using BoolHyperTrie = tnt::tensor::hypertrie::BoolHyperTrie;
-        using SliceKey_t = tnt::util::types::SliceKey_t;
-        using Join = tnt::tensor::hypertrie::Join;
-        using Operands = tnt::tensor::hypertrie::Operands;
-    }
-
     /**
      * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this
      * operator should only be used as sub operator of a CrossProduct as it is not very effective if an cross product is involved.
@@ -252,7 +251,6 @@ namespace tnt::tensor::einsum::operators {
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
-        using RESULT_TYPE = std::tuple<Key_t, size_t>;
         // there are steps left
         if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
@@ -281,7 +279,6 @@ namespace tnt::tensor::einsum::operators {
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
-        using RESULT_TYPE = std::tuple<Key_t, size_t>;
         // there are steps left
         if (step.result_labels_done) {
             rekEinsumBoolNonResult(yield, operands, result_key, step);

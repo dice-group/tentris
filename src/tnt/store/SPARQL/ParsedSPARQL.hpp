@@ -1,15 +1,6 @@
 #ifndef TNT_SPARQLPARSER_HPP
 #define TNT_SPARQLPARSER_HPP
 
-#include <SparqlParser.cpp>
-#include <SparqlLexer.cpp>
-#include <SparqlBaseListener.cpp>
-#include "tnt/tensor/einsum/Subscript.hpp"
-#include <antlr4-runtime.h>
-#include "tnt/util/All.hpp"
-#include "tnt/store/RDF/Term.hpp"
-#include "tnt/store/SPARQL/Variable.hpp"
-
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -17,12 +8,22 @@
 #include <optional>
 #include <exception>
 
-namespace tnt::store::sparql {
+#include <antlr4-runtime.h>
+#include <SparqlParser.cpp>
+#include <SparqlLexer.cpp>
+#include <SparqlBaseListener.cpp>
 
-    namespace {
-        using namespace tnt::util::types;
-        using namespace tnt::tensor::einsum;
-    };
+#include "tnt/tensor/einsum/Subscript.hpp"
+#include "tnt/util/All.hpp"
+#include "tnt/store/RDF/Term.hpp"
+#include "tnt/store/SPARQL/Variable.hpp"
+
+
+namespace {
+    using namespace tnt::util::types;
+    using namespace tnt::tensor::einsum;
+};
+namespace tnt::store::sparql {
     enum SelectModifier {
         NONE,
         DISTINCT,
@@ -211,7 +212,7 @@ namespace tnt::store::sparql {
         void registerVariable(std::variant<Variable, Term> &variant) {
             if (std::holds_alternative<Variable>(variant)) {
                 Variable &var = std::get<Variable>(variant);
-                if (not var._anonym)
+                if (not var.is_anonym)
                     variables.insert(var);
                 else
                     anonym_variables.insert(var);

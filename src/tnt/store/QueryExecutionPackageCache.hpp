@@ -2,13 +2,11 @@
 #define TNT_PARSEDSPARQLCACHES_HPP
 
 #include "tnt/util/SycronizedFactory.hpp"
-
-#include "tnt/store/SPARQL/ParsedSPARQL.hpp"
-#include "tnt/tensor/einsum/operator/Einsum.hpp"
-#include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
-
-#include "tnt/util/SycronizedFactory.hpp"
 #include "tnt/store/QueryExecutionPackage.hpp"
+
+namespace {
+    using tnt::util::sync::SycronizedFactory;
+}
 
 namespace tnt::store::cache {
 

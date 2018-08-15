@@ -13,11 +13,11 @@
 #include "tnt/util/All.hpp"
 #include "tnt/util/UndirectedGraph.hpp"
 
+namespace {
+    using namespace tnt::util::types;
+}
 
 namespace tnt::tensor::einsum {
-    using namespace tnt::util::types;
-
-
     /**
      * Representation of the subscript of a expression in einstein summation convention.
      * This provides also  bracketing of independently computable parts and resulting in a

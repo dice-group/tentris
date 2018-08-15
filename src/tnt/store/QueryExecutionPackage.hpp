@@ -10,19 +10,19 @@
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 
+namespace {
+    using namespace tnt::tensor::einsum::operators;
+    using namespace tnt::store::sparql;
+    using namespace tnt::util::types;
+    using namespace tnt::tensor::einsum;
+    using namespace tnt::tensor::hypertrie;
+    using namespace tnt::tensor::einsum::operators;
+    using namespace tnt::store::sparql;
+    using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
+};
 
 namespace tnt::store::cache {
-    namespace {
-        using namespace tnt::tensor::einsum::operators;
-        using namespace tnt::store::sparql;
-        using namespace tnt::util::types;
-        using namespace tensor::einsum;
-        using namespace tensor::einsum::operators;
-        using namespace tnt::store::sparql;
-        using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
-        using Operands =  typename std::vector<BoolHyperTrie *>;
-        using key_part_t = tnt::util::types::key_part_t;
-    };
+
 
     /**
      * A QueryExecutionPackage contains everything that is necessary to execute a given sparql query for a state of the

@@ -13,21 +13,17 @@
 #include "tnt/tensor/einsum/EinsumPlan.hpp"
 #include "tnt/util/All.hpp"
 
+namespace {
+    using namespace tnt::util::types;
+    using EinsumPlan = tnt::tensor::einsum::EinsumPlan;
+}
+
 namespace tnt::tensor::hypertrie {
-    using Operands =  typename std::vector<BoolHyperTrie *>;
 
     /**
      * Joins two or more tensors and returns the non-scalar results of the return via the iterator
      */
     class Join {
-
-        using key_pos_t = tnt::util::types::key_pos_t;
-        using op_pos_t = tnt::util::types::op_pos_t;
-        using label_pos_t = tnt::util::types::label_pos_t;
-        using key_part_t =  tnt::util::types::key_part_t;
-        using Key_t =  tnt::util::types::Key_t;
-        using EinsumPlan = tnt::tensor::einsum::EinsumPlan;
-
         const Key_t &_key; ///< a key that is copied each time the iterator returns a result
 
         key_part_t _min_keypart = KEY_PART_MAX; ///< a lower bound to the key parts that are candidates for this join
@@ -187,7 +183,8 @@ namespace tnt::tensor::hypertrie {
                 if (_join._result_key_pos)
                     key[*_join._result_key_pos] = _current_key_part;
 
-                return {{result},{key}};
+                return {{result},
+                        {key}};
             }
 
 

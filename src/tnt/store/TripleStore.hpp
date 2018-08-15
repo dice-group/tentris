@@ -2,12 +2,13 @@
 #define TNT_STORE_TRIPLESTORE
 
 
-#include <serd-0/serd/serd.h>
 #include <string>
 #include <optional>
+#include <vector>
+
 #include <boost/bind.hpp>
 #include <boost/coroutine2/all.hpp>
-#include <vector>
+#include <serd-0/serd/serd.h>
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
@@ -16,19 +17,16 @@
 #include "tnt/store/QueryExecutionPackageCache.hpp"
 #include "tnt/store/QueryExecutionPackage.hpp"
 
+namespace {
+    using namespace tnt::store::cache;
+    using namespace tnt::util::types;
+    using namespace tnt::tensor::einsum;
+    using namespace tnt::tensor::einsum::operators;
+    using namespace tnt::store::sparql;
+    using namespace tnt::tensor::hypertrie;
+}
+
 namespace tnt::store {
-    namespace {
-        using namespace tnt::store::cache;
-        using namespace tnt::util::types;
-        using namespace tensor::einsum;
-        using namespace tensor::einsum::operators;
-        using namespace tnt::store::sparql;
-        using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
-        using Operands =  typename std::vector<BoolHyperTrie *>;
-        using key_part_t = tnt::util::types::key_part_t;
-    }
-
-
     class TripleStore {
 
         TermStore termIndex{};

@@ -6,18 +6,19 @@
 /**
  * Content-Type for SPARQL OUTPUT JSON FORMAT
  */
-class SPARQLJSON : public Pistache::Http::Header::Header {
-public:
-    NAME("Content-Type");
+namespace tnt::http {
+    class SPARQLJSON : public Pistache::Http::Header::Header {
+    public:
+        NAME("Content-Type");
 
-    SPARQLJSON() {}
+        SPARQLJSON() {}
 
-    void parse([[maybe_unused]] const std::string &str) {
-    }
+        void parse([[maybe_unused]] const std::string &str) {
+        }
 
-    void write(std::ostream &os) const {
-        os << "application/sparql-results+json";
-    }
-};
-
+        void write(std::ostream &os) const {
+            os << "application/sparql-results+json";
+        }
+    };
+}
 #endif //TNT_HEADERS_HPP

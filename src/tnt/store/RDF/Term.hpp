@@ -10,15 +10,21 @@
 #include <exception>
 #include <regex>
 
+namespace {
+    const std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
+
+    const std::regex is_uri_regex{"^<(?:.*)>$", std::regex::optimize};
+
+    const std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$", std::regex::optimize};
+
+    /**
+     * Regex with groups [1]: literal string, [2]: language tag, [3]: type tag. [2] and [3] are exclusive.
+     */
+    const std::regex literal_regex{"^\"([^]*)\"(?:@(.*)|\\^\\^<(.*)>|)$", std::regex::optimize};
+}
+
 namespace tnt::store {
 
-    namespace {
-        static const std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
-
-        static const std::regex is_uri_regex{"^<(?:.*)>$", std::regex::optimize};
-
-        static const std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$", std::regex::optimize};
-    }
 
     class Term {
     public:
@@ -91,10 +97,6 @@ namespace tnt::store {
 
     };
 
-/**
- * Regex with groups [1]: literal string, [2]: language tag, [3]: type tag. [2] and [3] are exclusive.
- */
-    static const std::regex literal_regex{"^\"([^]*)\"(?:@(.*)|\\^\\^<(.*)>|)$", std::regex::optimize};
 
     class Literal : public Term {
 
@@ -107,11 +109,11 @@ namespace tnt::store {
             if (std::regex_match(_identifier, mr, literal_regex)) {
                 // get a iterator to the beginning of the matched string
                 const std::basic_string<char>::const_iterator &identifer_it = mr[0].first;
-                if (const auto &type_group = mr[3]; type_group.matched){
-                    if(type_group.str() == "http://www.w3.org/2001/XMLSchema#string") {
+                if (const auto &type_group = mr[3]; type_group.matched) {
+                    if (type_group.str() == "http://www.w3.org/2001/XMLSchema#string") {
                         _identifier = std::string{_identifier, 0, size_t(type_group.first - identifer_it - 3)};
                         goto match_regex;
-                    } else{
+                    } else {
                         char *type_raw = _identifier.data() + (type_group.first - identifer_it);
                         _type = {type_raw, (size_t) type_group.length()};
                     }

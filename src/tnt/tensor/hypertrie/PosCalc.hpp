@@ -8,17 +8,17 @@
 
 #include "tnt/util/All.hpp"
 
+namespace {
+    using namespace tnt::util::types;
+}
 
 namespace tnt::tensor::hypertrie {
-
-
     /**
      * Provides translation between position in superkeys with subkeys. (1,2,4) for example is a subkey of (1,2,3,4).
      * And the other way around.
      */
     class PosCalc {
-        using key_pos_t = tnt::util::types::key_pos_t;
-        using subkey_mask_t = tnt::util::types::subkey_mask_t;
+
         /**
          * Holds all instances.
          */

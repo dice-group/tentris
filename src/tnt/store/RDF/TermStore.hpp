@@ -1,18 +1,21 @@
 #ifndef TNT_STORE_RDFTERMINDEX
 #define TNT_STORE_RDFTERMINDEX
 
-#include "tnt/util/All.hpp"
-#include "tnt/store/RDF/Term.hpp"
 #include <map>
 #include <memory>
 #include <tuple>
 #include <ostream>
 
+#include "tnt/util/All.hpp"
+#include "tnt/store/RDF/Term.hpp"
+
+namespace {
+    using namespace tnt::util::types;
+}
+
 namespace tnt::store {
     class TermStore {
-        using key_part_t = tnt::util::types::key_part_t;
     public:
-
         class RevTermStore {
             friend class TermStore;
 
@@ -46,7 +49,6 @@ namespace tnt::store {
         };
 
     private:
-
         struct TermPtrComp {
             bool operator()(const std::unique_ptr<Term> &a, const std::unique_ptr<Term> &b) const {
                 return a->getIdentifier().compare(b->getIdentifier()) < 0;
@@ -126,7 +128,7 @@ namespace tnt::store {
         }
 
         friend std::ostream &operator<<(std::ostream &os, const TermStore &store) {
-            for(const auto &str_p: values(store._id2term)){
+            for (const auto &str_p: values(store._id2term)) {
                 os << *str_p << "\n";
             }
             os << std::endl;

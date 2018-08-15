@@ -2,12 +2,15 @@
 #define TNT_GENERATORINTERFACE_HPP
 
 #include <boost/coroutine2/all.hpp>
+
 #include "tnt/util/Types.hpp"
 
+namespace {
+    using namespace tnt::util::types;
+}
+
 namespace tnt::tensor::einsum::operators {
-    namespace {
-        using namespace tnt::util::types;
-    }
+
     template<typename RESULT_TYPE>
     using yield_push = typename boost::coroutines2::coroutine<RESULT_TYPE>::push_type;
     template<typename RESULT_TYPE>

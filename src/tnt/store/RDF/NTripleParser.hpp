@@ -1,10 +1,6 @@
 #ifndef TEST_RDFPARSER_HPP
 #define TEST_RDFPARSER_HPP
 
-#include "tnt/util/All.hpp"
-#include "tnt/store/RDF/Term.hpp"
-
-#include <serd-0/serd/serd.h>
 #include <memory>
 #include <stdexcept>
 #include <optional>
@@ -12,6 +8,12 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+
+#include <serd-0/serd/serd.h>
+
+#include "tnt/util/All.hpp"
+#include "tnt/store/RDF/Term.hpp"
+
 
 namespace tnt::store {
 

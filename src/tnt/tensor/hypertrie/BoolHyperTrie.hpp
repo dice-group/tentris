@@ -18,13 +18,20 @@
 #include "tnt/util/container/VecSet.hpp"
 #include "tnt/util/All.hpp"
 
+namespace {
+    using namespace tnt::util::types;
+}
+
 namespace tnt::tensor::hypertrie {
     class BoolHyperTrie;
 
+    using Operands =  typename std::vector<BoolHyperTrie *>;
+
     union Children {
-        using key_part_t = tnt::util::types::key_part_t;
+    private:
         using inner_edges = tnt::util::container::VecMap<key_part_t, BoolHyperTrie *>;
         using leaf_edges = tnt::util::container::VecSet<key_part_t>;
+    public:
         std::vector<inner_edges> _inner_edges;
         leaf_edges _leaf_edges;
 
@@ -32,11 +39,6 @@ namespace tnt::tensor::hypertrie {
     };
 
     class BoolHyperTrie {
-        using Key_t = tnt::util::types::Key_t;
-        using SliceKey_t = tnt::util::types::SliceKey_t;
-        using key_pos_t = tnt::util::types::key_pos_t;
-        using key_part_t = tnt::util::types::key_part_t;
-        using subkey_mask_t = tnt::util::types::subkey_mask_t;
     public:
         /**
          * Inner edges are encoded by mapping a key_part to an subhypertrie. Only key_parts that map to an non-zero
@@ -1011,7 +1013,7 @@ namespace tnt::tensor::hypertrie {
                 if (view._leaf_edges->keyByInd(view._min_ind) != min) {
                     view._min_ind = std::get<1>(
                             view._leaf_edges->containsAndInd(min, view._min_ind, view._max_ind));;
-                    if (view._min_ind > view._max_ind){
+                    if (view._min_ind > view._max_ind) {
                         view._size = 0;
                         return;
                     }
@@ -1022,7 +1024,7 @@ namespace tnt::tensor::hypertrie {
                 if (view._leaf_edges->keyByInd(view._max_ind) != max) {
                     view._max_ind = std::get<1>(
                             view._leaf_edges->containsAndIndLower(max, view._min_ind, view._max_ind));
-                    if (view._min_ind > view._max_ind){
+                    if (view._min_ind > view._max_ind) {
                         view._size = 0;
                         return;
                     }
@@ -1040,7 +1042,7 @@ namespace tnt::tensor::hypertrie {
                 // calc min
                 if (view._inner_edges->keyByInd(view._min_ind) != min) {
                     view._min_ind = std::get<1>(view._inner_edges->containsAndInd(min, view._min_ind, view._max_ind));
-                    if (view._min_ind > view._max_ind){
+                    if (view._min_ind > view._max_ind) {
                         view._size = 0;
                         return;
                     }
@@ -1051,7 +1053,7 @@ namespace tnt::tensor::hypertrie {
                 if (view._inner_edges->keyByInd(view._max_ind) != max) {
                     view._max_ind = std::get<1>(
                             view._inner_edges->containsAndIndLower(max, view._min_ind, view._max_ind));
-                    if (view._min_ind > view._max_ind){
+                    if (view._min_ind > view._max_ind) {
                         view._size = 0;
                         return;
                     }

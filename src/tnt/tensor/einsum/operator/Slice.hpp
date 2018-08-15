@@ -3,8 +3,16 @@
 
 #include <variant>
 #include <algorithm>
+
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+
+namespace {
+    using namespace tnt::util::types;
+    using namespace tnt::tensor::hypertrie;
+
+
+}
 
 namespace tnt::tensor::einsum::operators {
     class Slice {
@@ -13,15 +21,11 @@ namespace tnt::tensor::einsum::operators {
             SCALAR,
             HYPERTRIE
         };
+        const TYPE type;
     private:
-        using SliceKey_t = tnt::util::types::SliceKey_t;
-        using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
-
         const SliceKey_t _key;
         const BoolHyperTrie *_trie;
     public:
-        const TYPE type;
-
         Slice(const SliceKey_t &key, const BoolHyperTrie *trie) :
                 _key{key}, _trie{trie},
                 type{(std::count(key.begin(), key.end(), std::nullopt) > 0) ? HYPERTRIE : SCALAR} {}

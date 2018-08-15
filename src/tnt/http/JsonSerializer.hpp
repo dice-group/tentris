@@ -8,33 +8,15 @@
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 
 #include "tnt/store/TripleStore.hpp"
+#include "tnt/http/TimeoutException.hpp"
 
 #include <iostream>
-#include <exception>
-
+namespace {
+    using Variable = tnt::store::sparql::Variable;
+    using ResponseStream = Pistache::Http::ResponseStream;
+    using namespace tnt::tensor::einsum::operators;
+};
 namespace tnt::http {
-    namespace {
-        using Variable = tnt::store::sparql::Variable;
-        using ResponseStream = Pistache::Http::ResponseStream;
-        using namespace tnt::tensor::einsum::operators;
-    };
-
-
-    class TimeoutException : public std::exception {
-        ulong _number_of_results;
-        const std::string _what;
-    public:
-        explicit TimeoutException(const ulong &number_of_results = 0)
-                : std::exception{},
-                  _number_of_results{number_of_results},
-                  _what{std::string{"Timed out after writing "} + std::to_string(_number_of_results).c_str() +
-                        " entries"} {}
-
-        const char *what() const throw() {
-            return _what.c_str();
-        }
-    };
-
     template<typename VALUE_TYPE>
     void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> results, ResponseStream &stream,
                     const tnt::store::TripleStore &store,
@@ -49,9 +31,9 @@ namespace tnt::http {
         for (const auto &var : vars) {
             if (firstTime) {
                 firstTime = false;
-                stream << "\"" << var._var_name.c_str() << "\"";
+                stream << "\"" << var.name.c_str() << "\"";
             } else {
-                stream << ",\"" << var._var_name.c_str() << "\"";
+                stream << ",\"" << var.name.c_str() << "\"";
             }
         }
         stream << "]},\"results\":{\"bindings\":[";
@@ -72,7 +54,7 @@ namespace tnt::http {
                     json_result << ",";
                 }
 
-                json_result << "\"" << var._var_name << "\":{";
+                json_result << "\"" << var.name << "\":{";
 
                 const store::Term::NodeType &termType = term.type();
                 switch (termType) {

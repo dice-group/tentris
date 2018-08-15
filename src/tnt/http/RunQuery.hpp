@@ -10,18 +10,16 @@
 
 #include <chrono>
 
+namespace {
+    using ParsedSPARQL = tnt::store::sparql::ParsedSPARQL;
+    using ResponseWriter = Pistache::Http::ResponseWriter;
+    using Variable = tnt::store::sparql::Variable;
+    using SelectModifier =  tnt::store::sparql::SelectModifier;
+    using namespace tnt::store::cache;
+    using namespace tnt::tensor::einsum::operators;
+    using Code = Pistache::Http::Code;
+};
 namespace tnt::http {
-
-    namespace {
-        using ParsedSPARQL = tnt::store::sparql::ParsedSPARQL;
-        using ResponseWriter = Pistache::Http::ResponseWriter;
-        using Variable = tnt::store::sparql::Variable;
-        using SelectModifier =  tnt::store::sparql::SelectModifier;
-        using namespace tnt::store::cache;
-        using namespace tnt::tensor::einsum::operators;
-        using Code = Pistache::Http::Code;
-    };
-
     void runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
                   tnt::store::TripleStore &store,
                   const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
@@ -43,8 +41,6 @@ namespace tnt::http {
                 response.send(Code::Not_Implemented);
         }
     }
-
-
 }
 
 #endif //TNT_SPARQLREQUESTTHREAD_HPP
