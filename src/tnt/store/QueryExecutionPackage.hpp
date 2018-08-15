@@ -24,17 +24,32 @@ namespace tnt::store::cache {
         using key_part_t = tnt::util::types::key_part_t;
     };
 
+    /**
+     * A QueryExecutionPackage contains everything that is necessary to execute a given sparql query for a state of the
+     * RDF graph.
+     */
     struct QueryExecutionPackage {
     private:
         ParsedSPARQL parsedSPARQL;
     public:
+        /**
+         * Indicates if the QueryExecutionPackage represents an distinct query or not. If it is distinct use only
+         * the methods with distinct in their names. Otherwise use only the methods with regular in their names
+         */
         bool is_distinct;
     private:
         std::vector<SliceKey_t> slice_keys;
-        std::shared_ptr<Einsum<INT_VALUES>> regular_operator_tree;
-        std::shared_ptr<Einsum<BOOL_VALUES>> distinct_operator_tree;
+        std::unique_ptr<Einsum<INT_VALUES>> regular_operator_tree;
+        std::unique_ptr<Einsum<BOOL_VALUES>> distinct_operator_tree;
     public:
 
+        /**
+         *
+         * @param sparql_string sparql query to be parsed
+         * @param trie current try holding the data
+         * @param termIndex term store attached to the trie
+         * @throw std::invalid_argument the sparql query was not parsable
+         */
         QueryExecutionPackage(const std::string sparql_string, BoolHyperTrie &trie, const TermStore &termIndex)
                 : parsedSPARQL{sparql_string},
                   is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)},
@@ -65,6 +80,10 @@ namespace tnt::store::cache {
             return *regular_operator_tree.get();
         }
 
+        /**
+         * Returns an generator for the result if this->is_distinct
+         * @return result generator
+         */
         yield_pull<BOOL_VALUES> getDistinctGenerator() const {
             if (not slice_keys.empty())
                 return distinct_operator_tree->get();
@@ -72,6 +91,10 @@ namespace tnt::store::cache {
                 return yield_pull<BOOL_VALUES>([&]([[maybe_unused]]yield_push<BOOL_VALUES> &yield) { return; });
         }
 
+        /**
+         * Returns an generator for the result if not this->is_distinct
+         * @return result generator
+         */
         yield_pull<INT_VALUES> getRegularGenerator() const {
             if (not slice_keys.empty())
                 return regular_operator_tree->get();
@@ -80,12 +103,20 @@ namespace tnt::store::cache {
 
         }
 
-
+    private:
+        /**
+         * Calculates the slice keys for the BoolHyperTrie from a basic graph pattern. If the result is clearly empty
+         * an empty list of slice keys is returned.
+         * @param bgp basic graph pattern of the query
+         * @param trie BoolHyperTrie
+         * @param termIndex intex for trie
+         * @return slice keys for the BoolHyperTrie
+         */
         static std::vector<SliceKey_t>
-        calc_keys(const std::vector<std::vector<std::optional<Term>>> &op_keys, BoolHyperTrie &trie,
+        calc_keys(const std::vector<std::vector<std::optional<Term>>> &bgp, BoolHyperTrie &trie,
                   const TermStore &termIndex) {
             std::vector<SliceKey_t> slice_keys{};
-            for (const auto &op_key : op_keys) {
+            for (const auto &op_key : bgp) {
                 SliceKey_t slice_key(3, std::nullopt);
                 bool no_slices = true;
                 for (const auto &[pos, op_key_part] : enumerate(op_key))

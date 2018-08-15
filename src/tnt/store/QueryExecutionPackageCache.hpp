@@ -12,9 +12,9 @@
 
 namespace tnt::store::cache {
 
-    class QueryCache : public SycronizedFactory<std::string, QueryExecutionPackage> {
+    class QueryExecutionPackage_cache : public SycronizedFactory<std::string, QueryExecutionPackage> {
     protected:
-        QueryExecutionPackage *construct(const std::string &key) {
+        virtual QueryExecutionPackage *construct(const std::string &key) {
             try {
                 return new QueryExecutionPackage{key, _trie, _termIndex};
             } catch (std::invalid_argument exc) {}
@@ -25,9 +25,8 @@ namespace tnt::store::cache {
         TermStore &_termIndex;
 
     public:
-        QueryCache(BoolHyperTrie &trie, TermStore &termIndex, uint capacity = 500) : _trie{trie},
-                                                                                     _termIndex{termIndex},
-                                                                                     SycronizedFactory{capacity} {}
+        QueryExecutionPackage_cache(BoolHyperTrie &trie, TermStore &termIndex, uint capacity = 500) :
+                SycronizedFactory{capacity}, _trie{trie}, _termIndex{termIndex} {}
     };
 
 }

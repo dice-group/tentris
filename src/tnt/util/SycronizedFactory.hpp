@@ -11,18 +11,16 @@ template<typename K, typename V>
 class SycronizedFactory {
 protected:
     struct Entry {
-        Entry(const K &key, const V &value)
-                : key{key}, value{value} {}
+        Entry(const K &key, const std::shared_ptr<V> &value) : key(key), value(value) {}
 
-        Entry(const K &key, const V &&value)
+        Entry(const K &key, V *value)
                 : key{key}, value{value} {}
 
         K key;
-        V value;
+        std::shared_ptr<V> value;
     };
-
-    using Entry_p =  std::shared_ptr<Entry>;
-    using LruList_pos = typename std::list<Entry_p>::iterator;
+    using LruList = std::list<Entry>;
+    using LruList_iter = typename std::list<Entry>::iterator;
 
     /**
      * Mutex to protect access to _lru_list and _cache
@@ -35,11 +33,11 @@ protected:
     /**
      * entries (key and value) ordered by least recently used.
      */
-    std::list<Entry_p> _lru_list;
+    LruList _lru_list;
     /**
      * mapping from key to the position in _lru_list
      */
-    std::unordered_map<K, LruList_pos> _key_to_pos;
+    std::unordered_map<K, LruList_iter> _key_to_pos;
 
     /**
      * Checks weather a key is contained and returns a iterator pointing to the corresponding entry.
@@ -48,9 +46,9 @@ protected:
      * @param key key to a entry
      * @return tuple (is in cache)
      */
-    std::tuple<bool, LruList_pos> unsynced_contains(const K &key) const {
+    std::tuple<bool, LruList_iter> unsynced_contains(const K &key) const {
         if (_key_to_pos.count(key)) {
-            LruList_pos pos = _key_to_pos.at(key);
+            LruList_iter pos = _key_to_pos.at(key);
             return {true, pos};
         } else {
             return {false, {}};
@@ -63,7 +61,7 @@ protected:
      * The call of this function must be guarded by _cache_mutex.
      */
     void unsynced_popLeastRecentlyUsed() {
-        _key_to_pos.erase(_lru_list.back()->key);
+        _key_to_pos.erase(_lru_list.back().key);
         _lru_list.pop_back();
     }
 
@@ -73,12 +71,12 @@ protected:
      * The call of this function must be guarded by _cache_mutex.
      * @param entry_pos pointer to an entry. It is updated in the process and stays valid.
      */
-    void unsafe_makeLatest(LruList_pos &entry_pos) {
+    void unsafe_makeLatest(LruList_iter &entry_pos) {
         // move it to the front
         _lru_list.splice(_lru_list.begin(), _lru_list, entry_pos);
         // update the mapper
         entry_pos = _lru_list.begin();
-        _key_to_pos[(*entry_pos)->key] = entry_pos;
+        _key_to_pos[entry_pos->key] = entry_pos;
     }
 
 
@@ -90,7 +88,7 @@ protected:
      * @param key key to construct value for
      * @return pointer to newly constructed value. The caller is in care of destructing the value.
      */
-    V *construct(const K &key);
+    virtual V *construct(const K &key) = 0;
 
 public:
     SycronizedFactory(uint capacity = 500) : _capacity{capacity} {}
@@ -110,19 +108,19 @@ public:
     std::shared_ptr<V> get(const K &key) {
         std::lock_guard{_cache_mutex};
 
-        if (auto &&[contains, element_p] = unsynced_contains(key); contains) {
-            unsafe_makeLatest(element_p);
-            return (*element_p)->value;
+        if (auto &&[contains, lru_iter] = unsynced_contains(key); contains) {
+            unsafe_makeLatest(lru_iter);
+            return lru_iter->value;
         } else {
-            if (_lru_list.size() == _capacity)
+            if (_lru_list.size() >= _capacity)
                 unsynced_popLeastRecentlyUsed();
-            V *const new_value = construct(key);
+            V *new_value = construct(key);
             if (new_value == nullptr)
                 throw std::invalid_argument("Key was not valid.");
-            _lru_list.push_front({key, std::make_shared(new_value)});
-            const Entry_p entry_pos = _lru_list.begin();
-            _key_to_pos[entry_pos->key] = entry_pos;
-            return entry_pos->value;
+            _lru_list.push_front({key, new_value});
+            lru_iter = _lru_list.begin();
+            _key_to_pos[lru_iter->key] = lru_iter;
+            return lru_iter->value;
         }
     }
 };

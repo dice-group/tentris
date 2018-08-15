@@ -13,7 +13,7 @@
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
-#include "tnt/store/ParsedSPARQLCache.hpp"
+#include "tnt/store/QueryExecutionPackageCache.hpp"
 #include "tnt/store/QueryExecutionPackage.hpp"
 
 namespace tnt::store {
@@ -33,7 +33,7 @@ namespace tnt::store {
 
         TermStore termIndex{};
         BoolHyperTrie trie{3};
-        mutable QueryCache query_cache;
+        mutable QueryExecutionPackage_cache query_cache;
 
     public:
         explicit TripleStore(uint cache_capacity = 1000) :
@@ -76,25 +76,6 @@ namespace tnt::store {
             const std::unique_ptr<Term> &object = parseTerm(std::get<2>(triple));
             return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
         }
-
-        template<typename RETURN_TYPE>
-        Einsum<RETURN_TYPE> &getOperatorTree(const std::string &sparql, const Subscript &subscript,
-                                             std::vector<SliceKey_t> &slice_keys) const {
-            try {
-                return *getOperatorTreeCache<RETURN_TYPE>().at(sparql).get();
-            } catch (...) {
-                const std::vector<BoolHyperTrie *> tries(slice_keys.size(), &const_cast<BoolHyperTrie &>(trie));
-                auto inserted = getOperatorTreeCache<RETURN_TYPE>()
-                        .emplace(sparql, std::unique_ptr<Einsum<RETURN_TYPE>>{
-                                new Einsum<RETURN_TYPE>{subscript, slice_keys, tries}});
-                return *inserted.first->second.get();
-            }
-        }
-
-
-        template<typename RETURN_TYPE>
-        std::map<std::string, std::unique_ptr<Einsum<RETURN_TYPE>>> &getOperatorTreeCache() const;
-
 
         std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
             return query_cache.get(sparql);
