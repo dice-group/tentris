@@ -36,7 +36,7 @@ namespace tnt::tensor::einsum::operators {
         /**
          * The evaluation plan for this->subscript.
          */
-        const EinsumPlan _plan;
+        mutable EinsumPlan _plan;
         mutable std::vector<Slice> _predecessors{};
         mutable Operands _operands{};
         mutable bool _operands_generated = false;
@@ -52,7 +52,8 @@ namespace tnt::tensor::einsum::operators {
          */
         Einsum(const std::shared_ptr<const Subscript> subscript, const std::vector<SliceKey_t> &slice_keys,
                const std::vector<BoolHyperTrie *> &tries)
-                : _plan{subscript} {
+                : OperatorNode<RESULT_TYPE>{}, _plan{subscript} {
+            this->type = OperatorType::EINSUM;
             for (const auto &[slice_key, trie] : zip(slice_keys, tries)) {
                 _predecessors.push_back({slice_key, trie});
             }
