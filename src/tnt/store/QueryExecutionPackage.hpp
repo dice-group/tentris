@@ -9,6 +9,7 @@
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/tensor/einsum/operator/OperatorNode.hpp"
 
 namespace {
     using namespace tnt::tensor::einsum::operators;

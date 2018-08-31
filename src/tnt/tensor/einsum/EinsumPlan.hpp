@@ -49,13 +49,13 @@ namespace tnt::tensor::einsum {
 
     private:
 
-        const Subscript _subscript;
-        const std::vector<label_t> &_result_labels;
+        const std::shared_ptr<const Subscript> _subscript;
+        const std::vector<label_t> _result_labels;
         mutable Step *initial_step = nullptr;
     public:
-        explicit EinsumPlan(const Subscript &subscript, STRATEGY = RESULT_FIRST) :
+        explicit EinsumPlan(const std::shared_ptr<const Subscript> subscript, STRATEGY = RESULT_FIRST) :
                 _subscript(subscript),
-                _result_labels{subscript.getResultLabels()} {}
+                _result_labels{subscript->getResultLabels()} {}
 
         ~EinsumPlan() {
             if (initial_step != nullptr)
@@ -64,17 +64,17 @@ namespace tnt::tensor::einsum {
 
         Step &getInitialStep(const Operands &operands) const {
             if (initial_step == nullptr) {
-                const std::set<label_t> result_label_set{_subscript.getResultLabels().cbegin(),
-                                                         _subscript.getResultLabels().cend()};
-                initial_step = new Step{_subscript, _subscript.getLabelPosInResult(), operands,
-                                        setMinus(_subscript.getAllLabels(), _subscript.getUniqueNonResultLabels(),
-                                                 _subscript.getLonelyNonResultLabels()), result_label_set};
+                const std::set<label_t> result_label_set{_subscript->getResultLabels().cbegin(),
+                                                         _subscript->getResultLabels().cend()};
+                initial_step = new Step{_subscript, _subscript->getLabelPosInResult(), operands,
+                                        setMinus(_subscript->getAllLabels(), _subscript->getUniqueNonResultLabels(),
+                                                 _subscript->getLonelyNonResultLabels()), result_label_set};
             }
             return *initial_step;
         }
 
 
-        inline const Subscript &getSubscript() const {
+        const std::shared_ptr<const Subscript> getSubscript() const {
             return _subscript;
         }
 
@@ -86,7 +86,7 @@ namespace tnt::tensor::einsum {
         class Step {
         private:
             mutable std::map<label_t, Step> next_step_cache;
-            const Subscript &_subscript;
+            const std::shared_ptr<const Subscript> _subscript;
             const std::map<label_t, label_pos_t> &_result_label_poss;
         public:
             const label_t label;
@@ -106,7 +106,7 @@ namespace tnt::tensor::einsum {
 
         private:
 
-            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
                  const label_t &min_card_label,
                  const std::set<label_t> &label_candidates,
                  const std::set<label_t> &unused_result_labels) :
@@ -118,7 +118,7 @@ namespace tnt::tensor::einsum {
                     all_done{not bool(label_candidates.size())},
                     result_labels_done{not bool(unused_result_labels.size())} {
                 if (not all_done) {
-                    _op_poss = _subscript.operandsWithLabel(label);
+                    _op_poss = _subscript->operandsWithLabel(label);
                     auto found = _result_label_poss.find(label);
                     if (found != result_label_poss.end())
                         _result_pos = {found->second};
@@ -129,12 +129,12 @@ namespace tnt::tensor::einsum {
                     // the joining key part positions of each join operand.
                     _joinee_key_part_poss.reserve(_op_poss.size());
                     for (const op_pos_t &op_pos : _op_poss) {
-                        _joinee_key_part_poss.emplace_back(_subscript.labelPossInOperand(op_pos, label));
+                        _joinee_key_part_poss.emplace_back(_subscript->labelPossInOperand(op_pos, label));
                     }
 
                     // TODO: only if label was left
-                    const Subscript &subsc = _subscript.removeLabel(label);
-                    next_op_poss = subsc.getOriginalOpPoss();
+                    const std::shared_ptr<const Subscript> subsc = _subscript->removeLabel(label);
+                    next_op_poss = subsc->getOriginalOpPoss();
 
 
                     for (op_pos_t i = 0, j = 0; i < _op_poss.size() and j < next_op_poss.size();) {
@@ -150,10 +150,9 @@ namespace tnt::tensor::einsum {
                             ++j;
                         }
                     }
-                    int i;
                 } else {
-                    for (const auto &op_pos: range(subscript.numberOfOperands())) {
-                        const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &map = _subscript.getUniqueNonResultContractions();
+                    for (const auto &op_pos: range(subscript->numberOfOperands())) {
+                        const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &map = _subscript->getUniqueNonResultContractions();
                         if (const auto found = map.find(op_pos);
                                 found != map.cend()) {
                             _unique_labels.push_back(found->second.at(0));
@@ -162,7 +161,7 @@ namespace tnt::tensor::einsum {
                         }
                     }
                     for (const std::vector<std::vector<label_pos_t>> &unique :
-                            values(_subscript.getUniqueNonResultContractions())) {
+                            values(_subscript->getUniqueNonResultContractions())) {
                         _unique_labels.push_back(unique[0]);
                     }
                 }
@@ -171,18 +170,18 @@ namespace tnt::tensor::einsum {
 
         public:
 
-            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
                  const Operands &operands, const std::set<label_t> &label_candidates,
                  const std::set<label_t> &unused_result_labels) :
                     Step(subscript, result_label_poss,
-                         getMinCardLabel(operands, label_candidates, unused_result_labels, subscript),
+                         getMinCardLabel(operands, label_candidates, unused_result_labels, *subscript),
                          label_candidates, unused_result_labels) {}
 
-            Step(const Subscript &subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
                  const Operands &operands, const std::set<label_t> &unused_result_labels) :
                     Step(subscript, result_label_poss,
-                         getMinCardLabel(operands, subscript.getAllLabels(), unused_result_labels, subscript),
-                         subscript.getAllLabels(), unused_result_labels) {}
+                         getMinCardLabel(operands, subscript->getAllLabels(), unused_result_labels, *subscript),
+                         subscript->getAllLabels(), unused_result_labels) {}
 
             inline const std::map<label_t, label_pos_t> &getResultLabels() const {
                 return _result_label_poss;
@@ -196,13 +195,13 @@ namespace tnt::tensor::einsum {
                 if (all_done)
                     throw std::invalid_argument("Must not be called if all_done is true");
                 label_t label_ = getMinCardLabel(operands, _label_candidates, _unused_result_labels,
-                                                 _subscript.removeLabel(label));
+                                                 *(_subscript->removeLabel(label)));
 
                 auto found = next_step_cache.find(label_);
                 if (found != next_step_cache.end()) {
                     return found->second;
                 } else {
-                    const auto &result = next_step_cache.emplace(label_, Step{_subscript.removeLabel(label),
+                    const auto &result = next_step_cache.emplace(label_, Step{_subscript->removeLabel(label),
                                                                               _result_label_poss, label_,
                                                                               _label_candidates,
                                                                               _unused_result_labels});

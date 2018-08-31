@@ -27,7 +27,7 @@ namespace tnt::tensor::einsum {
 
         template<typename T>
         using UndirectedGraph = typename ::tnt::util::UndirectedGraph<T>;
-        mutable std::map<label_t, Subscript> _cache_for_remove_label{};
+        mutable std::map<label_t, std::shared_ptr<Subscript>> _cache_for_remove_label{};
 
 
         std::set<label_t> _all_labels;
@@ -322,7 +322,7 @@ namespace tnt::tensor::einsum {
          * @param label the label to be removed.
          * @return a subscript without the given label.
          */
-        const Subscript &removeLabel(const label_t &label) const {
+        const std::shared_ptr<const Subscript> removeLabel(const label_t &label) const {
             auto found = _cache_for_remove_label.find(label);
             if (found != _cache_for_remove_label.end())
                 return found->second;
@@ -330,34 +330,34 @@ namespace tnt::tensor::einsum {
                 if (not _all_labels.count(label))
                     throw std::invalid_argument("only labels that are present in an subscript may be removed.");
                 else {
-                    Subscript &subscript = _cache_for_remove_label[label];
+                    std::shared_ptr<Subscript> subscript = _cache_for_remove_label[label];
 
                     // remove the label from _all_labels
-                    subscript._all_labels = {};
+                    subscript->_all_labels = {};
                     std::copy_if(_all_labels.begin(), _all_labels.end(),
-                                 std::inserter(subscript._all_labels, subscript._all_labels.begin()),
+                                 std::inserter(subscript->_all_labels, subscript->_all_labels.begin()),
                                  [&](const label_t &l) { return l != label; });
 
                     // remove the label from _result_labels
-                    subscript._result_labels = {};
+                    subscript->_result_labels = {};
                     std::copy_if(_result_labels.begin(), _result_labels.end(),
-                                 std::back_inserter(subscript._result_labels),
+                                 std::back_inserter(subscript->_result_labels),
                                  [&](const label_t &l) { return l != label; });
 
                     // remove the label from _operands_labels
-                    subscript._operands_labels = {};
-                    subscript._original_op_poss = {};
+                    subscript->_operands_labels = {};
+                    subscript->_original_op_poss = {};
                     for (const auto &[op_pos, op_labels] : enumerate(_operands_labels)) {
                         std::vector<label_t> new_op_labels{};
                         std::copy_if(op_labels.begin(), op_labels.end(), std::back_inserter(new_op_labels),
                                      [&](const label_t &l) { return l != label; });
                         if (new_op_labels.size()) {
-                            subscript._operands_labels.emplace_back(std::move(new_op_labels));
-                            subscript._original_op_poss.emplace_back(op_pos);
+                            subscript->_operands_labels.emplace_back(std::move(new_op_labels));
+                            subscript->_original_op_poss.emplace_back(op_pos);
                         }
                     }
 
-                    subscript.updateFields();
+                    subscript->updateFields();
                     return subscript;
                 }
             }

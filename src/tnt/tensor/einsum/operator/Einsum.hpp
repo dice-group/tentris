@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <memory>
 
 #include <boost/coroutine2/all.hpp>
 #include <boost/bind.hpp>
@@ -15,6 +16,7 @@
 #include "tnt/tensor/einsum/operator/Slice.hpp"
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
+#include "tnt/tensor/einsum/operator/OperatorNode.hpp"
 
 namespace {
     using namespace tnt::tensor::hypertrie;
@@ -29,7 +31,7 @@ namespace tnt::tensor::einsum::operators {
      * @see CrossProduct
      */
     template<typename RESULT_TYPE>
-    class Einsum {
+    class Einsum : OperatorNode<RESULT_TYPE> {
     protected:
         /**
          * The evaluation plan for this->subscript.
@@ -48,7 +50,7 @@ namespace tnt::tensor::einsum::operators {
          * @param slice_keys the key to its operators
          * @param trie the tries that shall be sliced.
          */
-        Einsum(const Subscript &subscript, const std::vector<SliceKey_t> &slice_keys,
+        Einsum(const std::shared_ptr<const Subscript> subscript, const std::vector<SliceKey_t> &slice_keys,
                const std::vector<BoolHyperTrie *> &tries)
                 : _plan{subscript} {
             for (const auto &[slice_key, trie] : zip(slice_keys, tries)) {
@@ -97,7 +99,7 @@ namespace tnt::tensor::einsum::operators {
          */
         Operands extractRelevantOperands(const Operands &all_operands) const {
             Operands operands{};
-            for (const op_pos_t &op_pos : _plan.getSubscript().getOriginalOpPoss()) {
+            for (const op_pos_t &op_pos : _plan.getSubscript()->getOriginalOpPoss()) {
                 operands.push_back(all_operands.at(op_pos));
             }
             return operands;

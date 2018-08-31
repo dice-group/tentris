@@ -7,6 +7,7 @@
 #include <queue>
 #include <optional>
 #include <exception>
+#include <memory>
 
 #include <antlr4-runtime.h>
 #include <SparqlParser.cpp>
@@ -67,7 +68,7 @@ namespace tnt::store::sparql {
         std::set<Variable> anonym_variables{};
         std::set<std::vector<std::variant<Variable, Term>>> bgps;
         uint next_anon_var_id = 0;
-        Subscript _subscript;
+        std::shared_ptr<Subscript> _subscript;
         std::vector<std::vector<std::optional<Term>>> _operand_keys;
 
     public:
@@ -170,7 +171,7 @@ namespace tnt::store::sparql {
                     result_labels.push_back(var_to_label[query_variable]);
                 }
 
-                _subscript = Subscript{ops_labels, result_labels};
+                _subscript = std::move(std::shared_ptr<Subscript>{new Subscript{ops_labels, result_labels}});
 
                 // generate operand keys
                 for (const auto &bgp : bgps) {
@@ -199,7 +200,7 @@ namespace tnt::store::sparql {
             return _sparql_str;
         }
 
-        auto getSubscript() const -> const tensor::einsum::Subscript & {
+        const std::shared_ptr<const Subscript> getSubscript() const {
             return _subscript;
         }
 
