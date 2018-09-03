@@ -87,7 +87,7 @@ namespace tnt::tensor::einsum {
         private:
             mutable std::map<label_t, Step> next_step_cache;
             const std::shared_ptr<const Subscript> _subscript;
-            const std::map<label_t, label_pos_t> &_result_label_poss;
+            const std::map<label_t, label_pos_t> _result_label_poss;
         public:
             const label_t label;
         private:

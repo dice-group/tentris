@@ -2,6 +2,7 @@
 #define TNT_QUERYEXECUTIONPACKAGE_HPP
 
 #include <any>
+#include <exception>
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/util/SycronizedFactory.hpp"
@@ -38,10 +39,10 @@ namespace tnt::store::cache {
          * the methods with distinct in their names. Otherwise use only the methods with regular in their names
          */
         bool is_distinct;
+        bool is_trivial_emtpy;
     private:
-        std::vector<SliceKey_t> slice_keys;
-        std::unique_ptr<Einsum<INT_VALUES>> regular_operator_tree;
-        std::unique_ptr<Einsum<BOOL_VALUES>> distinct_operator_tree;
+        std::unique_ptr<OperatorNode<INT_VALUES>> regular_operator_tree;
+        std::unique_ptr<OperatorNode<BOOL_VALUES>> distinct_operator_tree;
     public:
 
         /**
@@ -53,32 +54,46 @@ namespace tnt::store::cache {
          */
         QueryExecutionPackage(const std::string sparql_string, BoolHyperTrie &trie, const TermStore &termIndex)
                 : parsedSPARQL{sparql_string},
-                  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)},
-                  slice_keys{calc_keys(parsedSPARQL.getOperandKeys(), trie, termIndex)},
-                  regular_operator_tree{
-                          ((not slice_keys.empty()) and (not is_distinct))
-                          ? new Einsum<INT_VALUES>{
-                                  parsedSPARQL.getSubscript(), slice_keys,
-                                  std::vector<BoolHyperTrie *>(slice_keys.size(), &const_cast<BoolHyperTrie &>(trie))}
-                          : (Einsum<INT_VALUES> *) nullptr},
-                  distinct_operator_tree{
-                          ((not slice_keys.empty()) and is_distinct)
-                          ? new Einsum<BOOL_VALUES>{
-                                  parsedSPARQL.getSubscript(), slice_keys,
-                                  std::vector<BoolHyperTrie *>(slice_keys.size(), &const_cast<BoolHyperTrie &>(trie))}
-                          : (Einsum<BOOL_VALUES> *) nullptr} {
+                  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)} {
+
+            const std::vector<SliceKey_t> slice_keys = calc_keys(parsedSPARQL.getOperandKeys(), trie, termIndex);
+
+
+            is_trivial_emtpy = slice_keys.empty();
+            if (not is_trivial_emtpy) {
+
+                const std::shared_ptr<const Subscript> subscript = parsedSPARQL.getSubscript();
+                const std::vector<BoolHyperTrie *> hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
+                                                                                             &const_cast<BoolHyperTrie &>(trie));
+                if (not is_distinct) {
+
+                    regular_operator_tree = std::unique_ptr<OperatorNode<INT_VALUES>>{
+                            new Einsum<INT_VALUES>{subscript, slice_keys, hypertries}
+                    };
+                } else {
+                    distinct_operator_tree = std::unique_ptr<OperatorNode<BOOL_VALUES>>{
+                            new Einsum<BOOL_VALUES>{subscript, slice_keys, hypertries}
+                    };
+                }
+            }
         }
 
         const ParsedSPARQL &getParsedSPARQL() const {
             return parsedSPARQL;
         }
 
-        const Einsum<BOOL_VALUES> &getDistinctOpTree() const {
-            return *distinct_operator_tree.get();
+        const OperatorNode<BOOL_VALUES> &getDistinctOpTree() const {
+            if (is_distinct)
+                return *distinct_operator_tree.get();
+            else
+                throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
         }
 
-        const Einsum<INT_VALUES> &getRegularOpTree() const {
-            return *regular_operator_tree.get();
+        const OperatorNode<INT_VALUES> &getRegularOpTree() const {
+            if (not is_distinct)
+                return *regular_operator_tree.get();
+            else
+                throw std::domain_error("This Packackage holds a distinct Operator tree.");
         }
 
         /**
@@ -86,10 +101,14 @@ namespace tnt::store::cache {
          * @return result generator
          */
         yield_pull<BOOL_VALUES> getDistinctGenerator() const {
-            if (not slice_keys.empty())
-                return distinct_operator_tree->get();
-            else
-                return yield_pull<BOOL_VALUES>([&]([[maybe_unused]]yield_push<BOOL_VALUES> &yield) { return; });
+            if (is_distinct) {
+                if (not is_trivial_emtpy)
+                    return distinct_operator_tree->get();
+                else
+                    return yield_pull<BOOL_VALUES>([&]([[maybe_unused]]yield_push<BOOL_VALUES> &yield) { return; });
+            } else
+                throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
+
         }
 
         /**
@@ -97,10 +116,14 @@ namespace tnt::store::cache {
          * @return result generator
          */
         yield_pull<INT_VALUES> getRegularGenerator() const {
-            if (not slice_keys.empty())
-                return regular_operator_tree->get();
-            else
-                return yield_pull<INT_VALUES>([&]([[maybe_unused]]yield_push<INT_VALUES> &yield) { return; });
+            if (not is_distinct) {
+                if (not is_trivial_emtpy)
+                    return regular_operator_tree->get();
+                else
+                    return yield_pull<INT_VALUES>([&]([[maybe_unused]]yield_push<INT_VALUES> &yield) { return; });
+            } else
+                throw std::domain_error("This Packackage holds a distinct Operator tree.");
+
 
         }
 

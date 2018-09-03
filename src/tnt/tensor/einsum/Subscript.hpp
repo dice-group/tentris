@@ -331,6 +331,10 @@ namespace tnt::tensor::einsum {
                     throw std::invalid_argument("only labels that are present in an subscript may be removed.");
                 else {
                     std::shared_ptr<Subscript> subscript = _cache_for_remove_label[label];
+                    if (not subscript){
+                        subscript = std::shared_ptr<Subscript>{new Subscript()};
+                        _cache_for_remove_label[label] = subscript;
+                    }
 
                     // remove the label from _all_labels
                     subscript->_all_labels = {};

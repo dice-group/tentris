@@ -31,7 +31,7 @@ namespace tnt::tensor::einsum::operators {
      * @see CrossProduct
      */
     template<typename RESULT_TYPE>
-    class Einsum : OperatorNode<RESULT_TYPE> {
+    class Einsum : public OperatorNode<RESULT_TYPE> {
     protected:
         /**
          * The evaluation plan for this->subscript.

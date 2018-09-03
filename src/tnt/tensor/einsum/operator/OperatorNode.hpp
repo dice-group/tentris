@@ -6,7 +6,6 @@
 namespace tnt::tensor::einsum::operators {
 
     enum OperatorType {
-        SLICE,
         EINSUM,
         CROSSPRODUCT
     };
