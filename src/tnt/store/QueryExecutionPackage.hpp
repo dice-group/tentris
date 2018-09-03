@@ -7,6 +7,7 @@
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/util/SycronizedFactory.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
+#include "tnt/tensor/einsum/operator/CrossProduct.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
@@ -18,8 +19,6 @@ namespace {
     using namespace tnt::util::types;
     using namespace tnt::tensor::einsum;
     using namespace tnt::tensor::hypertrie;
-    using namespace tnt::tensor::einsum::operators;
-    using namespace tnt::store::sparql;
     using BoolHyperTrie =tnt::tensor::hypertrie::BoolHyperTrie;
 };
 
@@ -65,16 +64,24 @@ namespace tnt::store::cache {
                 const std::shared_ptr<const Subscript> subscript = parsedSPARQL.getSubscript();
                 const std::vector<BoolHyperTrie *> hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
                                                                                              &const_cast<BoolHyperTrie &>(trie));
-                if (not is_distinct) {
+                if (not is_distinct)
+                    regular_operator_tree = getOpTree<INT_VALUES>(slice_keys, subscript, hypertries);
+                else
+                    distinct_operator_tree = getOpTree<BOOL_VALUES>(slice_keys, subscript, hypertries);
 
-                    regular_operator_tree = std::unique_ptr<OperatorNode<INT_VALUES>>{
-                            new Einsum<INT_VALUES>{subscript, slice_keys, hypertries}
-                    };
-                } else {
-                    distinct_operator_tree = std::unique_ptr<OperatorNode<BOOL_VALUES>>{
-                            new Einsum<BOOL_VALUES>{subscript, slice_keys, hypertries}
-                    };
-                }
+            }
+        }
+
+        template<typename RESULT_TYPE>
+        std::unique_ptr<OperatorNode<RESULT_TYPE>>
+        getOpTree(const std::vector<SliceKey_t> &slice_keys, const std::shared_ptr<const Subscript> subscript,
+                  const std::vector<BoolHyperTrie *> &hypertries) {
+            if (auto subsubscripts = subscript->getSubSubscripts();not subsubscripts.empty()) {
+                return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
+                        new CrossProduct<RESULT_TYPE>{subscript, slice_keys, hypertries}};
+            } else {
+                return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
+                        new Einsum<RESULT_TYPE>{subscript, slice_keys, hypertries}};
             }
         }
 

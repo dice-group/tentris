@@ -331,7 +331,7 @@ namespace tnt::tensor::einsum {
                     throw std::invalid_argument("only labels that are present in an subscript may be removed.");
                 else {
                     std::shared_ptr<Subscript> subscript = _cache_for_remove_label[label];
-                    if (not subscript){
+                    if (not subscript) {
                         subscript = std::shared_ptr<Subscript>{new Subscript()};
                         _cache_for_remove_label[label] = subscript;
                     }
@@ -374,25 +374,26 @@ namespace tnt::tensor::einsum {
          * new operands may be retrieved from the new Subscript by getSubSubscripts().
          * @return optimized Subscript or this
          */
-        Subscript optimized() const {
+        std::shared_ptr<Subscript> optimized() const {
             std::vector<std::shared_ptr<Subscript>> sub_subscripts{};
             std::vector<std::vector<label_t>> new_operands_labels{};
             std::vector<std::shared_ptr<Subscript>> new_sub_subscripts{};
 
             for (const std::set<label_t> &label_subset : _independent_label_subsets) {
 
-                auto sub_subscript = std::make_shared<Subscript>(extractSubscript(label_subset));
-                new_operands_labels.emplace_back(sub_subscript->getResultLabels());
+                std::shared_ptr<Subscript> sub_subscript = extractSubscript(label_subset);
+                new_operands_labels.push_back(sub_subscript->getResultLabels());
                 new_sub_subscripts.push_back(sub_subscript);
             }
             if (new_sub_subscripts.size() >= 1) {
-                return {*this};
+                return std::shared_ptr<Subscript>{};
             } else {
-                Subscript opt_subscript{new_operands_labels, _result_labels};
-                opt_subscript._sub_subscripts = new_sub_subscripts;
+                std::shared_ptr<Subscript> opt_subscript{new Subscript{new_operands_labels, _result_labels}};
+                opt_subscript->_sub_subscripts = new_sub_subscripts;
                 return opt_subscript;
             }
         }
+
 
         /**
          * Returns an subscript that uses only labels form this that are present in label_subset. If the labels of an
@@ -401,7 +402,7 @@ namespace tnt::tensor::einsum {
          * @param label_subset a set of labels that are allowed in the new subscript
          * @return a SubSubscript
          */
-        Subscript extractSubscript(const std::set<label_t> &label_subset) const {
+        std::shared_ptr<Subscript> extractSubscript(const std::set<label_t> &label_subset) const {
             std::vector<std::vector<label_t>> operands_labels;
             std::vector<op_pos_t> original_op_poss;
             for (const auto &[parent_op_pos, parent_op_labels] : enumerate(_operands_labels)) {
@@ -420,8 +421,8 @@ namespace tnt::tensor::einsum {
                 if (label_subset.count(label))
                     result_labels.emplace_back(label);
 
-            Subscript extracted_subscript{operands_labels, result_labels};
-            extracted_subscript._original_op_poss = original_op_poss;
+            std::shared_ptr<Subscript> extracted_subscript{new Subscript{operands_labels, result_labels}};
+            extracted_subscript->_original_op_poss = original_op_poss;
             return extracted_subscript;
         }
 
@@ -561,7 +562,8 @@ namespace tnt::tensor::einsum {
             std::vector<std::vector<label_t >> norm_operand_subscripts{};
             norm_operand_subscripts.reserve(raw_operand_subscripts.size());
             for (const auto &op_labels : raw_operand_subscripts) {
-                norm_operand_subscripts.push_back(normalizeLabelVector(raw_to_norm_label, next_norm_label, op_labels));
+                norm_operand_subscripts.push_back(
+                        normalizeLabelVector(raw_to_norm_label, next_norm_label, op_labels));
             }
 
             // put all new labels that were used into a set

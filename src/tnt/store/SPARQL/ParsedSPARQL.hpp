@@ -171,7 +171,10 @@ namespace tnt::store::sparql {
                     result_labels.push_back(var_to_label[query_variable]);
                 }
 
-                _subscript = std::move(std::shared_ptr<Subscript>{new Subscript{ops_labels, result_labels}});
+                _subscript = std::shared_ptr<Subscript>{new Subscript{ops_labels, result_labels}};
+                if (auto optimized = _subscript->optimized(); optimized) {
+                    _subscript = std::move(optimized);
+                }
 
                 // generate operand keys
                 for (const auto &bgp : bgps) {
