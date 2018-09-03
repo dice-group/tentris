@@ -107,7 +107,7 @@ namespace tnt::tensor::einsum::operators {
         }
 
     public:
-        yield_pull<RESULT_TYPE> get() const {
+        yield_pull<RESULT_TYPE> get() const override{
             return yield_pull<RESULT_TYPE>(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1));
         }
 
