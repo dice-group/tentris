@@ -17,8 +17,8 @@ namespace {
     using namespace tnt::tensor::einsum::operators;
 };
 namespace tnt::http {
-    template<typename VALUE_TYPE>
-    void stream_out(const std::vector<Variable> &vars, yield_pull<VALUE_TYPE> results, ResponseStream &stream,
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
+    void stream_out(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
                     const tnt::store::TripleStore &store,
                     const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
         ulong result_count = 0;
@@ -40,7 +40,7 @@ namespace tnt::http {
         bool firstResult = true;
 
         for (const auto &result : results) {
-            const Key_t &key = getKey<VALUE_TYPE>(result);
+            const Key_t &key = RESULT_TYPE::getKey(result);
             std::stringstream json_result{};
             json_result << "{";
             bool firstKey = true;
@@ -82,7 +82,7 @@ namespace tnt::http {
             json_result << "}";
 
             std::string json_result_binding = json_result.str();
-            for ([[maybe_unused]]  const auto &c : range(getCount<VALUE_TYPE>(result))) {
+            for ([[maybe_unused]]  const auto &c : range(RESULT_TYPE::getCount(result))) {
                 if (++result_count % 10 == 0 and time_out < std::chrono::high_resolution_clock::now()) {
                     stream << Pistache::Http::ends;
                     throw TimeoutException{result_count};

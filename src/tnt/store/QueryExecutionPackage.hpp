@@ -40,8 +40,8 @@ namespace tnt::store::cache {
         bool is_distinct;
         bool is_trivial_emtpy;
     private:
-        std::unique_ptr<OperatorNode<INT_VALUES>> regular_operator_tree;
-        std::unique_ptr<OperatorNode<BOOL_VALUES>> distinct_operator_tree;
+        std::unique_ptr<OperatorNode<counted_binding>> regular_operator_tree;
+        std::unique_ptr<OperatorNode<distinct_binding>> distinct_operator_tree;
     public:
 
         /**
@@ -65,14 +65,14 @@ namespace tnt::store::cache {
                 const std::vector<BoolHyperTrie *> hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
                                                                                              &const_cast<BoolHyperTrie &>(trie));
                 if (not is_distinct)
-                    regular_operator_tree = getOpTree<INT_VALUES>(slice_keys, subscript, hypertries);
+                    regular_operator_tree = getOpTree<counted_binding>(slice_keys, subscript, hypertries);
                 else
-                    distinct_operator_tree = getOpTree<BOOL_VALUES>(slice_keys, subscript, hypertries);
+                    distinct_operator_tree = getOpTree<distinct_binding>(slice_keys, subscript, hypertries);
 
             }
         }
 
-        template<typename RESULT_TYPE>
+        template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
         std::unique_ptr<OperatorNode<RESULT_TYPE>>
         getOpTree(const std::vector<SliceKey_t> &slice_keys, const std::shared_ptr<const Subscript> subscript,
                   const std::vector<BoolHyperTrie *> &hypertries) {
@@ -89,14 +89,14 @@ namespace tnt::store::cache {
             return parsedSPARQL;
         }
 
-        const OperatorNode<BOOL_VALUES> &getDistinctOpTree() const {
+        const OperatorNode<distinct_binding> &getDistinctOpTree() const {
             if (is_distinct)
                 return *distinct_operator_tree.get();
             else
                 throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
         }
 
-        const OperatorNode<INT_VALUES> &getRegularOpTree() const {
+        const OperatorNode<counted_binding> &getRegularOpTree() const {
             if (not is_distinct)
                 return *regular_operator_tree.get();
             else
@@ -107,12 +107,12 @@ namespace tnt::store::cache {
          * Returns an generator for the result if this->is_distinct
          * @return result generator
          */
-        yield_pull<BOOL_VALUES> getDistinctGenerator() const {
+        yield_pull<distinct_binding> getDistinctGenerator() const {
             if (is_distinct) {
                 if (not is_trivial_emtpy)
                     return distinct_operator_tree->get();
                 else
-                    return yield_pull<BOOL_VALUES>([&]([[maybe_unused]]yield_push<BOOL_VALUES> &yield) { return; });
+                    return yield_pull<distinct_binding>([&]([[maybe_unused]]yield_push<distinct_binding> &yield) { return; });
             } else
                 throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
 
@@ -122,12 +122,12 @@ namespace tnt::store::cache {
          * Returns an generator for the result if not this->is_distinct
          * @return result generator
          */
-        yield_pull<INT_VALUES> getRegularGenerator() const {
+        yield_pull<counted_binding> getRegularGenerator() const {
             if (not is_distinct) {
                 if (not is_trivial_emtpy)
                     return regular_operator_tree->get();
                 else
-                    return yield_pull<INT_VALUES>([&]([[maybe_unused]]yield_push<INT_VALUES> &yield) { return; });
+                    return yield_pull<counted_binding>([&]([[maybe_unused]]yield_push<counted_binding> &yield) { return; });
             } else
                 throw std::domain_error("This Packackage holds a distinct Operator tree.");
 

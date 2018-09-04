@@ -18,7 +18,7 @@ namespace {
 
 namespace tnt::tensor::einsum::operators {
 
-    template<typename RESULT_TYPE>
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     class Slice : public OperatorNode<RESULT_TYPE> {
     public:
         enum SLICE_TYPE {
@@ -59,12 +59,12 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    void Slice<INT_VALUES>::get(yield_push<INT_VALUES> &yield) const {
+    void Slice<counted_binding>::get(yield_push<counted_binding> &yield) const {
         // TODO: implement
     }
 
     template<>
-    void Slice<BOOL_VALUES>::get(yield_push<BOOL_VALUES> &yield) const {
+    void Slice<distinct_binding>::get(yield_push<distinct_binding> &yield) const {
         // TODO: implement
     }
 

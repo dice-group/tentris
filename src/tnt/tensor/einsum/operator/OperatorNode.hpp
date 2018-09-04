@@ -10,11 +10,12 @@ namespace tnt::tensor::einsum::operators {
         CROSSPRODUCT
     };
 
-    template<typename RESULT_TYPE>
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     class OperatorNode {
     public:
         OperatorType type;
-        virtual yield_pull <RESULT_TYPE> get() const = 0;
+
+        virtual yield_pull<RESULT_TYPE> get() const = 0;
     };
 }
 

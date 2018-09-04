@@ -27,7 +27,7 @@ namespace tnt::tensor::einsum::operators {
      * operator should only be used as sub operator of a CrossProduct as it is not very effective if an cross product is involved.
      * @see CrossProduct
      */
-    template<typename RESULT_TYPE>
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     class Einsum : public OperatorNode<RESULT_TYPE> {
     protected:
         /**
@@ -85,8 +85,7 @@ namespace tnt::tensor::einsum::operators {
         rekEinsum(yield_push<RESULT_TYPE> &yield, const Operands &operands, const Key_t &result_key,
                   const EinsumPlan::Step &step);
 
-        template<typename COUNT_TYPE>
-        static COUNT_TYPE contract(const Operands &operands, const EinsumPlan::Step &step);
+        static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
 
     private:
         /**
@@ -182,8 +181,7 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    template<>
-    size_t Einsum<INT_VALUES>::contract<size_t>(const Operands &operands, const EinsumPlan::Step &step) {
+    typename counted_binding::count_t Einsum<counted_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
         const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
         std::vector<size_t> results(operands.size());
         for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
@@ -199,8 +197,8 @@ namespace tnt::tensor::einsum::operators {
     }
 
     template<>
-    void Einsum<INT_VALUES>::rekEinsum(
-            yield_push<INT_VALUES> &yield,
+    void Einsum<counted_binding>::rekEinsum(
+            yield_push<counted_binding> &yield,
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
@@ -217,7 +215,7 @@ namespace tnt::tensor::einsum::operators {
             }
         } else { // there are no steps left
             if (not operands.empty()) { // there are lonely and/or unique labels left.
-                const size_t i = contract<size_t>(operands, step);
+                const size_t i = contract(operands, step);
                 if (i > 0)
                     yield({result_key, i});
             } else { // no labels left
@@ -227,8 +225,7 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    template<>
-    bool Einsum<BOOL_VALUES>::contract<bool>(const Operands &operands, const EinsumPlan::Step &step) {
+    bool Einsum<distinct_binding >::contract(const Operands &operands, const EinsumPlan::Step &step) {
         const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
         std::vector<bool> results(operands.size(), false);
         for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
@@ -247,7 +244,7 @@ namespace tnt::tensor::einsum::operators {
     }
 
     void rekEinsumBoolNonResult(
-            yield_push<BOOL_VALUES> &yield,
+            yield_push<distinct_binding> &yield,
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
@@ -263,7 +260,7 @@ namespace tnt::tensor::einsum::operators {
             }
         } else { // there are no steps left
             if (not operands.empty()) {
-                if (Einsum<BOOL_VALUES>::contract<bool>(operands, step)) {
+                if (Einsum<distinct_binding>::contract(operands, step)) {
                     // there are lonely and/or unique labels left.
                     yield(result_key);
                 }
@@ -274,8 +271,8 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    void Einsum<BOOL_VALUES>::rekEinsum(
-            yield_push<BOOL_VALUES> &yield,
+    void Einsum<distinct_binding>::rekEinsum(
+            yield_push<distinct_binding> &yield,
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
@@ -292,7 +289,7 @@ namespace tnt::tensor::einsum::operators {
             }
         } else { // there are no steps left
             if (not operands.empty()) {
-                if (contract<bool>(operands, step)) { // there are lonely and/or unique labels left.
+                if (contract(operands, step)) { // there are lonely and/or unique labels left.
                     yield(result_key);
                 }
             } else { // no labels left

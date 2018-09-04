@@ -23,7 +23,7 @@ namespace tnt::tensor::einsum::operators {
      * Example of an cross product: ij,kl->il <=> m,n->mn with m = (ij->i)  and n = (kl->l)
      * @tparam T type of the values hold by processed Tensors (Tensor).
      */
-    template<typename RESULT_TYPE>
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     class CrossProduct : public OperatorNode<RESULT_TYPE> {
     public:
         typedef std::vector<std::tuple<size_t, size_t>> op2result_pos_t;
@@ -118,13 +118,13 @@ namespace tnt::tensor::einsum::operators {
         }
     };
 
-    void rek_set_key(yield_push <INT_VALUES> &yield,
+    void rek_set_key(yield_push <counted_binding> &yield,
                      Key_t &result_key,
                      const std::vector<std::map<Key_t, size_t>> &results,
-                     const std::vector<CrossProduct<INT_VALUES>::op2result_pos_t> &pos_mappings,
+                     const std::vector<CrossProduct<counted_binding>::op2result_pos_t> &pos_mappings,
                      size_t &total_count,
                      const size_t last_op_pos, const size_t op_pos = 0) {
-        const CrossProduct<INT_VALUES>::op2result_pos_t &pos_mapping = pos_mappings.at(op_pos);
+        const CrossProduct<counted_binding>::op2result_pos_t &pos_mapping = pos_mappings.at(op_pos);
         if (op_pos != last_op_pos) {
             for (const auto &[key, count] : results.at(op_pos)) {
                 total_count *= count;
@@ -145,12 +145,12 @@ namespace tnt::tensor::einsum::operators {
     }
 
     template<>
-    void CrossProduct<BOOL_VALUES>::get(operators::yield_push<BOOL_VALUES> &yield) const {
+    void CrossProduct<distinct_binding>::get(operators::yield_push<distinct_binding> &yield) const {
         // TODO: implement
     }
 
     template<>
-    void CrossProduct<INT_VALUES>::get(operators::yield_push<INT_VALUES> &yield) const {
+    void CrossProduct<counted_binding>::get(operators::yield_push<counted_binding> &yield) const {
 
         const size_t op_count = subscript->getResultLabels().size();
 
@@ -161,7 +161,7 @@ namespace tnt::tensor::einsum::operators {
         for (const size_t &i : range(op_count - 1)) {
             // TODO: keep the one with highest card, not the last
             for (const auto binding : predecessor_generators.at(i))
-                results.at(i)[getKey<INT_VALUES>(binding)] += getCount<INT_VALUES>(binding);
+                results.at(i)[counted_binding::getKey(binding)] += counted_binding::getCount(binding);
             // check that each generator has at least one result
             // TODO: cache empty results
             if (results.at(i).empty())
@@ -174,8 +174,8 @@ namespace tnt::tensor::einsum::operators {
         size_t total_count = 0;
         const op2result_pos_t &pos_mapping = pos_mappings.at(op_count - 1);
         for (auto &result : predecessor_generators.at(op_count - 1)) {
-            Key_t key = getKey<INT_VALUES>(result);
-            total_count = getCount<INT_VALUES>(result);
+            Key_t key = counted_binding::getKey(result);
+            total_count = counted_binding::getCount(result);
             for (const auto[pos, key_part] : zip(pos_mapping, key)) {
                 key[std::get<1>(pos)] = key_part; // TODO: correct?
             }

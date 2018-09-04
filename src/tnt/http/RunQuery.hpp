@@ -29,12 +29,12 @@ namespace tnt::http {
         switch (sparqlQuery.getSelectModifier()) {
             case SelectModifier::NONE: {
                 auto stream = response.stream(Code::Ok);
-                stream_out<INT_VALUES>(vars, query_package->getRegularGenerator(), stream, store, time_out);
+                stream_out<counted_binding>(vars, query_package->getRegularGenerator(), stream, store, time_out);
                 break;
             }
             case SelectModifier::DISTINCT: {
                 auto stream = response.stream(Code::Ok);
-                stream_out<BOOL_VALUES>(vars, query_package->getDistinctGenerator(), stream, store, time_out);
+                stream_out<distinct_binding>(vars, query_package->getDistinctGenerator(), stream, store, time_out);
                 break;
             }
             default:
