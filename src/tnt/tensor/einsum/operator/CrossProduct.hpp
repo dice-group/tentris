@@ -60,7 +60,7 @@ namespace tnt::tensor::einsum::operators {
         }
 
         yield_pull <RESULT_TYPE> get() const override {
-            return yield_pull<RESULT_TYPE>(boost::bind(&CrossProduct<RESULT_TYPE>::getResult, this, _1));
+            return yield_pull<RESULT_TYPE>(boost::bind(&CrossProduct<RESULT_TYPE>::get, this, _1));
         }
 
 
@@ -69,7 +69,7 @@ namespace tnt::tensor::einsum::operators {
          * @param subscript the passed Subscript must represent the dimension layout of the HyperTrieTenors (HyperTrieTenor)
          * that will be passed to getResult() . It will be bracketing out cross product factors will be done internally.
          */
-        void getResult(yield_push <RESULT_TYPE> &yield) const;
+        void get(yield_push <RESULT_TYPE> &yield) const;
 
         std::vector<op2result_pos_t> calcMapping(const size_t op_count) const {
             std::vector<std::vector<std::tuple<size_t, size_t>>> pos_mappings{};
@@ -115,7 +115,12 @@ namespace tnt::tensor::einsum::operators {
     }
 
     template<>
-    void CrossProduct<INT_VALUES>::getResult(operators::yield_push<INT_VALUES> &yield) const {
+    void CrossProduct<BOOL_VALUES>::get(operators::yield_push<BOOL_VALUES> &yield) const {
+        // TODO: implement
+    }
+
+    template<>
+    void CrossProduct<INT_VALUES>::get(operators::yield_push<INT_VALUES> &yield) const {
 
         const size_t op_count = subscript->getResultLabels().size();
 

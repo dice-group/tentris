@@ -50,7 +50,6 @@ namespace tnt::http {
             } else {
                 ++open_connections;
             }
-            using ParsedSPARQL = tnt::store::sparql::ParsedSPARQL;
             try { // if something fails return an internal server error
                 // only answer sparql querys to GET /sparql
                 if (request.method() == Method::Get) {
