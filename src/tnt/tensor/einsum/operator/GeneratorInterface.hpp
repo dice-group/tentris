@@ -27,6 +27,8 @@ namespace tnt::tensor::einsum::operators {
         static key_t getKey(bidning_t binding);
 
         static count_t getCount(bidning_t binding);
+
+        static bidning_t makeBinding(key_t key, count_t count);
     };
 
 
@@ -44,6 +46,10 @@ namespace tnt::tensor::einsum::operators {
 
         constexpr static count_t getCount(bidning_t binding) {
             return std::get<1>(binding);
+        }
+
+        constexpr static bidning_t makeBinding(key_t key, count_t count) {
+            return {key, count};
         }
     };
 
@@ -63,6 +69,13 @@ namespace tnt::tensor::einsum::operators {
 
         constexpr static count_t getCount([[maybe_unused]] bidning_t binding) {
             return true;
+        }
+
+        constexpr static bidning_t makeBinding(key_t key, count_t count) {
+            if (count)
+                return key;
+            else
+                throw std::invalid_argument("distinct_binding::makeBinding: count must not be false.");
         }
     };
 
