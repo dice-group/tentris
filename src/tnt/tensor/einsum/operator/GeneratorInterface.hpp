@@ -2,6 +2,7 @@
 #define TNT_GENERATORINTERFACE_HPP
 
 #include <boost/coroutine2/all.hpp>
+#include <boost/bind.hpp>
 
 #include "tnt/util/Types.hpp"
 

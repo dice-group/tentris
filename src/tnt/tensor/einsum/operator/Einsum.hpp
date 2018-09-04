@@ -7,9 +7,6 @@
 #include <vector>
 #include <memory>
 
-#include <boost/coroutine2/all.hpp>
-#include <boost/bind.hpp>
-
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/tensor/einsum/EinsumPlan.hpp"
 #include "tnt/tensor/hypertrie/Join.hpp"
@@ -37,7 +34,7 @@ namespace tnt::tensor::einsum::operators {
          * The evaluation plan for this->subscript.
          */
         mutable EinsumPlan _plan;
-        mutable std::vector<Slice> _predecessors{};
+        mutable std::vector<Slice<RESULT_TYPE>> _predecessors{};
         mutable Operands _operands{};
         mutable bool _operands_generated = false;
         mutable bool _may_have_results = false;
@@ -116,15 +113,15 @@ namespace tnt::tensor::einsum::operators {
             if (not _operands_generated) {
                 _operands_generated = true;
 
-                for (Slice &slice : _predecessors) {
-                    switch (slice.type) {
-                        case Slice::SCALAR: {
+                for (Slice<RESULT_TYPE> &slice : _predecessors) {
+                    switch (slice.slice_type) {
+                        case Slice<RESULT_TYPE>::SCALAR: {
                             if (not slice.getScalar())
                                 return;
                             break;
                         }
 
-                        case Slice::HYPERTRIE: {
+                        case Slice<RESULT_TYPE>::HYPERTRIE: {
                             BoolHyperTrie *trie = slice.getHyperTrie();
                             if (trie == nullptr)
                                 return;
