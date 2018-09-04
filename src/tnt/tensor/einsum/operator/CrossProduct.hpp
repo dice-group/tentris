@@ -47,16 +47,46 @@ namespace tnt::tensor::einsum::operators {
             auto[sub_slice_keys, sub_tries] = extractSliceKeysAndTries(subscript, slice_keys, tries);
             for (const auto &[sub_subscript, sub_slice_key, sub_tries] : zip(subscript->getSubSubscripts(),
                                                                              sub_slice_keys, sub_tries)) {
+                // TODO: use Slices directly for subsubscripts with empty result labels
                 predecessors.emplace_back(std::shared_ptr<OperatorNode<RESULT_TYPE>>{
                         new Einsum<RESULT_TYPE>{sub_subscript, sub_slice_key, sub_tries}});
             }
         }
 
+        /**
+         * This uses the given subscripts (and its sub-subscripts) to split the given vector of slice_keys into the
+         * single vectors of slice_keys for every sub-subscript. The same is done with the given vector of tries. The
+         * tries are those tries the keys are applied to later. <br/>
+         * note for better understanding: if only one graph is used all entries in tries are the same. acutally, multiple
+         * graphs are not supported so far.
+         * @param subscript a subscript which is optimized and has a cross product.
+         * @param slice_keys the slice keys to the unoptimized subscript
+         * @param tries the tries for the unoptimized subscript
+         * @return a tuple of two vectors: <br/>
+         * - vector of the vector of slice_keys for each operand of this CrossProduct
+         * - vector of the vector of tries for each operand of this CrossProduct
+         */
         std::tuple<std::vector<std::vector<SliceKey_t>>, std::vector<std::vector<BoolHyperTrie *>>>
         extractSliceKeysAndTries(const std::shared_ptr<const Subscript> subscript,
                                  const std::vector<SliceKey_t> &slice_keys,
                                  const std::vector<BoolHyperTrie *> &tries) {
-            // TODO: implement
+            const std::vector<std::shared_ptr<Subscript>> &subsubscripts = subscript->getSubSubscripts();
+
+            std::vector<std::vector<SliceKey_t>> sub_slices_keys(subsubscripts.size());
+            std::vector<std::vector<BoolHyperTrie *>> sub_triess(subsubscripts.size());
+
+            for (const auto &[sub_op_pos, subsubscript] : enumerate(subsubscripts)) {
+                std::vector<SliceKey_t> &sub_slice_keys = sub_slices_keys.at(sub_op_pos);
+                std::vector<BoolHyperTrie *> &sub_tries = sub_triess.at(sub_op_pos);
+
+                const std::vector<op_pos_t> &original_op_poss = subsubscript->getOriginalOpPoss();
+                for (const op_pos_t &original_op_pos : original_op_poss) {
+                    sub_slice_keys.emplace_back(slice_keys.at(original_op_pos));
+                    sub_tries.emplace_back(tries.at(original_op_pos));
+                }
+            }
+
+            return {sub_slices_keys, sub_triess};
         }
 
         yield_pull <RESULT_TYPE> get() const override {
