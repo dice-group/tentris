@@ -68,6 +68,15 @@ namespace tnt::tensor::einsum::operators {
 
     using distinct_binding = binding_type<bool>;
 
+    /**
+     * Class to determine if T is counted_binding or distinct_binding. Use as:
+     *
+     * \code{.cpp}
+     *     template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
+     * \endcode
+     *
+     * @tparam T
+     */
     template<typename T>
     struct is_binding {
         enum {
@@ -76,9 +85,10 @@ namespace tnt::tensor::einsum::operators {
     };
 
 
-    template<typename RESULT_TYPE>
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     using yield_push = typename boost::coroutines2::coroutine<typename RESULT_TYPE::bidning_t>::push_type;
-    template<typename RESULT_TYPE>
+
+    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     using yield_pull = typename boost::coroutines2::coroutine<typename RESULT_TYPE::bidning_t>::pull_type;
 
 }
