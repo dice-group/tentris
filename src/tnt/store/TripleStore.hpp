@@ -82,13 +82,13 @@ namespace tnt::store {
 
     auto getBNode(const SerdNode *node) -> std::unique_ptr<Term> {
         std::ostringstream bnode_str;
-        bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_chars)};
+        bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)};
         return std::unique_ptr<Term>{new BNode{bnode_str.str()}};
     }
 
     auto getURI(const SerdNode *node) -> std::unique_ptr<Term> {
         std::ostringstream uri_str;
-        uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_chars)} << ">";
+        uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)} << ">";
         return std::unique_ptr<Term>{new URIRef{uri_str.str()}};
     }
 
@@ -96,14 +96,14 @@ namespace tnt::store {
                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
         std::optional<std::string> type = (type_node != nullptr)
                                           ? std::optional<std::string>{{(char *) (type_node->buf),
-                                                                               size_t(type_node->n_chars)}}
+                                                                               size_t(type_node->n_bytes)}}
                                           : std::nullopt;
         std::optional<std::string> lang = (lang_node != nullptr)
                                           ? std::optional<std::string>{{(char *) (lang_node->buf),
-                                                                               size_t(lang_node->n_chars)}}
+                                                                               size_t(lang_node->n_bytes)}}
                                           : std::nullopt;
         return std::unique_ptr<Term>{
-                new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
+                new Literal{std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type}};
     };
 
     auto serd_callback(void *handle, SerdStatementFlags flags, const SerdNode *graph, const SerdNode *subject,
