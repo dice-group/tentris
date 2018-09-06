@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <optional>
+#include <algorithm>
 
 
 namespace tnt::util::types {
@@ -42,6 +43,10 @@ namespace tnt::util::types {
 
     using Key_t = ::std::vector<key_part_t>;
     using SliceKey_t = ::std::vector<std::optional<key_part_t>>;
+
+    bool hasSlices(const SliceKey_t &key){
+        return std::count(key.begin(), key.end(), std::nullopt) > 0;
+    }
 
 #define KEY_PART_MAX (UINT64_MAX)
 

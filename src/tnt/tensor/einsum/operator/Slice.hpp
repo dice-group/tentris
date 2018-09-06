@@ -32,7 +32,7 @@ namespace tnt::tensor::einsum::operators {
     public:
         Slice(const SliceKey_t &key, const BoolHyperTrie *trie) :
                 _key{key}, _trie{trie},
-                slice_type{(std::count(key.begin(), key.end(), std::nullopt) > 0) ? HYPERTRIE : SCALAR} {}
+                slice_type{hasSlices(key) ? HYPERTRIE : SCALAR} {}
 
         /**
          * Must only be called if this->slice_type == SCALAR.
