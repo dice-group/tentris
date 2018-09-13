@@ -51,7 +51,7 @@ std::ostream &operator<<(std::ostream &os, const std::tuple<T1, T2, T3> &t) {
 }
 
 template<typename T1, typename T2>
-std::ostream &operator<<(std::ostream &os, const std::pair<const T1, T2> &p) {
+std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &p) {
     os << p.first << " : " << p.second;
     return os;
 }

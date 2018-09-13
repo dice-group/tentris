@@ -80,6 +80,14 @@ namespace tnt::tensor::hypertrie {
                                                            ? Children{._inner_edges =std::vector<inner_edges>(depth)}
                                                            : Children{._leaf_edges =leaf_edges{}}} {}
 
+        BoolHyperTrie(std::initializer_list<Key_t> keys)
+                : BoolHyperTrie(key_pos_t((keys.size() > 0) ? keys.begin()->size() : 0)) {
+            for (const auto &key : keys) {
+                assert(key.size() == _depth);
+                set(key, true);
+            }
+        }
+
         /**
          * Get the depth of the BoolHyperTrie.
          * @return depth of this

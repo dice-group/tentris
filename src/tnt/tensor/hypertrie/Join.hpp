@@ -171,7 +171,7 @@ namespace tnt::tensor::hypertrie {
                 return *this;
             }
 
-            std::tuple<std::vector<BoolHyperTrie *>, std::vector<uint64_t>> operator*() {
+            std::pair<std::vector<BoolHyperTrie *>, std::vector<uint64_t>> operator*() {
                 // build the result
                 std::vector<BoolHyperTrie *> result = _join._result;
                 for (auto &[revJoinee_pos, result_pos] : _reorderedDiagonals2result_pos) {
