@@ -120,7 +120,7 @@ namespace tnt::tensor::einsum {
                 if (not all_done) {
                     _op_poss = _subscript->operandsWithLabel(label);
                     auto found = _result_label_poss.find(label);
-                    if (found != result_label_poss.end())
+                    if (found != _result_label_poss.end())
                         _result_pos = {found->second};
                     else
                         _result_pos = std::nullopt;

@@ -55,7 +55,8 @@ TEST(TestJoin, simple_call) {
         ASSERT_EQ(actual_operands, expected_operands);
 
         const Step &step_2 = step.nextStep(expected_operands);
-        Join join_2{key, expected_operands, step_2};
+        std::cout << step_2 << std::endl;
+        Join join_2{actual_key, expected_operands, step_2};
 
         if (actual_key[0] == 7) {
             Operands expected_operands_2{};

@@ -27,7 +27,7 @@ std::ostream &operator<<(std::ostream &os, const std::tuple<T1, T2> &t) {
 
 template<typename T1, typename T2>
 std::ostream &operator<<(std::ostream &os, const std::variant<T1, T2> &t) {
-    if (std:: holds_alternative<T1>(t))
+    if (std::holds_alternative<T1>(t))
         os << std::get<T1>(t);
     else
         os << std::get<T2>(t);
@@ -37,7 +37,7 @@ std::ostream &operator<<(std::ostream &os, const std::variant<T1, T2> &t) {
 template<typename T>
 std::ostream &operator<<(std::ostream &os, const std::optional<T> &t) {
     if (t.has_value())
-        os << *t;
+        os << "opt<" << *t << ">";
     else
         os << "nullopt";
     return os;
