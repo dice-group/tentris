@@ -54,7 +54,7 @@ namespace tnt::tensor::hypertrie {
 
             // initialize diagonals with the operands and their positions to join on.
             for (const auto &[op_pos, key_part_poss] : zip(step.getOperandPositions(), step.getKeyPartPoss())) {
-                _diagonals.emplace_back(BoolHyperTrie::DiagonalView{operands[op_pos], key_part_poss});
+                _diagonals.emplace_back(BoolHyperTrie::DiagonalView{operands.at(op_pos), key_part_poss});
             }
 
             // narrow the range of the diagonals

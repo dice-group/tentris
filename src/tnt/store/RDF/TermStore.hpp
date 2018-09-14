@@ -46,6 +46,8 @@ namespace tnt::store {
             void clear() noexcept {
                 _original.clear();
             }
+
+            friend std::ostream &operator<<(std::ostream &os, const RevTermStore &store);
         };
 
     private:
@@ -132,6 +134,11 @@ namespace tnt::store {
                 os << *str_p << "\n";
             }
             os << std::endl;
+            return os;
+        }
+
+        friend std::ostream &operator<<(std::ostream &os, const RevTermStore &store) {
+            os << store._original._id2term;
             return os;
         }
     };

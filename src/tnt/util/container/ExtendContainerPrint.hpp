@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include <numeric>
 #include <set>
 #include <map>
@@ -58,8 +59,20 @@ std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &p) {
 
 template<typename Value>
 std::ostream &operator<<(std::ostream &os, const std::vector<Value> &elements) {
-    auto iter_begin = begin(elements);
-    auto iter_end = end(elements);
+    auto iter_begin = cbegin(elements);
+    auto iter_end = cend(elements);
+    os << "[";
+    for (auto iter = iter_begin; iter != iter_end; ++iter) {
+        os << ((iter != iter_begin) ? ", " : "") << *iter;
+    }
+    os << "]";
+    return os;
+}
+
+template<typename Value>
+std::ostream &operator<<(std::ostream &os, const std::list<Value> &elements) {
+    auto iter_begin = cbegin(elements);
+    auto iter_end = cend(elements);
     os << "[";
     for (auto iter = iter_begin; iter != iter_end; ++iter) {
         os << ((iter != iter_begin) ? ", " : "") << *iter;

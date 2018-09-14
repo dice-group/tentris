@@ -98,7 +98,7 @@ namespace tnt::util::container {
         if (low == high) {
 //            if (low >= sorted_vector.size())
 //                return high + 1;
-            if (sorted_vector.at(low) <= value) {
+            if (value <= sorted_vector.at(low)) {
                 return high;
             } else {
                 return high + 1;

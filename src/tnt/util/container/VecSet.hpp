@@ -62,6 +62,10 @@ namespace tnt::util::container {
             return _keys.size();
         }
 
+        inline const std::vector<KEY_t> keys() const{
+            return _keys;
+        }
+
         /**
          *
          * @param key
