@@ -76,11 +76,11 @@ namespace tnt::util::container {
   * If it is not present the position where to insert the key is returned.
   * @param key key to check
   * @param minInd the minimum index where to look
-  * @param maxInd the maximum index where to look
+  * @param maxInd the maximum index where to look todo take care of it usages
   * @return if there is an entry for that key or not.
   */
         inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);////todo +1 should moved to the useages
             if (ind == (max + 1) or key != this->_keys[ind]) {
                 return std::make_tuple(false, ind);
             } else {
@@ -94,11 +94,11 @@ namespace tnt::util::container {
          * SIZE_MAX is returned.
          * @param key key to check
          * @param minInd the minimum index where to look
-         * @param maxInd the maximum index where to look
+         * @param maxInd the maximum index where to look todo take care of it usages
          * @return if there is an entry for that key or not.
          */
         inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
+            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);//todo +1 should moved to the useages
             if (ind == (max + 1) or key != this->_keys[ind]) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);

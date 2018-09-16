@@ -31,14 +31,14 @@ TEST(TestBinarySearch, findInsertPos) {
     ASSERT_EQ(insert_pos<int>(sorted, -7, 0), 1);
 
     // find a value in range
-    ASSERT_EQ(insert_pos<int>(sorted, 6, 2, 10), 6);
-    ASSERT_EQ(insert_pos<int>(sorted, 9, 2, 10), 9);
-    ASSERT_EQ(insert_pos<int>(sorted, 15, 2, 10), 10);
+    ASSERT_EQ(insert_pos<int>(sorted, 6, 2, 10 + 1), 6);
+    ASSERT_EQ(insert_pos<int>(sorted, 9, 2, 10 + 1), 9);
+    ASSERT_EQ(insert_pos<int>(sorted, 15, 2, 10 + 1), 10);
 
     // values not in range or not sequence not found
-    ASSERT_EQ(insert_pos<int>(sorted, 18, 2, 10), 11);
-    ASSERT_EQ(insert_pos<int>(sorted, 16, 2, 10), 11);
-    ASSERT_EQ(insert_pos<int>(sorted, 14, 2, 10), 10);
+    ASSERT_EQ(insert_pos<int>(sorted, 18, 2, 10 + 1), 11);
+    ASSERT_EQ(insert_pos<int>(sorted, 16, 2, 10 + 1), 11);
+    ASSERT_EQ(insert_pos<int>(sorted, 14, 2, 10 + 1), 10);
 }
 
 TEST(TestBinarySearch, findInRange) {
@@ -53,14 +53,14 @@ TEST(TestBinarySearch, findInRange) {
     ASSERT_EQ(search<int>(sorted, -7, 0), 1);
 
     // find a value in range
-    ASSERT_EQ(search<int>(sorted, 6, 2, 10), 6);
-    ASSERT_EQ(search<int>(sorted, 9, 2, 10), 9);
-    ASSERT_EQ(search<int>(sorted, 15, 2, 10), 10);
+    ASSERT_EQ(search<int>(sorted, 6, 2, 10 + 1), 6);
+    ASSERT_EQ(search<int>(sorted, 9, 2, 10 + 1), 9);
+    ASSERT_EQ(search<int>(sorted, 15, 2, 10 + 1), 10);
 
     // values not in range or not sequence not found
-    ASSERT_EQ(search<int>(sorted, 18, 2, 10), NOT_FOUND);
-    ASSERT_EQ(search<int>(sorted, 16, 2, 10), NOT_FOUND);
-    ASSERT_EQ(search<int>(sorted, 14, 2, 10), NOT_FOUND);
+    ASSERT_EQ(search<int>(sorted, 18, 2, 10 + 1), NOT_FOUND);
+    ASSERT_EQ(search<int>(sorted, 16, 2, 10 + 1), NOT_FOUND);
+    ASSERT_EQ(search<int>(sorted, 14, 2, 10 + 1), NOT_FOUND);
 }
 
 
