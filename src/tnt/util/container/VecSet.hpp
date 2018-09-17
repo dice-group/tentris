@@ -76,7 +76,7 @@ namespace tnt::util::container {
   * If it is not present the position where to insert the key is returned.
   * @param key key to check
   * @param minInd the minimum index where to look
-  * @param maxInd the maximum index where to look
+  * @param maxInd the maximum index where to look todo take care of it usages
   * @return if there is an entry for that key or not.
   */
         inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
@@ -94,7 +94,7 @@ namespace tnt::util::container {
          * SIZE_MAX is returned.
          * @param key key to check
          * @param minInd the minimum index where to look
-         * @param maxInd the maximum index where to look
+         * @param maxInd the maximum index where to look todo take care of it usages
          * @return if there is an entry for that key or not.
          */
         inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {

@@ -136,16 +136,16 @@ namespace tnt::util::container {
      */
     template<typename T>
     inline size_t search(const std::vector<T> &sorted_vector, const T &value, size_t low, size_t high) {
-        if (low > high)
+        if (low + 1 > high)
             return NOT_FOUND;
-        else if (low == high)
+        else if (low + 1 == high)
             if (sorted_vector.at(low) == value) {
                 return low;
             } else {
                 return NOT_FOUND;
             }
         else {
-            size_t size = high - low + 1;
+            size_t size = high - low;
             size_t probe;
 
             while (size > 0) {
