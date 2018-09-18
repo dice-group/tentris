@@ -72,16 +72,16 @@ namespace tnt::util::container {
         }
 
         /**
-  * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
-  * If it is not present the position where to insert the key is returned.
-  * @param key key to check
-  * @param minInd the minimum index where to look
-  * @param maxInd the maximum index where to look todo take care of it usages
-  * @return if there is an entry for that key or not.
-  */
-        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);////todo +1 should moved to the useages
-            if (ind == (max + 1) or key != this->_keys[ind]) {
+          * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
+          * If it is not present the position where to insert the key is returned.
+          * @param key key to check
+          * @param minInd the minimum index where to look
+          * @param maxInd the maximum index where to look
+          * @return if there is an entry for that key or not.
+          */
+        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t low_ind, size_t high_ind) const {
+            const size_t ind = insert_pos<KEY_t>(_keys, low_ind, high_ind, key);
+            if (ind == high_ind or key != this->_keys[ind]) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
@@ -94,12 +94,12 @@ namespace tnt::util::container {
          * SIZE_MAX is returned.
          * @param key key to check
          * @param minInd the minimum index where to look
-         * @param maxInd the maximum index where to look todo take care of it usages
+         * @param maxInd the maximum index where to look
          * @return if there is an entry for that key or not.
          */
-        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);//todo +1 should moved to the useages
-            if (ind == (max + 1) or key != this->_keys[ind]) {
+        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t low_ind, size_t high_ind) const {
+            const size_t ind = insert_pos<KEY_t>(_keys, low_ind, high_ind, key);
+            if (ind == high_ind or key != this->_keys.at(ind)) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);
                 } else {

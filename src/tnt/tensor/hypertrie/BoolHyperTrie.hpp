@@ -786,8 +786,8 @@ namespace tnt::tensor::hypertrie {
         private:
             static key_part_t first_from_lower_bound_I(DiagonalView &view, const key_part_t &lower) {
                 if (lower != view._leaf_edges->_keys.at(view._min_ind)) {
-                    view._min_ind = tnt::util::container::insert_pos(view._leaf_edges->_keys, lower, view._min_ind,
-                                                                     view._max_ind + 1);
+                    view._min_ind = tnt::util::container::insert_pos(view._leaf_edges->_keys, view._min_ind,
+                                                                     view._max_ind + 1, lower);
                     return increment_current_until_hit_I(view);
 
                 } else {
@@ -811,8 +811,8 @@ namespace tnt::tensor::hypertrie {
                 const std::vector<key_part_t> &children_keys = view._inner_edges->keys();
 
                 if (lower != children_keys.at(view._min_ind)) {
-                    view._min_ind = tnt::util::container::insert_pos(children_keys, lower, view._min_ind,
-                                                                     view._max_ind + 1);
+                    view._min_ind = tnt::util::container::insert_pos(children_keys, view._min_ind,
+                                                                     view._max_ind + 1, lower);
                 }
                 return increment_current_until_hit_II(view);
             }
@@ -843,8 +843,8 @@ namespace tnt::tensor::hypertrie {
                 const std::vector<key_part_t> &childrens_keys = view._inner_edges->keys();
 
                 if (lower != childrens_keys.at(view._min_ind)) {
-                    view._min_ind = tnt::util::container::insert_pos(childrens_keys, lower, view._min_ind,
-                                                                     view._max_ind + 1);
+                    view._min_ind = tnt::util::container::insert_pos(childrens_keys, view._min_ind,
+                                                                     view._max_ind + 1, lower);
                 }
                 return increment_current_until_hit_III(view);
             }
@@ -912,8 +912,8 @@ namespace tnt::tensor::hypertrie {
              */
         private:
             static bool containsAndUpdateLower_I(DiagonalView &view, const key_part_t &key_part) {
-                size_t ind = tnt::util::container::insert_pos(view._leaf_edges->_keys, key_part, view._min_ind,
-                                                              view._max_ind + 1 );
+                size_t ind = tnt::util::container::insert_pos(view._leaf_edges->_keys, view._min_ind,
+                                                              view._max_ind + 1, key_part);
                 if (ind != view._max_ind + 1) {
                     view._min = view._leaf_edges->keyByInd(ind);
                     if (view._min == key_part) {
@@ -940,7 +940,8 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind + 1);
+                             : tnt::util::container::insert_pos(childrens_keys, view._min_ind, view._max_ind + 1,
+                                                                key_part);
 
 
                 if (ind != view._max_ind + 1) {
@@ -973,7 +974,8 @@ namespace tnt::tensor::hypertrie {
 
                 size_t ind = (current_key_part == childrens_keys.at(view._min_ind))
                              ? view._min_ind
-                             : tnt::util::container::insert_pos(childrens_keys, key_part, view._min_ind, view._max_ind + 1);
+                             : tnt::util::container::insert_pos(childrens_keys, view._min_ind, view._max_ind + 1,
+                                                                key_part);
 
 
                 if (ind != view._max_ind + 1) {

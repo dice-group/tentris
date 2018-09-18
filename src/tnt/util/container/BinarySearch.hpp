@@ -28,7 +28,7 @@ namespace tnt::util::container {
      * @return insert position
      */
     template<typename T>
-    inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value) {
+    inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value) noexcept {
         auto iterator = std::lower_bound(sorted_vector.cbegin(), sorted_vector.cend(), value);
         return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
     }
@@ -43,15 +43,14 @@ namespace tnt::util::container {
      * @return insert position
      */
     template<typename T>
-    inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value, size_t low) {
-        size_t probe = sorted_vector.size();
-        if (low >= probe)
-            return probe;
-        auto lowIterator = sorted_vector.cbegin();
-        std::advance(lowIterator, low);
-        auto iterator = std::lower_bound(lowIterator, sorted_vector.cend(), value);
+    inline size_t insert_pos(const std::vector<T> &sorted_vector, const size_t low, const T &value) noexcept {
+        assert(low <= sorted_vector.size());
+        if (size_t size = sorted_vector.size(); low >= size)
+            return size;
+        auto low_iterator = sorted_vector.cbegin();
+        std::advance(low_iterator, low);
+        auto iterator = std::lower_bound(low_iterator, sorted_vector.cend(), value);
         return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
-
     }
 
     /**
@@ -65,21 +64,19 @@ namespace tnt::util::container {
      * @return insert position
      */
     template<typename T>
-    inline size_t insert_pos(const std::vector<T> &sorted_vector, const T &value, size_t low, size_t high) {
-        if (high > sorted_vector.size()) //todo throw exception or just replace high or make sure not have such a case and remove the line
-            high = sorted_vector.size();
-        if (low > high) //todo maybe illegal usages
-            return high + 1;
-        if (low + 1 == high)
-            return sorted_vector.at(low) <= value ? low : high;
-
-        auto lowIterator = sorted_vector.cbegin();
-        std::advance(lowIterator, low);
-        auto highIterator = sorted_vector.cbegin();
-        std::advance(highIterator, high);
-
-        auto iterator = std::lower_bound(lowIterator, highIterator, value);
-        return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
+    inline size_t insert_pos(const std::vector<T> &sorted_vector, const size_t low, const size_t high, const T &value) noexcept {
+        assert(high <= sorted_vector.size());
+        assert(low <= sorted_vector.size());
+        if (low >= high)
+            return high;
+        else {
+            auto low_iterator = sorted_vector.cbegin();
+            std::advance(low_iterator, low);
+            auto high_iterator = sorted_vector.cbegin();
+            std::advance(high_iterator, high);
+            auto iterator = std::lower_bound(low_iterator, high_iterator, value);
+            return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
+        }
     }
 
 
@@ -91,10 +88,12 @@ namespace tnt::util::container {
      * @return the position of value in the vector or ::sparsetensor::container::NOT_FOUND if its not in there.
      */
     template<typename T>
-    inline size_t search(const std::vector<T> &sorted_vector, const T &value) {
+    inline size_t search(const std::vector<T> &sorted_vector, const T &value) noexcept {
         auto iterator = std::lower_bound(sorted_vector.cbegin(), sorted_vector.cend(), value);
-        if (iterator == sorted_vector.end() or *iterator != value) return NOT_FOUND;
-        return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
+        if (iterator == sorted_vector.end() or *iterator != value)
+            return NOT_FOUND;
+        else
+            return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
     }
 
     /**
@@ -106,16 +105,17 @@ namespace tnt::util::container {
      * @return the position of value in the vector or ::sparsetensor::container::NOT_FOUND if its not in there.
      */
     template<typename T>
-    inline size_t search(const std::vector<T> &sorted_vector, const T &value, const size_t &low) {
-        size_t probe = sorted_vector.size();
-        if (low >= probe)
+    inline size_t search(const std::vector<T> &sorted_vector, const size_t low, const T &value) noexcept {
+        if (low >= sorted_vector.size())
             return NOT_FOUND;
         else {
-            auto lowIterator = sorted_vector.cbegin();
-            std::advance(lowIterator, low);
-            auto iterator = std::lower_bound(lowIterator, sorted_vector.cend(), value);
-            if (iterator == sorted_vector.end() or *iterator != value) return NOT_FOUND;
-            return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
+            auto low_iterator = sorted_vector.cbegin();
+            std::advance(low_iterator, low);
+            auto iterator = std::lower_bound(low_iterator, sorted_vector.cend(), value);
+            if (iterator == sorted_vector.end() or *iterator != value)
+                return NOT_FOUND;
+            else
+                return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
         }
     }
 
@@ -129,21 +129,20 @@ namespace tnt::util::container {
      * @return the position of value in the vector or ::sparsetensor::container::NOT_FOUND if its not in there.
      */
     template<typename T>
-    inline size_t search(const std::vector<T> &sorted_vector, const T &value, const size_t low, const size_t high) {
-        if (low > high)
+    inline size_t search(const std::vector<T> &sorted_vector, const size_t low, const size_t high, const T &value) noexcept {
+        assert(high <= sorted_vector.size());
+        assert(low <= sorted_vector.size());
+        if (low >= high)
             return NOT_FOUND;
-//        else if (low + 1 == high)
-//            return sorted_vector.at(low) == value ? low : NOT_FOUND;
-
-        auto lowIterator = sorted_vector.cbegin();
-        std::advance(lowIterator, low);
-        auto highIterator = sorted_vector.cbegin();
-        std::advance(highIterator, high);
-        auto iterator = std::lower_bound(lowIterator, highIterator, value);
-
-        if (iterator == highIterator or *iterator != value) return NOT_FOUND;
-
-        return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
+        auto low_iterator = sorted_vector.cbegin();
+        std::advance(low_iterator, low);
+        auto high_iterator = sorted_vector.cbegin();
+        std::advance(high_iterator, high);
+        auto iterator = std::lower_bound(low_iterator, high_iterator, value);
+        if (iterator == high_iterator or *iterator != value)
+            return NOT_FOUND;
+        else
+            return static_cast<size_t>(std::distance(sorted_vector.cbegin(), iterator));
     }
 }
 

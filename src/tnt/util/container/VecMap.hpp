@@ -103,16 +103,13 @@ namespace tnt::util::container {
         /**
          * Returns the values stored for key. Throws an exception if there is none.
          * @param key key to the value
-         * @param min_ind minimum index (inclusive) to look for the value
-         * @param max_ind maximum index (exclusive) to look for the value
+         * @param low_ind minimum index (inclusive) to look for the value
+         * @param high_ind maximum index (exclusive) to look for the value
          * @return the stored value
          * @throws std::out_of_range if the key is not contained in min_ind , max_ind
          */
-        //todo why const is used in this overload of at
-        //todo take care of it usages
-        //todo What is the purpose of this function (can be removed because the caller function of this don't have any usages)
-        const VALUE_t &at(const KEY_t &key, const size_t min_ind, const size_t max_ind) const {
-            size_t pos = search<KEY_t>(_keys, key, min_ind, max_ind); //+ 1 is moved to the usages
+        const VALUE_t &at(const KEY_t &key, const size_t low_ind, const size_t high_ind) const {
+            size_t pos = search<KEY_t>(_keys, low_ind, high_ind, key); //+ 1 is moved to the usages
             // throws if result is out of range
             return _values.at(pos);
         }
@@ -131,12 +128,12 @@ namespace tnt::util::container {
         /**
          * Returns the values stored for key in min_ind to max_ind domain. Returns NOT_FOUND if there is none.
          * @param key key to the value
-         * @param min_ind minimum index to start search for the given key
-         * @param max_ind maximum index to start search for the given key
+         * @param low_ind minimum index (inclusive) to start search for the given key
+         * @param high_ind maximum index (exclusive) to start search for the given key
          * @return the stored value or MAX_VAL
          */
-        const VALUE_t &get(const KEY_t &key, const size_t min_ind, const size_t max_ind) const noexcept {
-            size_t pos = search<KEY_t>(_keys, key, min_ind, max_ind); //+ 1 is moved to the usages
+        const VALUE_t &get(const KEY_t &key, const size_t low_ind, const size_t high_ind) const noexcept {
+            size_t pos = search<KEY_t>(_keys, low_ind, high_ind, key); //+ 1 is moved to the usages
             if (pos != NOT_FOUND)
                 return _values.at(pos);
             else
@@ -178,7 +175,7 @@ namespace tnt::util::container {
          //todo it can be replaced by search function
         inline std::tuple<bool, size_t>
         containsAndInd(const KEY_t &key, size_t min_ind, size_t max_ind) const noexcept {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min_ind, max_ind); //todo +1 should moved to the useages
+            const size_t ind = insert_pos<KEY_t>(_keys, min_ind, max_ind, key); //todo +1 should moved to the usages
             if (ind == (max_ind + 1) or key != this->_keys.at(ind)) {
                 return std::make_tuple(false, ind);
             } else {
@@ -207,7 +204,7 @@ namespace tnt::util::container {
          */
         //todo it can be replaced by search function
         std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const noexcept {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);//todo +1 should moved to the useages
+            const size_t ind = insert_pos<KEY_t>(_keys, min, max, key);//todo +1 should moved to the useages
             if (ind == (max + 1) or key != this->_keys[ind]) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);
@@ -325,7 +322,7 @@ namespace tnt::util::container {
                     _min_ind = insert_pos<KEY_t>(map._keys, _min);
                     if (min != map._keys.size()) {
                         // get max value index
-                        _max_ind = insert_pos<KEY_t>(map._keys, _max, _min_ind);
+                        _max_ind = insert_pos<KEY_t>(map._keys, _min_ind, _max);
                         // check if a higher value was found.
                         if (_max_ind != map._keys.size()) {
                             if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
@@ -456,7 +453,7 @@ namespace tnt::util::container {
              * @return if there is an entry for that key or not.
              */
             bool contains(const KEY_t &key) noexcept {
-                return search<KEY_t>(map._keys, key, _min_ind, _max_ind + 1) != NOT_FOUND;
+                return search<KEY_t>(map._keys, _min_ind, _max_ind + 1, key) != NOT_FOUND;
             }
 
             bool operator==(const View &rhs) const {
