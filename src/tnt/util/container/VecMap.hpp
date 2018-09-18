@@ -16,22 +16,24 @@ namespace tnt::util::container {
      */
     template<typename KEY_t, typename VALUE_t>
     class VecMap {
+    public:
         /**
          * Minimum value of KEY_t.
          */
-        constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::max();
+        constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::min();
         /**
          * Maximum value of KEY_t.
          */
         constexpr const static KEY_t MAX_KEY = std::numeric_limits<KEY_t>::max();
         /**
+         * Maximum value of VALUE_t.
+         */
+        constexpr const static VALUE_t MIN_VAL = std::numeric_limits<VALUE_t>::min();
+        /**
          * Minimum value of VALUE_t.
          */
         constexpr const static VALUE_t MAX_VAL = std::numeric_limits<VALUE_t>::max();
-        /**
-         * Maximum value of VALUE_t.
-         */
-        constexpr const static VALUE_t MIN_VAL = std::numeric_limits<VALUE_t>::max();
+
 
         /**
          * Vector string the keys.
@@ -49,10 +51,10 @@ namespace tnt::util::container {
         VecMap() {}
 
         /**
-         * Get the minimum key currently stored.
+         * Get the minimum key currently stored. If there is no element return MAX_KEY, empty set is (MAX_KEY, MIN_KEY).
          * @return the minimum key currently stored.
          */
-        const KEY_t &min() const {
+        const KEY_t &min() const noexcept {
             if (_keys.size())
                 return *_keys.cbegin();
             else
@@ -60,10 +62,10 @@ namespace tnt::util::container {
         }
 
         /**
-         * Get the maximum key currently stored.
+         * Get the maximum key currently stored. If there is no element return MIN_KEY, empty set is (MAX_KEY, MIN_KEY).
          * @return the maximum key currently stored.
          */
-        const KEY_t &max() const {
+        const KEY_t &max() const noexcept {
             if (_keys.size())
                 return *_keys.crbegin();
             else
@@ -77,7 +79,7 @@ namespace tnt::util::container {
          */
         void setItem(const KEY_t &key, const VALUE_t &value) noexcept {
             size_t pos = insert_pos<KEY_t>(_keys, key);
-            if (pos != _keys.size() and _keys[pos] == key) {
+            if (pos != _keys.size() and _keys.at(pos) == key) {
                 _values[pos] = value;
             } else {
                 _keys.insert(_keys.begin() + pos, key);
@@ -89,12 +91,27 @@ namespace tnt::util::container {
          * Deletes the entry for the given key. If there is no value for that key nothing happens.
          * @param key the key to the entry to be deleted.
          */
-        void delItem(const KEY_t &key) {
+        void delItem(const KEY_t &key) noexcept {
             size_t pos = search<KEY_t>(_keys, key);
             if (pos != NOT_FOUND) {
                 _keys.erase(_keys.begin() + pos);
                 _values.erase(_values.begin() + pos);
             }
+        }
+
+
+        /**
+         * Returns the values stored for key. Throws an exception if there is none.
+         * @param key key to the value
+         * @param low_ind minimum index (inclusive) to look for the value
+         * @param high_ind maximum index (exclusive) to look for the value
+         * @return the stored value
+         * @throws std::out_of_range if the key is not contained in min_ind , max_ind
+         */
+        const VALUE_t &at(const KEY_t &key, const size_t low_ind, const size_t high_ind) const {
+            size_t pos = search<KEY_t>(_keys, low_ind, high_ind, key); //+ 1 is moved to the usages
+            // throws if result is out of range
+            return _values.at(pos);
         }
 
         /**
@@ -109,11 +126,27 @@ namespace tnt::util::container {
         }
 
         /**
+         * Returns the values stored for key in min_ind to max_ind domain. Returns NOT_FOUND if there is none.
+         * @param key key to the value
+         * @param low_ind minimum index (inclusive) to start search for the given key
+         * @param high_ind maximum index (exclusive) to start search for the given key
+         * @return the stored value or MAX_VAL
+         */
+        const VALUE_t &get(const KEY_t &key, const size_t low_ind, const size_t high_ind) const noexcept {
+            size_t pos = search<KEY_t>(_keys, low_ind, high_ind, key); //+ 1 is moved to the usages
+            if (pos != NOT_FOUND)
+                return _values.at(pos);
+            else
+                return MAX_VAL;
+        }
+
+
+        /**
          * Returns the values stored for key. Returns NOT_FOUND if there is none.
          * @param key key to the value
          * @return the stored value or MAX_VAL
          */
-        const VALUE_t &get(const KEY_t &key) const {
+        const VALUE_t &get(const KEY_t &key) const noexcept {
             size_t pos = search<KEY_t>(_keys, key);
             if (pos != NOT_FOUND) {
                 return _values.at(pos);
@@ -127,7 +160,7 @@ namespace tnt::util::container {
          * @param key key to check
          * @return if there is an entry for that key or not.
          */
-        inline bool contains(const KEY_t &key) const {
+        inline bool contains(const KEY_t &key) const noexcept {
             return search<KEY_t>(_keys, key) != NOT_FOUND;
         }
 
@@ -136,21 +169,24 @@ namespace tnt::util::container {
          * If it is not present the position where to insert the key is returned.
          * @param key key to check
          * @param min_ind the minimum index where to look
-         * @param max_ind the maximum index where to look
+         * @param max_ind the maximum index where to look todo take care of it usages
          * @return if there is an entry for that key or not.
          */
-        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t min_ind, size_t max_ind) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min_ind, max_ind);
-            if (ind == (max_ind+1) or key != this->_keys[ind]) {
+         //todo it can be replaced by search function
+        inline std::tuple<bool, size_t>
+        containsAndInd(const KEY_t &key, size_t min_ind, size_t max_ind) const noexcept {
+            const size_t ind = insert_pos<KEY_t>(_keys, min_ind, max_ind, key); //todo +1 should moved to the usages
+            if (ind == (max_ind + 1) or key != this->_keys.at(ind)) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
             }
         }
 
-        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key) const {
+        //todo it can be replaced by search function
+        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key) const noexcept {
             const size_t ind = insert_pos<KEY_t>(_keys, key);
-            if (ind == this->_keys.size() or key != this->_keys[ind]) {
+            if (ind == this->_keys.size() or key != this->_keys.at(ind)) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
@@ -163,12 +199,13 @@ namespace tnt::util::container {
          * SIZE_MAX is returned.
          * @param key key to check
          * @param minInd the minimum index where to look
-         * @param maxInd the maximum index where to look
+         * @param maxInd the maximum index where to look todo take care of it usages
          * @return if there is an entry for that key or not.
          */
-        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, key, min, max);
-            if (ind == (max +1) or key != this->_keys[ind]) {
+        //todo it can be replaced by search function
+        std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t min, size_t max) const noexcept {
+            const size_t ind = insert_pos<KEY_t>(_keys, min, max, key);//todo +1 should moved to the useages
+            if (ind == (max + 1) or key != this->_keys[ind]) {
                 if (ind == 0) {
                     return std::make_tuple(false, SIZE_MAX);
                 } else {
@@ -216,16 +253,16 @@ namespace tnt::util::container {
          * Number of entries.
          * @return number of entries.
          */
-        inline size_t size() const {
+        inline size_t size() const noexcept {
             return _values.size();
         }
 
 
-        inline const std::vector<KEY_t> &keys() const {
+        inline const std::vector<KEY_t> &keys() const noexcept {
             return _keys;
         }
 
-        inline const std::vector<VALUE_t> &values() const {
+        inline const std::vector<VALUE_t> &values() const noexcept {
             return _values;
         }
 
@@ -251,11 +288,11 @@ namespace tnt::util::container {
             /**
              * The index of the minimum key that may be accessed.
              */
-            size_t _min_ind = MIN_SIZE_T;
+            size_t _min_ind = SIZE_MAX;
             /**
              * The index of the maximum key that may be accessed.
              */
-            size_t _max_ind = NOT_FOUND;
+            size_t _max_ind = 0;
             /**
              * The number of elements in the view.
              */
@@ -266,9 +303,9 @@ namespace tnt::util::container {
              * @param map the VecMap to be viewed.
              */
             explicit View(const VecMap &map) : map{map}, _min{map.min()}, _max{map.max()}, _size{map.size()} {
-                if (auto size = map.size(); size > 0) {
+                if (_size > 0) {
                     _min_ind = 0;
-                    _max_ind = size - 1;
+                    _max_ind = _size - 1;
                 }
             }
 
@@ -283,11 +320,11 @@ namespace tnt::util::container {
                 if (_size != 0 and _min <= _max) { // check if view is empty
                     // get min value index
                     _min_ind = insert_pos<KEY_t>(map._keys, _min);
-                    if (min != _size) {
+                    if (min != map._keys.size()) {
                         // get max value index
-                        _max_ind = insert_pos<KEY_t>(map._keys, _max, _min_ind);
+                        _max_ind = insert_pos<KEY_t>(map._keys, _min_ind, _max);
                         // check if a higher value was found.
-                        if (_max_ind != map.size()) {
+                        if (_max_ind != map._keys.size()) {
                             if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
                                 --_max_ind;
                             }
@@ -301,18 +338,26 @@ namespace tnt::util::container {
                         }
                     }
                 }
-                _min = MAX_SIZE_T;
-                _max = MIN_SIZE_T;
-                _min_ind = NOT_FOUND;
-                _max_ind = NOT_FOUND;
+                _min = MAX_KEY;
+                _max = MIN_KEY;
+                _min_ind = SIZE_MAX;
+                _max_ind = 0;
                 _size = 0;
+            }
+
+            bool keyInRange(const KEY_t &key) const noexcept {
+                return (_min <= key and key <= _max);
+            }
+
+            bool indexInRange(const size_t &ind) const noexcept {
+                return (_min_ind <= ind and ind <= _max_ind);
             }
 
             /**
              * Get the minimum key currently visible.
              * @return the minimum key currently visible.
              */
-            inline const KEY_t &min() const {
+            inline const KEY_t &min() const noexcept {
                 return _min;
             }
 
@@ -320,7 +365,7 @@ namespace tnt::util::container {
              * Get the maximum key currently visible.
              * @return the maximum key currently visible.
              */
-            inline const KEY_t &max() const {
+            inline const KEY_t &max() const noexcept {
                 return _max;
             }
 
@@ -328,7 +373,7 @@ namespace tnt::util::container {
              * Get the index of the maximum key currently visible.
              * @return the index of the maximum key currently visible.
              */
-            inline const size_t &minInd() const {
+            inline const size_t &minInd() const noexcept {
                 return _min_ind;
             }
 
@@ -336,9 +381,10 @@ namespace tnt::util::container {
              * Get the index of the maximum key currently visible.
              * @return the index of the maximum key currently visible.
              */
-            inline const size_t &maxInd() const {
+            inline const size_t &maxInd() const noexcept {
                 return _max_ind;
             }
+
 
             /**
              * Returns the values stored for key. Throws an exception if there is none.
@@ -347,23 +393,23 @@ namespace tnt::util::container {
              * @throws std::out_of_range if the key is not contained
              */
             const VALUE_t &at(const KEY_t &key) const {
-                size_t pos = search<KEY_t>(map._keys, key, _min_ind, _max_ind);
-                // throws if result is out of range
-                return map._values.at(pos);
+                if (keyInRange(key))
+                    return map.at(key, _min_ind, _max_ind + 1);
+                else
+                    // throws if result is out of range
+                    throw std::out_of_range("key is not in range of view.");
+
 
             }
+
 
             /**
              * Returns the values stored for key. Returns NOT_FOUND if there is none.
              * @param key key to the value
              * @return the stored value or MAX_VAL
              */
-            const VALUE_t &get(const KEY_t &key) const {
-                size_t pos = search<KEY_t>(map._keys, key, _min_ind, _max_ind);
-                if (pos != NOT_FOUND)
-                    return map._keys.at(pos);
-                else
-                    return MAX_VAL;
+            const VALUE_t &get(const KEY_t &key) const noexcept {
+                return map.get(key, _min_ind, _max_ind + 1);
             }
 
             /**
@@ -372,11 +418,11 @@ namespace tnt::util::container {
              * @return the value
              * @throws std::out_of_range there is no value for that index, i.e. it is not 0 <= index < size()
              */
-            inline const KEY_t &keyByInd(size_t index) const {
-                if (_min_ind <= index and index <= _max_ind)
+            const KEY_t &keyByInd(size_t index) const {
+                if (indexInRange(index))
                     return map._keys.at(index);
                 else
-                    throw std::out_of_range{"not in view."};
+                    throw std::out_of_range{"index is not in range of view."};
             }
 
             /**
@@ -385,18 +431,18 @@ namespace tnt::util::container {
              * @return the value
              * @throws std::out_of_range there is no value for that index, i.e. it is not 0 <= index < size()
              */
-            inline const VALUE_t &valByInd(size_t index) const {
-                if (_min_ind <= index and index <= _max_ind)
+            const VALUE_t &valByInd(size_t index) const {
+                if (indexInRange(index))
                     return map._values.at(index);
                 else
-                    throw std::out_of_range{"not in view."};
+                    throw std::out_of_range{"index is not in range of view."};
             }
 
             /**
              * Number of entries in the view.
              * @return number of entries.
              */
-            inline const size_t &size() const {
+            inline const size_t &size() const noexcept {
                 return _size;
             }
 
@@ -406,8 +452,16 @@ namespace tnt::util::container {
              * @param key key to check
              * @return if there is an entry for that key or not.
              */
-            bool contains(const KEY_t &key) {
-                return search<KEY_t>(map._keys, key, _min_ind, _max_ind) != NOT_FOUND;
+            bool contains(const KEY_t &key) noexcept {
+                return search<KEY_t>(map._keys, _min_ind, _max_ind + 1, key) != NOT_FOUND;
+            }
+
+            bool operator==(const View &rhs) const {
+                return std::tie(map, _min, _max) == std::tie(rhs.map, rhs._min, rhs._max);
+            }
+
+            bool operator!=(const View &rhs) const {
+                return !(rhs == *this);
             }
         };
 
@@ -415,12 +469,12 @@ namespace tnt::util::container {
         /**
          * Provides an iterable view of the items (key-value-pairs) of a VecMap. The viewed key range can be restricted.
          */
+         // TODO: do not test as it is currently not used
         class ItemView : public View {
         public:
             explicit ItemView(const VecMap &map) : View{map} {}
 
-            ItemView(const VecMap &map, KEY_t min, KEY_t max) : View{map, min, max} {
-            }
+            ItemView(const VecMap &map, KEY_t min, KEY_t max) : View{map, min, max} {}
 
             class iterator {
                 ItemView &view;
@@ -439,15 +493,14 @@ namespace tnt::util::container {
                     return *this;
                 }
 
-                std::tuple<KEY_t, VALUE_t> operator*() {
+                std::tuple<KEY_t &, VALUE_t &> operator*() {
                     return std::make_tuple(view.map.keyByInd(view._min_ind + pos),
                                            view.map.valByInd(view._min_ind + pos));
                 }
 
                 bool operator==(const iterator &rhs) const {
-                    return ((*rhs.view == *view) and
-                            (rhs.pos == pos or
-                             (rhs.pos > view._min_ind and pos < view._min_ind)));
+                    return (rhs.pos == pos or
+                            (rhs.pos > rhs.view._min_ind and pos > view._min_ind));
                 }
 
                 bool operator!=(const iterator &rhs) const {
@@ -456,26 +509,47 @@ namespace tnt::util::container {
 
             };
 
-            iterator begin() {
+            iterator begin() noexcept {
                 return iterator{*this};
             }
 
-            iterator end() {
+            iterator end() noexcept {
                 return iterator{*this, size()};
             }
 
+
         };
 
+        // TODO: do not test as it is currently not used
+        ItemView itemView() {
+            return ItemView{*this};
+        }
+
+        // TODO: do not test as it is currently not used
+        ItemView itemView(KEY_t min) {
+            min = (min >= this->min()) ? min : this->min();
+            return ItemView{*this, min, max()};
+        }
+
+        // TODO: do not test as it is currently not used
+        ItemView itemView_max(KEY_t max) {
+            max = (max <= this->max()) ? max : this->max();
+            return ItemView{*this, min(), max};
+        }
+
+        // TODO: do not test as it is currently not used
         ItemView itemView(KEY_t min, KEY_t max) {
+            min = (min >= this->min()) ? min : this->min();
+            max = (max <= this->max()) ? max : this->max();
             return ItemView{*this, min, max};
         }
 
+        // TODO: do not test as it is currently not used
         class KeyView : public View {
         public:
             explicit KeyView(const VecMap &map) : View{map} {}
 
-            KeyView(const VecMap &map, KEY_t min, KEY_t max) : View{map, min, max} {
-            }
+            KeyView(const VecMap &map, KEY_t min, KEY_t max) : View{map, min, max} {}
 
             class iterator {
                 KeyView &view;
@@ -495,14 +569,13 @@ namespace tnt::util::container {
                     return *this;
                 }
 
-                KEY_t operator*() {
+                KEY_t &operator*() {
                     return view.keyByInd(view._min_ind + pos);
                 }
 
                 bool operator==(const iterator &rhs) const {
-                    return ((*rhs.view == *view) and
-                            (rhs.pos == pos or
-                             (rhs.pos > view._min_ind and pos < view._min_ind)));
+                    return (rhs.pos == pos or
+                            (rhs.pos > rhs.view._min_ind and pos > view._min_ind));
                 }
 
                 bool operator!=(const iterator &rhs) const {
@@ -511,17 +584,37 @@ namespace tnt::util::container {
 
             };
 
-            iterator begin() {
+            iterator begin() noexcept {
                 return iterator{*this};
             }
 
-            iterator end() {
+            iterator end() noexcept {
                 return iterator{*this, size()};
             }
 
         };
 
+        // TODO: do not test as it is currently not used
+        KeyView keyView() {
+            return KeyView{*this};
+        }
+
+        // TODO: do not test as it is currently not used
+        KeyView keyView(KEY_t min) {
+            min = (min >= this->min()) ? min : this->min();
+            return KeyView{*this, min, max()};
+        }
+
+        // TODO: do not test as it is currently not used
+        KeyView keyView_max(KEY_t max) {
+            max = (max <= this->max()) ? max : this->max();
+            return KeyView{*this, min(), max};
+        }
+
+        // TODO: do not test as it is currently not used
         KeyView keyView(KEY_t min, KEY_t max) {
+            min = (min >= this->min()) ? min : this->min();
+            max = (max <= this->max()) ? max : this->max();
             return KeyView{*this, min, max};
         }
 
