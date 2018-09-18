@@ -75,45 +75,6 @@ namespace tnt::util::container {
             return search<KEY_t>(_keys, key);
         }
 
-        /**
-          * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
-          * If it is not present the position where to insert the key is returned.
-          * @param key key to check
-          * @param minInd the minimum index where to look
-          * @param maxInd the maximum index where to look
-          * @return if there is an entry for that key or not.
-          */
-        inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t low_ind, size_t high_ind) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, low_ind, high_ind, key);
-            if (ind == high_ind or key != this->_keys.at(ind)) {
-                return std::make_tuple(false, ind);
-            } else {
-                return std::make_tuple(true, ind);
-            }
-        }
-
-        /**
-         * Returns a tuple. The first position tells if the key is contained and second tells the position where it is.
-         * If it is not present the position of the next smaller value is returned. If it would be before the first element,
-         * SIZE_MAX is returned.
-         * @param key key to check
-         * @param minInd the minimum index where to look
-         * @param maxInd the maximum index where to look
-         * @return if there is an entry for that key or not.
-         */
-        inline std::tuple<bool, size_t> containsAndIndLower(const KEY_t &key, size_t low_ind, size_t high_ind) const {
-            const size_t ind = insert_pos<KEY_t>(_keys, low_ind, high_ind, key);
-            if (ind == high_ind or key != this->_keys.at(ind)) {
-                if (ind == 0) {
-                    return std::make_tuple(false, SIZE_MAX);
-                } else {
-                    return std::make_tuple(false, ind - 1);
-                }
-            } else {
-                return std::make_tuple(true, ind);
-            }
-        }
-
         inline iterator begin() {
             return _keys.begin();
         }
