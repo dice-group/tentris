@@ -1048,7 +1048,6 @@ namespace tnt::tensor::hypertrie {
                 }
                 // calc max
                 if (view._leaf_edges->keyByInd(view._max_ind) != max) {
-                    // TODO: this fails if the result if max is greater than the greatest value in _inner_edges->keys()
                     const size_t ind = tnt::util::container::insert_pos(view._leaf_edges->keys(), view._min_ind,
                                                                         view._max_ind + 1, max);
                     if (view._min_ind > ind) {
