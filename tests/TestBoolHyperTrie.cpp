@@ -85,7 +85,7 @@ TEST(TestBoolHyperTrie, test_mult_write_read1) {
     }
 }
 
-TEST(TestBoolHyperTrie, DISABLED_test_read_full_slice) {
+TEST(TestBoolHyperTrie, test_read_full_slice) {
     Key_t key{5, 10, 8};
     bool value = true;
 
