@@ -254,7 +254,7 @@ namespace tnt::util::container {
          * @return number of entries.
          */
         inline size_t size() const noexcept {
-            return _values.size();
+            return _keys.size();
         }
 
 
@@ -320,11 +320,11 @@ namespace tnt::util::container {
                 if (_size != 0 and _min <= _max) { // check if view is empty
                     // get min value index
                     _min_ind = insert_pos<KEY_t>(map._keys, _min);
-                    if (min != map._keys.size()) {
+                    if (min != _size) {
                         // get max value index
                         _max_ind = insert_pos<KEY_t>(map._keys, _min_ind, _max);
                         // check if a higher value was found.
-                        if (_max_ind != map._keys.size()) {
+                        if (_max_ind != _size) {
                             if (auto actual_max = map.keyByInd(_max_ind); actual_max != _max) {
                                 --_max_ind;
                             }
