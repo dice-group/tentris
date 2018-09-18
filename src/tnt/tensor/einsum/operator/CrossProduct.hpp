@@ -170,7 +170,7 @@ namespace tnt::tensor::einsum::operators {
             for (const auto &op_pos : range(op_count)) {
                 std::vector<std::tuple<size_t, size_t>> op_to_res_pos{};
                 for (const auto &[label_pos_in_op, label] : enumerate(subscript->operandLabels(op_pos)))
-                    if (const size_t label_pos_in_res = util::container::search(res_labels, label, 0, <#initializer#>);
+                    if (const size_t label_pos_in_res = util::container::search(res_labels, label);
                             label_pos_in_res != util::container::NOT_FOUND)
                         op_to_res_pos.emplace_back(label_pos_in_op, label_pos_in_res);
 
