@@ -12,11 +12,11 @@ namespace tnt::util::container {
 
     template<typename KEY_t>
     class VecSet {
-
+        std::vector<KEY_t> _keys{};
     public:
         constexpr const static KEY_t MIN_KEY = std::numeric_limits<KEY_t>::max();
         constexpr const static KEY_t MAX_KEY = std::numeric_limits<KEY_t>::max();
-        std::vector<KEY_t> _keys{};
+
         using iterator = typename std::vector<KEY_t>::iterator;
 
         VecSet() {}
@@ -85,7 +85,7 @@ namespace tnt::util::container {
           */
         inline std::tuple<bool, size_t> containsAndInd(const KEY_t &key, size_t low_ind, size_t high_ind) const {
             const size_t ind = insert_pos<KEY_t>(_keys, low_ind, high_ind, key);
-            if (ind == high_ind or key != this->_keys[ind]) {
+            if (ind == high_ind or key != this->_keys.at(ind)) {
                 return std::make_tuple(false, ind);
             } else {
                 return std::make_tuple(true, ind);
