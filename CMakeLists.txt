@@ -13,13 +13,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 LIST( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
 # find boost
-#SET(Boost_USE_STATIC_LIBS ON)
-ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
+SET(Boost_USE_STATIC_LIBS ON)
 find_package(Boost  REQUIRED COMPONENTS context system log thread log_setup)
 IF (Boost_FOUND)
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 ENDIF()
 message("Boost libraries: ${Boost_LIBRARIES}")
+
 # build antlr4
 # set variable pointing to the antlr tool that supports C++
 set(ANTLR4CPP_JAR_LOCATION ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
@@ -67,12 +67,7 @@ link_libraries(
         antlr4-runtime
         antlr4_interface
         Boost::boost # header only boost libraries
-        boost_context
-        boost_system
-        boost_thread
-        boost_log_setup
-        boost_log
-        ${Boost_LOG_LIBRARY}
+	    ${Boost_LIBRARIES}
         ${Pistache_LIBRARY}
 )
 
