@@ -55,21 +55,13 @@ namespace tnt::store::cache {
                 : parsedSPARQL{sparql_string},
                   is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)} {
 
-            std::cout << "Operand Keys: \n"<< parsedSPARQL.getOperandKeys() << std::endl;
-
-
             const std::vector<SliceKey_t> slice_keys = calc_keys(parsedSPARQL.getOperandKeys(), trie, termIndex);
-
-            std::cout << "Slice Keys: \n"<< slice_keys << std::endl;
-
 
 
             is_trivial_emtpy = slice_keys.empty();
             if (not is_trivial_emtpy) {
 
                 const std::shared_ptr<const Subscript> subscript = parsedSPARQL.getSubscript();
-                std::cout << "subscript operands: \n"<< subscript->_operands_labels << std::endl;
-                std::cout << "subscript result: \n"<< subscript->getResultLabels() << std::endl;
 
                 const std::vector<BoolHyperTrie *> hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
                                                                                              &const_cast<BoolHyperTrie &>(trie));

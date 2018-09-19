@@ -76,12 +76,12 @@ namespace tnt::http {
                                     response.send(Code::Bad_Request, "Could not parse the requested query.");
                                     std::cout << "unparsable query: \n" << sparqlQueryStr << "\n";
                                     const uint oc = open_connections;
-                                    std::cout << "open connections: " << oc << std::endl;
+                                    std::cout << "open connections: " << oc << "\n";
                                     return;
                                 }
                             } catch (const TimeoutException exc) {
                                 response.timeoutAfter(std::chrono::seconds(0));
-                                std::cout << exc.what() << std::endl;
+                                std::cout << exc.what() << "\n";
                                 response.headers().add<SPARQLJSON>();
                                 response.send(Http::Code::Request_Timeout);
                                 --open_connections;
@@ -90,11 +90,11 @@ namespace tnt::http {
                                 return;
                             } catch (const std::exception &exc) {
                                 // if the execution of the query should fail return an internal server error
-                                std::cout << exc.what() << std::endl;
+                                std::cout << exc.what() << "\n";
                                 --open_connections;
                                 response.send(Code::Internal_Server_Error);
                                 const uint oc = open_connections;
-                                std::cout << "open connections: " << oc << std::endl;
+                                std::cout << "open connections: " << oc << "\n";
                                 return;
                             }
                         }
@@ -106,7 +106,7 @@ namespace tnt::http {
                 std::cout << "open connections: " << oc;
                 return;
             } catch (const std::exception &exc) {
-                std::cout << exc.what() << std::endl;
+                std::cout << exc.what() << "\n";
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
                 const uint oc = open_connections;
