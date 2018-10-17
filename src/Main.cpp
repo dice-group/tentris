@@ -1,15 +1,6 @@
 
 #include <experimental/filesystem>
-#include <boost/log/core.hpp>
 
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/support/date_time.hpp>
 
 #include "tnt/store/TripleStore.hpp"
 #include "tnt/config/Config.cpp"
@@ -20,40 +11,11 @@ namespace {
     using namespace Pistache;
     using namespace tnt::http;
     using namespace tnt::config;
-    using namespace boost::log::trivial;
     namespace fs = std::experimental::filesystem;
-}
-
-// TODO: move out of main
-void init_logging() {
-    using namespace boost::log;
-    add_file_log
-            (
-                    keywords::file_name = "TNT_%N.log",
-                    keywords::rotation_size = 10 * 1024 * 1024,
-                    keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-                    keywords::format = (
-                            expressions::stream
-                                    << std::setw(8) << std::setfill('0')
-                                    << expressions::attr< unsigned int >("LineID")
-                                    << "\t"
-                                    << expressions::format_date_time<boost::posix_time::ptime>("TimeStamp","%Y-%m-%d_%H:%M:%S.%f")
-                                    << "\t: <" << trivial::severity
-                                    << "> \t"
-                                    << expressions::smessage
-                    ),
-                    keywords::auto_flush = true
-            );
-//
-    core::get()->set_filter
-            (
-                    trivial::severity >= trivial::debug
-            );
 }
 
 int main(int argc, char *argv[]) {
     init_logging();
-    boost::log::add_common_attributes();
 
     tnt::config::init_config(argc, argv);
 
@@ -62,21 +24,26 @@ int main(int argc, char *argv[]) {
 
     int thr = std::thread::hardware_concurrency();
     Address addr(Ipv4::any(), port);
-    std::cout << "Serving at " << addr.host() << ":" << addr.port() << " ." << std::endl;
-    std::cout << "Using " << thr << " threads to handle Requests." << std::endl;
+    log("Serving at ", addr.host(), ":", addr.port(), " .");
+    log("Using ", thr, " threads to handle Requests.");
+    auto loading_start_time = log_health_data();
     if (not AtomicConfig::getInstance().dataBaseFile.empty()) {
         if (fs::is_regular_file(path_to_nt_file)) {
-            std::cout << "nt-file: " << path_to_nt_file << std::endl;
+            log("nt-file: ", path_to_nt_file, " loading ...");
             AtomicTripleStore::getInstance().loadRDF(path_to_nt_file);
         } else {
-            std::cout << "nt-file: " << path_to_nt_file << " not found." << std::endl;
+            log("nt-file: ", path_to_nt_file, " not found." );
             return EXIT_FAILURE;
         }
 
     } else {
-        std::cout << "No file loaded. Use '-f myntfile.nt' if you want to bulkload a file." << std::endl;
+        log("No file loaded. Use '-f myntfile.nt' if you want to bulkload a file.");
     }
-    std::cout << "URI: " << "http://127.0.0.1:" << addr.port() << "/sparql?query" << std::endl;
+    log("Loaded ", AtomicTripleStore::getInstance().size(), " triples.");
+    auto loading_end_time = log_health_data();
+    log_duration(loading_start_time, loading_end_time);
+
+    log("URI: ", "http://127.0.0.1:", addr.port(), "/sparql?query");
 
     auto server = std::make_shared<Http::Endpoint>(addr);
 
@@ -87,7 +54,8 @@ int main(int argc, char *argv[]) {
     server->setHandler(Http::make_handler<SPARQLEndpoint>());
     server->serve();
 
-    std::cout << "Shutdowning server" << std::endl;
+    log("Shutdowning server ...");
     server->shutdown();
+    log("Shutdownn successful.");
     return EXIT_SUCCESS;
 }

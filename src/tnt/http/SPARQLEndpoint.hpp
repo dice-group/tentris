@@ -19,6 +19,7 @@
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/http/JsonSerializer.hpp"
 #include "tnt/http/RunQuery.hpp"
+#include "tnt/util/LogHelper.hpp"
 
 namespace {
     using namespace Pistache;
@@ -44,12 +45,15 @@ namespace tnt::http {
         SPARQLEndpoint() {}
 
         void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
+            log("### Request begin ###");
             if (open_connections > 100) {
                 response.send(Code::Service_Unavailable);
+                log("canceled: more than 100 connections are open.\n");
                 return;
             } else {
                 ++open_connections;
             }
+
             try { // if something fails return an internal server error
                 // only answer sparql querys to GET /sparql
                 if (request.method() == Method::Get) {
@@ -59,6 +63,11 @@ namespace tnt::http {
                         if (not hasQuery.isEmpty()) {
 
                             const std::string sparqlQueryStr = urlDecode(hasQuery.get());
+                            log("query-string: ", sparqlQueryStr);
+                            log("");
+                            log("Resources at the beginning:");
+                            log_health_data();
+                            log("");
 
                             try { // execute the query
                                 try {
@@ -70,13 +79,19 @@ namespace tnt::http {
                                             std::chrono::seconds(AtomicConfig::getInstance().timeout);
                                     runQuery(response, query_package, AtomicTripleStore::getInstance(), time_out);
                                     --open_connections;
+                                    log("Resources at the end:");
+                                    log_health_data();
+                                    log("");
+                                    log("### Request end ###");
+                                    log("");
                                     return;
                                 } catch (const std::invalid_argument &exc) {
                                     --open_connections;
                                     response.send(Code::Bad_Request, "Could not parse the requested query.");
-                                    std::cout << "unparsable query: \n" << sparqlQueryStr << "\n";
-                                    const uint oc = open_connections;
-                                    std::cout << "open connections: " << oc << "\n";
+                                    log("canceled: unparsable query.\n");
+                                    log("### Request end ###");
+                                    log("");
+
                                     return;
                                 }
                             } catch (const TimeoutException exc) {
@@ -85,16 +100,25 @@ namespace tnt::http {
                                 response.headers().add<SPARQLJSON>();
                                 response.send(Http::Code::Request_Timeout);
                                 --open_connections;
-                                const uint oc = open_connections;
-                                std::cout << "open connections: " << oc;
+                                log("Resources at the end:");
+                                log_health_data();
+                                log("");
+                                log("canceled: timeout.\n");
+                                log("### Request end ###");
+                                log("");
                                 return;
                             } catch (const std::exception &exc) {
                                 // if the execution of the query should fail return an internal server error
                                 std::cout << exc.what() << "\n";
                                 --open_connections;
                                 response.send(Code::Internal_Server_Error);
-                                const uint oc = open_connections;
-                                std::cout << "open connections: " << oc << "\n";
+                                log("Resources at the end:");
+                                log_health_data();
+                                log("");
+                                log("canceled: internal server error.\n");
+                                log( exc.what() );
+                                log("### Request end ###");
+                                log("");
                                 return;
                             }
                         }
@@ -102,15 +126,33 @@ namespace tnt::http {
                 }
                 response.send(Code::I_m_a_teapot);
                 --open_connections;
-                const uint oc = open_connections;
-                std::cout << "open connections: " << oc;
+                log("Request to something that doesn't exist.\n");
+                log("### Request end ###");
+                log("");
                 return;
-            } catch (const std::exception &exc) {
-                std::cout << exc.what() << "\n";
+            } catch (std::exception exc) {
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
-                const uint oc = open_connections;
-                std::cout << "open connections: " << oc;
+                log("Resources at the end:");
+                log_health_data();
+                log("");
+                log("canceled: Unhandled exception");
+                log( exc.what() );
+                log("### Request end ###");
+
+                return;
+            }
+
+            catch (...) {
+                std::exception_ptr exc = std::current_exception();
+
+                response.send(Code::Internal_Server_Error);
+                --open_connections;
+                log("Resources at the end:");
+                log_health_data();
+                log("");
+                log("canceled: Unhandleable exception");
+                log("### Request end ###");
                 return;
             }
         }

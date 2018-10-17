@@ -50,6 +50,11 @@ target_include_directories(cppitertools INTERFACE
         thirdparty/cppitertools
         )
 
+add_library(datetimelib INTERFACE)
+target_include_directories(datetimelib INTERFACE
+        thirdparty/date/include
+        )
+
 #make an interface library from the code
 add_library(libsparsetensor INTERFACE)
 target_include_directories(libsparsetensor INTERFACE
@@ -62,6 +67,7 @@ link_libraries(
         serd-0 # for parsing ntriples
         Threads::Threads # for use of threads
         cppitertools
+        datetimelib
         libsparsetensor
         antlr4_sparql
         antlr4-runtime

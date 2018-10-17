@@ -78,6 +78,10 @@ namespace tnt::store {
         std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
             return query_cache.get(sparql);
         }
+
+        size_t size() const {
+            return trie.size();
+        }
     };
 
     auto getBNode(const SerdNode *node) -> std::unique_ptr<Term> {
