@@ -12,6 +12,10 @@ link_libraries(
         gmock
         gtest)
 
+file(COPY query DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY queries DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY dataset DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 #add_executable(TestEvalPlan TestEvalPlan.cpp)
 add_executable(TestBoolHyperTrie TestBoolHyperTrie.cpp)
 add_executable(TestPosCalc TestPosCalc.cpp)
