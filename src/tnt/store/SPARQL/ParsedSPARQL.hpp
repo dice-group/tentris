@@ -93,13 +93,12 @@ namespace tnt::store::sparql {
             _query = _parser.query();
             if (_query == nullptr)
                 throw std::invalid_argument("The query was not parsable");
-            const bool b = _parser.getBuildParseTree();
             if (_query) {
                 const std::vector<SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
-                for (auto &decl : prefixDecl)
+                for (auto &prefix : prefixDecl)
                     // remove < and > from <...>
-                    prefixes[decl->PNAME_NS()->getText()] = std::string(decl->IRI_REF()->getText(), 1,
-                                                                        decl->IRI_REF()->getText().size() - 2);
+                    prefixes[prefix->PNAME_NS()->getText()] = std::string(prefix->IRI_REF()->getText(), 1,
+                                                                          prefix->IRI_REF()->getText().size() - 2);
 
 
                 SparqlParser::SelectQueryContext *select = _query->selectQuery();
@@ -143,9 +142,12 @@ namespace tnt::store::sparql {
 
                 if (not query_variables.size())
                     throw std::invalid_argument{"Empty query variables is not allowed."};
-                if (std::set<Variable> var_set{query_variables.begin(), query_variables.end()};
-                        not std::includes(variables.cbegin(), variables.cend(), var_set.cbegin(), var_set.cend()))
+                if (std::set<Variable> query_variables_set{query_variables.begin(), query_variables.end()};
+                        not std::includes(variables.cbegin(), variables.cend(), query_variables_set.cbegin(),
+                                          query_variables_set.cend())) {
                     throw std::invalid_argument{"query variables must be a subset of BGP variables."};
+                }
+
 
 
                 // generate subscript
@@ -283,11 +285,10 @@ namespace tnt::store::sparql {
                     auto *integerNumeric = numericLiteral->integerNumeric();
                     if (auto *plus = integerNumeric->INTEGER(); plus) {
                         return Literal{
-                                "\"" + plus->getText() + "\"^^\"http://www.w3.org/2001/XMLSchema#integer>"};
+                                "\"" + plus->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
                     } else {
                         return Literal{
-                                "\"" + decimalNumeric->getText() +
-                                "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
+                                "\"" + decimalNumeric->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
                     }
                 }
 
@@ -376,6 +377,15 @@ namespace tnt::store::sparql {
             const std::string &data = var->getText();
             return Variable{std::string{data, 1, data.length() - 1}};
         }
+
+    public:
+        friend std::ostream &operator<<(std::ostream &os, const ParsedSPARQL &sparql) {
+            os << "prefixes: " << sparql.prefixes << "\n select_modifier: " << sparql.select_modifier
+               << "\n query_variables: " << sparql.query_variables << "\n variables: " << sparql.variables
+               << "\n anonym_variables: " << sparql.anonym_variables << "\n bgps: " << sparql.bgps;
+            return os;
+        }
+
     };
 }
 
