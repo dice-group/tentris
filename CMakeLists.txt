@@ -50,7 +50,14 @@ target_include_directories(cppitertools INTERFACE
         thirdparty/cppitertools
         )
 
-add_library(datetimelib INTERFACE)
+# Lightweight C++ command line option parser   https://github.com/jarro2783/cxxopts
+add_library(cxxopts INTERFACE)
+target_include_directories(cxxopts INTERFACE
+        thirdparty/cxxopts/include
+        )
+
+
+        add_library(datetimelib INTERFACE)
 target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
@@ -68,6 +75,7 @@ link_libraries(
         Threads::Threads # for use of threads
         cppitertools
         datetimelib
+        cxxopts
         libsparsetensor
         antlr4_sparql
         antlr4-runtime

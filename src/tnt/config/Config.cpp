@@ -10,77 +10,80 @@
 #include "tnt/util/ArrayHelper.hpp"
 #include "tnt/util/LogHelper.hpp"
 #include "tnt/util/SingletonFactory.hpp"
+#include <cxxopts.hpp>
 
-namespace {
-    using namespace tnt::util::sync;
-    struct option long_options[] = {
-            {"port",    required_argument, nullptr, 'p'},
-            {"file",    required_argument, nullptr, 'f'},
-            {"timeout", required_argument, nullptr, 't'},
-    };
-};
+
 namespace tnt::config {
     struct Config;
 
-    class AtomicConfig : public SingletonFactory<Config> {
+    class AtomicConfig : public util::sync::SingletonFactory<Config> {
     public:
         AtomicConfig() : SingletonFactory<Config>{} {}
     };
 
     struct Config {
+        cxxopts::Options options{"TNT", "TNT, a tensor-based triple store with an HTTP sparql enpoint"};
+
+
         mutable uint16_t port = 9080;
         mutable std::string dataBaseFile{};
         mutable uint timeout = 180;
+
+        Config() {
+            options.add_options()
+                    ("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
+                    ("f,file", "ntriple file to load at startup", cxxopts::value<std::string>())
+                    ("t,timeout", "time in seconds until processing a request is canceled by the server",
+                     cxxopts::value<uint>()->default_value("180"));
+        }
 
         friend void init_config(int argc, char *argv[]);
     };
 
     void init_config(int argc, char **argv) {
+        Config &config = AtomicConfig::getInstance();
 
-        const std::string &argValues = ArrayHelper::ArrayToString(argv, argc);
-        logDebug("Called", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
-                 argValues);
+        try {
+            auto arguments = config.options.parse(argc, argv);
 
-        int opt = 0;
-        int long_index = 0;
+            if (arguments.count("port") == 1) {
+                auto port = arguments["port"].as<uint16_t>();
 
-        while ((opt = getopt_long(argc, argv, "p:f:t:", long_options, &long_index)) != -1) {
-            switch (opt) {
-                case 'p': {
-                    const int raw_port_number = atoi(optarg);
-                    if (0 > raw_port_number or raw_port_number > 65535) {
-                        logDebug("Port must be in range [0,65535].");
-                        logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
-                                 GET_VARIABLE_NAME(argv), argValues);
-                        exit(EXIT_FAILURE);
-                    }
-                    AtomicConfig::getInstance().port = uint16_t(raw_port_number);
-                }
-                    break;
-                case 'f':
-                    AtomicConfig::getInstance().dataBaseFile = optarg;
-                    break;
-                case 't': {
-                    const int raw_timeout = atoi(optarg);
-                    if (raw_timeout < 0) {
-                        AtomicConfig::getInstance().timeout = UINT_MAX;
-                    } else {
-                        AtomicConfig::getInstance().timeout = uint(raw_timeout);
-                    }
-                }
-                    break;
-                default: {
-                    logDebug("Port must be in range [0,65535].");
-                    logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
-                             GET_VARIABLE_NAME(argv), argValues);
+                if (0 > port or port > 65535) {
+                    log("Port must be in range [0,65535].");
                     exit(EXIT_FAILURE);
                 }
-            }
-        }
-        logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
-                 argValues);
-    }
 
+                config.port = port;
+            }
+
+            if (arguments.count("file") == 1) {
+                auto file = arguments["file"].as<std::string>();
+
+                config.dataBaseFile = file;
+            }
+
+            if (arguments.count("timeout") == 1) {
+                auto timeout = arguments["timeout"].as<uint>();
+
+                if (timeout < 0)
+                    config.timeout = UINT_MAX;
+                else
+                    config.timeout = timeout;
+            }
+        } catch (cxxopts::option_not_exists_exception ex) {
+            if (std::string{"Option ‘help’ does not exist"}.compare(ex.what()) == 0) {
+                log(config.options.help());
+                exit(EXIT_SUCCESS);
+            } else {
+                log(ex.what());
+                exit(EXIT_FAILURE);
+            }
+        } catch (cxxopts::argument_incorrect_type ex) {
+            log(ex.what());
+            exit(EXIT_FAILURE);
+        }
+    }
 
 };
 

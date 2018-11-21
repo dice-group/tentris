@@ -103,10 +103,12 @@ inline void log_duration(std::chrono::time_point<std::chrono::system_clock> date
 
 template<typename ...Args>
 inline void logDebug(std::string msg, Args &&... args) {
+#if DEBUG
     std::ostringstream oss;
     oss << msg;
     ((oss << args), ...);
     BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << oss.str();
+#endif
 }
 
 template<typename ...Args>
