@@ -591,14 +591,14 @@ namespace tnt::tensor::hypertrie {
             }
         }
 
-        // TODO: do not test as it is currently not used
-        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
-            if (this->_depth == 1) {
-                return children._leaf_edges.end();
-            } else {
-                return children._inner_edges.at(key_pos).end();
-            }
-        }
+//        // TODO: do not test as it is currently not used
+//        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
+//            if (this->_depth == 1) {
+//                return children._leaf_edges.end();
+//            } else {
+//                return children._inner_edges.at(key_pos).end();
+//            }
+//        }
 
         // TODO: do not test as it is currently not used
         std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator>

@@ -49,10 +49,14 @@ class iter::impl::ZippedLongest {
   template <typename TupleTypeT, template <typename> class IterTuple,
       template <std::size_t, typename> class OptTempl>
   class Iterator {
+#if NO_GCC_FRIEND_ERROR
    private:
     template <typename, template <typename> class,
         template <std::size_t, typename> class>
     friend class Iterator;
+#else
+   public:
+#endif
     IterTuple<TupleTypeT> iters_;
     IterTuple<TupleTypeT> ends_;
 
@@ -84,12 +88,7 @@ class iter::impl::ZippedLongest {
     template <typename T, template <typename> class TT,
         template <std::size_t, typename> class TU>
     bool operator!=(const Iterator<T, TT, TU>& other) const {
-      if (sizeof...(Is) == 0) return false;
-
-      bool results[] = {
-          false, (std::get<Is>(iters_) != std::get<Is>(other.iters_))...};
-      return std::any_of(
-          get_begin(results), get_end(results), [](bool b) { return b; });
+      return (... || (std::get<Is>(iters_) != std::get<Is>(other.iters_)));
     }
 
     template <typename T, template <typename> class TT,
