@@ -1,13 +1,8 @@
 #ifndef TNT_CONFIG_HPP
 #define TNT_CONFIG_HPP
 
-#include <unistd.h>
-#include <cstdio>
-#include <cstdlib>
 #include <string>
-#include <getopt.h>
 
-#include "tnt/util/ArrayHelper.hpp"
 #include "tnt/util/LogHelper.hpp"
 #include "tnt/util/SingletonFactory.hpp"
 #include <cxxopts.hpp>
@@ -49,11 +44,6 @@ namespace tnt::config {
             if (arguments.count("port") == 1) {
                 auto port = arguments["port"].as<uint16_t>();
 
-                if (0 > port or port > 65535) {
-                    log("Port must be in range [0,65535].");
-                    exit(EXIT_FAILURE);
-                }
-
                 config.port = port;
             }
 
@@ -66,7 +56,7 @@ namespace tnt::config {
             if (arguments.count("timeout") == 1) {
                 auto timeout = arguments["timeout"].as<uint>();
 
-                if (timeout < 0)
+                if (timeout == 0)
                     config.timeout = UINT_MAX;
                 else
                     config.timeout = timeout;
