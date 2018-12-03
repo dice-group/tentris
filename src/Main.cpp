@@ -1,5 +1,5 @@
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <csignal>
 
 #include "tnt/store/TripleStore.hpp"
@@ -13,7 +13,7 @@ namespace {
     using namespace Pistache;
     using namespace tnt::http;
     using namespace tnt::config;
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
 }
 
 void bulkload(std::string triple_file){
