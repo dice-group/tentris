@@ -16,46 +16,55 @@ namespace {
     namespace fs = std::experimental::filesystem;
 }
 
+void bulkload(std::string triple_file){
+
+    // log the starting time and print resource usage informations
+    auto loading_start_time = log_health_data();
+
+    if (fs::is_regular_file(triple_file)) {
+        log("nt-file: ", triple_file, " loading ...");
+        AtomicTripleStore::getInstance().loadRDF(triple_file);
+    } else {
+        log("nt-file ", triple_file, " was not found." );
+        log("Exiting ..." );
+        std::exit(EXIT_FAILURE);
+    }
+    log("Loaded ", AtomicTripleStore::getInstance().size(), " triples.\n");
+
+    // log the end time and print resource usage informations
+    auto loading_end_time = log_health_data();
+    // log the time it tool to load the file
+    log_duration(loading_start_time, loading_end_time);
+}
+
 int main(int argc, char *argv[]) {
     init_logging();
 
     tnt::config::init_config(argc, argv);
 
-    Port port(AtomicConfig::getInstance().port);
-    std::string path_to_nt_file{AtomicConfig::getInstance().dataBaseFile};
-
-    int thr = std::thread::hardware_concurrency();
-    Address addr(Ipv4::any(), port);
-    log("Serving at ", addr.host(), ":", addr.port(), " .");
-    log("Using ", thr, " threads to handle Requests.");
-    auto loading_start_time = log_health_data();
-    if (not AtomicConfig::getInstance().dataBaseFile.empty()) {
-        if (fs::is_regular_file(path_to_nt_file)) {
-            log("nt-file: ", path_to_nt_file, " loading ...");
-            AtomicTripleStore::getInstance().loadRDF(path_to_nt_file);
-        } else {
-            log("nt-file: ", path_to_nt_file, " not found." );
-            return EXIT_FAILURE;
-        }
-
-    } else {
-        log("No file loaded. Use '-f myntfile.nt' if you want to bulkload a file.");
+    // bulkload file
+    if(std::string triple_file = AtomicConfig::getInstance().dataBaseFile; not triple_file.empty()){
+        bulkload(AtomicConfig::getInstance().dataBaseFile);
+    } else{
+        log("No file loaded. Use '-f yourfile.nt' to bulkload a file.");
     }
-    log("Loaded ", AtomicTripleStore::getInstance().size(), " triples.");
-    auto loading_end_time = log_health_data();
-    log_duration(loading_start_time, loading_end_time);
 
-    log("URI: ", "http://127.0.0.1:", addr.port(), "/sparql?query");
-
-    auto server = std::make_shared<Http::Endpoint>(addr);
-
+    // create endpoint
+    Address address(Ipv4::any(), {AtomicConfig::getInstance().port});
+    unsigned int threads = std::thread::hardware_concurrency();
     auto opts = Http::Endpoint::options()
-            .threads(thr)
+            .threads(threads)
             .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
+    std::shared_ptr<Http::Endpoint> server = std::make_shared<Http::Endpoint>(address);
     server->init(opts);
     server->setHandler(Http::make_handler<SPARQLEndpoint>());
+    log("Server \n"
+        "  threads: ", threads, "\n",
+        "  IRI:     ", "http://127.0.0.1:", address.port(), "/sparql?query=");
+    // start endpoint
     server->serveThreaded();
 
+    // wait for keyboard interrupt
     while (true) {
         sigset_t wset;
         sigemptyset(&wset);
@@ -72,8 +81,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    log("Shutdowning server ...");
+    log("Shutting down server ...");
     server->shutdown();
-    log("Shutdownn successful.");
+    log("Shutdown successful.");
     return EXIT_SUCCESS;
 }
