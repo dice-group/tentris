@@ -1,11 +1,13 @@
 
 #include <experimental/filesystem>
-
+#include <csignal>
 
 #include "tnt/store/TripleStore.hpp"
 #include "tnt/config/Config.cpp"
 #include "tnt/http/AtomicTripleStore.hpp"
 #include "tnt/http/SPARQLEndpoint.hpp"
+
+
 
 namespace {
     using namespace Pistache;
@@ -52,7 +54,23 @@ int main(int argc, char *argv[]) {
             .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
     server->init(opts);
     server->setHandler(Http::make_handler<SPARQLEndpoint>());
-    server->serve();
+    server->serveThreaded();
+
+    while (true) {
+        sigset_t wset;
+        sigemptyset(&wset);
+        sigaddset(&wset,SIGINT);
+        int number;
+
+        if (int status = sigwait(&wset, &number); status != 0) {
+            log("Set contains an invalid signal number.");
+            break;
+        }
+        if (number == SIGINT){
+            logDebug("Exiting by Signal ", std::string{strsignal(number)}, ".");
+            break;
+        }
+    }
 
     log("Shutdowning server ...");
     server->shutdown();
