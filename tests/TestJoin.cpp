@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "tnt/tensor/einsum/EinsumPlan.hpp"
-#include "tnt/tensor/hypertrie/Join.hpp"
+#include <tnt/tensor/einsum/EinsumPlan.hpp>
+#include <tnt/tensor/hypertrie/Join.hpp>
 
 
 namespace {
@@ -308,9 +308,3 @@ TEST(TestJoin, single_op_0__0) {
     ASSERT_EQ(count, keys_00.size());
 }
 
-
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

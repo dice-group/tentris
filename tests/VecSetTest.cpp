@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
-#include "tnt/util/container/VecSet.hpp"
+#include <tnt/util/container/VecSet.hpp>
 
-using namespace tnt::util::container;
+namespace {
+    using namespace tnt::util::container;
+}
+
 
 TEST(TestDoubleVector, loadAndRead) {
     // Data
@@ -63,7 +66,3 @@ TEST(TestDoubleVector, probeElements) {
 }
 
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

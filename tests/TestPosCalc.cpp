@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "tnt/tensor/hypertrie/PosCalc.hpp"
+#include <tnt/tensor/hypertrie/PosCalc.hpp>
 
 using namespace tnt::tensor::hypertrie;
 
@@ -26,30 +26,17 @@ TEST(TestPosCalc, check_values) {
 
     PosCalc *inst000 = PosCalc::getInstance(vec1);
     PosCalc *inst100 = inst000->use(0);
-    ASSERT_EQ(inst100
-                      ->key_to_subkey_pos(1), 0);
-    ASSERT_EQ(inst100
-                      ->key_to_subkey_pos(2), 1);
+    ASSERT_EQ(inst100->key_to_subkey_pos(1), 0);
+    ASSERT_EQ(inst100->key_to_subkey_pos(2), 1);
 
-    ASSERT_EQ(inst100
-                      ->subkey_to_key_pos(0), 1);
-    ASSERT_EQ(inst100
-                      ->subkey_to_key_pos(1), 2);
+    ASSERT_EQ(inst100->subkey_to_key_pos(0), 1);
+    ASSERT_EQ(inst100->subkey_to_key_pos(1), 2);
 
     PosCalc *inst010 = inst000->use(1);
-    ASSERT_EQ(inst010
-                      ->key_to_subkey_pos(0), 0);
-    ASSERT_EQ(inst010
-                      ->key_to_subkey_pos(2), 1);
+    ASSERT_EQ(inst010->key_to_subkey_pos(0), 0);
+    ASSERT_EQ(inst010->key_to_subkey_pos(2), 1);
 
-    ASSERT_EQ(inst010
-                      ->subkey_to_key_pos(0), 0);
-    ASSERT_EQ(inst010
-                      ->subkey_to_key_pos(1), 2);
+    ASSERT_EQ(inst010->subkey_to_key_pos(0), 0);
+    ASSERT_EQ(inst010->subkey_to_key_pos(1), 2);
 }
 
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

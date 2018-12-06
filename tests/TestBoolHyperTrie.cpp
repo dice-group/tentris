@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
 
 using namespace tnt::util::types;
 using namespace tnt::tensor::hypertrie;
@@ -249,10 +249,4 @@ TEST(TestBoolHyperTrie, load_data10000) {
 
     double elapsed_secs = double(clock() - i1) / CLOCKS_PER_SEC;
     std::cout << "time: " << elapsed_secs << " s" << std::endl;
-}
-
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

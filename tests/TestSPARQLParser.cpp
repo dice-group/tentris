@@ -2,9 +2,10 @@
 
 #include <fstream>
 #include <regex>
-#include <experimental/filesystem>
+#include <filesystem>
 
-#include "tnt/store/SPARQL/ParsedSPARQL.hpp"
+#include <tnt/store/SPARQL/ParsedSPARQL.hpp>
+
 
 std::vector<std::string> load_queries(std::string query_file_path) {
     std::vector<std::string> queries{};
@@ -42,13 +43,13 @@ bool parse_queries(const std::string &file) {
 }
 
 TEST(TestSPARQLParser, ParseBenchmarkQueries) {
-
+    namespace fs = std::filesystem;
     const std::string sp2b_file = "queries/sp2b.txt";
     const std::string dbpedia_file = "queries/DBpedia.txt";
     const std::string swdf_file = "queries/swdf.txt";
-    ASSERT_TRUE(std::experimental::filesystem::is_regular_file(sp2b_file));
-    ASSERT_TRUE(std::experimental::filesystem::is_regular_file(dbpedia_file));
-    ASSERT_TRUE(std::experimental::filesystem::is_regular_file(swdf_file));
+    ASSERT_TRUE(fs::is_regular_file(sp2b_file));
+    ASSERT_TRUE(fs::is_regular_file(dbpedia_file));
+    ASSERT_TRUE(fs::is_regular_file(swdf_file));
 
     bool no_errors = true;
     no_errors &= parse_queries(sp2b_file);
@@ -69,7 +70,3 @@ TEST(TestSPARQLParser, DISABLED_ParseSingleQuery) {
 }
 
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

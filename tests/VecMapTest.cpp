@@ -1,10 +1,13 @@
-#include <random>
-
 #include <gtest/gtest.h>
-#include "tnt/util/container/VecMap.hpp"
+
 #include <random>
 
-using namespace tnt::util::container;
+#include <tnt/util/container/VecMap.hpp>
+
+
+namespace {
+    using namespace tnt::util::container;
+}
 
 
 TEST(TestVecMap, loadAndCkeckdataAlsoSizeOfVecmap) {
@@ -302,7 +305,3 @@ TEST(TestVecMap, keysAndValues) {
     }
 }
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

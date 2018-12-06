@@ -1,12 +1,17 @@
 #include <gtest/gtest.h>
-#include "tnt/store/TripleStore.hpp"
-#include "tnt/store/RDF/NTripleParser.hpp"
-#include <experimental/filesystem>
 
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
 
-using namespace tnt::store;
-using namespace tnt::util::types;
+#include <tnt/store/TripleStore.hpp>
+#include <tnt/store/RDF/NTripleParser.hpp>
+
+namespace {
+    namespace fs = std::filesystem;
+
+    using namespace tnt::store;
+    using namespace tnt::util::types;
+}
+
 
 TEST(TestTripleStore, double_write) {
     TripleStore store{};
@@ -19,8 +24,3 @@ TEST(TestTripleStore, double_write) {
 
 }
 
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

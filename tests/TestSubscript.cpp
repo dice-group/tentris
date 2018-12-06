@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 
 
-#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
-#include "tnt/tensor/einsum/operator/Einsum.hpp"
+#include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
+#include <tnt/tensor/einsum/operator/Einsum.hpp>
 
-using namespace tnt::util::types;
-using namespace tnt::tensor::einsum;
+namespace {
+    using namespace tnt::util::types;
+    using namespace tnt::tensor::einsum;
+}
+
 
 TEST(TestSubscript, check_simple_things) {
     std::vector<std::vector<label_t >> raw_op_sc{
@@ -112,6 +115,7 @@ TEST(TestSubscript, check_non_result_single_operand_labels) {
 
 }
 
+// TODO: make a real testcase out of it
 TEST(TestSubscript, remove_label) {
     std::vector<std::vector<label_t >> raw_op_sc{
             {3, 0, 1},
@@ -126,9 +130,9 @@ TEST(TestSubscript, remove_label) {
     Subscript sc{raw_op_sc, raw_res_sc};
     std::cout << sc << std::endl;
 
-    Subscript sc_wo0 = sc.removeLabel(0);
+    const std::shared_ptr<const Subscript> &sc_wo0 = sc.removeLabel(0);
 
-    std::cout << sc_wo0 << std::endl;
+    std::cout << *sc_wo0 << std::endl;
 }
 
 //TEST(TestSubscript, optimize) {
@@ -159,8 +163,3 @@ TEST(TestSubscript, remove_label) {
 //
 //}
 
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

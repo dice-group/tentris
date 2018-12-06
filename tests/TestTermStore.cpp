@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
-#include "tnt/store/RDF/TermStore.hpp"
+#include <tnt/store/RDF/TermStore.hpp>
 
-using namespace tnt::store;
-using namespace tnt::util::types;
-
+namespace {
+    using namespace tnt::store;
+    using namespace tnt::util::types;
+}
 TEST(TestTermStore, double_write) {
     TermStore store{};
     const key_part_t &id_ = store[std::string{"\"xx\""}];
@@ -24,8 +25,3 @@ TEST(TestTermStore, inverse) {
     ASSERT_EQ(&inv.inv(), &store);
 }
 
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
