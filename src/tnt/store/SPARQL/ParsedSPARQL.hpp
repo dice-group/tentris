@@ -10,9 +10,9 @@
 #include <memory>
 
 #include <antlr4-runtime.h>
-#include <SparqlParser.cpp>
-#include <SparqlLexer.cpp>
-#include <SparqlBaseListener.cpp>
+#include <SparqlParser.h>
+#include <SparqlLexer.h>
+#include <SparqlBaseListener.h>
 
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include "tnt/util/All.hpp"
@@ -31,21 +31,21 @@ namespace tnt::store::sparql {
         REDUCE
     };
 
-    class LexerErrorListener : public BaseErrorListener {
+    class LexerErrorListener : public antlr4::BaseErrorListener {
     public:
-        LexerErrorListener() {}
+        LexerErrorListener() = default;
 
-        virtual void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line, size_t charPositionInLine,
+        virtual void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,
                                  const std::string &msg, std::exception_ptr e) override {
             throw std::invalid_argument{msg};
         }
     };
 
-    class ParserErrorListener : public BaseErrorListener {
+    class ParserErrorListener : public antlr4::BaseErrorListener {
     public:
-        ParserErrorListener() {}
+        ParserErrorListener() = default;
 
-        virtual void syntaxError(Recognizer *recognizer, Token *offendingSymbol, size_t line, size_t charPositionInLine,
+        virtual void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,
                                  const std::string &msg, std::exception_ptr e) override {
             throw std::invalid_argument{msg};
         }
@@ -55,11 +55,11 @@ namespace tnt::store::sparql {
 
         std::string _sparql_str;
         std::istringstream _str_stream;
-        ANTLRInputStream _input;
-        SparqlLexer _lexer;
-        CommonTokenStream _tokens;
-        SparqlParser _parser;
-        SparqlParser::QueryContext *_query;
+        antlr4::ANTLRInputStream _input;
+        tnt_antlr4_sparql::SparqlLexer _lexer;
+        antlr4::CommonTokenStream _tokens;
+        tnt_antlr4_sparql::SparqlParser _parser;
+        tnt_antlr4_sparql::SparqlParser::QueryContext *_query;
 
         std::map<std::string, std::string> prefixes{};
         SelectModifier select_modifier;
@@ -94,33 +94,33 @@ namespace tnt::store::sparql {
             if (_query == nullptr)
                 throw std::invalid_argument("The query was not parsable");
             if (_query) {
-                const std::vector<SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
+                const std::vector<tnt_antlr4_sparql::SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
                 for (auto &prefix : prefixDecl)
                     // remove < and > from <...>
                     prefixes[prefix->PNAME_NS()->getText()] = std::string(prefix->IRI_REF()->getText(), 1,
                                                                           prefix->IRI_REF()->getText().size() - 2);
 
 
-                SparqlParser::SelectQueryContext *select = _query->selectQuery();
+                tnt_antlr4_sparql::SparqlParser::SelectQueryContext *select = _query->selectQuery();
                 select_modifier = getSelectModifier(select);
                 bool all_vars = false;
-                if (std::vector<SparqlParser::VarContext *> vars = select->var(); not vars.empty())
+                if (std::vector<tnt_antlr4_sparql::SparqlParser::VarContext *> vars = select->var(); not vars.empty())
                     for (auto &var : vars)
                         query_variables.push_back(extractVariable(var));
                 else
                     all_vars = true;
 
-                std::queue<SparqlParser::TriplesBlockContext *> tripleBlocks;
+                std::queue<tnt_antlr4_sparql::SparqlParser::TriplesBlockContext *> tripleBlocks;
                 for (auto &block : select->whereClause()->groupGraphPattern()->triplesBlock())
                     tripleBlocks.push(block);
                 while (not tripleBlocks.empty()) {
                     auto block = tripleBlocks.front();
                     tripleBlocks.pop();
-                    SparqlParser::TriplesSameSubjectContext *triplesSameSubject = block->triplesSameSubject();
+                    tnt_antlr4_sparql::SparqlParser::TriplesSameSubjectContext *triplesSameSubject = block->triplesSameSubject();
 
                     std::variant<Variable, Term> subj = parseVarOrTerm(triplesSameSubject->varOrTerm());
                     registerVariable(subj);
-                    SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
+                    tnt_antlr4_sparql::SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
                     for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
                                                           propertyListNotEmpty->objectList())) {
                         std::variant<Variable, Term> pred = parseVerb(pred_node);
@@ -226,7 +226,7 @@ namespace tnt::store::sparql {
         }
 
 
-        auto parseGraphTerm(SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
+        auto parseGraphTerm(tnt_antlr4_sparql::SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
             if (auto *iriRef = termContext->iriRef(); iriRef) {
                 return URIRef{getFullIriString(iriRef)};
 
@@ -273,7 +273,7 @@ namespace tnt::store::sparql {
                                 "\"^^<http://www.w3.org/2001/XMLSchema#decimal>"};
                     }
                 } else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
-                    if (tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
+                    if (antlr4::tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
                         return Literal{
                                 "\"" + plus->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#double>"
                         };
@@ -295,7 +295,7 @@ namespace tnt::store::sparql {
             } else if (termContext->booleanLiteral()) {
                 return Literal{
                         "\"" + termContext->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#boolean>"};
-            } else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
+            } else if (tnt_antlr4_sparql::SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
                 if (blankNode->BLANK_NODE_LABEL())
                     return Variable{termContext->getText()};
                 else
@@ -305,25 +305,25 @@ namespace tnt::store::sparql {
             }
         }
 
-        auto parseVarOrTerm(SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
+        auto parseVarOrTerm(tnt_antlr4_sparql::SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
             if (varOrTerm->var())
                 return std::variant<Variable, Term>{extractVariable(varOrTerm->var())};
             else
                 return parseGraphTerm(varOrTerm->graphTerm());
         }
 
-        auto parseObject(SparqlParser::ObjectContext *obj) -> std::variant<Variable, Term> {
-            SparqlParser::VarOrTermContext *varOrTerm = obj->graphNode()->varOrTerm();
+        auto parseObject(tnt_antlr4_sparql::SparqlParser::ObjectContext *obj) -> std::variant<Variable, Term> {
+            tnt_antlr4_sparql::SparqlParser::VarOrTermContext *varOrTerm = obj->graphNode()->varOrTerm();
             // TODO: consider obj->graphNode()->triplesNode()
             return parseVarOrTerm(varOrTerm);
         }
 
-        auto parseVerb(SparqlParser::VerbContext *verb) -> std::variant<Variable, Term> {
+        auto parseVerb(tnt_antlr4_sparql::SparqlParser::VerbContext *verb) -> std::variant<Variable, Term> {
             if (auto *varOrIRIref = verb->varOrIRIref(); varOrIRIref) {
                 if (varOrIRIref->var()) {
                     return std::variant<Variable, Term>{extractVariable(varOrIRIref->var())};
                 } else {
-                    SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
+                    tnt_antlr4_sparql::SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
 
                     return std::variant<Variable, Term>{URIRef{getFullIriString(iriRef)}};
 
@@ -335,8 +335,8 @@ namespace tnt::store::sparql {
         }
 
 
-        auto getFullIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
-            if (tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref) {
+        auto getFullIriString(tnt_antlr4_sparql::SparqlParser::IriRefContext *iriRef) const -> std::string {
+            if (antlr4::tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref) {
                 return complete_ref->getText();
             } else {
                 auto *prefixedName = iriRef->prefixedName();
@@ -358,7 +358,7 @@ namespace tnt::store::sparql {
             }
         }
 
-        auto getSelectModifier(SparqlParser::SelectQueryContext *select) -> SelectModifier {
+        auto getSelectModifier(tnt_antlr4_sparql::SparqlParser::SelectQueryContext *select) -> SelectModifier {
             auto *modifier = select->selectModifier();
             if (modifier->children.size() != 0) {
                 const std::string &string = modifier->children[0]->toString();
@@ -372,7 +372,7 @@ namespace tnt::store::sparql {
             }
         }
 
-        auto extractVariable(SparqlParser::VarContext *var) -> Variable {
+        auto extractVariable(tnt_antlr4_sparql::SparqlParser::VarContext *var) -> Variable {
 
             const std::string &data = var->getText();
             return Variable{std::string{data, 1, data.length() - 1}};

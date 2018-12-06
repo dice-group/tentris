@@ -22,20 +22,37 @@ message("Boost libraries: ${Boost_LIBRARIES}")
 
 # build antlr4
 # set variable pointing to the antlr tool that supports C++
-set(ANTLR4CPP_JAR_LOCATION ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
+# set(ANTLR4CPP_JAR_LOCATION ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
+add_definitions(-DANTLR4CPP_STATIC)
+set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
 include(ExternalAntlr4Cpp)
-#load libraries
-link_directories(${ANTLR4CPP_LIBS})
+include_directories(${ANTLR4_INCLUDE_DIRS})
 
-# add header interface for antlr4-runtime
-add_library(antlr4_interface INTERFACE)
-target_include_directories(antlr4_interface INTERFACE ${ANTLR4CPP_INCLUDE_DIRS})
+find_package(ANTLR REQUIRED)
+
+
+antlr_target(SPARQLGrammar
+        Sparql.g4
+        LEXER PARSER LISTENER VISITOR
+        PACKAGE tnt_antlr4_sparql)
+
+
+#TODO: seperate sources and headers
+#set(ANTLR_SPARQLGrammar_headers ${ANTLR_SPARQLGrammar_CXX_OUTPUTS})
+#LIST(FILTER ANTLR_SPARQLGrammar_headers INCLUDE REGEX ".+\\.h$")
+#
+#set(ANTLR_SPARQLGrammar_sources ${ANTLR_SPARQLGrammar_CXX_OUTPUTS})
+#LIST(FILTER ANTLR_SPARQLGrammar_sources INCLUDE REGEX ".+\\.cpp$")
 
 #make an interface library from the SPARQL grammar
-add_library(antlr4_sparql INTERFACE)
-target_include_directories(antlr4_sparql INTERFACE
-        grammar/
+add_library(antlr4_sparql STATIC
+        ${ANTLR_SPARQLGrammar_CXX_OUTPUTS}
         )
+target_include_directories(antlr4_sparql
+        PUBLIC ${ANTLR_SPARQLGrammar_OUTPUT_DIR}
+        )
+target_link_libraries(antlr4_sparql antlr4_static)
+add_dependencies(antlr4_sparql antlr4_static)
 
 #include pistache
 find_package(Pistache REQUIRED)
@@ -77,8 +94,6 @@ target_link_libraries(libsparsetensor
         datetimelib
         cxxopts
         antlr4_sparql
-        antlr4-runtime
-        antlr4_interface
         Boost::boost # header only boost libraries
         ${Boost_LIBRARIES}
         ${Pistache_LIBRARY}
@@ -88,7 +103,6 @@ target_link_libraries(libsparsetensor
 add_executable(tnt_exec src/Main.cpp)
 target_link_libraries(tnt_exec
         PRIVATE libsparsetensor)
-add_dependencies(tnt_exec antlr4cpp)
 
 enable_testing() # enable this to enable testing
 if (CMAKE_TESTING_ENABLED)
