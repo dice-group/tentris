@@ -36,7 +36,7 @@ namespace tnt::store::sparql {
     public:
         LexerErrorListener() = default;
 
-        virtual void
+        void
         syntaxError([[maybe_unused]]antlr4::Recognizer *recognizer, [[maybe_unused]]antlr4::Token *offendingSymbol,
                     [[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
                     [[maybe_unused]]std::exception_ptr e) override {
@@ -48,7 +48,7 @@ namespace tnt::store::sparql {
     public:
         ParserErrorListener() = default;
 
-        virtual void
+        void
         syntaxError([[maybe_unused]]antlr4::Recognizer *recognizer, [[maybe_unused]]antlr4::Token *offendingSymbol,
                     [[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
                     [[maybe_unused]]std::exception_ptr e) override {
@@ -58,12 +58,12 @@ namespace tnt::store::sparql {
 
     class ParsedSPARQL {
 
-        std::string _sparql_str;
-        std::istringstream _str_stream;
-        antlr4::ANTLRInputStream _input;
-        tnt::a4grammar::sparql::SparqlLexer _lexer;
-        antlr4::CommonTokenStream _tokens;
-        tnt::a4grammar::sparql::SparqlParser _parser;
+        std::string sparql_str;
+        std::istringstream str_stream;
+        antlr4::ANTLRInputStream input;
+        tnt::a4grammar::sparql::SparqlLexer lexer;
+        antlr4::CommonTokenStream tokens;
+        tnt::a4grammar::sparql::SparqlParser parser;
         tnt::a4grammar::sparql::SparqlParser::QueryContext *_query;
 
         std::map<std::string, std::string> prefixes{};
@@ -73,29 +73,29 @@ namespace tnt::store::sparql {
         std::set<Variable> anonym_variables{};
         std::set<std::vector<std::variant<Variable, Term>>> bgps;
         uint next_anon_var_id = 0;
-        std::shared_ptr<Subscript> _subscript;
+        std::shared_ptr<Subscript> subscript;
         std::vector<std::vector<std::optional<Term>>> _operand_keys;
 
     public:
 
         ParsedSPARQL(std::string sparql_str) :
-                _sparql_str{sparql_str},
-                _str_stream{sparql_str},
-                _input{_str_stream},
-                _lexer{&_input},
-                _tokens{&_lexer},
-                _parser{&_tokens} {
+                sparql_str{sparql_str},
+                str_stream{sparql_str},
+                input{str_stream},
+                lexer{&input},
+                tokens{&lexer},
+                parser{&tokens} {
             // replace the error handler
-            LexerErrorListener lexerErrorListener = LexerErrorListener{};
-            _lexer.removeErrorListeners();
-            _lexer.addErrorListener(&lexerErrorListener);
+            auto lexerErrorListener = LexerErrorListener{};
+            lexer.removeErrorListeners();
+            lexer.addErrorListener(&lexerErrorListener);
 
-            ParserErrorListener parserErrorListener = ParserErrorListener{};
-            _parser.removeParseListeners();
-            _parser.removeErrorListeners();
-            _parser.addErrorListener(&parserErrorListener);
+            auto parserErrorListener = ParserErrorListener{};
+            parser.removeParseListeners();
+            parser.removeErrorListeners();
+            parser.addErrorListener(&parserErrorListener);
             // check that _query is present
-            _query = _parser.query();
+            _query = parser.query();
             if (_query == nullptr)
                 throw std::invalid_argument("The query was not parsable");
             if (_query) {
@@ -145,7 +145,7 @@ namespace tnt::store::sparql {
                     for (const auto &variable : variables)
                         query_variables.push_back(variable);
 
-                if (not query_variables.size())
+                if (query_variables.empty())
                     throw std::invalid_argument{"Empty query variables is not allowed."};
                 if (std::set<Variable> query_variables_set{query_variables.begin(), query_variables.end()};
                         not std::includes(variables.cbegin(), variables.cend(), query_variables_set.cbegin(),
@@ -178,9 +178,9 @@ namespace tnt::store::sparql {
                     result_labels.push_back(var_to_label[query_variable]);
                 }
 
-                _subscript = std::shared_ptr<Subscript>{new Subscript{ops_labels, result_labels}};
-                if (auto optimized = _subscript->optimized(); optimized) {
-                    _subscript = std::move(optimized);
+                subscript = std::make_shared<Subscript>(ops_labels, result_labels);
+                if (auto optimized = subscript->optimized(); optimized) {
+                    subscript = std::move(optimized);
                 }
 
                 // generate operand keys
@@ -188,9 +188,9 @@ namespace tnt::store::sparql {
                     std::vector<std::optional<Term>> op_key{};
                     for (const std::variant<Variable, Term> &res : bgp)
                         if (std::holds_alternative<Term>(res))
-                            op_key.push_back({std::get<Term>(res)});
+                            op_key.emplace_back(std::get<Term>(res));
                         else
-                            op_key.push_back(std::nullopt);
+                            op_key.emplace_back(std::nullopt);
                     _operand_keys.push_back(op_key);
                 }
             } else
@@ -207,11 +207,11 @@ namespace tnt::store::sparql {
         }
 
         const std::string &getSparqlStr() const {
-            return _sparql_str;
+            return sparql_str;
         }
 
         const std::shared_ptr<const Subscript> getSubscript() const {
-            return _subscript;
+            return subscript;
         }
 
         const std::vector<std::vector<std::optional<Term>>> &getOperandKeys() const {
@@ -222,7 +222,7 @@ namespace tnt::store::sparql {
 
         void registerVariable(std::variant<Variable, Term> &variant) {
             if (std::holds_alternative<Variable>(variant)) {
-                Variable &var = std::get<Variable>(variant);
+                auto &var = std::get<Variable>(variant);
                 if (not var.is_anonym)
                     variables.insert(var);
                 else
@@ -368,9 +368,9 @@ namespace tnt::store::sparql {
 
         auto getSelectModifier(tnt::a4grammar::sparql::SparqlParser::SelectQueryContext *select) -> SelectModifier {
             auto *modifier = select->selectModifier();
-            if (modifier->children.size() != 0) {
-                const std::string &string = modifier->children[0]->toString();
-                if (string.compare("DISTINCT") == 0) {
+            if (!modifier->children.empty()) {
+                const std::string &modifier_str = modifier->children[0]->toString();
+                if (modifier_str == "DISTINCT") {
                     return DISTINCT;
                 } else {
                     return REDUCE;
