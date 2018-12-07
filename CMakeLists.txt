@@ -31,7 +31,7 @@ find_package(ANTLR REQUIRED)
 antlr_target(SPARQLGrammar
         Sparql.g4
         LEXER PARSER LISTENER VISITOR
-        PACKAGE tnt_antlr4_sparql)
+        PACKAGE tnt::a4grammar::sparql)
 
 
 #TODO: seperate sources and headers
