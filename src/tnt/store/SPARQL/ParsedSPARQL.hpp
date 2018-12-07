@@ -23,6 +23,7 @@
 namespace {
     using namespace tnt::util::types;
     using namespace tnt::tensor::einsum;
+    using namespace tnt::store::rdf;
 };
 namespace tnt::store::sparql {
     enum SelectModifier {

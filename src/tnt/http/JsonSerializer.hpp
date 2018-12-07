@@ -15,15 +15,18 @@ namespace {
     using Variable = tnt::store::sparql::Variable;
     using ResponseStream = Pistache::Http::ResponseStream;
     using namespace tnt::tensor::einsum::operators;
+    using namespace std::chrono;
+    using TripleStore = tnt::store::TripleStore;
+    using namespace Pistache::Http;
+    using namespace tnt::store::rdf;
 };
 namespace tnt::http {
     template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
     void stream_out(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
-                    const tnt::store::TripleStore &store,
-                    const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
+                    const TripleStore &store, const time_point<high_resolution_clock> &time_out) {
         ulong result_count = 0;
-        if (time_out < std::chrono::high_resolution_clock::now()) {
-            stream << Pistache::Http::ends;
+        if (time_out < high_resolution_clock::now()) {
+            stream << ends;
             throw TimeoutException{result_count};
         }
         stream << "{\"head\":{\"vars\":[";
@@ -45,7 +48,7 @@ namespace tnt::http {
             json_result << "{";
             bool firstKey = true;
             for (const auto &[binding, var] : zip(key, vars)) {
-                store::Term &term = *store.getTermIndex().inv().at(binding);
+                Term &term = *store.getTermIndex().inv().at(binding);
 
 
                 if (firstKey) {
@@ -56,22 +59,22 @@ namespace tnt::http {
 
                 json_result << "\"" << var.name << "\":{";
 
-                const store::Term::NodeType &termType = term.type();
+                const Term::NodeType &termType = term.type();
                 switch (termType) {
-                    case store::Term::URI:
+                    case Term::URI:
                         json_result << "\"type\":\"uri\"";
                         break;
-                    case store::Term::BNode:
+                    case Term::BNode:
                         json_result << "\"type\":\"bnode\"";
                         break;
-                    case store::Term::Literal:
+                    case Term::Literal:
                         json_result << "\"type\":\"literal\"";
                         break;
                 } //todo check default
 
                 json_result << ",\"value\":\"" << escapeJsonString(term.get_value());
-                if (termType == store::Term::Literal) {
-                    const store::Literal &literal = static_cast<store::Literal &>(term);
+                if (termType == Term::Literal) {
+                    const Literal &literal = static_cast<Literal &>(term);
                     if (literal.hasType())
                         json_result << "\",\"datatype\":\"" << literal.getType();
                     else if (literal.hasLang())
@@ -83,8 +86,8 @@ namespace tnt::http {
 
             std::string json_result_binding = json_result.str();
             for ([[maybe_unused]]  const auto &c : range(RESULT_TYPE::getCount(result))) {
-                if (++result_count % 10 == 0 and time_out < std::chrono::high_resolution_clock::now()) {
-                    stream << Pistache::Http::ends;
+                if (++result_count % 10 == 0 and time_out < high_resolution_clock::now()) {
+                    stream << ends;
                     throw TimeoutException{result_count};
                 }
                 if (firstResult) {
@@ -95,7 +98,7 @@ namespace tnt::http {
                 }
             }
         }
-        stream << "]}}\n" << Pistache::Http::ends;
+        stream << "]}}\n" << ends;
     }
 }
 

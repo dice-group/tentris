@@ -35,7 +35,7 @@ namespace {
 }
 namespace tnt::http {
     /**
-     * Counts the number of ioen connections.
+     * Counts the number of open connections.
      */
     static std::atomic_uint open_connections{0};
 

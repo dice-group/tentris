@@ -13,7 +13,7 @@ namespace {
     using namespace tnt::util::types;
 }
 
-namespace tnt::store {
+namespace tnt::store::rdf {
     class TermStore {
     public:
         class RevTermStore {

@@ -23,7 +23,7 @@ namespace {
     const std::regex literal_regex{"^\"([^]*)\"(?:@(.*)|\\^\\^<(.*)>|)$", std::regex::optimize};
 }
 
-namespace tnt::store {
+namespace tnt::store::rdf {
 
 
     class Term {
@@ -178,14 +178,14 @@ namespace tnt::store {
 
 
 template<>
-struct std::hash<tnt::store::Term> {
-    size_t operator()(const tnt::store::Term &v) const {
+struct std::hash<tnt::store::rdf::Term> {
+    size_t operator()(const tnt::store::rdf::Term &v) const {
         std::hash<std::string> hasher;
         return hasher(v.getIdentifier());
     }
 };
 
-std::ostream &operator<<(std::ostream &os, const tnt::store::Term &p) {
+std::ostream &operator<<(std::ostream &os, const tnt::store::rdf::Term &p) {
     os << p.getIdentifier();
     return os;
 }

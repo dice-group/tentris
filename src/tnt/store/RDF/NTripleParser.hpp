@@ -15,7 +15,7 @@
 #include "tnt/store/RDF/Term.hpp"
 
 
-namespace tnt::store {
+namespace tnt::store::rdf {
 
 
     template<typename R>
