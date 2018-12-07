@@ -103,7 +103,7 @@ namespace tnt::tensor::einsum::operators {
         }
 
     public:
-        yield_pull<RESULT_TYPE> get() const override{
+        yield_pull<RESULT_TYPE> get() const override {
             return yield_pull<RESULT_TYPE>(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1));
         }
 
@@ -181,7 +181,8 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    typename counted_binding::count_t Einsum<counted_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
+    typename counted_binding::count_t
+    Einsum<counted_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
         const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
         std::vector<size_t> results(operands.size());
         for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
@@ -193,7 +194,7 @@ namespace tnt::tensor::einsum::operators {
             else
                 results[op_pos] += op->size();
         }
-        return std::accumulate(results.begin(), results.end(), size_t(1), std::multiplies<size_t>());
+        return std::accumulate(results.begin(), results.end(), size_t(1), std::multiplies<>());
     }
 
     template<>
@@ -224,12 +225,12 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    bool Einsum<distinct_binding >::contract(const Operands &operands, const EinsumPlan::Step &step) {
+    bool Einsum<distinct_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
         const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
         std::vector<bool> results(operands.size(), false);
         for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
             const auto &[op, unique_contraction] = op_and_contr;
-
+            // TODO: does that make sense?? -> then document it
             if (not unique_contraction.empty() and op->depth() == 3)
                 for ([[maybe_unused]]const BoolHyperTrie *hyperTrie :
                         BoolHyperTrie::DiagonalView{op, unique_contraction}) {
@@ -239,7 +240,7 @@ namespace tnt::tensor::einsum::operators {
             else
                 results[op_pos] = true;
         }
-        return std::accumulate(results.begin(), results.end(), true, std::logical_and<bool>());
+        return std::accumulate(results.begin(), results.end(), true, std::logical_and<>());
     }
 
     void rekEinsumBoolNonResult(

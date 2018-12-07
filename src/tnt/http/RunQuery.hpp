@@ -15,14 +15,23 @@ namespace {
     using ResponseWriter = Pistache::Http::ResponseWriter;
     using Variable = tnt::store::sparql::Variable;
     using SelectModifier =  tnt::store::sparql::SelectModifier;
+    using TripleStore = tnt::store::TripleStore;
     using namespace tnt::store::cache;
     using namespace tnt::tensor::einsum::operators;
     using Code = Pistache::Http::Code;
+    using namespace std::chrono;
 };
 namespace tnt::http {
+    /**
+     * Executes a QueryExecutionPackage and writes its as JSON to a Pistache ResponseWriter. The execution is stopped
+     * when time_out is reached.
+     * @param response the writer to write the result of the query to.
+     * @param query_package a query package that is executed to produce the result
+     * @param store a instance of a triple store
+     * @param time_out a time stamp after that the execution must be canceled
+     */
     void runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
-                  tnt::store::TripleStore &store,
-                  const std::chrono::time_point<std::chrono::high_resolution_clock> &time_out) {
+                  TripleStore &store, const time_point<high_resolution_clock> &time_out) {
 
         const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
         const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();

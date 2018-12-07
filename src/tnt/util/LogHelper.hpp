@@ -32,6 +32,7 @@
 
 namespace {
     using namespace boost::log::trivial;
+    using namespace std::chrono;
 }
 
 boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
@@ -44,11 +45,10 @@ inline void log(std::string msg, Args &&... args) {
     BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::info) << oss.str();
 }
 
-struct processMem_t{
+struct processMem_t {
     uint32_t virtualMem;
     uint32_t physicalMem;
 };
-
 
 
 inline int parseLine(char *line) {
@@ -62,25 +62,25 @@ inline int parseLine(char *line) {
 }
 
 inline processMem_t get_memory_usage() {
-	FILE *file = fopen("/proc/self/status", "r");
-	char line[128];
-	processMem_t processMem{};
+    FILE *file = fopen("/proc/self/status", "r");
+    char line[128];
+    processMem_t processMem{};
 
-	while (fgets(line, 128, file) != NULL) {
+    while (fgets(line, 128, file) != NULL) {
         // std::cout << line << std::endl;
-		if (strncmp(line, "VmSize:", 7) == 0) {
-			processMem.virtualMem = parseLine(line);
-		}
+        if (strncmp(line, "VmSize:", 7) == 0) {
+            processMem.virtualMem = parseLine(line);
+        }
 
-		if (strncmp(line, "VmRSS:", 6) == 0) {
-			processMem.physicalMem = parseLine(line);
-		}
-	}
-	fclose(file);
-	return processMem;
+        if (strncmp(line, "VmRSS:", 6) == 0) {
+            processMem.physicalMem = parseLine(line);
+        }
+    }
+    fclose(file);
+    return processMem;
 }
 
-inline std::chrono::time_point<std::chrono::system_clock> log_health_data() {
+inline time_point<system_clock> log_health_data() {
     using namespace std::chrono;
     processMem_t mem = get_memory_usage();
     auto time = system_clock::now();
@@ -90,16 +90,15 @@ inline std::chrono::time_point<std::chrono::system_clock> log_health_data() {
     return time;
 }
 
-inline void log_duration(std::chrono::time_point<std::chrono::system_clock> date1, std::chrono::time_point<std::chrono::system_clock> date2) {
+inline void log_duration(time_point<system_clock> start_time, time_point<system_clock> end_time) {
     using namespace std::chrono;
-    auto duration = date2 - date1;
+    auto duration = end_time - start_time;
 
+    // xx h xx min xx s
     log("duration: ", (duration_cast<hours>(duration) % 24).count(), "h ",
-            (duration_cast<minutes>(duration) % 60).count(), "min ",
-            (duration_cast<seconds>(duration) % 60).count(), "s");
+        (duration_cast<minutes>(duration) % 60).count(), "min ",
+        (duration_cast<seconds>(duration) % 60).count(), "s");
 }
-
-
 
 template<typename ...Args>
 inline void logDebug(std::string msg, Args &&... args) {
@@ -110,17 +109,6 @@ inline void logDebug(std::string msg, Args &&... args) {
     BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << oss.str();
 #endif
 }
-
-template<typename ...Args>
-inline void logDebugOptimized(std::string msg, Args &&... args) {
-#if DEBUG
-    std::ostringstream oss;
-    oss << msg;
-    ((oss << args), ...);
-    BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << oss.str();
-#endif
-}
-
 
 template<typename ...Args>
 inline void logTraceOptimized(std::string msg, Args &&... args) {
@@ -161,7 +149,6 @@ void init_logging() {
             ),
             keywords::auto_flush = true
     );
-//
     core::get()->set_filter(
             trivial::severity >= trivial::debug
     );

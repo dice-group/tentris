@@ -62,14 +62,14 @@ namespace tnt::store {
         };
 
         constexpr static const SerdStatementSink writeTriple = [](void *handle,
-                                                                  SerdStatementFlags flags,
-                                                                  const SerdNode *graph,
+                                                                  [[maybe_unused]] SerdStatementFlags flags,
+                                                                  [[maybe_unused]] const SerdNode *graph,
                                                                   const SerdNode *subject,
                                                                   const SerdNode *predicate,
                                                                   const SerdNode *object,
                                                                   const SerdNode *object_datatype,
                                                                   const SerdNode *object_lang) -> SerdStatus {
-            CallBack *cb = (CallBack *) handle;
+            auto cb = (CallBack *) handle;
             while (true) {
                 std::lock_guard guard{cb->mutex};
                 if (cb->producer_runs)
@@ -125,7 +125,7 @@ namespace tnt::store {
         };
 
 
-        SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) &cb, NULL, NULL, NULL, writeTriple, NULL);
+        SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) &cb, nullptr, nullptr, nullptr, writeTriple, nullptr);
 
         std::string _file;
         std::future<SerdStatus> _future;
@@ -144,7 +144,7 @@ namespace tnt::store {
 
         ~ NTripleParser() {
             while (not is_ready(_future)) {
-                cb.producer_runs = 1;
+                cb.producer_runs = true;
 
             }
             _future.get();

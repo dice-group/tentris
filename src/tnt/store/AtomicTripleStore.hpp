@@ -10,7 +10,10 @@ namespace {
     using namespace tnt::util::sync;
 }
 
-namespace tnt::http {
+namespace tnt::store {
+    /**
+     * A SingletonFactory that allows to share a single TripleStore instance between multiple threads.
+     */
     class AtomicTripleStore : public SingletonFactory<TripleStore> {
     public:
         AtomicTripleStore() : SingletonFactory<TripleStore>{} {}

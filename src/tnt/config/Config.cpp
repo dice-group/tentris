@@ -3,14 +3,21 @@
 
 #include <string>
 
+#include <cxxopts.hpp>
+
 #include "tnt/util/LogHelper.hpp"
 #include "tnt/util/SingletonFactory.hpp"
-#include <cxxopts.hpp>
 
 
 namespace tnt::config {
+    /**
+     * The configuration of a TNT instance.
+     */
     struct Config;
 
+    /**
+     * A Factory that assures that only one instance of Config is created per running TNT instance.
+     */
     class AtomicConfig : public util::sync::SingletonFactory<Config> {
     public:
         AtomicConfig() : SingletonFactory<Config>{} {}
@@ -19,11 +26,22 @@ namespace tnt::config {
     struct Config {
         cxxopts::Options options{"TNT", "TNT, a tensor-based triple store with an HTTP sparql enpoint"};
 
-
+        /**
+         * The where TNT runs.
+         */
         mutable uint16_t port = 9080;
+        /**
+         * The relative or absolute path to the RDF file that TNT loads on startup.
+         */
         mutable std::string dataBaseFile{};
+        /**
+         * The timeout for query processing of single queries.
+         */
         mutable uint timeout = 180;
 
+        /**
+         * Initialization of command argument parser.
+         */
         Config() {
             options.add_options()
                     ("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
@@ -35,6 +53,11 @@ namespace tnt::config {
         friend void init_config(int argc, char *argv[]);
     };
 
+    /**
+     * Parses the command line arguments that were passed to TNT into the Config instance managed by AtomicConfig.
+     * @param argc number of arguments
+     * @param argv array of char arrays with arguments
+     */
     void init_config(int argc, char **argv) {
         Config &config = AtomicConfig::getInstance();
 

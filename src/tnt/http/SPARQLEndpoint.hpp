@@ -12,8 +12,8 @@
 #include <pistache/http.h>
 
 #include "tnt/store/TripleStore.hpp"
-#include "tnt/http/Headers.hpp"
-#include "tnt/http/AtomicTripleStore.hpp"
+#include "tnt/http/JSONSparqlResultsHeader.hpp"
+#include "tnt/store/AtomicTripleStore.hpp"
 #include "tnt/config/Config.cpp"
 #include "tnt/util/HTTPUtils.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
@@ -31,8 +31,12 @@ namespace {
     using namespace tnt::tensor::einsum::operators;
     using namespace tnt::store::sparql;
     using namespace tnt::store::cache;
+    using AtomicTripleStore = tnt::store::AtomicTripleStore;
 }
 namespace tnt::http {
+    /**
+     * Counts the number of ioen connections.
+     */
     static std::atomic_uint open_connections{0};
 
     /**
