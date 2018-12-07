@@ -2,10 +2,10 @@
 #include <filesystem>
 #include <csignal>
 
-#include "tnt/store/TripleStore.hpp"
-#include "tnt/config/Config.cpp"
-#include "tnt/http/AtomicTripleStore.hpp"
-#include "tnt/http/SPARQLEndpoint.hpp"
+#include <tnt/store/TripleStore.hpp>
+#include <tnt/config/Config.cpp>
+#include <tnt/http/AtomicTripleStore.hpp>
+#include <tnt/http/SPARQLEndpoint.hpp>
 
 
 
