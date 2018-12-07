@@ -110,10 +110,10 @@ namespace tnt::store {
                 new Literal{std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type}};
     };
 
-    auto serd_callback(void *handle, SerdStatementFlags flags, const SerdNode *graph, const SerdNode *subject,
+    auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph, const SerdNode *subject,
                        const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
                        const SerdNode *object_lang) -> SerdStatus {
-        tnt::store::TripleStore *store = (tnt::store::TripleStore *) handle;
+        auto *store = (tnt::store::TripleStore *) handle;
         std::unique_ptr<Term> subject_term;
         std::unique_ptr<Term> predicate_term;
         std::unique_ptr<Term> object_term;
@@ -157,7 +157,7 @@ namespace tnt::store {
 
 
     void TripleStore::loadRDF(std::string file_path) {
-        SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, NULL, NULL, NULL, &serd_callback, NULL);
+        SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, nullptr, nullptr, nullptr, &serd_callback, nullptr);
         serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
     }
 

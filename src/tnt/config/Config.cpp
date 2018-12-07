@@ -61,7 +61,7 @@ namespace tnt::config {
                 else
                     config.timeout = timeout;
             }
-        } catch (cxxopts::option_not_exists_exception ex) {
+        } catch (cxxopts::option_not_exists_exception &ex) {
             if (std::string{"Option ‘help’ does not exist"}.compare(ex.what()) == 0) {
                 log(config.options.help());
                 exit(EXIT_SUCCESS);
@@ -69,7 +69,7 @@ namespace tnt::config {
                 log(ex.what());
                 exit(EXIT_FAILURE);
             }
-        } catch (cxxopts::argument_incorrect_type ex) {
+        } catch (cxxopts::argument_incorrect_type &ex) {
             log(ex.what());
             exit(EXIT_FAILURE);
         }

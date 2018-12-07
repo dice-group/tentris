@@ -94,7 +94,7 @@ namespace tnt::http {
 
                                     return;
                                 }
-                            } catch (const TimeoutException exc) {
+                            } catch (const TimeoutException &exc) {
                                 response.timeoutAfter(std::chrono::seconds(0));
                                 std::cout << exc.what() << "\n";
                                 response.headers().add<SPARQLJSON>();
@@ -130,7 +130,7 @@ namespace tnt::http {
                 log("### Request end ###");
                 log("");
                 return;
-            } catch (std::exception exc) {
+            } catch (std::exception &exc) {
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
                 log("Resources at the end:");

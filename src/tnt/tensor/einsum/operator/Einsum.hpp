@@ -202,7 +202,6 @@ namespace tnt::tensor::einsum::operators {
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
-        using RESULT_TYPE = std::tuple<Key_t, size_t>;
         // there are steps left
         if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey

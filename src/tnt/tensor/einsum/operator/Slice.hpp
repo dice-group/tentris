@@ -31,8 +31,8 @@ namespace tnt::tensor::einsum::operators {
         const BoolHyperTrie *_trie;
     public:
         Slice(const SliceKey_t &key, const BoolHyperTrie *trie) :
-                _key{key}, _trie{trie},
-                slice_type{hasSlices(key) ? HYPERTRIE : SCALAR} {}
+                slice_type{hasSlices(key) ? HYPERTRIE : SCALAR}, _key{key}, _trie{trie}
+                 {}
 
         /**
          * Must only be called if this->slice_type == SCALAR.
@@ -59,12 +59,12 @@ namespace tnt::tensor::einsum::operators {
     };
 
     template<>
-    void Slice<counted_binding>::get(yield_push<counted_binding> &yield) const {
+    void Slice<counted_binding>::get([[maybe_unused]]yield_push<counted_binding> &yield) const {
         // TODO: implement
     }
 
     template<>
-    void Slice<distinct_binding>::get(yield_push<distinct_binding> &yield) const {
+    void Slice<distinct_binding>::get([[maybe_unused]]yield_push<distinct_binding> &yield) const {
         // TODO: implement
     }
 

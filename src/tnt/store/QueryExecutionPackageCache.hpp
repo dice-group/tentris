@@ -15,7 +15,7 @@ namespace tnt::store::cache {
         virtual QueryExecutionPackage *construct(const std::string &key) {
             try {
                 return new QueryExecutionPackage{key, _trie, _termIndex};
-            } catch (std::invalid_argument exc) {}
+            } catch (std::invalid_argument &exc) {}
             return nullptr;
         }
 

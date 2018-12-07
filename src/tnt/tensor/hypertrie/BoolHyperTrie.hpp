@@ -180,7 +180,7 @@ namespace tnt::tensor::hypertrie {
             try {
                 return edges.at(key_part);
 
-            } catch (std::out_of_range ex) {
+            } catch (std::out_of_range &ex) {
                 return nullptr;
             }
         }
@@ -205,6 +205,7 @@ namespace tnt::tensor::hypertrie {
                     return current_subtrie->getLeafEdges().contains(key.at(0));
                 }
             }
+            return false; // never reached
         }
 
     public:
@@ -462,8 +463,9 @@ namespace tnt::tensor::hypertrie {
         }
 
     private:
-        void del_rek(const Key_t &key, std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
-                     PosCalc *pos_calc) {
+        void del_rek([[maybe_unused]] const Key_t &key,
+                     [[maybe_unused]] std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
+                     [[maybe_unused]] PosCalc *pos_calc) {
             throw "del_rek not yet implemented.";
         }
 
@@ -570,7 +572,7 @@ namespace tnt::tensor::hypertrie {
             }
         }
 
-        void del(const Key_t &coords) {
+        void del([[maybe_unused]]const Key_t &coords) {
             throw "Not yet implemented.";
         }
 

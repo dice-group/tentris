@@ -35,8 +35,10 @@ namespace tnt::store::sparql {
     public:
         LexerErrorListener() = default;
 
-        virtual void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,
-                                 const std::string &msg, std::exception_ptr e) override {
+        virtual void
+        syntaxError([[maybe_unused]]antlr4::Recognizer *recognizer, [[maybe_unused]]antlr4::Token *offendingSymbol,
+                    [[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
+                    [[maybe_unused]]std::exception_ptr e) override {
             throw std::invalid_argument{msg};
         }
     };
@@ -45,8 +47,10 @@ namespace tnt::store::sparql {
     public:
         ParserErrorListener() = default;
 
-        virtual void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,
-                                 const std::string &msg, std::exception_ptr e) override {
+        virtual void
+        syntaxError([[maybe_unused]]antlr4::Recognizer *recognizer, [[maybe_unused]]antlr4::Token *offendingSymbol,
+                    [[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
+                    [[maybe_unused]]std::exception_ptr e) override {
             throw std::invalid_argument{msg};
         }
     };
@@ -226,7 +230,8 @@ namespace tnt::store::sparql {
         }
 
 
-        auto parseGraphTerm(tnt::a4grammar::sparql::SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
+        auto parseGraphTerm(
+                tnt::a4grammar::sparql::SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
             if (auto *iriRef = termContext->iriRef(); iriRef) {
                 return URIRef{getFullIriString(iriRef)};
 
@@ -301,11 +306,13 @@ namespace tnt::store::sparql {
                 else
                     return Variable{"__:" + std::to_string(next_anon_var_id++)};
             } else {
+                throw std::logic_error{"Handling NIL not yet implemented."};
                 // TODO: handle NIL value "( )"
             }
         }
 
-        auto parseVarOrTerm(tnt::a4grammar::sparql::SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
+        auto parseVarOrTerm(
+                tnt::a4grammar::sparql::SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
             if (varOrTerm->var())
                 return std::variant<Variable, Term>{extractVariable(varOrTerm->var())};
             else
