@@ -18,11 +18,8 @@ find_package(Boost REQUIRED COMPONENTS context system log thread log_setup)
 IF (Boost_FOUND)
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 ENDIF ()
-message("Boost libraries: ${Boost_LIBRARIES}")
 
 # build antlr4
-# set variable pointing to the antlr tool that supports C++
-# set(ANTLR4CPP_JAR_LOCATION ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
 add_definitions(-DANTLR4CPP_STATIC)
 set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
 include(ExternalAntlr4Cpp)
