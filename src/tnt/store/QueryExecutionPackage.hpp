@@ -5,7 +5,7 @@
 #include <exception>
 
 #include "tnt/store/RDF/TermStore.hpp"
-#include "tnt/util/SycronizedFactory.hpp"
+#include "tnt/util/SynchronizedCachedFactory.hpp"
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
 #include "tnt/tensor/einsum/operator/CrossProduct.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
@@ -55,28 +55,37 @@ namespace tnt::store::cache {
                 : parsedSPARQL{sparql_string},
                   is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)} {
 
-            const std::vector<SliceKey_t> slice_keys = calc_keys(parsedSPARQL.getOperandKeys(), trie, termIndex);
+            const auto slice_keys = calc_keys(parsedSPARQL.getOperandKeys(), trie, termIndex);
 
 
             is_trivial_emtpy = slice_keys.empty();
             if (not is_trivial_emtpy) {
 
-                const std::shared_ptr<const Subscript> subscript = parsedSPARQL.getSubscript();
+                const auto subscript = parsedSPARQL.getSubscript();
 
-                const std::vector<BoolHyperTrie *> hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
-                                                                                             &const_cast<BoolHyperTrie &>(trie));
+                const auto hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
+                                                                     &const_cast<BoolHyperTrie &>(trie));
                 if (not is_distinct)
-                    regular_operator_tree = getOpTree<counted_binding>(slice_keys, subscript, hypertries);
+                    regular_operator_tree = buildOperatorTree<counted_binding>(slice_keys, subscript, hypertries);
                 else
-                    distinct_operator_tree = getOpTree<distinct_binding>(slice_keys, subscript, hypertries);
+                    distinct_operator_tree = buildOperatorTree<distinct_binding>(slice_keys, subscript, hypertries);
 
             }
         }
 
+    private:
+        /**
+         * Builds the operator tree for this query.
+         * @tparam RESULT_TYPE the type returned by the operand tree
+         * @param slice_keys slice keys to extract the operands from the hypertries. slice_keys and hypertries must be of equal length.
+         * @param subscript the subscript that spans the operator tree.
+         * @param hypertries a list of hypertries. typically this is a list containing the data base hypertrie multiple times.
+         * @return
+         */
         template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
         std::unique_ptr<OperatorNode<RESULT_TYPE>>
-        getOpTree(const std::vector<SliceKey_t> &slice_keys, const std::shared_ptr<const Subscript> subscript,
-                  const std::vector<BoolHyperTrie *> &hypertries) {
+        buildOperatorTree(const std::vector<SliceKey_t> &slice_keys, const std::shared_ptr<const Subscript> subscript,
+                          const std::vector<BoolHyperTrie *> &hypertries) {
             if (auto subsubscripts = subscript->getSubSubscripts();not subsubscripts.empty()) {
                 return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
                         new CrossProduct<RESULT_TYPE>{subscript, slice_keys, hypertries}};
@@ -86,6 +95,7 @@ namespace tnt::store::cache {
             }
         }
 
+    public:
         const ParsedSPARQL &getParsedSPARQL() const {
             return parsedSPARQL;
         }
@@ -113,7 +123,8 @@ namespace tnt::store::cache {
                 if (not is_trivial_emtpy)
                     return distinct_operator_tree->get();
                 else
-                    return yield_pull<distinct_binding>([&]([[maybe_unused]]yield_push<distinct_binding> &yield) { return; });
+                    return yield_pull<distinct_binding>(
+                            [&]([[maybe_unused]]yield_push<distinct_binding> &yield) { return; });
             } else
                 throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
 
@@ -128,7 +139,8 @@ namespace tnt::store::cache {
                 if (not is_trivial_emtpy)
                     return regular_operator_tree->get();
                 else
-                    return yield_pull<counted_binding>([&]([[maybe_unused]]yield_push<counted_binding> &yield) { return; });
+                    return yield_pull<counted_binding>(
+                            [&]([[maybe_unused]]yield_push<counted_binding> &yield) { return; });
             } else
                 throw std::domain_error("This Packackage holds a distinct Operator tree.");
 

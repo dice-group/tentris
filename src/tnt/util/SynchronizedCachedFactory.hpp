@@ -8,8 +8,13 @@
 #include <exception>
 
 namespace tnt::util::sync {
+    /**
+     * Provides a factory for instances of V. V must provide a constructor awaiting a single argument of type V.
+     * @tparam K key type. K is the type of a unique identifer of V.
+     * @tparam V V is the type that is instanciated by the factory.
+     */
     template<typename K, typename V>
-    class SycronizedFactory {
+    class SynchronizedCachedFactory {
     protected:
         struct Entry {
             Entry(const K &key, const std::shared_ptr<V> &value) : key(key), value(value) {}
@@ -85,15 +90,15 @@ namespace tnt::util::sync {
         /**
          * This method constructs a value from a given key. This must be implemented manually for every
          * specialization of this template. <n />
-         * When called internally by the SycronizedFactory the return value is wrapped into a std::shared_pointer. Thus
-         * the user is not responsable for destructing the return value manually.
+         * When called internally by the SynchronizedFactory the return value is wrapped into a std::shared_pointer. Thus
+         * the user is not responsible for destructing the return value manually.
          * @param key key to construct value for
          * @return pointer to newly constructed value. The caller is in care of destructing the value.
          */
         virtual V *construct(const K &key) = 0;
 
     public:
-        SycronizedFactory(uint capacity = 500) : _capacity{capacity} {}
+        explicit SynchronizedCachedFactory(uint capacity = 500) : _capacity{capacity} {}
 
         size_t size() const {
             std::lock_guard{_cache_mutex};

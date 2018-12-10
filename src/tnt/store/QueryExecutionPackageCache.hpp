@@ -1,18 +1,18 @@
 #ifndef TNT_PARSEDSPARQLCACHES_HPP
 #define TNT_PARSEDSPARQLCACHES_HPP
 
-#include "tnt/util/SycronizedFactory.hpp"
+#include "tnt/util/SynchronizedCachedFactory.hpp"
 #include "tnt/store/QueryExecutionPackage.hpp"
 
 namespace {
-    using tnt::util::sync::SycronizedFactory;
+    using tnt::util::sync::SynchronizedCachedFactory;
 }
 
 namespace tnt::store::cache {
 
-    class QueryExecutionPackage_cache : public SycronizedFactory<std::string, QueryExecutionPackage> {
+    class QueryExecutionPackage_cache : public SynchronizedCachedFactory<std::string, QueryExecutionPackage> {
     protected:
-        virtual QueryExecutionPackage *construct(const std::string &key) {
+        QueryExecutionPackage *construct(const std::string &key) override{
             try {
                 return new QueryExecutionPackage{key, _trie, _termIndex};
             } catch (std::invalid_argument &exc) {}
@@ -24,7 +24,7 @@ namespace tnt::store::cache {
 
     public:
         QueryExecutionPackage_cache(BoolHyperTrie &trie, TermStore &termIndex, uint capacity = 500) :
-                SycronizedFactory{capacity}, _trie{trie}, _termIndex{termIndex} {}
+                SynchronizedCachedFactory{capacity}, _trie{trie}, _termIndex{termIndex} {}
     };
 
 }

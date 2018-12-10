@@ -10,6 +10,8 @@
 
 #include <chrono>
 
+#include <tnt/util/LogHelper.hpp>
+
 namespace {
     using ParsedSPARQL = tnt::store::sparql::ParsedSPARQL;
     using ResponseWriter = Pistache::Http::ResponseWriter;
@@ -37,16 +39,19 @@ namespace tnt::http {
         const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
         switch (sparqlQuery.getSelectModifier()) {
             case SelectModifier::NONE: {
+                logDebug("Running select query.");
                 auto stream = response.stream(Code::Ok);
                 stream_out<counted_binding>(vars, query_package->getRegularGenerator(), stream, store, time_out);
                 break;
             }
             case SelectModifier::DISTINCT: {
+                logDebug("Running select distinct query.");
                 auto stream = response.stream(Code::Ok);
                 stream_out<distinct_binding>(vars, query_package->getDistinctGenerator(), stream, store, time_out);
                 break;
             }
             default:
+                logDebug("Query type is not yet supported.");
                 response.send(Code::Not_Implemented);
         }
     }
