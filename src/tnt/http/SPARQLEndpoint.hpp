@@ -32,6 +32,7 @@ namespace {
     using namespace tnt::store::sparql;
     using namespace tnt::store::cache;
     using AtomicTripleStore = tnt::store::AtomicTripleStore;
+    using namespace std::chrono;
 }
 namespace tnt::http {
     /**
@@ -42,13 +43,13 @@ namespace tnt::http {
     /**
      * Main SPARQL endpoint. Parses HTTP queries and returns SPARQL JSON Results.
      */
-    class SPARQLEndpoint : public Pistache::Http::Handler {
+    class SPARQLEndpoint : public Handler {
     public:
     HTTP_PROTOTYPE(SPARQLEndpoint)
 
         SPARQLEndpoint() {}
 
-        void onRequest(const Pistache::Http::Request &request, Pistache::Http::ResponseWriter response) {
+        void onRequest(const Request &request, ResponseWriter response) override {
             log("### Request begin ###");
             if (open_connections > 100) {
                 response.send(Code::Service_Unavailable);
@@ -67,62 +68,42 @@ namespace tnt::http {
                         if (not hasQuery.isEmpty()) {
 
                             const std::string sparqlQueryStr = urlDecode(hasQuery.get());
-                            log("query-string: ", sparqlQueryStr);
-                            log("");
+                            log("query-string: ", sparqlQueryStr, "\n");
                             log("Resources at the beginning:");
                             log_health_data();
                             log("");
 
                             try { // execute the query
                                 try {
-                                    const std::shared_ptr<QueryExecutionPackage> query_package = AtomicTripleStore::getInstance().query(
-                                            sparqlQueryStr);
+                                    const auto query_package = AtomicTripleStore::getInstance().query(sparqlQueryStr);
                                     response.headers().add<SPARQLJSON>();
-                                    const std::chrono::time_point<std::chrono::high_resolution_clock> time_out =
-                                            std::chrono::high_resolution_clock::now() +
-                                            std::chrono::seconds(AtomicConfig::getInstance().timeout);
+                                    const time_point<high_resolution_clock> time_out =
+                                            high_resolution_clock::now() + seconds(AtomicConfig::getInstance().timeout);
                                     runQuery(response, query_package, AtomicTripleStore::getInstance(), time_out);
                                     --open_connections;
                                     log("Resources at the end:");
                                     log_health_data();
-                                    log("");
-                                    log("### Request end ###");
-                                    log("");
+                                    log("### Request end ###\n");
                                     return;
                                 } catch (const std::invalid_argument &exc) {
                                     --open_connections;
                                     response.send(Code::Bad_Request, "Could not parse the requested query.");
-                                    log("canceled: unparsable query.\n");
-                                    log("### Request end ###");
-                                    log("");
+                                    logCanceled("unparsable query", &exc);
 
                                     return;
                                 }
                             } catch (const TimeoutException &exc) {
                                 response.timeoutAfter(std::chrono::seconds(0));
-                                std::cout << exc.what() << "\n";
                                 response.headers().add<SPARQLJSON>();
                                 response.send(Http::Code::Request_Timeout);
                                 --open_connections;
-                                log("Resources at the end:");
-                                log_health_data();
-                                log("");
-                                log("canceled: timeout.\n");
-                                log("### Request end ###");
-                                log("");
+                                logCanceled("timeout", &exc);
                                 return;
                             } catch (const std::exception &exc) {
                                 // if the execution of the query should fail return an internal server error
-                                std::cout << exc.what() << "\n";
                                 --open_connections;
                                 response.send(Code::Internal_Server_Error);
-                                log("Resources at the end:");
-                                log_health_data();
-                                log("");
-                                log("canceled: internal server error.\n");
-                                log( exc.what() );
-                                log("### Request end ###");
-                                log("");
+                                logCanceled("internal server error", &exc);
                                 return;
                             }
                         }
@@ -131,34 +112,33 @@ namespace tnt::http {
                 response.send(Code::I_m_a_teapot);
                 --open_connections;
                 log("Request to something that doesn't exist.\n");
-                log("### Request end ###");
+                log("### Request end ###\n");
                 log("");
                 return;
             } catch (std::exception &exc) {
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
-                log("Resources at the end:");
-                log_health_data();
-                log("");
-                log("canceled: Unhandled exception");
-                log( exc.what() );
-                log("### Request end ###");
+                log("Unhandled exception", &exc);
 
                 return;
             }
-
             catch (...) {
                 std::exception_ptr exc = std::current_exception();
-
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
-                log("Resources at the end:");
-                log_health_data();
-                log("");
-                log("canceled: Unhandleable exception");
-                log("### Request end ###");
+                logCanceled("Unhandled exception");
                 return;
             }
+        }
+
+        static void logCanceled(std::string const reason, std::exception const *const exc = nullptr) {
+            log("Resources at the end:");
+            log_health_data();
+            log("");
+            log("canceled: ", reason);
+            if (exc)
+                logError(exc->what());
+            log("### Request end ###");
         }
 
     };
