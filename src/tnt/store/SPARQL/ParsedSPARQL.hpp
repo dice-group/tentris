@@ -30,7 +30,6 @@ namespace {
 namespace tnt::store::sparql {
     using VarOrTerm = std::variant<Variable, Term>;
     using TriplePattern = std::vector<VarOrTerm>;
-
     enum SelectModifier {
         NONE,
         DISTINCT,
@@ -83,7 +82,7 @@ namespace tnt::store::sparql {
 
     public:
 
-        ParsedSPARQL(std::string sparql_str) :
+        explicit ParsedSPARQL(std::string sparql_str) :
                 sparql_str{sparql_str},
                 str_stream{sparql_str},
                 input{str_stream},
@@ -211,6 +210,14 @@ namespace tnt::store::sparql {
             return query_variables;
         }
 
+        const std::set<Variable> &getVariables() const {
+            return variables;
+        }
+
+        const std::set<Variable> &getAnonym_variables() const {
+            return anonym_variables;
+        }
+
         const std::string &getSparqlStr() const {
             return sparql_str;
         }
@@ -221,6 +228,10 @@ namespace tnt::store::sparql {
 
         const std::vector<std::vector<std::optional<Term>>> &getOperandKeys() const {
             return _operand_keys;
+        }
+
+        const std::set<TriplePattern> &getBgps() const {
+            return bgps;
         }
 
     private:

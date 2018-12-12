@@ -86,9 +86,41 @@ TEST(TestSPARQLParser, parse_a_query) {
                               "?article2 swrc:journal ?journal }";
     ParsedSPARQL q{query};
 
-//    std::set{};
+    const URIRef type = URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"};
+    const URIRef creator = URIRef{"<http://purl.org/dc/elements/1.1/creator>"};
+    const URIRef journal = URIRef{"<http://swrc.ontoware.org/ontology#journal>"};
+    const URIRef name = URIRef{"<http://xmlns.com/foaf/0.1/name>"};
 
+    const URIRef article = URIRef{"<http://localhost/vocabulary/bench/Article>"};
 
-    std::cout << q << std::endl;}
+    const Variable article1 = Variable{"article1"};
+    const Variable article2 = Variable{"article2"};
+    const Variable author1 = Variable{"author1"};
+    const Variable author2 = Variable{"author2"};
+    const Variable name1 = Variable{"name1"};
+    const Variable name2 = Variable{"name2"};
+    const Variable journal_var = Variable{"journal"};
+    std::set<TriplePattern> actual_bgps{
+            {article1, type,    article},
+            {article2, type,    article},
+            {article1, creator, author1},
+            {author1,  name,    name1},
+            {article2, creator, author2},
+            {author2,  name,    name2},
+            {article1, journal, journal_var},
+            {article2, journal, journal_var}
+    };
+    auto query_variables = std::vector{name1, name2};
+    auto variables = std::set{article1, article2, author1, author2, name1, name2, journal_var};
+
+    ASSERT_EQ(q.getBgps(), actual_bgps);
+
+    ASSERT_EQ(q.getQueryVariables(), query_variables);
+
+    ASSERT_EQ(q.getSelectModifier(), SelectModifier::DISTINCT);
+
+    ASSERT_EQ(q.getVariables(), variables);
+
+}
 
 
