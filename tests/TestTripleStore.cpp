@@ -13,7 +13,7 @@ namespace {
 }
 
 
-TEST(TestTripleStore, double_write) {
+TEST(TestTripleStore, load_data) {
     TripleStore store{};
     std::string path = fs::current_path().string();
     path.append("/../../tests/ntriplefiles/ntriples.nt");
@@ -21,6 +21,5 @@ TEST(TestTripleStore, double_write) {
     for (auto &&[subject, predicate, object] :NTripleParser{path}) {
         ASSERT_TRUE(store.contains({subject->getIdentifier(), predicate->getIdentifier(), object->getIdentifier()}));
     }
-
 }
 

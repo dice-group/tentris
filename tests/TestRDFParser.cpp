@@ -4,15 +4,20 @@
 
 #include <tnt/store/RDF/NTripleParser.hpp>
 
-TEST(TestRDFParser, da) {
+namespace {
+    using namespace tnt::store::rdf;
     namespace fs = std::filesystem;
+}
+
+TEST(TestRDFParser, da) {
+
 
     std::string path = fs::current_path().string();
     path.append("/../../tests/ntriplefiles/ntriples.nt");
     path = fs::path{path}.string();
     std::cout << path << std::endl;
     for ([[maybe_unused]] auto i : range(100)) {
-        tnt::store::NTripleParser triple_it{path};
+        NTripleParser triple_it{path};
 
         for (auto &&triple : triple_it)
             std::cout << triple << "\n";

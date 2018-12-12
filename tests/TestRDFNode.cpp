@@ -6,6 +6,10 @@
 
 // TODO: make it a real testcase
 
+namespace {
+    using namespace tnt::store::rdf;
+}
+
 TEST(Node, DISABLED_polymorphism) {
     using namespace tnt::store;
 

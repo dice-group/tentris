@@ -6,8 +6,13 @@
 
 #include <tnt/store/SPARQL/ParsedSPARQL.hpp>
 
+namespace {
+    namespace fs = std::filesystem;
+    using namespace tnt::store::sparql;
+    using namespace tnt::store::rdf;
+}
 
-std::vector<std::string> load_queries(std::string query_file_path) {
+std::vector<std::string> load_queries(const std::string &query_file_path) {
     std::vector<std::string> queries{};
     std::ifstream query_file(query_file_path);
     std::string query;
@@ -31,7 +36,7 @@ bool parse_queries(const std::string &file) {
         try {
             ParsedSPARQL{query};
             std::cout << " #     " << "OK" << std::endl;
-        } catch (std::exception ex) {
+        } catch (std::exception &ex) {
             lines_with_errors.insert(line_number);
             no_errors = false;
             std::cout << " #     " << "Failed" << std::endl;
@@ -65,8 +70,25 @@ TEST(TestSPARQLParser, DISABLED_ParseSingleQuery) {
     using namespace tnt::store::sparql;
     ParsedSPARQL q{query};
     std::cout << q << std::endl;
-    wait(0);
-
 }
+
+TEST(TestSPARQLParser, parse_a_query) {
+
+    const std::string query = "PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX bench:   <http://localhost/vocabulary/bench/> PREFIX dc:      <http://purl.org/dc/elements/1.1/> PREFIX dcterms: <http://purl.org/dc/terms/> PREFIX foaf:    <http://xmlns.com/foaf/0.1/> PREFIX swrc:    <http://swrc.ontoware.org/ontology#>  "
+                              "SELECT DISTINCT ?name1 ?name2  WHERE {   "
+                              "?article1 rdf:type bench:Article .   "
+                              "?article2 rdf:type bench:Article .   "
+                              "?article1 dc:creator ?author1 .   "
+                              "?author1 foaf:name ?name1 .   "
+                              "?article2 dc:creator ?author2 .   "
+                              "?author2 foaf:name ?name2 .   "
+                              "?article1 swrc:journal ?journal .   "
+                              "?article2 swrc:journal ?journal }";
+    ParsedSPARQL q{query};
+
+//    std::set{};
+
+
+    std::cout << q << std::endl;}
 
 
