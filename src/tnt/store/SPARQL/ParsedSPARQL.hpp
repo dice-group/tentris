@@ -8,6 +8,7 @@
 #include <optional>
 #include <exception>
 #include <memory>
+#include <tuple>
 
 #include <antlr4-runtime.h>
 #include <SparqlParser.h>
@@ -24,8 +25,12 @@ namespace {
     using namespace tnt::util::types;
     using namespace tnt::tensor::einsum;
     using namespace tnt::store::rdf;
+    using SparqlParser = tnt::a4grammar::sparql::SparqlParser;
 };
 namespace tnt::store::sparql {
+    using VarOrTerm = std::variant<Variable, Term>;
+    using TriplePattern = std::vector<VarOrTerm>;
+
     enum SelectModifier {
         NONE,
         DISTINCT,
@@ -63,15 +68,15 @@ namespace tnt::store::sparql {
         antlr4::ANTLRInputStream input;
         tnt::a4grammar::sparql::SparqlLexer lexer;
         antlr4::CommonTokenStream tokens;
-        tnt::a4grammar::sparql::SparqlParser parser;
-        tnt::a4grammar::sparql::SparqlParser::QueryContext *_query;
+        SparqlParser parser;
+        SparqlParser::QueryContext *_query;
 
         std::map<std::string, std::string> prefixes{};
         SelectModifier select_modifier;
         std::vector<Variable> query_variables{};
         std::set<Variable> variables{};
         std::set<Variable> anonym_variables{};
-        std::set<std::vector<std::variant<Variable, Term>>> bgps;
+        std::set<TriplePattern> bgps;
         uint next_anon_var_id = 0;
         std::shared_ptr<Subscript> subscript;
         std::vector<std::vector<std::optional<Term>>> _operand_keys;
@@ -99,43 +104,43 @@ namespace tnt::store::sparql {
             if (_query == nullptr)
                 throw std::invalid_argument("The query was not parsable");
             if (_query) {
-                const std::vector<tnt::a4grammar::sparql::SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
+                const std::vector<SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
                 for (auto &prefix : prefixDecl)
                     // remove < and > from <...>
                     prefixes[prefix->PNAME_NS()->getText()] = std::string(prefix->IRI_REF()->getText(), 1,
                                                                           prefix->IRI_REF()->getText().size() - 2);
 
 
-                tnt::a4grammar::sparql::SparqlParser::SelectQueryContext *select = _query->selectQuery();
+                SparqlParser::SelectQueryContext *select = _query->selectQuery();
                 select_modifier = getSelectModifier(select);
                 bool all_vars = false;
-                if (std::vector<tnt::a4grammar::sparql::SparqlParser::VarContext *> vars = select->var(); not vars.empty())
+                if (std::vector<SparqlParser::VarContext *> vars = select->var(); not vars.empty())
                     for (auto &var : vars)
                         query_variables.push_back(extractVariable(var));
                 else
                     all_vars = true;
 
-                std::queue<tnt::a4grammar::sparql::SparqlParser::TriplesBlockContext *> tripleBlocks;
+                std::queue<SparqlParser::TriplesBlockContext *> tripleBlocks;
                 for (auto &block : select->whereClause()->groupGraphPattern()->triplesBlock())
                     tripleBlocks.push(block);
                 while (not tripleBlocks.empty()) {
                     auto block = tripleBlocks.front();
                     tripleBlocks.pop();
-                    tnt::a4grammar::sparql::SparqlParser::TriplesSameSubjectContext *triplesSameSubject = block->triplesSameSubject();
+                    SparqlParser::TriplesSameSubjectContext *triplesSameSubject = block->triplesSameSubject();
 
-                    std::variant<Variable, Term> subj = parseVarOrTerm(triplesSameSubject->varOrTerm());
+                    VarOrTerm subj = parseVarOrTerm(triplesSameSubject->varOrTerm());
                     registerVariable(subj);
-                    tnt::a4grammar::sparql::SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
+                    SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
                     for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
                                                           propertyListNotEmpty->objectList())) {
-                        std::variant<Variable, Term> pred = parseVerb(pred_node);
+                        VarOrTerm pred = parseVerb(pred_node);
                         registerVariable(pred);
 
                         for (auto &obj_node : obj_nodes->object()) {
-                            std::variant<Variable, Term> obj = parseObject(obj_node);
+                            VarOrTerm obj = parseObject(obj_node);
                             registerVariable(obj);
 
-                            bgps.insert(std::vector<std::variant<Variable, Term>>{subj, pred, obj});
+                            bgps.insert(TriplePattern{subj, pred, obj});
                         }
                     }
                     if (auto *next_block = block->triplesBlock(); next_block)
@@ -186,7 +191,7 @@ namespace tnt::store::sparql {
                 // generate operand keys
                 for (const auto &bgp : bgps) {
                     std::vector<std::optional<Term>> op_key{};
-                    for (const std::variant<Variable, Term> &res : bgp)
+                    for (const VarOrTerm &res : bgp)
                         if (std::holds_alternative<Term>(res))
                             op_key.emplace_back(std::get<Term>(res));
                         else
@@ -220,7 +225,7 @@ namespace tnt::store::sparql {
 
     private:
 
-        void registerVariable(std::variant<Variable, Term> &variant) {
+        void registerVariable(VarOrTerm &variant) {
             if (std::holds_alternative<Variable>(variant)) {
                 auto &var = std::get<Variable>(variant);
                 if (not var.is_anonym)
@@ -232,7 +237,7 @@ namespace tnt::store::sparql {
 
 
         auto parseGraphTerm(
-                tnt::a4grammar::sparql::SparqlParser::GraphTermContext *termContext) -> std::variant<Variable, Term> {
+                SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
             if (auto *iriRef = termContext->iriRef(); iriRef) {
                 return URIRef{getFullIriString(iriRef)};
 
@@ -301,7 +306,7 @@ namespace tnt::store::sparql {
             } else if (termContext->booleanLiteral()) {
                 return Literal{
                         "\"" + termContext->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#boolean>"};
-            } else if (tnt::a4grammar::sparql::SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
+            } else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
                 if (blankNode->BLANK_NODE_LABEL())
                     return Variable{termContext->getText()};
                 else
@@ -313,37 +318,37 @@ namespace tnt::store::sparql {
         }
 
         auto parseVarOrTerm(
-                tnt::a4grammar::sparql::SparqlParser::VarOrTermContext *varOrTerm) -> std::variant<Variable, Term> {
+                SparqlParser::VarOrTermContext *varOrTerm) -> VarOrTerm {
             if (varOrTerm->var())
-                return std::variant<Variable, Term>{extractVariable(varOrTerm->var())};
+                return VarOrTerm{extractVariable(varOrTerm->var())};
             else
                 return parseGraphTerm(varOrTerm->graphTerm());
         }
 
-        auto parseObject(tnt::a4grammar::sparql::SparqlParser::ObjectContext *obj) -> std::variant<Variable, Term> {
-            tnt::a4grammar::sparql::SparqlParser::VarOrTermContext *varOrTerm = obj->graphNode()->varOrTerm();
+        auto parseObject(SparqlParser::ObjectContext *obj) -> VarOrTerm {
+            SparqlParser::VarOrTermContext *varOrTerm = obj->graphNode()->varOrTerm();
             // TODO: consider obj->graphNode()->triplesNode()
             return parseVarOrTerm(varOrTerm);
         }
 
-        auto parseVerb(tnt::a4grammar::sparql::SparqlParser::VerbContext *verb) -> std::variant<Variable, Term> {
+        auto parseVerb(SparqlParser::VerbContext *verb) -> VarOrTerm {
             if (auto *varOrIRIref = verb->varOrIRIref(); varOrIRIref) {
                 if (varOrIRIref->var()) {
-                    return std::variant<Variable, Term>{extractVariable(varOrIRIref->var())};
+                    return VarOrTerm{extractVariable(varOrIRIref->var())};
                 } else {
-                    tnt::a4grammar::sparql::SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
+                    SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
 
-                    return std::variant<Variable, Term>{URIRef{getFullIriString(iriRef)}};
+                    return VarOrTerm{URIRef{getFullIriString(iriRef)}};
 
                 }
             } else { // is 'a'
-                return std::variant<Variable, Term>{
+                return VarOrTerm{
                         URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"}};
             }
         }
 
 
-        auto getFullIriString(tnt::a4grammar::sparql::SparqlParser::IriRefContext *iriRef) const -> std::string {
+        auto getFullIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
             if (antlr4::tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref) {
                 return complete_ref->getText();
             } else {
@@ -366,7 +371,7 @@ namespace tnt::store::sparql {
             }
         }
 
-        auto getSelectModifier(tnt::a4grammar::sparql::SparqlParser::SelectQueryContext *select) -> SelectModifier {
+        auto getSelectModifier(SparqlParser::SelectQueryContext *select) -> SelectModifier {
             auto *modifier = select->selectModifier();
             if (!modifier->children.empty()) {
                 const std::string &modifier_str = modifier->children[0]->toString();
@@ -380,7 +385,7 @@ namespace tnt::store::sparql {
             }
         }
 
-        auto extractVariable(tnt::a4grammar::sparql::SparqlParser::VarContext *var) -> Variable {
+        auto extractVariable(SparqlParser::VarContext *var) -> Variable {
 
             const std::string &data = var->getText();
             return Variable{std::string{data, 1, data.length() - 1}};

@@ -102,14 +102,14 @@ namespace tnt::store::cache {
 
         const OperatorNode<distinct_binding> &getDistinctOpTree() const {
             if (is_distinct)
-                return *distinct_operator_tree.get();
+                return *distinct_operator_tree;
             else
                 throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
         }
 
         const OperatorNode<counted_binding> &getRegularOpTree() const {
             if (not is_distinct)
-                return *regular_operator_tree.get();
+                return *regular_operator_tree;
             else
                 throw std::domain_error("This Packackage holds a distinct Operator tree.");
         }
