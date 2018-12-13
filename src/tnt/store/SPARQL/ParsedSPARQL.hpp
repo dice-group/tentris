@@ -83,8 +83,8 @@ namespace tnt::store::sparql {
 
     public:
 
-        explicit ParsedSPARQL(std::string sparql_str) :
-                sparql_str{sparql_str},
+        explicit ParsedSPARQL(const std::string &sparqlstr) :
+                sparql_str{sparqlstr},
                 str_stream{sparql_str},
                 input{str_stream},
                 lexer{&input},

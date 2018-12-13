@@ -3,6 +3,7 @@
 
 #include <any>
 #include <exception>
+#include <ostream>
 
 #include "tnt/store/RDF/TermStore.hpp"
 #include "tnt/util/SynchronizedCachedFactory.hpp"
@@ -51,11 +52,11 @@ namespace tnt::store::cache {
          * @param termIndex term store attached to the trie
          * @throw std::invalid_argument the sparql query was not parsable
          */
-        QueryExecutionPackage(const std::string sparql_string, BoolHyperTrie &trie, const TermStore &termIndex)
+        QueryExecutionPackage(const std::string &sparql_string, BoolHyperTrie &trie, const TermStore &termIndex)
                 : parsedSPARQL{sparql_string},
                   is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)} {
 
-            const auto slice_keys = calc_keys(parsedSPARQL.getBgps(), trie, termIndex);
+            const auto slice_keys = generateSliceKeys(parsedSPARQL.getBgps(), trie, termIndex);
 
 
             is_trivial_emtpy = slice_keys.empty();
@@ -98,6 +99,10 @@ namespace tnt::store::cache {
     public:
         const ParsedSPARQL &getParsedSPARQL() const {
             return parsedSPARQL;
+        }
+
+        const std::string &getSparqlStr() const {
+            return parsedSPARQL.getSparqlStr();
         }
 
         const OperatorNode<distinct_binding> &getDistinctOpTree() const {
@@ -147,6 +152,19 @@ namespace tnt::store::cache {
 
         }
 
+        friend std::ostream &operator<<(std::ostream &os, const QueryExecutionPackage &package) {
+            os << " parsedSPARQL: " << package.parsedSPARQL
+               << "\n is_distinct: " << package.is_distinct
+               << "\n is_trivial_emtpy: " << package.is_trivial_emtpy;
+            // TODO: implement print for operator
+//            if (not package.is_distinct)
+//                os << "\nregular_operator_tree:" << package.regular_operator_tree << "\n";
+//            else {
+//                os << "\ndistinct_operator_tree: " << package.distinct_operator_tree;
+//            }
+            return os;
+        }
+
     private:
         /**
          * Calculates the slice keys for the BoolHyperTrie from a basic graph pattern. If the result is clearly empty
@@ -157,7 +175,7 @@ namespace tnt::store::cache {
          * @return slice keys for the BoolHyperTrie
          */
         static std::vector<SliceKey_t>
-        calc_keys(const std::set<TriplePattern> &bgps, const BoolHyperTrie &trie, const TermStore &termIndex) {
+        generateSliceKeys(const std::set<TriplePattern> &bgps, const BoolHyperTrie &trie, const TermStore &termIndex) {
             std::vector<SliceKey_t> slice_keys{};
             for (const auto &op_key : bgps) {
                 SliceKey_t slice_key(3, std::nullopt);

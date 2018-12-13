@@ -16,6 +16,7 @@
 #include "tnt/tensor/einsum/operator/Einsum.hpp"
 #include "tnt/store/QueryExecutionPackageCache.hpp"
 #include "tnt/store/QueryExecutionPackage.hpp"
+#include "tnt/util/LogHelper.hpp"
 
 namespace {
     using namespace tnt::store::cache;
@@ -76,7 +77,9 @@ namespace tnt::store {
         }
 
         std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
-            return query_cache.get(sparql);
+            std::shared_ptr<QueryExecutionPackage> query = query_cache.get(sparql);
+            logDebug("QueryExecutionPackage: ", *query);
+            return query;
         }
 
         size_t size() const {
