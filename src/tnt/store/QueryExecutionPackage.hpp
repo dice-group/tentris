@@ -157,7 +157,7 @@ namespace tnt::store::cache {
          * @return slice keys for the BoolHyperTrie
          */
         static std::vector<SliceKey_t>
-        calc_keys(const std::vector<std::vector<std::optional<Term>>> &bgp, BoolHyperTrie &trie,
+        calc_keys(const std::vector<materializedSliceKey> &bgp, BoolHyperTrie &trie,
                   const TermStore &termIndex) {
             std::vector<SliceKey_t> slice_keys{};
             for (const auto &op_key : bgp) {

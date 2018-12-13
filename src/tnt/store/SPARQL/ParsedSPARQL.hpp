@@ -30,6 +30,8 @@ namespace {
 namespace tnt::store::sparql {
     using VarOrTerm = std::variant<Variable, Term>;
     using TriplePattern = std::vector<VarOrTerm>;
+    using materializedSliceKey = std::vector<std::optional<Term>>;
+
     enum SelectModifier {
         NONE,
         DISTINCT,
@@ -60,6 +62,8 @@ namespace tnt::store::sparql {
         }
     };
 
+
+
     class ParsedSPARQL {
 
         std::string sparql_str;
@@ -78,7 +82,7 @@ namespace tnt::store::sparql {
         std::set<TriplePattern> bgps;
         uint next_anon_var_id = 0;
         std::shared_ptr<Subscript> subscript;
-        std::vector<std::vector<std::optional<Term>>> _operand_keys;
+        std::vector<materializedSliceKey> _operand_keys;
 
     public:
 
@@ -189,7 +193,7 @@ namespace tnt::store::sparql {
 
                 // generate operand keys
                 for (const auto &bgp : bgps) {
-                    std::vector<std::optional<Term>> op_key{};
+                    materializedSliceKey op_key{};
                     for (const VarOrTerm &res : bgp)
                         if (std::holds_alternative<Term>(res))
                             op_key.emplace_back(std::get<Term>(res));
@@ -214,7 +218,7 @@ namespace tnt::store::sparql {
             return variables;
         }
 
-        const std::set<Variable> &getAnonym_variables() const {
+        const std::set<Variable> &getAnonymVariables() const {
             return anonym_variables;
         }
 
@@ -226,7 +230,7 @@ namespace tnt::store::sparql {
             return subscript;
         }
 
-        const std::vector<std::vector<std::optional<Term>>> &getOperandKeys() const {
+        const std::vector<materializedSliceKey> &getOperandKeys() const {
             return _operand_keys;
         }
 
