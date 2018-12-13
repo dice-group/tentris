@@ -110,6 +110,17 @@ TEST(TestSPARQLParser, parse_a_query) {
             {article1, journal, journal_var},
             {article2, journal, journal_var}
     };
+
+    std::set<TriplePattern> actual_bgps{
+            {article1, type,    article},
+            {article2, type,    article},
+            {article1, creator, author1},
+            {author1,  name,    name1},
+            {article2, creator, author2},
+            {author2,  name,    name2},
+            {article1, journal, journal_var},
+            {article2, journal, journal_var}
+    };
     auto query_variables = std::vector{name1, name2};
     auto variables = std::set{article1, article2, author1, author2, name1, name2, journal_var};
 
@@ -120,6 +131,10 @@ TEST(TestSPARQLParser, parse_a_query) {
     ASSERT_EQ(q.getSelectModifier(), SelectModifier::DISTINCT);
 
     ASSERT_EQ(q.getVariables(), variables);
+
+    ASSERT_EQ(q.getAnonymVariables(), std::set<Variable>{});
+
+    // std::cout << q.getAnonymVariables() << std::endl;
 
 }
 

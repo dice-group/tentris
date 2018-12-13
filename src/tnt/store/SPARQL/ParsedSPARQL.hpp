@@ -30,7 +30,6 @@ namespace {
 namespace tnt::store::sparql {
     using VarOrTerm = std::variant<Variable, Term>;
     using TriplePattern = std::vector<VarOrTerm>;
-    using materializedSliceKey = std::vector<std::optional<Term>>;
 
     enum SelectModifier {
         NONE,
@@ -63,7 +62,6 @@ namespace tnt::store::sparql {
     };
 
 
-
     class ParsedSPARQL {
 
         std::string sparql_str;
@@ -82,7 +80,6 @@ namespace tnt::store::sparql {
         std::set<TriplePattern> bgps;
         uint next_anon_var_id = 0;
         std::shared_ptr<Subscript> subscript;
-        std::vector<materializedSliceKey> _operand_keys;
 
     public:
 
@@ -187,20 +184,8 @@ namespace tnt::store::sparql {
                 }
 
                 subscript = std::make_shared<Subscript>(ops_labels, result_labels);
-                if (auto optimized = subscript->optimized(); optimized) {
+                if (auto optimized = subscript->optimized(); optimized)
                     subscript = std::move(optimized);
-                }
-
-                // generate operand keys
-                for (const auto &bgp : bgps) {
-                    materializedSliceKey op_key{};
-                    for (const VarOrTerm &res : bgp)
-                        if (std::holds_alternative<Term>(res))
-                            op_key.emplace_back(std::get<Term>(res));
-                        else
-                            op_key.emplace_back(std::nullopt);
-                    _operand_keys.push_back(op_key);
-                }
             } else
                 throw std::invalid_argument{"query could not be parsed."};
 
@@ -228,10 +213,6 @@ namespace tnt::store::sparql {
 
         const std::shared_ptr<const Subscript> getSubscript() const {
             return subscript;
-        }
-
-        const std::vector<materializedSliceKey> &getOperandKeys() const {
-            return _operand_keys;
         }
 
         const std::set<TriplePattern> &getBgps() const {

@@ -55,7 +55,7 @@ namespace tnt::store::cache {
                 : parsedSPARQL{sparql_string},
                   is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)} {
 
-            const auto slice_keys = calc_keys(parsedSPARQL.getOperandKeys(), trie, termIndex);
+            const auto slice_keys = calc_keys(parsedSPARQL.getBgps(), trie, termIndex);
 
 
             is_trivial_emtpy = slice_keys.empty();
@@ -151,32 +151,32 @@ namespace tnt::store::cache {
         /**
          * Calculates the slice keys for the BoolHyperTrie from a basic graph pattern. If the result is clearly empty
          * an empty list of slice keys is returned.
-         * @param bgp basic graph pattern of the query
+         * @param bgps basic graph pattern of the query
          * @param trie BoolHyperTrie
          * @param termIndex intex for trie
          * @return slice keys for the BoolHyperTrie
          */
         static std::vector<SliceKey_t>
-        calc_keys(const std::vector<materializedSliceKey> &bgp, BoolHyperTrie &trie,
-                  const TermStore &termIndex) {
+        calc_keys(const std::set<TriplePattern> &bgps, const BoolHyperTrie &trie, const TermStore &termIndex) {
             std::vector<SliceKey_t> slice_keys{};
-            for (const auto &op_key : bgp) {
+            for (const auto &op_key : bgps) {
                 SliceKey_t slice_key(3, std::nullopt);
                 bool no_slices = true;
-                for (const auto &[pos, op_key_part] : enumerate(op_key))
-                    if (op_key_part.has_value())
+                for (const auto &[pos, op_key_part] : enumerate(op_key)) {
+                    if (std::holds_alternative<Term>(op_key_part))
                         try {
-                            key_part_t ind = termIndex.at(*op_key_part);
+                            key_part_t ind = termIndex.at(std::get<Term>(op_key_part));
                             slice_key[pos] = {ind};
-                        } catch (...) { // a keypart was not in the index so the result is zero anyways.
+                        } catch (std::out_of_range &exc) {
+                            // a keypart was not in the index so the result is zero anyways.
                             return {};
                         }
                     else
                         no_slices = false;
-
+                }
                 if (no_slices) {
-                    if (not std::get<bool>(
-                            trie.get(slice_key))) // one triple without variables was not in storeF
+                    // one triple without variables was not in storeF
+                    if (not std::get<bool>(trie.get(slice_key)))
                         return {};
                 } else
                     slice_keys.push_back(slice_key);
