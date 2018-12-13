@@ -14,6 +14,7 @@
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tnt/tensor/einsum/operator/OperatorNode.hpp"
+#include "tnt/util/LogHelper.hpp"
 
 namespace {
     using namespace tnt::tensor::hypertrie;
@@ -276,6 +277,7 @@ namespace tnt::tensor::einsum::operators {
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
+        logTrace("step: ", step);
         // there are steps left
         if (step.result_labels_done) {
             rekEinsumBoolNonResult(yield, operands, result_key, step);

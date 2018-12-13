@@ -111,7 +111,7 @@ inline void logDebug(std::string msg, Args &&... args) {
 }
 
 template<typename ...Args>
-inline void logTraceOptimized(std::string msg, Args &&... args) {
+inline void logTrace(std::string msg, Args &&... args) {
 #if TRACE
     std::ostringstream oss;
     oss << msg;
@@ -150,7 +150,7 @@ void init_logging() {
             keywords::auto_flush = true
     );
     core::get()->set_filter(
-            trivial::severity >= trivial::debug
+            trivial::severity >= trivial::trace
     );
     boost::log::add_common_attributes();
     add_console_log(std::cout, boost::log::keywords::format = "%Message%");
