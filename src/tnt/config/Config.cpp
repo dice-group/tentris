@@ -38,6 +38,11 @@ namespace tnt::config {
          * The timeout for query processing of single queries.
          */
         mutable uint timeout = 180;
+        /**
+         * Number of threads used to serve http results. Each thread may use multiple others while calculating the result.
+         */
+        mutable uint8_t threads = std::thread::hardware_concurrency();
+
 
         /**
          * Initialization of command argument parser.
@@ -47,7 +52,8 @@ namespace tnt::config {
                     ("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
                     ("f,file", "ntriple file to load at startup", cxxopts::value<std::string>())
                     ("t,timeout", "time in seconds until processing a request is canceled by the server",
-                     cxxopts::value<uint>()->default_value("180"));
+                     cxxopts::value<uint>()->default_value("180"))
+                    ("c,threads", "How many threads are used for handling http requests", cxxopts::value<uint8_t>()->default_value("0"));
         }
 
         friend void init_config(int argc, char *argv[]);
@@ -83,6 +89,13 @@ namespace tnt::config {
                     config.timeout = UINT_MAX;
                 else
                     config.timeout = timeout;
+            }
+
+            if (arguments.count("threads") == 1) {
+                auto threads = arguments["threads"].as<uint8_t>();
+
+                if (threads != 0)
+                    config.threads = threads;
             }
         } catch (cxxopts::option_not_exists_exception &ex) {
             if (std::string{"Option ‘help’ does not exist"}.compare(ex.what()) == 0) {

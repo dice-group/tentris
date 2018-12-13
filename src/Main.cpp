@@ -51,15 +51,14 @@ int main(int argc, char *argv[]) {
 
     // create endpoint
     Address address(Ipv4::any(), {AtomicConfig::getInstance().port});
-    unsigned int threads = std::thread::hardware_concurrency();
     auto opts = Http::Endpoint::options()
-            .threads(threads)
+            .threads(AtomicConfig::getInstance().threads)
             .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
     std::shared_ptr<Http::Endpoint> server = std::make_shared<Http::Endpoint>(address);
     server->init(opts);
     server->setHandler(Http::make_handler<SPARQLEndpoint>());
     log("Server \n"
-        "  threads: ", threads, "\n",
+        "  threads: ", AtomicConfig::getInstance().threads, "\n",
         "  IRI:     ", "http://127.0.0.1:", address.port(), "/sparql?query=");
     // start endpoint
     server->serveThreaded();
