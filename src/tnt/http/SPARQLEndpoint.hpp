@@ -22,17 +22,18 @@
 #include "tnt/util/LogHelper.hpp"
 
 namespace {
-    using namespace Pistache;
-    using namespace Pistache::Http;
-    using namespace tnt::util::types;
-    using namespace tnt::config;
-    using namespace tnt::tensor::einsum;
-    using namespace tnt::tensor::hypertrie;
-    using namespace tnt::tensor::einsum::operators;
-    using namespace tnt::store::sparql;
-    using namespace tnt::store::cache;
-    using AtomicTripleStore = tnt::store::AtomicTripleStore;
-    using namespace std::chrono;
+    using namespace ::Pistache;
+    using namespace ::Pistache::Http;
+    using namespace ::tnt::util::types;
+    using namespace ::tnt::config;
+    using namespace ::tnt::tensor::einsum;
+    using namespace ::tnt::tensor::hypertrie;
+    using namespace ::tnt::tensor::einsum::operators;
+    using namespace ::tnt::store::sparql;
+    using namespace ::tnt::store::cache;
+    using AtomicTripleStore = ::tnt::store::AtomicTripleStore;
+    using namespace ::std::chrono;
+    using namespace ::tnt::logging;
 }
 namespace tnt::http {
     /**
@@ -68,7 +69,7 @@ namespace tnt::http {
                         if (not hasQuery.isEmpty()) {
 
                             const std::string sparqlQueryStr = urlDecode(hasQuery.get());
-                            log("query-string: ", sparqlQueryStr, "\n");
+                            log("query-string: {}\n"_format(sparqlQueryStr));
                             log("Resources at the beginning:");
                             log_health_data();
                             log("");
@@ -118,7 +119,7 @@ namespace tnt::http {
             } catch (std::exception &exc) {
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
-                log("Unhandled exception", &exc);
+                log("Unhandled exception"_format(&exc));
 
                 return;
             }
@@ -135,7 +136,7 @@ namespace tnt::http {
             log("Resources at the end:");
             log_health_data();
             log("");
-            log("canceled: ", reason);
+            log("canceled: {}"_format(reason));
             if (exc)
                 logError(exc->what());
             log("### Request end ###");

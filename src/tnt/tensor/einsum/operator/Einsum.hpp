@@ -20,6 +20,7 @@ namespace {
     using namespace tnt::tensor::hypertrie;
     using namespace tnt::util::types;
     using Join = tnt::tensor::hypertrie::Join;
+    using namespace ::tnt::logging;
 }
 
 namespace tnt::tensor::einsum::operators {
@@ -277,7 +278,7 @@ namespace tnt::tensor::einsum::operators {
             const Operands &operands,
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
-        logTrace("step: ", step);
+        logTrace("step: {}"_format(step));
         // there are steps left
         if (step.result_labels_done) {
             rekEinsumBoolNonResult(yield, operands, result_key, step);

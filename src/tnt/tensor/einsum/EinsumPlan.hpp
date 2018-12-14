@@ -10,6 +10,7 @@
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include <fmt/format.h>
 
 namespace {
     using namespace tnt::util::types;
@@ -106,7 +107,8 @@ namespace tnt::tensor::einsum {
 
         private:
 
-            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+            Step(const std::shared_ptr<const Subscript> subscript,
+                 const std::map<label_t, label_pos_t> &result_label_poss,
                  const label_t &min_card_label,
                  const std::set<label_t> &label_candidates,
                  const std::set<label_t> &unused_result_labels) :
@@ -170,14 +172,16 @@ namespace tnt::tensor::einsum {
 
         public:
 
-            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+            Step(const std::shared_ptr<const Subscript> subscript,
+                 const std::map<label_t, label_pos_t> &result_label_poss,
                  const Operands &operands, const std::set<label_t> &label_candidates,
                  const std::set<label_t> &unused_result_labels) :
                     Step(subscript, result_label_poss,
                          getMinCardLabel(operands, label_candidates, unused_result_labels, *subscript),
                          label_candidates, unused_result_labels) {}
 
-            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
+            Step(const std::shared_ptr<const Subscript> subscript,
+                 const std::map<label_t, label_pos_t> &result_label_poss,
                  const Operands &operands, const std::set<label_t> &unused_result_labels) :
                     Step(subscript, result_label_poss,
                          getMinCardLabel(operands, subscript->getAllLabels(), unused_result_labels, *subscript),
@@ -317,6 +321,7 @@ namespace tnt::tensor::einsum {
                 return d;
             }
 
+
         public:
             friend std::ostream &operator<<(std::ostream &os, const Step &step) {
                 os << "Step: \n" << step._subscript;
@@ -329,11 +334,24 @@ namespace tnt::tensor::einsum {
                 return os;
             }
 
+
         };
+
     };
 
-
 };
+namespace fmt {
+
+    template<>
+    struct formatter<tnt::tensor::einsum::EinsumPlan::Step> {
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+        template<typename FormatContext>
+        auto format(const tnt::tensor::einsum::EinsumPlan::Step &p, FormatContext &ctx) {
+            return format_to(ctx.begin(), "asd{}", 1);
+        }
+    };
 
 
 #endif //SPARSETENSOR_EINSUM_EINSUMPLAN

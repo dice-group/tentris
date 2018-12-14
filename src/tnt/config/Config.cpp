@@ -9,6 +9,10 @@
 #include "tnt/util/SingletonFactory.hpp"
 
 
+namespace {
+    using namespace ::tnt::logging;
+}
+
 namespace tnt::config {
     /**
      * The configuration of a TNT instance.

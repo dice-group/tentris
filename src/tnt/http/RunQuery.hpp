@@ -22,6 +22,7 @@ namespace {
     using namespace tnt::tensor::einsum::operators;
     using Code = Pistache::Http::Code;
     using namespace std::chrono;
+    using namespace ::tnt::logging;
 };
 namespace tnt::http {
     /**

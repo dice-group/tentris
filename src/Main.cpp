@@ -6,6 +6,7 @@
 #include <tnt/config/Config.cpp>
 #include <tnt/store/AtomicTripleStore.hpp>
 #include <tnt/http/SPARQLEndpoint.hpp>
+#include <fmt/format.h>
 
 
 
@@ -14,6 +15,7 @@ namespace {
     using namespace tnt::http;
     using namespace tnt::config;
     namespace fs = std::filesystem;
+    using namespace fmt::literals;
 }
 
 void bulkload(std::string triple_file){
@@ -22,14 +24,14 @@ void bulkload(std::string triple_file){
     auto loading_start_time = log_health_data();
 
     if (fs::is_regular_file(triple_file)) {
-        log("nt-file: ", triple_file, " loading ...");
+        log("nt-file: {} loading ..."_format(triple_file));
         AtomicTripleStore::getInstance().loadRDF(triple_file);
     } else {
-        log("nt-file ", triple_file, " was not found." );
+        log("nt-file {} was not found."_format(triple_file) );
         log("Exiting ..." );
         std::exit(EXIT_FAILURE);
     }
-    log("Loaded ", AtomicTripleStore::getInstance().size(), " triples.\n");
+    log("Loaded {} triples.\n"_format(AtomicTripleStore::getInstance().size()));
 
     // log the end time and print resource usage informations
     auto loading_end_time = log_health_data();
@@ -42,24 +44,29 @@ int main(int argc, char *argv[]) {
 
     tnt::config::init_config(argc, argv);
 
+    const auto port = AtomicConfig::getInstance().port;
+    const auto threads = AtomicConfig::getInstance().threads;
+    const auto rdf_file = AtomicConfig::getInstance().dataBaseFile;
+
     // bulkload file
-    if(std::string triple_file = AtomicConfig::getInstance().dataBaseFile; not triple_file.empty()){
-        bulkload(AtomicConfig::getInstance().dataBaseFile);
+    if(not rdf_file.empty()){
+        bulkload(rdf_file);
     } else{
         log("No file loaded. Use '-f yourfile.nt' to bulkload a file.");
     }
 
     // create endpoint
-    Address address(Ipv4::any(), {AtomicConfig::getInstance().port});
+
+    Address address(Ipv4::any(), {port});
     auto opts = Http::Endpoint::options()
-            .threads(AtomicConfig::getInstance().threads)
+            .threads(threads)
             .flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
-    std::shared_ptr<Http::Endpoint> server = std::make_shared<Http::Endpoint>(address);
+    auto server = std::make_shared<Http::Endpoint>(address);
     server->init(opts);
     server->setHandler(Http::make_handler<SPARQLEndpoint>());
     log("Server \n"
-        "  threads: ", AtomicConfig::getInstance().threads, "\n",
-        "  IRI:     ", "http://127.0.0.1:", address.port(), "/sparql?query=");
+        "  threads: {}\n"
+        "  IRI:     http://127.0.0.1:{}/sparql?query="_format(threads, port));
     // start endpoint
     server->serveThreaded();
 
@@ -75,7 +82,7 @@ int main(int argc, char *argv[]) {
             break;
         }
         if (number == SIGINT){
-            logDebug("Exiting by Signal ", std::string{strsignal(number)}, ".");
+            logDebug("Exiting by Signal {}."_format(strsignal(number)));
             break;
         }
     }

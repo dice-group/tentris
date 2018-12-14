@@ -25,135 +25,132 @@
 
 #include <date/tz.h>
 
+#include <fmt/format.h>
+
 #define DEBUG 1 // todo: Find an appropriate place for enabling DEBUG
 #define TRACE 1 // todo: Find an appropriate place for enabling DEBUG
 
-#define GET_VARIABLE_NAME(Variable) (#Variable)
+// #define GET_VARIABLE_NAME(Variable) (#Variable)
 
 namespace {
     using namespace boost::log::trivial;
     using namespace std::chrono;
 }
 
-boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
-
-template<typename ...Args>
-inline void log(std::string msg, Args &&... args) {
-    std::ostringstream oss;
-    oss << msg;
-    ((oss << args), ...);
-    BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::info) << oss.str();
-}
-
-struct processMem_t {
-    uint32_t virtualMem;
-    uint32_t physicalMem;
-};
+namespace tnt::logging {
+    using namespace fmt::literals;
+    namespace {
+        boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
 
 
-inline int parseLine(char *line) {
-    // This assumes that a digit will be found and the line ends in " Kb".
-    int i = strlen(line);
-    const char *p = line;
-    while (*p < '0' || *p > '9') p++;
-    line[i - 3] = '\0';
-    i = atoi(p);
-    return i;
-}
+        struct processMem_t {
+            uint32_t virtualMem;
+            uint32_t physicalMem;
+        };
 
-inline processMem_t get_memory_usage() {
-    FILE *file = fopen("/proc/self/status", "r");
-    char line[128];
-    processMem_t processMem{};
 
-    while (fgets(line, 128, file) != NULL) {
-        // std::cout << line << std::endl;
-        if (strncmp(line, "VmSize:", 7) == 0) {
-            processMem.virtualMem = parseLine(line);
+        inline int parseLine(char *line) {
+            // This assumes that a digit will be found and the line ends in " Kb".
+            int i = strlen(line);
+            const char *p = line;
+            while (*p < '0' || *p > '9') p++;
+            line[i - 3] = '\0';
+            i = atoi(p);
+            return i;
         }
 
-        if (strncmp(line, "VmRSS:", 6) == 0) {
-            processMem.physicalMem = parseLine(line);
+        inline processMem_t get_memory_usage() {
+            FILE *file = fopen("/proc/self/status", "r");
+            char line[128];
+            processMem_t processMem{};
+
+            while (fgets(line, 128, file) != NULL) {
+                // std::cout << line << std::endl;
+                if (strncmp(line, "VmSize:", 7) == 0) {
+                    processMem.virtualMem = parseLine(line);
+                }
+
+                if (strncmp(line, "VmRSS:", 6) == 0) {
+                    processMem.physicalMem = parseLine(line);
+                }
+            }
+            fclose(file);
+            return processMem;
         }
     }
-    fclose(file);
-    return processMem;
-}
 
-inline time_point<system_clock> log_health_data() {
-    using namespace std::chrono;
-    processMem_t mem = get_memory_usage();
-    auto time = system_clock::now();
-    log("time: ", date::format("%F %T", date::floor<milliseconds>(time)));
-    // log("virtMem: ", mem.virtualMem, "kB");
-    log("physMem: ", mem.physicalMem, "kB");
-    return time;
-}
+    void init_logging() {
+        using namespace boost::log;
+        add_file_log(
+                keywords::file_name = "TNT_%N.log",
+                keywords::rotation_size = 10 * 1024 * 1024,
+                keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
+                keywords::format = (
+                        expressions::stream
+                                << std::setw(8) << std::setfill('0')
+                                << expressions::attr<unsigned int>("LineID")
+                                << "\t"
+                                << expressions::format_date_time<boost::posix_time::ptime>("TimeStamp",
+                                                                                           "%Y-%m-%d_%H:%M:%S.%f")
+                                << "\t: <" << trivial::severity
+                                << "> \t"
+                                << expressions::smessage
+                ),
+                keywords::auto_flush = true
+        );
+        core::get()->set_filter(
+                trivial::severity >= trivial::trace
+        );
+        boost::log::add_common_attributes();
+        add_console_log(std::cout, boost::log::keywords::format = "%Message%");
+    }
 
-inline void log_duration(time_point<system_clock> start_time, time_point<system_clock> end_time) {
-    using namespace std::chrono;
-    auto duration = end_time - start_time;
 
-    // xx h xx min xx s
-    log("duration: ", (duration_cast<hours>(duration) % 24).count(), "h ",
-        (duration_cast<minutes>(duration) % 60).count(), "min ",
-        (duration_cast<seconds>(duration) % 60).count(), "s");
-}
+    inline void log(std::string msg) {
+        BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::info) << msg;
+    }
 
-template<typename ...Args>
-inline void logDebug(std::string msg, Args &&... args) {
+    inline time_point<system_clock> log_health_data() {
+        using namespace std::chrono;
+        processMem_t mem = get_memory_usage();
+        auto time = system_clock::now();
+        log("time: {:%F_%T}"_format(time));
+        // log("time: ", date::format("%F %T", date::floor<milliseconds>(time)));
+        // log("virtMem: ", mem.virtualMem, "kB");
+        log("physMem: {} kB"_format(mem.physicalMem));
+        return time;
+    }
+
+    inline void log_duration(time_point<system_clock> start_time, time_point<system_clock> end_time) {
+        using namespace std::chrono;
+        auto duration = end_time - start_time;
+
+        // xx h xx min xx s
+        log("duration: {} h {} min {} s"_format(
+                (duration_cast<hours>(duration) % 24).count(),
+                (duration_cast<minutes>(duration) % 60).count(),
+                (duration_cast<seconds>(duration) % 60).count()));
+    }
+
+    inline void logDebug(std::string msg) {
 #if DEBUG
-    std::ostringstream oss;
-    oss << msg;
-    ((oss << args), ...);
-    BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << oss.str();
+        BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << msg;
 #endif
-}
+    }
 
-template<typename ...Args>
-inline void logTrace(std::string msg, Args &&... args) {
+    inline void logTrace(std::string msg) {
 #if TRACE
-    std::ostringstream oss;
-    oss << msg;
-    ((oss << args), ...);
-    BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::trace) << oss.str();
+        BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::trace) << msg;
 #endif
+    }
+
+
+    inline void logError(std::string msg) {
+        BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::error) << msg;
+    }
+
+
 }
 
-
-template<typename ...Args>
-inline void logError(std::string msg, Args &&... args) {
-    std::ostringstream oss;
-    oss << msg;
-    ((oss << args), ...);
-    BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::error) << oss.str();
-}
-
-
-void init_logging() {
-    using namespace boost::log;
-    add_file_log(
-            keywords::file_name = "TNT_%N.log",
-            keywords::rotation_size = 10 * 1024 * 1024,
-            keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-            keywords::format = (
-                    expressions::stream
-                            << std::setw(8) << std::setfill('0')
-                            << expressions::attr<unsigned int>("LineID")
-                            << "\t"
-                            << expressions::format_date_time<boost::posix_time::ptime>("TimeStamp",
-                                                                                       "%Y-%m-%d_%H:%M:%S.%f")
-                            << "\t: <" << trivial::severity
-                            << "> \t"
-                            << expressions::smessage
-            ),
-            keywords::auto_flush = true
-    );
-    core::get()->set_filter(
-            trivial::severity >= trivial::trace
-    );
-    boost::log::add_common_attributes();
-    add_console_log(std::cout, boost::log::keywords::format = "%Message%");
-}
 
 #endif

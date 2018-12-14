@@ -25,6 +25,7 @@ namespace {
     using namespace tnt::tensor::einsum::operators;
     using namespace tnt::store::sparql;
     using namespace tnt::tensor::hypertrie;
+    using namespace ::tnt::logging;
 }
 
 namespace tnt::store {
@@ -78,7 +79,7 @@ namespace tnt::store {
 
         std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
             std::shared_ptr<QueryExecutionPackage> query = query_cache.get(sparql);
-            logDebug("QueryExecutionPackage: ", *query);
+            logDebug("QueryExecutionPackage: {}"_format(*query));
             return query;
         }
 

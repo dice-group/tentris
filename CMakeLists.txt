@@ -82,6 +82,9 @@ target_include_directories(libsparsetensor INTERFACE
         src/
         )
 
+#fmt
+add_subdirectory(thirdparty/fmt)
+
 target_link_libraries(libsparsetensor
         INTERFACE
         stdc++fs # for #include <filesystem>
@@ -92,6 +95,7 @@ target_link_libraries(libsparsetensor
         cxxopts
         antlr4_sparql
         Boost::boost # header only boost libraries
+        fmt::fmt
         ${Boost_LIBRARIES}
         ${Pistache_LIBRARY}
         )
