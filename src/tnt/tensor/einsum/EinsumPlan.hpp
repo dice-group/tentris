@@ -10,7 +10,9 @@
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include "tnt/util/All.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/util/LogHelper.hpp"
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 namespace {
     using namespace tnt::util::types;
@@ -324,7 +326,7 @@ namespace tnt::tensor::einsum {
 
         public:
 
-            friend struct ::fmt::formatter<Step>;
+            friend struct ::fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step>;
         };
     };
 };
@@ -336,7 +338,18 @@ struct fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step> {
 
     template<typename FormatContext>
     auto format(const tnt::tensor::einsum::EinsumPlan::Step &p, FormatContext &ctx) {
-        return format_to(ctx.begin(), "asd{}", 1);
+        return format_to(ctx.begin(),
+                         "<Step> \n"
+                         "{}"
+                         " label: {}\n"
+                         " _label_candidates: {}\n "
+                         " all_done: {}"
+                         " _op_poss: {}"
+                         " _result_pos: {}"
+                         " next_op_poss: {}",
+                         p._subscript, p.label, p._label_candidates, p.all_done,
+                         p._op_poss,p._result_pos, p.next_op_poss
+        );
     }
 };
 

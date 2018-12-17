@@ -169,5 +169,21 @@ struct fmt::formatter<std::exception> {
     }
 };
 
+template<typename X>
+struct fmt::formatter<std::optional<X>> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const std::optional<X> &p, FormatContext &ctx) {
+        if (p)
+            return format_to(ctx.begin(), "<{}>", *p);
+        else
+            return format_to(ctx.begin(), "<>");
+
+
+    }
+};
+
 
 #endif
