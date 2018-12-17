@@ -68,13 +68,13 @@ include(CheckCXXCompilerFlag)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
-      -Wold-style-cast -Wfloat-equal -Wlogical-op -Wundef
-      -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith
+      -Wold-style-cast -Wundef
+      -Wredundant-decls -Wwrite-strings -Wpointer-arith
       -Wcast-qual -Wformat=2 -Wmissing-include-dirs
       -Wcast-align -Wnon-virtual-dtor
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
-      -Wno-ctor-dtor-privacy -Wno-dangling-else -Wno-float-equal
+      -Wno-ctor-dtor-privacy -Wno-dangling-else
       -Wno-format-nonliteral -Wno-sign-conversion -Wno-shadow)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
@@ -88,29 +88,17 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
           -Wnull-dereference -Wduplicated-cond)
   endif ()
-
   set(WERROR_FLAG -Werror)
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Weverything -Wpedantic
-      -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
-      -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
-      -Wno-global-constructors -Wno-disabled-macro-expansion
-      -Wno-switch-enum -Wno-documentation-unknown-command
-      -Wno-unused-member-function
-      -Wno-format-nonliteral -Wno-missing-noreturn -Wno-undefined-func-template
-      -Wno-shadow -Wno-sign-conversion -Wno-used-but-marked-unused
-      -Wno-covered-switch-default -Wno-missing-prototypes
-      -Wno-missing-variable-declarations -Wno-double-promotion)
-
-  set(WERROR_FLAG -Werror)
-
-  check_cxx_compiler_flag(-Wno-zero-as-null-pointer-constant HAS_NULLPTR_WARNING)
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic)
+  check_cxx_compiler_flag(-Wzero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
-        -Wno-zero-as-null-pointer-constant)
+        -Wzero-as-null-pointer-constant)
   endif ()
+  set(WERROR_FLAG -Werror)
 endif ()
 
 if (MSVC)
@@ -150,8 +138,8 @@ function(add_headers VAR)
 endfunction()
 
 # Define the fmt library, its includes and the needed defines.
-add_headers(FMT_HEADERS color.h core.h format.h format-inl.h ostream.h printf.h
-                        time.h ranges.h)
+add_headers(FMT_HEADERS chrono.h color.h core.h format.h format-inl.h locale.h
+                        ostream.h printf.h time.h ranges.h)
 set(FMT_SOURCES src/format.cc)
 if (HAVE_OPEN)
   add_headers(FMT_HEADERS posix.h)
@@ -202,6 +190,7 @@ if (FMT_INSTALL)
     "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
+  set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
   set(targets_export_name fmt-targets)
 
   set (INSTALL_TARGETS fmt)
@@ -215,11 +204,18 @@ if (FMT_INSTALL)
   set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
       "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
+  set(FMT_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH
+    "Installation directory for pkgconfig (.pc) files, relative to ${CMAKE_INSTALL_PREFIX}.")
+
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
     COMPATIBILITY AnyNewerVersion)
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/support/cmake/fmt.pc.in"
+    "${pkgconfig}"
+    @ONLY)
   configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
@@ -239,7 +235,10 @@ if (FMT_INSTALL)
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           DESTINATION ${FMT_LIB_DIR})
+
+  install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}> DESTINATION ${FMT_LIB_DIR} OPTIONAL)
   install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
+  install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
 endif ()
 
 if (FMT_DOC)
