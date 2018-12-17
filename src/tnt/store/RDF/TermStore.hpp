@@ -16,6 +16,8 @@ namespace {
 namespace tnt::store::rdf {
     class TermStore {
     public:
+        friend struct fmt::formatter<tnt::store::rdf::TermStore>;
+
         class RevTermStore {
             friend class TermStore;
 
@@ -34,6 +36,10 @@ namespace tnt::store::rdf {
                 return _original;
             }
 
+            TermStore &inv() const noexcept {
+                return _original;
+            }
+
             inline bool empty() const noexcept {
                 return _original.empty();
             }
@@ -47,7 +53,8 @@ namespace tnt::store::rdf {
                 _original.clear();
             }
 
-            friend std::ostream &operator<<(std::ostream &os, const RevTermStore &store);
+            friend struct fmt::formatter<tnt::store::rdf::TermStore::RevTermStore>;
+
         };
 
     private:
@@ -129,19 +136,37 @@ namespace tnt::store::rdf {
             _term2id.clear();
         }
 
-        friend std::ostream &operator<<(std::ostream &os, const TermStore &store) {
-            for (const auto &str_p: values(store._id2term)) {
-                os << *str_p << "\n";
-            }
-            os << std::endl;
-            return os;
-        }
+        friend struct fmt::formatter<tnt::store::rdf::TermStore>;
 
-        friend std::ostream &operator<<(std::ostream &os, const RevTermStore &store) {
-            os << store._original._id2term;
-            return os;
-        }
     };
+};
+
+template<>
+struct fmt::formatter<tnt::store::rdf::TermStore> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::store::rdf::TermStore &p, FormatContext &ctx) {
+        auto entries = values(p._id2term);
+        return format_to(ctx.begin(),
+                         " Entries:\n"
+                         "   {}\n",
+                         join(entries.begin(), entries.end(), "\n   "));
+    }
+};
+
+template<>
+struct fmt::formatter<tnt::store::rdf::TermStore::RevTermStore> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::store::rdf::TermStore::RevTermStore &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "{}",
+                         p.inv());
+    }
 };
 
 #endif //TNT_STORE_RDFTERMINDEX

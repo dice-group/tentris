@@ -622,10 +622,8 @@ namespace tnt::tensor::hypertrie {
             }
         }
 
-        friend std::ostream &operator<<(std::ostream &out, BoolHyperTrie &trie) {
-            out << "<BoolHyperTrie: _depth=" << int(trie._depth) << ", leafcount=" << int(trie._leafcount) << ">";
-            return out;
-        }
+        friend struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie>;
+
 
     public:
         class DiagonalView {
@@ -646,11 +644,7 @@ namespace tnt::tensor::hypertrie {
             BoolHyperTrie *_result;
 
         public:
-            friend std::ostream &operator<<(std::ostream &os, const DiagonalView &view) {
-                os << "_positions: " << view._positions << " _min: " << view._min << " _max: " << view._max
-                   << " _min_ind: " << view._min_ind << " _max_ind: " << view._max_ind << " _size: " << view._size;
-                return os;
-            }
+            friend struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie::DiagonalView>;
 
         public:
             /**
@@ -1189,6 +1183,41 @@ namespace tnt::tensor::hypertrie {
         };
     };
 };
+
+template<>
+struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::hypertrie::BoolHyperTrie &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<BoolHyperTrie>"
+                         " _depth: {}"
+                         " _leafcount:   {}",
+                         p._depth, p._leafcount);
+    }
+};
+
+template<>
+struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie::DiagonalView> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::hypertrie::BoolHyperTrie::DiagonalView &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<BoolHyperTrie>"
+                         " _positions: {}"
+                         " _min:   {}"
+                         " _max:   {}"
+                         " _min_ind:   {}"
+                         " _max_ind:   {}"
+                         " _size:   {}",
+                         p._positions, p._min, p._max, p._min_ind, p._max_ind, p._size);
+    }
+};
+
 
 #endif //SPARSETENSOR_HYPERTRIE_BOOLHYPERTRIE_HPP
 

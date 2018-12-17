@@ -599,14 +599,25 @@ namespace tnt::tensor::einsum {
         }
 
     public:
-        friend std::ostream &operator<<(std::ostream &os, const Subscript &subscript) {
-            os << "Subscript: _operands_labels: " << subscript._operands_labels
-               << " _result_labels: " << subscript._result_labels;
-            return os;
-        }
+        friend struct fmt::formatter<tnt::tensor::einsum::Subscript>;
 
     };
 }
+
+template<>
+struct fmt::formatter<tnt::tensor::einsum::Subscript> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::einsum::Subscript &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<Subscript>"
+                         " _operands_labels: {}"
+                         " _result_labels:   {}",
+                         p._operands_labels, p._result_labels);
+    }
+};
 
 #endif //SPARSETENSOR_EINSUM_SUBSCRIPT_HPP
 

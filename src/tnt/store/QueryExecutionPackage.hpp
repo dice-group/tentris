@@ -152,18 +152,9 @@ namespace tnt::store::cache {
 
         }
 
-        friend std::ostream &operator<<(std::ostream &os, const QueryExecutionPackage &package) {
-            os << " parsedSPARQL: " << package.parsedSPARQL
-               << "\n is_distinct: " << package.is_distinct
-               << "\n is_trivial_emtpy: " << package.is_trivial_emtpy;
-            // TODO: implement print for operator
-//            if (not package.is_distinct)
-//                os << "\nregular_operator_tree:" << package.regular_operator_tree << "\n";
-//            else {
-//                os << "\ndistinct_operator_tree: " << package.distinct_operator_tree;
-//            }
-            return os;
-        }
+
+        friend struct ::fmt::formatter<QueryExecutionPackage>;
+
 
     private:
         /**
@@ -205,5 +196,21 @@ namespace tnt::store::cache {
     };
 
 }
+
+template<>
+struct fmt::formatter<tnt::store::cache::QueryExecutionPackage> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                " parsedSPARQL:     {}\n"
+                " is_distinct:      {}\n"
+                " is_trivial_emtpy: {}\n",
+                p.parsedSPARQL, p.is_distinct, p.is_trivial_emtpy);
+        // TODO: implement print for operator
+    }
+};
 
 #endif //TNT_QUERYEXECUTIONPACKAGE_HPP

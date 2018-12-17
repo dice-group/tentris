@@ -20,6 +20,7 @@
 #include "tnt/http/JsonSerializer.hpp"
 #include "tnt/http/RunQuery.hpp"
 #include "tnt/util/LogHelper.hpp"
+#include <fmt/ostream.h>
 
 namespace {
     using namespace ::Pistache;
@@ -119,7 +120,7 @@ namespace tnt::http {
             } catch (std::exception &exc) {
                 response.send(Code::Internal_Server_Error);
                 --open_connections;
-                log("Unhandled exception"_format(&exc));
+                log("Unhandled exception {}"_format(exc));
 
                 return;
             }

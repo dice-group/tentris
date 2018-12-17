@@ -185,9 +185,15 @@ struct std::hash<tnt::store::rdf::Term> {
     }
 };
 
-std::ostream &operator<<(std::ostream &os, const tnt::store::rdf::Term &p) {
-    os << p.getIdentifier();
-    return os;
-}
+template<>
+struct fmt::formatter<tnt::store::rdf::Term> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::store::rdf::Term &p, FormatContext &ctx) {
+        return format_to(ctx.begin(), "{}", p.getIdentifier());
+    }
+};
 
 #endif //TEST_NODE_HPP

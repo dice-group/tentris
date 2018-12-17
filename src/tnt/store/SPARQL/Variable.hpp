@@ -29,11 +29,19 @@ namespace tnt::store::sparql {
             return name > rhs.name;
         }
 
-        friend std::ostream &operator<<(std::ostream &os, const Variable &p) {
-            os << "?" << p.name;
-            return os;
-        }
     };
 
 }
+
+template<>
+struct fmt::formatter<tnt::store::sparql::Variable> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::store::sparql::Variable &p, FormatContext &ctx) {
+        return format_to(ctx.begin(), "?{}", p.name);
+    }
+};
+
 #endif //TNT_VARIABLE_HPP

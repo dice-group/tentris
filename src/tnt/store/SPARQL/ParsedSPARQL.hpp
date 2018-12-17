@@ -388,16 +388,28 @@ namespace tnt::store::sparql {
         }
 
     public:
-        friend std::ostream &operator<<(std::ostream &os, const ParsedSPARQL &sparql) {
-            os << "prefixes: " << sparql.prefixes << "\n select_modifier: " << sparql.select_modifier
-               << "\n query_variables: " << sparql.query_variables << "\n variables: " << sparql.variables
-               << "\n anonym_variables: " << sparql.anonym_variables << "\n bgps: " << sparql.bgps;
-            return os;
-        }
-
+        friend struct fmt::formatter<tnt::store::sparql::ParsedSPARQL>;
     };
 }
 
+
+template<>
+struct fmt::formatter<tnt::store::sparql::ParsedSPARQL> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::store::sparql::ParsedSPARQL &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         " prefixes:         {}\n"
+                         " select_modifier:  {}\n"
+                         " query_variables:  {}\n"
+                         " variables:        {}\n"
+                         " anonym_variables: {}\n"
+                         " bgps:             {}\n",
+                         p.prefixes, p.select_modifier, p.query_variables, p.variables, p.anonym_variables, p.bgps);
+    }
+};
 
 #endif //TNT_SPARQLPARSER_HPP
 

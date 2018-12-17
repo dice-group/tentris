@@ -79,7 +79,7 @@ namespace tnt::store {
 
         std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
             std::shared_ptr<QueryExecutionPackage> query = query_cache.get(sparql);
-            logDebug("QueryExecutionPackage: {}"_format(*query));
+            // logDebug("QueryExecutionPackage: {}"_format(query));
             return query;
         }
 

@@ -323,35 +323,21 @@ namespace tnt::tensor::einsum {
 
 
         public:
-            friend std::ostream &operator<<(std::ostream &os, const Step &step) {
-                os << "Step: \n" << step._subscript;
-                os << "  label: " << step.label << "\n";
-                os << "  _label_candidates: " << step._label_candidates << "\n";
-                os << "  all_done: " << step.all_done << "\n";
-                os << "  _op_poss: " << step._op_poss << "\n";
-                os << "  _result_pos: " << step._result_pos << "\n";
-                os << "  _next_op_position: " << step.next_op_poss;
-                return os;
-            }
 
-
+            friend struct ::fmt::formatter<Step>;
         };
-
     };
-
 };
-namespace fmt {
 
-    template<>
-    struct formatter<tnt::tensor::einsum::EinsumPlan::Step> {
-        template<typename ParseContext>
-        constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+template<>
+struct fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
-        template<typename FormatContext>
-        auto format(const tnt::tensor::einsum::EinsumPlan::Step &p, FormatContext &ctx) {
-            return format_to(ctx.begin(), "asd{}", 1);
-        }
-    };
-
+    template<typename FormatContext>
+    auto format(const tnt::tensor::einsum::EinsumPlan::Step &p, FormatContext &ctx) {
+        return format_to(ctx.begin(), "asd{}", 1);
+    }
+};
 
 #endif //SPARSETENSOR_EINSUM_EINSUMPLAN

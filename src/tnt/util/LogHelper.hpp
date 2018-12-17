@@ -26,6 +26,8 @@
 #include <date/tz.h>
 
 #include <fmt/format.h>
+#include <fmt/time.h>
+#include <fmt/chrono.h>
 
 #define DEBUG 1 // todo: Find an appropriate place for enabling DEBUG
 #define TRACE 1 // todo: Find an appropriate place for enabling DEBUG
@@ -113,9 +115,9 @@ namespace tnt::logging {
     inline time_point<system_clock> log_health_data() {
         using namespace std::chrono;
         processMem_t mem = get_memory_usage();
-        auto time = system_clock::now();
-        log("time: {:%F_%T}"_format(time));
-        // log("time: ", date::format("%F %T", date::floor<milliseconds>(time)));
+        const auto time = std::chrono::system_clock::now();
+        const std::time_t t = std::chrono::system_clock::to_time_t(time);
+        log(fmt::format("time: {:%F_%T}", *std::localtime(&t)));
         // log("virtMem: ", mem.virtualMem, "kB");
         log("physMem: {} kB"_format(mem.physicalMem));
         return time;
@@ -151,6 +153,21 @@ namespace tnt::logging {
 
 
 }
+
+
+template<>
+struct fmt::formatter<std::exception> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const std::exception &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<exception>"
+                         " what: {} ",
+                         p.what());
+    }
+};
 
 
 #endif
