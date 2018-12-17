@@ -340,14 +340,14 @@ struct fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step> {
     auto format(const tnt::tensor::einsum::EinsumPlan::Step &p, FormatContext &ctx) {
         return format_to(ctx.begin(),
                          "<Step> \n"
-                         "{}"
+                         "{}\n"
                          " label: {}\n"
-                         " _label_candidates: {}\n "
-                         " all_done: {}"
-                         " _op_poss: {}"
-                         " _result_pos: {}"
-                         " next_op_poss: {}",
-                         p._subscript, p.label, p._label_candidates, p.all_done,
+                         " _label_candidates: {}\n"
+                         " all_done: {}\n"
+                         " _op_poss: {}\n"
+                         " _result_pos: {}\n"
+                         " next_op_poss: {}\n",
+                         *p._subscript, p.label, p._label_candidates, p.all_done,
                          p._op_poss,p._result_pos, p.next_op_poss
         );
     }

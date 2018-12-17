@@ -25,9 +25,9 @@
 
 #include <date/tz.h>
 
-#include <fmt/format.h>
-#include <fmt/time.h>
-#include <fmt/chrono.h>
+#include "tnt/util/FmtHelper.hpp"
+
+
 
 #define DEBUG 1 // todo: Find an appropriate place for enabling DEBUG
 #define TRACE 1 // todo: Find an appropriate place for enabling DEBUG
@@ -150,40 +150,6 @@ namespace tnt::logging {
     inline void logError(std::string msg) {
         BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::error) << msg;
     }
-
-
 }
-
-
-template<>
-struct fmt::formatter<std::exception> {
-    template<typename ParseContext>
-    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const std::exception &p, FormatContext &ctx) {
-        return format_to(ctx.begin(),
-                         "<exception>"
-                         " what: {} ",
-                         p.what());
-    }
-};
-
-template<typename X>
-struct fmt::formatter<std::optional<X>> {
-    template<typename ParseContext>
-    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const std::optional<X> &p, FormatContext &ctx) {
-        if (p)
-            return format_to(ctx.begin(), "<{}>", *p);
-        else
-            return format_to(ctx.begin(), "<>");
-
-
-    }
-};
-
 
 #endif

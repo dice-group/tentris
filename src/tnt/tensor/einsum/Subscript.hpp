@@ -612,8 +612,8 @@ struct fmt::formatter<tnt::tensor::einsum::Subscript> {
     template<typename FormatContext>
     auto format(const tnt::tensor::einsum::Subscript &p, FormatContext &ctx) {
         return format_to(ctx.begin(),
-                         "<Subscript>"
-                         " _operands_labels: {}"
+                         "<Subscript>\n"
+                         " _operands_labels: {}\n"
                          " _result_labels:   {}",
                          p._operands_labels, p._result_labels);
     }
