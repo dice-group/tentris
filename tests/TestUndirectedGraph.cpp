@@ -2,8 +2,7 @@
 
 #include <tnt/util/UndirectedGraph.hpp>
 
-TEST(TestUndirectedGraph, addEdge
-) {
+TEST(TestUndirectedGraph, addEdge) {
     using namespace ::tnt::util;
     UndirectedGraph<uint8_t> graph{};
 
@@ -17,14 +16,12 @@ TEST(TestUndirectedGraph, addEdge
 
     ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{2, 3, 4}), 1);
 
-    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3, 4}), 1);
-
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3, 4}), 0);
 
     ASSERT_EQ(size(connComp), 2);
 }
 
-TEST(TestUndirectedGraph, addFullGraph
-) {
+TEST(TestUndirectedGraph, addCompleteGraph) {
     using namespace ::tnt::util;
     UndirectedGraph<uint8_t> graph{};
 
@@ -38,7 +35,7 @@ TEST(TestUndirectedGraph, addFullGraph
 
     ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{5, 6, 7}), 1);
 
-    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3}), 1);
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3}), 0);
 
     ASSERT_EQ(size(connComp), 2);
 }
