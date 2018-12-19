@@ -5,6 +5,8 @@
 #include <filesystem>
 
 #include <tnt/store/SPARQL/ParsedSPARQL.hpp>
+#include <tnt/util/FmtHelper.hpp>
+
 
 namespace {
     namespace fs = std::filesystem;
@@ -29,21 +31,22 @@ bool parse_queries(const std::string &file) {
 
     using namespace tnt::store::sparql;
     bool no_errors = true;
-    std::cout << " ### " << file << std::endl;
+    fmt::print(" ### {}\n", file);
     std::set<int> lines_with_errors{};
     for (const auto&[line_number, query] : enumerate(queries, 1)) {
-        std::cout << " # " << std::setw(3) << line_number << " " << query << std::endl;
+        fmt::print(" # {:3d} {}\n", line_number, query);
         try {
             ParsedSPARQL{query};
-            std::cout << " #     " << "OK" << std::endl;
+            fmt::print(" #     OK\n");
         } catch (std::exception &ex) {
             lines_with_errors.insert(line_number);
             no_errors = false;
-            std::cout << " #     " << "Failed" << std::endl;
+            fmt::print(" #     failed\n");
+            fmt::print("{}\n", ex.what());
             std::cout << ex.what() << std::endl;
         }
     }
-    std::cout << " ### " << "failed queries: " << lines_with_errors << std::endl;
+    fmt::print(" ### failed queries: {}\n", lines_with_errors);
     return no_errors;
 }
 
@@ -69,7 +72,7 @@ TEST(TestSPARQLParser, DISABLED_ParseSingleQuery) {
                               " SELECT  *  WHERE    { ?data rdf:type <http://dbpedia.org/ontology/FormulaOneRacer> .      ?wins <http://dbpedia.org/ontology/wins> 10    }";
     using namespace tnt::store::sparql;
     ParsedSPARQL q{query};
-    std::cout << q << std::endl;
+    fmt::print("{}", q);
 }
 
 TEST(TestSPARQLParser, parse_a_query) {
@@ -124,8 +127,7 @@ TEST(TestSPARQLParser, parse_a_query) {
 
     ASSERT_EQ(q.getAnonymVariables(), std::set<Variable>{});
 
-    std::cout << q << std::endl;
-
+    fmt::print("{}", q);
 }
 
 

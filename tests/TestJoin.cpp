@@ -2,6 +2,8 @@
 
 #include <tnt/tensor/einsum/EinsumPlan.hpp>
 #include <tnt/tensor/hypertrie/Join.hpp>
+#include <tnt/util/FmtHelper.hpp>
+
 
 
 namespace {
@@ -36,8 +38,7 @@ TEST(TestJoin, full_sc_1_10_1___0) {
     Step step = plan.getInitialStep(ops);
     ASSERT_EQ(step.label, 0);
 
-
-    std::cout << step << std::endl;
+    fmt::print("{}\n", step);
     std::vector<size_t> key(1);
     Join join{key, ops, step};
     std::vector<Key_t> expected_keys = {{7},
@@ -55,7 +56,7 @@ TEST(TestJoin, full_sc_1_10_1___0) {
         ASSERT_EQ(actual_operands, expected_operands);
 
         const Step &step_2 = step.nextStep(expected_operands);
-        std::cout << step_2 << std::endl;
+        fmt::print("{}\n", step_2);
         Join join_2{actual_key, expected_operands, step_2};
 
         if (actual_key[0] == 7) {
@@ -94,9 +95,9 @@ TEST(TestJoin, part_sc_01_0___01) {
     std::set<key_part_t> common_keys{};
     std::set_intersection(keys_00.begin(), keys_00.end(), keys_10.begin(), keys_10.end(),
                           std::inserter(common_keys, common_keys.begin()));
-    std::cout << "keys_00 :" << keys_00 << std::endl;
-    std::cout << "keys_10 :" << keys_10 << std::endl;
-    std::cout << "common_keys :" << common_keys << std::endl;
+    fmt::print("keys_00 :{}\n", keys_00);
+    fmt::print("keys_10 :{}\n", keys_10);
+    fmt::print("common_keys :{}\n", common_keys);
 
     BoolHyperTrie tensor_0{2};
     for (const auto &key_part : keys_00) {
@@ -119,7 +120,7 @@ TEST(TestJoin, part_sc_01_0___01) {
     Step step = plan.getInitialStep(ops);
     ASSERT_EQ(step.label, 0);
 
-    std::cout << step << std::endl;
+    fmt::print("{}\n", step);
     std::vector<size_t> key(2);
     std::vector<Key_t> expected_keys;
     for (const auto &common_key : common_keys) {
@@ -132,7 +133,7 @@ TEST(TestJoin, part_sc_01_0___01) {
         ++count;
         const auto &actual_key = actual.second;
         ASSERT_EQ(actual_key, expected_key);
-        std::cout << actual << std::endl;
+        fmt::print("{}\n", actual_key);
 
         const auto &actual_operands = actual.first;
         Operands expected_operands(1);
@@ -160,8 +161,9 @@ TEST(TestJoin, single_op_00__0) {
                                        442, 443, 451, 455, 466, 467, 639, 675, 682, 684, 692, 693, 695,
                                        696, 699, 722, 723, 724, 735, 736, 739, 751, 995, 997, 999};
 
-    std::cout << "keys_00 :" << keys_00 << std::endl;
-    std::cout << "keys_01 :" << keys_01 << std::endl;
+
+    fmt::print("keys_00 :{}\n", keys_00);
+    fmt::print("keys_01 :{}\n", keys_01);
 
     BoolHyperTrie tensor_0{2};
     for (const auto &key_part0 : keys_00) {
@@ -178,7 +180,7 @@ TEST(TestJoin, single_op_00__0) {
     Step step = plan.getInitialStep(ops);
     ASSERT_EQ(step.label, 0);
 
-    std::cout << step << std::endl;
+    fmt::print("{}\n", step);
     std::vector<size_t> key(1);
     std::vector<Key_t> expected_keys;
     for (const auto &key_part : keys_01) {
@@ -190,7 +192,7 @@ TEST(TestJoin, single_op_00__0) {
     for (const auto &[actual, expected_key] : zip(join, expected_keys)) {
         ++count;
         const auto &actual_key = actual.second;
-        std::cout << actual_key << std::endl;
+        fmt::print("{}\n", actual_key);
         ASSERT_EQ(actual_key, expected_key);
 
         const auto &actual_operands = actual.first;
@@ -217,8 +219,8 @@ TEST(TestJoin, single_op_01__0) {
                                        776, 784, 786, 792, 810, 811, 812, 813, 814, 822, 824, 826, 830, 837, 842, 850,
                                        851, 863, 869, 884, 886, 888, 914, 991, 992, 995, 997, 999, 1000};
 
-    std::cout << "keys_00 :" << keys_00 << std::endl;
-    std::cout << "keys_01 :" << keys_01 << std::endl;
+    fmt::print("keys_00 :{}\n", keys_00);
+    fmt::print("keys_01 :{}\n", keys_01);
 
     BoolHyperTrie tensor_0{2};
     for (const auto &key_part0 : keys_00) {
@@ -235,7 +237,7 @@ TEST(TestJoin, single_op_01__0) {
     Step step = plan.getInitialStep(ops);
     ASSERT_EQ(step.label, 0);
 
-    std::cout << step << std::endl;
+    fmt::print("{}\n", step);
     std::vector<size_t> key(1);
     std::vector<Key_t> expected_keys;
     for (const auto &key_part : keys_00) {
@@ -247,7 +249,7 @@ TEST(TestJoin, single_op_01__0) {
     for (const auto &[actual, expected_key] : zip(join, expected_keys)) {
         ++count;
         const auto &actual_key = actual.second;
-        std::cout << actual_key << std::endl;
+        fmt::print("{}\n", actual_key);
         ASSERT_EQ(actual_key, expected_key);
 
         const auto &actual_operands = actual.first;
@@ -270,7 +272,7 @@ TEST(TestJoin, single_op_0__0) {
                                        776, 784, 786, 792, 810, 811, 812, 813, 814, 822, 824, 826, 830, 837, 842, 850,
                                        851, 863, 869, 884, 886, 888, 914, 991, 992, 995, 997, 999, 1000};
 
-    std::cout << "keys_00 :" << keys_00 << std::endl;
+    fmt::print("keys_00 :{}\n", keys_00);
 
     BoolHyperTrie tensor_0{1};
     for (const auto &key_part0 : keys_00) {
@@ -286,7 +288,7 @@ TEST(TestJoin, single_op_0__0) {
     Step step = plan.getInitialStep(ops);
     ASSERT_EQ(step.label, 0);
 
-    std::cout << step << std::endl;
+    fmt::print("{}\n", step);
     std::vector<size_t> key(1);
     std::vector<Key_t> expected_keys;
     for (const auto &key_part : keys_00) {
@@ -298,7 +300,7 @@ TEST(TestJoin, single_op_0__0) {
     for (const auto &[actual, expected_key] : zip(join, expected_keys)) {
         ++count;
         const auto &actual_key = actual.second;
-        std::cout << actual_key << std::endl;
+        fmt::print("{}\n", actual_key);
         ASSERT_EQ(actual_key, expected_key);
 
         const auto &actual_operands = actual.first;

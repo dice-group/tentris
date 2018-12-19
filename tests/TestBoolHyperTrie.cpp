@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
+#include <tnt/util/FmtHelper.hpp>
+
 
 using namespace tnt::util::types;
 using namespace tnt::tensor::hypertrie;
@@ -222,7 +224,7 @@ TEST(TestBoolHyperTrie, calc_card) {
     ASSERT_EQ(trie.getCard(1), 3);
 }
 
-TEST(TestBoolHyperTrie, load_data10000) {
+TEST(TestBoolHyperTrie, load_data1000) {
     // data
     Key_t key{0, 0, 0};
 
@@ -232,21 +234,21 @@ TEST(TestBoolHyperTrie, load_data10000) {
 
     const clock_t i1 = clock();
     // load data
-    for (auto i : range(500)) {
+    for (auto i : range(1000)) {
         key[0] = key_part_t(rand() % 300 + 1);
         key[1] = key_part_t(rand() % 400 + 1);
         key[2] = key_part_t(rand() % 500 + 1);
         trie.set(key, true);
         if (i % 10000 == 0) {
-            std::cout << "triples: " << i << std::endl;
+            fmt::print("triples: {}\n", i);
         }
     }
 
-    printf("triples loaded: %d\n", int(trie.size()));
-    printf("distinct subjects: %d\n", int(trie.getCard(0)));
-    printf("distinct predicates: %d\n", int(trie.getCard(1)));
-    printf("distinct objects: %d\n", int(trie.getCard(2)));
+    fmt::print("triples loaded: {}\n", trie.size());
+    fmt::print("distinct subjects: {}\n", trie.getCard(0));
+    fmt::print("distinct predicates: {}\n", trie.getCard(1));
+    fmt::print("distinct objects: {}\n", trie.getCard(2));
 
     double elapsed_secs = double(clock() - i1) / CLOCKS_PER_SEC;
-    std::cout << "time: " << elapsed_secs << " s" << std::endl;
+    fmt::print("time: {} s\n", elapsed_secs);
 }

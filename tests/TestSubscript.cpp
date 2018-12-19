@@ -3,6 +3,7 @@
 
 #include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
 #include <tnt/tensor/einsum/operator/Einsum.hpp>
+#include <tnt/util/FmtHelper.hpp>
 
 namespace {
     using namespace tnt::util::types;
@@ -17,12 +18,15 @@ TEST(TestSubscript, check_simple_things) {
             {0}
     };
     std::vector<label_t> raw_res_sc{3, 0};
-
-    std::cout << "raw_op_labels:\n\t" << raw_op_sc << std::endl;
-    std::cout << "raw_res_labels:\n\t" << raw_res_sc << std::endl;
+    fmt::print("raw_op_labels\n"
+               "\t{}", raw_op_sc);
+    fmt::print("raw_res_sc\n"
+               "\t{}", raw_res_sc);
 
     Subscript sc{raw_op_sc, raw_res_sc};
-    std::cout << sc << std::endl;
+    fmt::print("subscript\n"
+               "\t{}",
+               sc);
     // check all labels
     const std::set<label_t> all_labels{0, 1, 2, 3};
     ASSERT_EQ(all_labels, sc.getAllLabels());
@@ -71,11 +75,15 @@ TEST(TestSubscript, check_non_result_single_operand_labels) {
     };
     std::vector<label_t> raw_res_sc{3, 0};
 
-    std::cout << "raw_op_labels:\n\t" << raw_op_sc << std::endl;
-    std::cout << "raw_res_labels:\n\t" << raw_res_sc << std::endl;
+    fmt::print("raw_op_labels\n"
+               "\t{}\n", raw_op_sc);
+    fmt::print("raw_res_sc\n"
+               "\t{}\n", raw_res_sc);
 
     Subscript sc{raw_op_sc, raw_res_sc};
-    std::cout << sc << std::endl;
+    fmt::print("subscript\n"
+               "\t{}\n",
+               sc);
 
     std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> uniqueContr = sc.getUniqueNonResultContractions();
     for (const auto &[op_pos, contractions] : uniqueContr) {
@@ -100,7 +108,7 @@ TEST(TestSubscript, check_non_result_single_operand_labels) {
             }
         }
     }
-    std::cout << uniqueContr << std::endl;
+    fmt::print("uniqueContr {}\n", uniqueContr);
 
     std::map<op_pos_t, std::vector<label_pos_t>> lonelyContr = sc.getLonleyNonResultContractions();
     for (const auto &[op_pos, contractions] : lonelyContr) {
@@ -111,7 +119,7 @@ TEST(TestSubscript, check_non_result_single_operand_labels) {
             ASSERT_THROW(sc.labelPosInResult(label), std::out_of_range);
         }
     }
-    std::cout << lonelyContr << std::endl;
+    fmt::print("lonelyContr {}\n", lonelyContr);
 
 }
 
@@ -124,15 +132,21 @@ TEST(TestSubscript, remove_label) {
     };
     std::vector<label_t> raw_res_sc{0, 1, 2};
 
-    std::cout << "raw_op_labels:\n\t" << raw_op_sc << std::endl;
-    std::cout << "raw_res_labels:\n\t" << raw_res_sc << std::endl;
+    fmt::print("raw_op_labels\n"
+               "\t{}\n", raw_op_sc);
+    fmt::print("raw_res_sc\n"
+               "\t{}\n", raw_res_sc);
 
     Subscript sc{raw_op_sc, raw_res_sc};
-    std::cout << sc << std::endl;
+    fmt::print("subscript\n"
+               "\t{}\n",
+               sc);
 
-    const std::shared_ptr<const Subscript> &sc_wo0 = sc.removeLabel(0);
+    const std::shared_ptr<const Subscript> sc_wo0 = sc.removeLabel(0);
 
-    std::cout << *sc_wo0 << std::endl;
+    fmt::print("subscript\n"
+               "\t{}\n",
+               *sc_wo0);
 }
 
 //TEST(TestSubscript, optimize) {

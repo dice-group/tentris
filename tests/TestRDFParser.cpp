@@ -3,6 +3,8 @@
 #include <filesystem>
 
 #include <tnt/store/RDF/NTripleParser.hpp>
+#include <tnt/util/FmtHelper.hpp>
+
 
 namespace {
     using namespace tnt::store::rdf;
@@ -20,7 +22,7 @@ TEST(TestRDFParser, da) {
         NTripleParser triple_it{path};
 
         for (auto &&triple : triple_it)
-            std::cout << triple << "\n";
+            fmt::print("{}\n", triple);
     }
     std::cout << std::endl;
 
