@@ -4,6 +4,7 @@
 
 #include <tnt/store/TripleStore.hpp>
 #include <tnt/store/RDF/NTripleParser.hpp>
+#include <tnt/util/FmtHelper.hpp>
 
 namespace {
     namespace fs = std::filesystem;
@@ -19,6 +20,7 @@ TEST(TestTripleStore, load_data) {
     path.append("/../../tests/ntriplefiles/ntriples.nt");
     store.loadRDF(path);
     for (auto &&[subject, predicate, object] :NTripleParser{path}) {
+        fmt::print("{} {} {}\n", subject, predicate, object);
         ASSERT_TRUE(store.contains({subject->getIdentifier(), predicate->getIdentifier(), object->getIdentifier()}));
     }
 }

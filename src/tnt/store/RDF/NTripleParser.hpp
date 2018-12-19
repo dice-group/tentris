@@ -21,7 +21,7 @@ namespace tnt::store::rdf {
     template<typename R>
     bool is_ready(std::future<R> const &f) { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
-    class NTripleParser {
+    class [[deprecated]] NTripleParser {
         struct CallBack {
             bool producer_runs{false};
             bool fresh_result{false};
@@ -36,13 +36,13 @@ namespace tnt::store::rdf {
 
         constexpr static const auto getBNode = [](const SerdNode *node) -> std::unique_ptr<Term> {
             std::ostringstream bnode_str;
-            bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_chars)};
+            bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)};
             return std::unique_ptr<Term>{new BNode{bnode_str.str()}};
         };
 
         constexpr static const auto getURI = [](const SerdNode *node) -> std::unique_ptr<Term> {
             std::ostringstream uri_str;
-            uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_chars)} << ">";
+            uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)} << ">";
             return std::unique_ptr<Term>{new URIRef{uri_str.str()}};
         };
 
@@ -50,15 +50,15 @@ namespace tnt::store::rdf {
                                                     const SerdNode *lang_node) -> std::unique_ptr<Term> {
             std::optional<std::string> type = (type_node != nullptr)
                                               ? std::optional<std::string>{{(char *) (type_node->buf),
-                                                                                   size_t(type_node->n_chars)}}
+                                                                                   size_t(type_node->n_bytes)}}
                                               : std::nullopt;
             std::optional<std::string> lang = (lang_node != nullptr)
                                               ? std::optional<std::string>{{(char *) (lang_node->buf),
-                                                                                   size_t(lang_node->n_chars)}}
+                                                                                   size_t(lang_node->n_bytes)}}
                                               : std::nullopt;
 
             return std::unique_ptr<Term>{
-                    new Literal{std::string{(char *) (literal->buf), size_t(literal->n_chars)}, lang, type}};
+                    new Literal{std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type}};
         };
 
         constexpr static const SerdStatementSink writeTriple = [](void *handle,
