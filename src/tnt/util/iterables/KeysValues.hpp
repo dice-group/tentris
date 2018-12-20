@@ -44,16 +44,16 @@ namespace tnt::util::iterable::values {
     public:
         Values(Associative &associative) : associative(associative) {}
 
-        decltype(auto) begin() const { return iterator(associative.begin()); }
+        decltype(auto) begin() const { return iterator<typename Associative::const_iterator>{associative.begin()}; }
 
-        decltype(auto) end() const { return iterator(associative.end()); }
+        decltype(auto) end() const { return iterator<typename Associative::const_iterator>{associative.end()}; }
 
         template<class Iterator>
         class iterator {
-            using iter_val_t = typename std::iterator_traits<Iterator>::value_type::second_type;
+            using iter_val_t =  std::decay_t<typename  std::iterator_traits<Iterator>::value_type::second_type>;
             Iterator iter;
         public:
-            iterator(Iterator iter) : iter(iter) {}
+            iterator(Iterator iter) : iter{iter} {}
 
             iterator &operator++() {
                 ++iter;
