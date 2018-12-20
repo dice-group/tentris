@@ -1,6 +1,7 @@
 #ifndef TNT_FMTHELPER_HPP
 #define TNT_FMTHELPER_HPP
 
+#include <optional>
 #include <variant>
 #include <memory>
 #include <fmt/core.h>
