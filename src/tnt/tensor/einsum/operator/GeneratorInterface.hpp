@@ -4,6 +4,7 @@
 #include <set>
 #include <map>
 #include <unordered_set>
+#include <functional>
 
 #include <boost/coroutine2/all.hpp>
 #include <boost/bind.hpp>
@@ -29,6 +30,8 @@ namespace tnt::tensor::einsum::operators {
         static count_t getCount(bidning_t binding);
 
         static bidning_t makeBinding(key_t key, count_t count);
+
+        static void multiply(count_t &a, const count_t &b);
     };
 
 
@@ -50,6 +53,10 @@ namespace tnt::tensor::einsum::operators {
 
         constexpr static bidning_t makeBinding(key_t key, count_t count) {
             return {key, count};
+        }
+
+        constexpr static void multiply(count_t &a, const count_t &b){
+            a *= b;
         }
     };
 
@@ -76,6 +83,10 @@ namespace tnt::tensor::einsum::operators {
                 return key;
             else
                 throw std::invalid_argument("distinct_binding::makeBinding: count must not be false.");
+        }
+
+        constexpr static void multiply(count_t &a, const count_t &b){
+            a &= b;
         }
     };
 

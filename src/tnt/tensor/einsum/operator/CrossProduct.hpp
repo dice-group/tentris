@@ -107,7 +107,7 @@ namespace tnt::tensor::einsum::operators {
                 for (const auto &binding : results.at(op_pos)) {
                     const auto &key = RESULT_TYPE::getKey(binding);
                     const auto &count = RESULT_TYPE::getCount(binding);
-                    total_count *= count;
+                    RESULT_TYPE::multiply(total_count, count);
                     for (const auto[pos, key_part] : zip(pos_mapping, key)) {
                         result_key[std::get<1>(pos)] = key_part; // TODO: correct?
                     }
@@ -117,7 +117,7 @@ namespace tnt::tensor::einsum::operators {
                 for (const auto &binding : results.at(op_pos)) {
                     const auto &key = RESULT_TYPE::getKey(binding);
                     const auto &count = RESULT_TYPE::getCount(binding);
-                    total_count *= count;
+                    RESULT_TYPE::multiply(total_count, count);
                     for (const auto[pos, key_part] : zip(pos_mapping, key)) {
                         result_key[std::get<1>(pos)] = key_part; // TODO: correct?
                     }

@@ -23,7 +23,6 @@ ENDIF ()
 add_definitions(-DANTLR4CPP_STATIC)
 set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
 include(ExternalAntlr4Cpp)
-include_directories(${ANTLR4_INCLUDE_DIRS})
 
 find_package(ANTLR REQUIRED)
 
@@ -32,7 +31,6 @@ antlr_target(SPARQLGrammar
         Sparql.g4
         LEXER PARSER LISTENER VISITOR
         PACKAGE tnt::a4grammar::sparql)
-
 
 #TODO: seperate sources and headers
 #set(ANTLR_SPARQLGrammar_headers ${ANTLR_SPARQLGrammar_CXX_OUTPUTS})
@@ -47,6 +45,7 @@ add_library(antlr4_sparql STATIC
         )
 target_include_directories(antlr4_sparql
         PUBLIC ${ANTLR_SPARQLGrammar_OUTPUT_DIR}
+        ${ANTLR4_INCLUDE_DIRS}
         )
 target_link_libraries(antlr4_sparql antlr4_static)
 add_dependencies(antlr4_sparql antlr4_static)
@@ -76,17 +75,10 @@ target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
-#make an interface library from the code
-add_library(libsparsetensor INTERFACE)
-target_include_directories(libsparsetensor INTERFACE
-        src/
-        )
-
 #fmt
 add_subdirectory(thirdparty/fmt)
 
-target_link_libraries(libsparsetensor
-        INTERFACE
+set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
         Threads::Threads # for use of threads
@@ -100,10 +92,28 @@ target_link_libraries(libsparsetensor
         ${Pistache_LIBRARY}
         )
 
+# make a library of the code
+add_library(libsparsetensor STATIC
+        src/
+        )
+
+target_link_libraries(libsparsetensor
+        ${libraries_to_link}
+        )
+
+target_include_directories(libsparsetensor PUBLIC
+        src/
+        )
+
 # main executable target
 add_executable(tnt_exec src/Main.cpp)
+target_include_directories(tnt_exec PRIVATE
+        src/
+        )
+
 target_link_libraries(tnt_exec
-        PRIVATE libsparsetensor)
+        PRIVATE ${libraries_to_link}
+        )
 
 enable_testing() # enable this to enable testing
 if (CMAKE_TESTING_ENABLED)
