@@ -55,7 +55,7 @@ namespace tnt::tensor::einsum::operators {
                const std::vector<BoolHyperTrie *> &tries)
                 : OperatorNode<RESULT_TYPE>{}, plan{subscript} {
             this->type = OperatorType::EINSUM;
-            for (const auto [slice_key, trie] : zip(slice_keys, tries)) {
+            for (const auto[slice_key, trie] : zip(slice_keys, tries)) {
                 predecessors.push_back({slice_key, trie});
             }
         }
@@ -177,18 +177,18 @@ namespace tnt::tensor::einsum::operators {
     Einsum<counted_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
 
         std::vector<counted_binding::count_t> results(operands.size(), 0);
-        for (const auto [op_pos, op_and_contr] : enumerate(zip(operands, step.getUniqueNonResultContractions()))) {
+        for (const auto[op_pos, op_and_contr] : enumerate(zip(operands, step.getUniqueNonResultContractions()))) {
             const auto &[op, unique_contraction] = op_and_contr;
 
-            if (unique_contraction.empty() or op->depth() != 3){
-                 results[op_pos] += op->size();
+            if (unique_contraction.empty() or op->depth() != 3) {
+                results[op_pos] += op->size();
             } else {
                 for (const BoolHyperTrie *hyperTrie : BoolHyperTrie::DiagonalView{op, unique_contraction})
                     results[op_pos] += hyperTrie->size();
             }
 
         }
-        return std::accumulate(results.begin(), results.end(), 1, std::multiplies<>());
+        return std::accumulate(results.begin(), results.end(), counted_binding::count_t(1), std::multiplies<>());
     }
 
 
@@ -197,15 +197,15 @@ namespace tnt::tensor::einsum::operators {
     Einsum<distinct_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
         std::vector<distinct_binding::count_t> results(operands.size(), false);
         // A unique label is a label that is only present at one operand but there it must be present at least twice. If it is present only once it is an lonely label.
-        for (const auto [op_pos, op_and_contr] : enumerate(zip(operands, step.getUniqueNonResultContractions()))) {
+        for (const auto[op_pos, op_and_contr] : enumerate(zip(operands, step.getUniqueNonResultContractions()))) {
             const auto &[op, unique_contraction] = op_and_contr;
-            if (unique_contraction.empty() or op->depth() != 3){
+            if (unique_contraction.empty() or op->depth() != 3) {
                 results[op_pos] = true;
             } else { // not unique_contraction.empty() and op->depth() == 3
                 // it could be that there is one unique label and one lonely label.
                 // TODO: compute an estimation if it is better to first process the unique label oder the lonely label
                 BoolHyperTrie::DiagonalView diag{op, unique_contraction};
-                if(diag.begin() != diag.end())
+                if (diag.begin() != diag.end())
                     results[op_pos] = true;
             }
         }
@@ -239,11 +239,16 @@ namespace tnt::tensor::einsum::operators {
         }
     };
 
-    void rekEinsumBoolNonResult(
-            yield_push<distinct_binding> &yield,
-            const Operands &operands,
-            const Key_t &result_key,
-            const EinsumPlan::Step &step) {
+    /**
+     * Assume a distinct/bool query/einsum operation. If all result labels were processed it is sufficient to check if
+     * any valid combination for the remaining labels exists.
+     * @param operands
+     * @param result_key
+     * @param step
+     * @return if a valid combination of label bindings was found return
+     */
+    inline bool
+    rekEinsumBoolNonResult(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step) {
         // there are steps left
         if (not step.all_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
@@ -252,17 +257,18 @@ namespace tnt::tensor::einsum::operators {
                 const EinsumPlan::Step &next_step = step.nextStep(next_operands);
                 tnt::logging::log(fmt::format("{}\n", next_step));
                 // start next recursive step.
-                rekEinsumBoolNonResult(yield, next_operands, next_result_key, next_step);
-                // break;
+                bool exists = rekEinsumBoolNonResult(next_operands, next_result_key, next_step);
+                if (exists) // if a valid combination of label bindings was found return
+                    return true;
             }
+            // no valid combination of label bindings was found for this step
+            return false;
+
         } else { // there are no steps left
-            if (not operands.empty()) {
-                if (Einsum<distinct_binding>::contract(operands, step)) {
-                    // there are lonely and/or unique labels left.
-                    yield(result_key);
-                }
+            if (operands.empty()) { // there are no further labels left. all operands are already reduced to scalars.
+                return true;
             } else { // no labels left
-                yield(result_key);
+                return Einsum<distinct_binding>::contract(operands, step);
             }
         }
     };
@@ -275,10 +281,8 @@ namespace tnt::tensor::einsum::operators {
             const Key_t &result_key,
             const EinsumPlan::Step &step) {
         logTrace("step: {}"_format(step));
-        // there are steps left
-        if (step.result_labels_done) {
-            rekEinsumBoolNonResult(yield, operands, result_key, step);
-        } else if (not step.all_done) {
+        // there are steps with operand labels left
+        if (not step.result_labels_done) {
             // calculate next operands and result_key from current operands, step, label and resultKey
             Join join{result_key, operands, step};
             for (const auto&[next_operands, next_result_key] : join) {
@@ -286,18 +290,12 @@ namespace tnt::tensor::einsum::operators {
                 // start next recursive step.
                 rekEinsum(yield, next_operands, next_result_key, next_step);
             }
-        } else { // there are no steps left
-            if (not operands.empty()) {
-                if (contract(operands, step)) { // there are lonely and/or unique labels left.
-                    yield(result_key);
-                }
-            } else { // no labels left
-                yield(result_key);
-            }
+        } else if (rekEinsumBoolNonResult(operands, result_key, step)){
+            // there are no steps with operand labels left
+            // check if  a valid combination of non-result labels for the current result candidate exists
+            yield(result_key);
         }
     };
-
-
 
 
 }

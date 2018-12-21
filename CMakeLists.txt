@@ -81,7 +81,8 @@ add_subdirectory(thirdparty/fmt)
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
-        Threads::Threads # for use of threads
+        pthread
+        # Threads::Threads # for use of threads
         cppitertools
         datetimelib
         cxxopts
