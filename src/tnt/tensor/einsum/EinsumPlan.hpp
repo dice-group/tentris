@@ -6,6 +6,7 @@
 #include <exception>
 #include <cmath>
 #include <ostream>
+#include <cmath>
 
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include "tnt/util/All.hpp"
@@ -286,40 +287,48 @@ namespace tnt::tensor::einsum {
                 // get operands that have the label
                 const std::vector<op_pos_t> &op_poss = sc.operandsWithLabel(label);
 
-                std::vector<double> dim_cardinalities(op_poss.size(), INFINITY);
-                std::vector<double> operand_cardinalities(op_poss.size(), INFINITY);
+                std::vector<double> operand_cardinalities(operands.size(), 1.0);
+                std::vector<double> dim_cardinalities(op_poss.size(), 1.0);
                 double min_dim_cardinality = INFINITY;
+                double max_dim_cardinality = 0.0;
 
+                auto op_poss_iter = op_poss.cbegin();
+                auto dim_card_it = dim_cardinalities.begin();
                 //iterate the operands that hold the label
-                for (const auto &[i, op_pos] : enumerate(op_poss)) {
-                    // get operand
-                    const BoolHyperTrie *operand = operands.at(op_pos);
-                    // get cardinality of the operand in this dimension
-                    const std::vector<size_t> cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
+                for (auto[i, operand] : enumerate(operands)) {
+                    operand_cardinalities[i] = (double) operand->size();
+                    if (op_poss_iter != op_poss.cend() && *op_poss_iter == i) {
+                        const auto &op_pos = *op_poss_iter;
 
-                    // calc it's cardinality
-                    const size_t &dim_cardinality = *std::min_element(cards.cbegin(), cards.cend());
-                    // if it is zero the overall cardinality is zero
-                    if (dim_cardinality == 0)
-                        return 0;
+                        const auto dim_cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
+                        const auto dim_card = *std::min_element(dim_cards.cbegin(), dim_cards.cend());
 
-                    if (dim_cardinality < min_dim_cardinality)
-                        min_dim_cardinality = dim_cardinality;
-                    dim_cardinalities[i] = dim_cardinality;
-                    operand_cardinalities[i] = operand->size();
+                        const auto label_count = dim_cards.size();
+                        const size_t dim_cardinality = std::pow(dim_card, label_count);
+                        if (dim_cardinality == 0)
+                            return 0;
+
+                        // update minimal dimenension cardinality
+                        if (dim_cardinality < min_dim_cardinality)
+                            min_dim_cardinality = dim_cardinality;
+                        // update maximum dimenension cardinality
+                        if (dim_cardinality > max_dim_cardinality)
+                            max_dim_cardinality = dim_cardinality;
+
+                        *dim_card_it = dim_cardinality;
+
+                        ++op_poss_iter;
+                        ++dim_card_it;
+                    }
                 }
 
                 // see: A. Swami and K. B. Schiefer, “On the estimation of join result sizes,” in International Conference on Extending Database Technology, 1994, pp. 287–300. (290-291)
-                const int i1 = std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
-                                               std::multiplies<size_t>());
-                const int i2 = std::accumulate(operand_cardinalities.cbegin(), operand_cardinalities.cend(), 1,
-                                               std::multiplies<size_t>());
-                const double d = min_dim_cardinality
-                                 * i2
-                                 / i1
-                                 //                 prefer smaller min_dim cardinality
-                                 + (1 - (1 / min_dim_cardinality));
-//                                 + (double(1) / double(op_poss.size()));
+                const int dim_cards = std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
+                                                      std::multiplies<size_t>());
+                const int op_cards = std::accumulate(operand_cardinalities.cbegin(), operand_cardinalities.cend(), 1,
+                                                     std::multiplies<size_t>());
+                const double d = op_cards / dim_cards
+                                 * min_dim_cardinality / max_dim_cardinality;
                 return d;
             }
 
@@ -348,7 +357,7 @@ struct fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step> {
                          " _result_pos: {}\n"
                          " next_op_poss: {}\n",
                          *p._subscript, p.label, p._label_candidates, p.all_done,
-                         p._op_poss,p._result_pos, p.next_op_poss
+                         p._op_poss, p._result_pos, p.next_op_poss
         );
     }
 };
