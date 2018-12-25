@@ -289,7 +289,6 @@ namespace tnt::tensor::einsum {
 
                 std::vector<double> dim_cardinalities(op_poss.size(), 1.0);
                 double min_dim_cardinality = INFINITY;
-                double max_dim_cardinality = 0.0;
                 auto label_count = 0;
 
                 //iterate the operands that hold the label
@@ -298,7 +297,7 @@ namespace tnt::tensor::einsum {
                     const auto dim_cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
                     const auto dim_card = *std::min_element(dim_cards.cbegin(), dim_cards.cend());
 
-                    label_count += 1;//dim_cards.size();
+                    label_count += dim_cards.size();
                     if (dim_card == 0)
                         return 0;
 
@@ -306,8 +305,6 @@ namespace tnt::tensor::einsum {
                     if (dim_card < min_dim_cardinality)
                         min_dim_cardinality = dim_card;
                     // update maximum dimenension cardinality
-                    if (dim_card > max_dim_cardinality)
-                        max_dim_cardinality = dim_card;
 
                     dim_cardinalities[i] = dim_card;
 
@@ -316,9 +313,8 @@ namespace tnt::tensor::einsum {
                 // see: A. Swami and K. B. Schiefer, “On the estimation of join result sizes,” in International Conference on Extending Database Technology, 1994, pp. 287–300. (290-291)
                 const int dim_cards = std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
                                                       std::multiplies<size_t>());
-                const double d = std::pow(min_dim_cardinality, label_count) / dim_cards;
-                // * min_dim_cardinality / max_dim_cardinality;
-                return d;
+                const double card = std::pow(min_dim_cardinality, label_count) / dim_cards;
+                return card;
             }
 
 
