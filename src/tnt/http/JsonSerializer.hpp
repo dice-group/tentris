@@ -78,7 +78,7 @@ namespace tnt::http {
                     if (literal.hasType())
                         json_result << "\",\"datatype\":\"" << literal.getType();
                     else if (literal.hasLang())
-                        json_result << "\",\"xml:lang\":" << literal.getLang();
+                        json_result << "\",\"xml:lang\":\"" << literal.getLang();
                 }
                 json_result << "\"}";
             }
