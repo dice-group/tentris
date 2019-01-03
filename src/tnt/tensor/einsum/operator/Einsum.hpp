@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "tnt/tensor/einsum/EinsumPlan.hpp"
+#include "tnt/tensor/Result.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tnt/tensor/einsum/operator/OperatorNode.hpp"
 #include "tnt/tensor/einsum/operator/Slice.hpp"
