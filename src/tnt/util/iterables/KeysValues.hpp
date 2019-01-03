@@ -10,9 +10,9 @@ namespace tnt::util::iterable::keys {
     public:
         Keys(Associative &associative) : associative(associative) {}
 
-        decltype(auto) begin() const { return iterator(associative.begin()); }
+        decltype(auto) begin() const { return iterator<typename Associative::const_iterator>(associative.begin()); }
 
-        decltype(auto) end() const { return iterator(associative.end()); }
+        decltype(auto) end() const { return iterator<typename Associative::const_iterator>(associative.end()); }
 
         template<class Iterator>
         class iterator {
