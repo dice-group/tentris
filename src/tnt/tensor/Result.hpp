@@ -19,7 +19,7 @@ namespace tnt::tensor {
 	public:
 
 		void insert(const binding_t &binding){
-			RESULT_TYPE::addToCollection(items, binding);
+			::tnt::tensor::einsum::operators::addToCollection<RESULT_TYPE>(items, binding);
 		}
 
 		bool contains(const binding_t &binding){

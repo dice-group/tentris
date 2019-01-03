@@ -25,7 +25,7 @@ namespace {
 
 namespace tnt::tensor::einsum::operators {
 	/**
-	 * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In
+	 * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convention Operation. In
 	 * most cases this operator should only be used as sub operator of a CrossProduct as it is not very effective if an
 	 * cross product is involved.
 	 * @see CrossProduct
@@ -46,6 +46,8 @@ namespace tnt::tensor::einsum::operators {
 		mutable Operands operands{};
 		mutable bool operands_generated = false;
 		mutable bool may_have_results = false;
+		mutable bool result_calculated = false;
+		mutable Result<RESULT_TYPE> result{};
 
 	public:
 		/**
@@ -67,38 +69,10 @@ namespace tnt::tensor::einsum::operators {
 
 		virtual ~Einsum() = default;
 
-		/**
-		 * Prepares the arguments for the recursive calculation of the results.
-		 * @param operands vector of tensors
-		 */
-		static void calcEinsum(yield_push_t &yield, const Operands &operands, const EinsumPlan &plan) {
-			// unpacks HyperTrieTensors to HyperTries or value types T
-			// initialize emtpy result key
-			// plan first step
-			EinsumPlan::Step step = plan.getInitialStep(operands);
-
-			Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
-			// start recursion
-			rekEinsum(yield, operands, result_key, step);
-		}
-
-		/**
-		 * Acutal recursion to calculate the result
-		 * @param operands vector of current operands
-		 * @param result_key current result key. Is filled step by step. When all positions are filled this key represents
-		 * the key of an result value.
-		 * @param step current step. This holds also data to plan the next step.
-		 * @param label the current label that is to be processed in this recursive step
-		 */
-		static void rekEinsum(yield_push_t &yield, const Operands &operands, const Key_t &result_key,
-		                      const EinsumPlan::Step &step);
-
-		static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
-
-	public:
 		yield_pull_t get() const override { return yield_pull_t(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1)); }
 
 	private:
+
 		void get(yield_push_t &yield) const {
 			// generate operands only once
 			if (not operands_generated) {
@@ -124,10 +98,44 @@ namespace tnt::tensor::einsum::operators {
 				may_have_results = true;
 			}
 
-			if (may_have_results) {
-				calcEinsum(yield, operands, plan);
+			if (may_have_results and not result_calculated) {
+				calcEinsum(result, operands, plan);
+				result_calculated = true;
+			}
+
+			for(const auto &binding : result){
+				yield(binding);
 			}
 		}
+
+		/**
+		 * Prepares the arguments for the recursive calculation of the results.
+		 * @param operands vector of tensors
+		 */
+		static void calcEinsum(Result<RESULT_TYPE> &result, const Operands &operands, const EinsumPlan &plan) {
+			// unpacks HyperTrieTensors to HyperTries or value types T
+			// initialize emtpy result key
+			// plan first step
+			EinsumPlan::Step step = plan.getInitialStep(operands);
+
+			Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
+			// start recursion
+			rekEinsum(result, operands, result_key, step);
+		}
+
+		/**
+		 * Acutal recursion to calculate the result
+		 * @param operands vector of current operands
+		 * @param result_key current result key. Is filled step by step. When all positions are filled this key represents
+		 * the key of an result value.
+		 * @param step current step. This holds also data to plan the next step.
+		 * @param label the current label that is to be processed in this recursive step
+		 */
+		static void rekEinsum(Result<RESULT_TYPE> &, const Operands &operands, const Key_t &result_key,
+		                      const EinsumPlan::Step &step);
+
+		static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
+
 
 	public:
 		class iterator {
@@ -158,6 +166,9 @@ namespace tnt::tensor::einsum::operators {
 		iterator begin() { return iterator{*this}; }
 
 		iterator end() { return iterator{*this, true}; }
+
+		friend bool
+		rekEinsumBoolNonResult(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step);
 	};
 
 	template<>
@@ -200,7 +211,7 @@ namespace tnt::tensor::einsum::operators {
 	}
 
 	template<>
-	void Einsum<counted_binding>::rekEinsum(yield_push<counted_binding> &yield, const Operands &operands,
+	void Einsum<counted_binding>::rekEinsum(Result<counted_binding> &result, const Operands &operands,
 	                                        const Key_t &result_key, const EinsumPlan::Step &step) {
 		// there are steps left
 		if (not step.all_done) {
@@ -210,15 +221,15 @@ namespace tnt::tensor::einsum::operators {
 			for (const auto &[next_operands, next_result_key] : join) {
 				const EinsumPlan::Step &next_step = step.nextStep(next_operands);
 				// start next recursive step.
-				rekEinsum(yield, next_operands, next_result_key, next_step);
+				rekEinsum(result, next_operands, next_result_key, next_step);
 			}
 		} else {                                 // there are no steps left
 			if (not operands.empty()) { // there are lonely and/or unique labels left.
 				const size_t i = contract(operands, step);
 				if (i > 0)
-					yield({result_key, i});
+					result.insert({result_key, i});
 			} else { // no labels left
-				yield({result_key, 1});
+				result.insert({result_key, 1});
 			}
 		}
 	};
@@ -231,6 +242,7 @@ namespace tnt::tensor::einsum::operators {
 	 * @param step
 	 * @return if a valid combination of label bindings was found return
 	 */
+
 	inline bool
 	rekEinsumBoolNonResult(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step) {
 		// there are steps left
@@ -258,7 +270,7 @@ namespace tnt::tensor::einsum::operators {
 	};
 
 	template<>
-	void Einsum<distinct_binding>::rekEinsum(yield_push<distinct_binding> &yield, const Operands &operands,
+	void Einsum<distinct_binding>::rekEinsum(Result<distinct_binding> &result, const Operands &operands,
 	                                         const Key_t &result_key, const EinsumPlan::Step &step) {
 		logTrace("step: {}"_format(step));
 		// there are steps with operand labels left
@@ -268,13 +280,22 @@ namespace tnt::tensor::einsum::operators {
 			for (const auto &[next_operands, next_result_key] : join) {
 				const EinsumPlan::Step &next_step = step.nextStep(next_operands);
 				// start next recursive step.
-				rekEinsum(yield, next_operands, next_result_key, next_step);
+				rekEinsum(result, next_operands, next_result_key, next_step);
 			}
-		} else if (rekEinsumBoolNonResult(operands, result_key, step)) {
+		} else if (step.all_done) {
+			if (operands.empty()) { // there are no further labels left. all operands are already reduced to scalars.
+				result.insert(result_key);
+			} else { // no labels left
+				if (Einsum<distinct_binding>::contract(operands, step)) {
+					result.insert(result_key);
+				}
+			}
+		} else if (not result.contains(result_key) and rekEinsumBoolNonResult(operands, result_key, step)) {
 			// there are no steps with operand labels left
 			// check if  a valid combination of non-result labels for the current result candidate exists
-			yield(result_key);
+			result.insert(result_key);
 		}
+
 	};
 
 } // namespace tnt::tensor::einsum::operators
