@@ -59,7 +59,7 @@ namespace tnt::tensor::einsum::operators {
 
         static void
         updateEntry(typename RESULT_TYPE::collection_t &result_collection,
-                    typename RESULT_TYPE::bidning_t const &binding);
+                    typename RESULT_TYPE::binding_t const &binding);
 
         void get(operators::yield_push<RESULT_TYPE> &yield) const {
 
@@ -182,13 +182,13 @@ namespace tnt::tensor::einsum::operators {
 
     template<>
     void CrossProduct<counted_binding>::updateEntry(typename counted_binding::collection_t &result_collection,
-                                                    typename counted_binding::bidning_t const &binding) {
+                                                    typename counted_binding::binding_t const &binding) {
         result_collection[counted_binding::getKey(binding)] += counted_binding::getCount(binding);
     }
 
     template<>
     void CrossProduct<distinct_binding>::updateEntry(typename distinct_binding::collection_t &result_collection,
-                                                     typename distinct_binding::bidning_t &binding) {
+                                                     typename distinct_binding::binding_t &binding) {
         result_collection.emplace(binding);
     }
 }
