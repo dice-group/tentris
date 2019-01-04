@@ -96,7 +96,8 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 		void rek_set_key(yield_push <RESULT_TYPE> &yield, Key_t &result_key,
-		                 const std::vector<op2result_pos_t> &pos_mappings, count_t &total_count,
+		                 const std::vector<op2result_pos_t> &pos_mappings,
+		                 count_t &total_count,
 		                 const size_t last_op_pos,
 		                 const size_t op_pos = 0) const {
 			const op2result_pos_t &pos_mapping = pos_mappings.at(op_pos);
@@ -104,21 +105,23 @@ namespace tnt::tensor::einsum::operators {
 				for (const auto &binding : predecessors.at(op_pos)->getFullResult()) {
 					const auto &key = RESULT_TYPE::getKey(binding);
 					const auto &count = RESULT_TYPE::getCount(binding);
-					RESULT_TYPE::multiply(total_count, count);
+					count_t next_count = total_count;
+					RESULT_TYPE::multiply(next_count, count);
 					for (const auto[pos, key_part] : zip(pos_mapping, key)) {
 						result_key[std::get<1>(pos)] = key_part; // TODO: correct?
 					}
-					rek_set_key(yield, result_key, pos_mappings, total_count, op_pos - 1);
+					rek_set_key(yield, result_key, pos_mappings, next_count, op_pos - 1);
 				}
 			} else {
 				for (const auto &binding : predecessors.at(op_pos)->getFullResult()) {
 					const auto &key = RESULT_TYPE::getKey(binding);
 					const auto &count = RESULT_TYPE::getCount(binding);
-					RESULT_TYPE::multiply(total_count, count);
+					count_t next_count = total_count;
+					RESULT_TYPE::multiply(next_count, count);
 					for (const auto[pos, key_part] : zip(pos_mapping, key)) {
 						result_key[std::get<1>(pos)] = key_part; // TODO: correct?
 					}
-					yield(RESULT_TYPE::makeBinding(result_key, total_count));
+					yield(RESULT_TYPE::makeBinding(result_key, next_count));
 				}
 			}
 		}
