@@ -18,18 +18,27 @@ namespace tnt::tensor {
 
 	public:
 
-		void insert(const binding_t &binding){
+		void insert(const binding_t &binding) {
 			::tnt::tensor::einsum::operators::addToCollection<RESULT_TYPE>(items, binding);
 		}
 
-		bool contains(const binding_t &binding){
+		bool contains(const binding_t &binding) {
 			return bool(items.count(RESULT_TYPE::getKey(binding)));
 		}
 
-		typename collection_t::iterator begin(){return items.begin();}
-		typename collection_t::iterator end(){return items.end();}
-		typename collection_t::const_iterator cbegin() const noexcept {return items.cbegin();}
-		typename collection_t::const_iterator cend() const noexcept {return items.cend();}
+		bool empty() const noexcept { return items.empty(); }
+
+		typename collection_t::iterator begin() noexcept { return items.begin(); }
+
+		typename collection_t::iterator end() noexcept { return items.end(); }
+
+		typename collection_t::const_iterator begin() const noexcept { return items.begin(); }
+
+		typename collection_t::const_iterator end() const noexcept { return items.end(); }
+
+		typename collection_t::const_iterator cbegin() const noexcept { return items.cbegin(); }
+
+		typename collection_t::const_iterator cend() const noexcept { return items.cend(); }
 	};
 
 

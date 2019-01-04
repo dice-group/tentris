@@ -71,9 +71,14 @@ namespace tnt::tensor::einsum::operators {
 
 		yield_pull_t get() const override { return yield_pull_t(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1)); }
 
+		const Result<RESULT_TYPE> &getFullResult() const override {
+			calcResult();
+			return result;
+		}
+
 	private:
 
-		void get(yield_push_t &yield) const {
+		void calcResult() const {
 			// generate operands only once
 			if (not operands_generated) {
 				operands_generated = true;
@@ -102,8 +107,13 @@ namespace tnt::tensor::einsum::operators {
 				calcEinsum(result, operands, plan);
 				result_calculated = true;
 			}
+		}
 
-			for(const auto &binding : result){
+		void get(yield_push_t &yield) const {
+
+			calcResult();
+
+			for (const auto &binding : result) {
 				yield(binding);
 			}
 		}
@@ -138,34 +148,25 @@ namespace tnt::tensor::einsum::operators {
 
 
 	public:
-		class iterator {
-			bool ended;
-			const std::unique_ptr<yield_pull_t> results;
+		typename RESULT_TYPE::collection_t::iterator begin() {
+			calcResult();
+			return result.begin();
+		}
 
-		public:
-			explicit iterator(const Einsum &einsum, bool ended = false)
-					: ended{ended},
-					  results{(not ended) ? std::unique_ptr<yield_pull_t>{new yield_pull_t(boost::bind(&get, &einsum))}
-					                      : std::unique_ptr<yield_pull_t>{}} {
-				if (not ended) ended = not(*results);
-			}
+		typename RESULT_TYPE::collection_t::iterator end() {
+			calcResult();
+			return result.end();
+		}
 
-			const RESULT_TYPE &operator*() { return results.get(); }
+		typename RESULT_TYPE::collection_t::const_iterator cbegin() const {
+			calcResult();
+			return result.cbegin();
+		}
 
-			iterator &operator++() {
-				results();
-				ended = not(*results);
-				return *this;
-			}
-
-			bool operator==(const iterator &rhs) const { return ended == rhs.ended; }
-
-			bool operator!=(const iterator &rhs) const { return !(rhs == *this); }
-		};
-
-		iterator begin() { return iterator{*this}; }
-
-		iterator end() { return iterator{*this, true}; }
+		typename RESULT_TYPE::collection_t::const_iterator cend() const {
+			calcResult();
+			return result.cend();
+		}
 
 		friend bool
 		rekEinsumBoolNonResult(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step);
