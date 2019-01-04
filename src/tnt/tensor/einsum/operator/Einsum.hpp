@@ -77,13 +77,17 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 		void clearCacheCanceled() const override {
-			if (not result_calculated or result.distinct_size() > 500)
+			if (not result_calculated or result.distinct_size() > 500) {
+				result_calculated = false;
 				result.clear();
+			}
 		}
 
 		void clearCacheDone() const override {
-			if (result.distinct_size() > 500)
+			if (result.distinct_size() > 500) {
+				result_calculated = false;
 				result.clear();
+			}
 		}
 
 	private:
