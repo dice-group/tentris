@@ -40,18 +40,21 @@ namespace tnt::tensor::einsum::operators {
 		const std::shared_ptr<const Subscript> subscript;
 
 	public:
-
 		void clearCacheCanceled() const override {
 			// TODO: clear only if predecessors were not fully calculated
 			for (const auto &predecessor : predecessors)
 				predecessor->clearCacheCanceled();
-
-
 		}
 
 		void clearCacheDone() const override {
 			for (const auto &predecessor : predecessors)
 				predecessor->clearCacheDone();
+		}
+
+		void setTimeout(const std::chrono::system_clock::time_point &timeout) override {
+			this->OperatorNode<RESULT_TYPE>::setTimeout(timeout);
+			for (const auto &predecessor : predecessors)
+				predecessor->setTimeout(timeout);
 		}
 
 		/**
@@ -110,8 +113,7 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 		void rek_set_key(yield_push <RESULT_TYPE> &yield, Key_t &result_key,
-		                 const std::vector<op2result_pos_t> &pos_mappings,
-		                 count_t &total_count,
+		                 const std::vector<op2result_pos_t> &pos_mappings, count_t &total_count,
 		                 const size_t last_op_pos,
 		                 const size_t op_pos = 0) const {
 			const op2result_pos_t &pos_mapping = pos_mappings.at(op_pos);

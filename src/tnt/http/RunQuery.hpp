@@ -38,7 +38,7 @@ namespace tnt::http {
 
 		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 		const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
-		const auto timeout = query_package->timeout;
+		const auto timeout = query_package->getTimeout();
 		switch (sparqlQuery.getSelectModifier()) {
 			case SelectModifier::NONE: {
 				logDebug("Running select query.");

@@ -50,7 +50,7 @@ namespace tnt::store::cache {
 
 				if (qep->processing.try_lock()) {
 					qep->queuing.unlock();
-					qep->timeout = timeout;
+					qep->setTimeout(timeout);
 
 					return qep;
 				} else {
@@ -58,7 +58,7 @@ namespace tnt::store::cache {
 
 					if (qep->processing.try_lock_until(timeout)) {
 						qep->queuing.unlock();
-						qep->timeout = timeout;
+						qep->setTimeout(timeout);
 
 						return qep;
 					} else {

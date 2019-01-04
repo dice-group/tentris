@@ -1,8 +1,10 @@
 #ifndef TNT_OPERATORNODE_HPP
 #define TNT_OPERATORNODE_HPP
 
-#include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tnt/tensor/Result.hpp"
+#include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
+
+#include <chrono>
 
 namespace tnt::tensor::einsum::operators {
 
@@ -13,6 +15,9 @@ namespace tnt::tensor::einsum::operators {
 
 	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
 	class OperatorNode {
+	protected:
+		std::chrono::system_clock::time_point timeout;
+
 	public:
 		OperatorType type;
 
@@ -23,8 +28,9 @@ namespace tnt::tensor::einsum::operators {
 		virtual void clearCacheCanceled() const = 0;
 
 		virtual void clearCacheDone() const = 0;
+
+		virtual void setTimeout(const std::chrono::system_clock::time_point &timeout) { this->timeout = timeout; }
 	};
-}
+} // namespace tnt::tensor::einsum::operators
 
-
-#endif //TNT_OPERATORNODE_HPP
+#endif // TNT_OPERATORNODE_HPP

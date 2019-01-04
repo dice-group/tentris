@@ -32,13 +32,13 @@ namespace tnt::store::cache {
 	struct QueryExecutionPackage {
 	private:
 		ParsedSPARQL parsedSPARQL;
+		std::chrono::system_clock::time_point timeout;
 
 	public:
 		std::timed_mutex processing;
 		std::timed_mutex queuing;
 		std::chrono::system_clock::time_point keep_result_timeout =
 				std::numeric_limits<std::chrono::system_clock::time_point>::min();
-		std::chrono::system_clock::time_point timeout;
 
 	public:
 		/**
@@ -87,7 +87,7 @@ namespace tnt::store::cache {
 				distinct_operator_tree->clearCacheDone();
 
 			processing.unlock();
-		}// TODO: implement }
+		}
 
 		void canceled() {
 			if (not is_distinct)
@@ -97,6 +97,16 @@ namespace tnt::store::cache {
 
 			processing.unlock();
 		}
+
+		void setTimeout(const std::chrono::system_clock::time_point &timeout) {
+			this->timeout = timeout;
+			if (not is_distinct)
+				regular_operator_tree->setTimeout(timeout);
+			else
+				distinct_operator_tree->setTimeout(timeout);
+		}
+
+		std::chrono::system_clock::time_point getTimeout() const { return timeout; }
 
 	private:
 		/**
@@ -182,8 +192,8 @@ namespace tnt::store::cache {
 		 * @param termIndex intex for trie
 		 * @return slice keys for the BoolHyperTrie
 		 */
-		static std::vector<SliceKey_t> generateSliceKeys(const std::set<TriplePattern> &bgps,
-		                                                 const BoolHyperTrie &trie, const TermStore &termIndex) {
+		static std::vector<SliceKey_t> generateSliceKeys(const std::set<TriplePattern> &bgps, const BoolHyperTrie &trie,
+		                                                 const TermStore &termIndex) {
 			std::vector<SliceKey_t> slice_keys{};
 			for (const auto &op_key : bgps) {
 				SliceKey_t slice_key(3, std::nullopt);
