@@ -34,7 +34,6 @@ namespace tnt::store::cache {
 		ParsedSPARQL parsedSPARQL;
 
 	public:
-		std::timed_mutex sync;
 		std::timed_mutex processing;
 		std::timed_mutex queuing;
 		std::chrono::system_clock::time_point keep_result_timeout =

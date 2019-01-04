@@ -13,7 +13,6 @@ namespace {
 namespace tnt::store::cache {
 
 	class QueryExecutionPackage_cache : public SynchronizedCachedFactory<std::string, QueryExecutionPackage> {
-		std::timed_mutex set_timer_mutex;
 		std::chrono::system_clock::duration max_processing_time;
 
 	protected:
