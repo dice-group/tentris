@@ -39,6 +39,14 @@ namespace tnt::tensor {
 		typename collection_t::const_iterator cbegin() const noexcept { return items.cbegin(); }
 
 		typename collection_t::const_iterator cend() const noexcept { return items.cend(); }
+
+		void clear() noexcept {
+			items.clear();
+		}
+
+		size_t distinct_size() const noexcept {
+			return items.size();
+		}
 	};
 
 

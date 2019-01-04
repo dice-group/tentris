@@ -19,6 +19,10 @@ namespace tnt::tensor::einsum::operators {
 		virtual yield_pull <RESULT_TYPE> get() const = 0;
 
 		virtual const Result <RESULT_TYPE> &getFullResult() const = 0;
+
+		virtual void clearCacheCanceled() const = 0;
+
+		virtual void clearCacheDone() const = 0;
 	};
 }
 

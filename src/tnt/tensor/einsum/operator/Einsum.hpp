@@ -76,6 +76,16 @@ namespace tnt::tensor::einsum::operators {
 			return result;
 		}
 
+		void clearCacheCanceled() const override {
+			if (not result_calculated or result.distinct_size() > 500)
+				result.clear();
+		}
+
+		void clearCacheDone() const override {
+			if (result.distinct_size() > 500)
+				result.clear();
+		}
+
 	private:
 
 		void calcResult() const {

@@ -82,10 +82,21 @@ namespace tnt::store::cache {
 		}
 
 		void done() {
+			if (not is_distinct)
+				regular_operator_tree->clearCacheDone();
+			else
+				distinct_operator_tree->clearCacheDone();
+
 			processing.unlock();
 		}// TODO: implement }
 
-		void canceled() { // TODO: implement
+		void canceled() {
+			if (not is_distinct)
+				regular_operator_tree->clearCacheCanceled();
+			else
+				distinct_operator_tree->clearCacheCanceled();
+
+			processing.unlock();
 		}
 
 	private:

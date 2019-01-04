@@ -40,6 +40,20 @@ namespace tnt::tensor::einsum::operators {
 		const std::shared_ptr<const Subscript> subscript;
 
 	public:
+
+		void clearCacheCanceled() const override {
+			// TODO: clear only if predecessors were not fully calculated
+			for (const auto &predecessor : predecessors)
+				predecessor->clearCacheCanceled();
+
+
+		}
+
+		void clearCacheDone() const override {
+			for (const auto &predecessor : predecessors)
+				predecessor->clearCacheDone();
+		}
+
 		/**
 		 * Constructor
          * @param subscript the passed Subscript must represent the dimension layout of the HyperTrieTenors

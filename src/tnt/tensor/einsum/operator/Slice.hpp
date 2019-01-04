@@ -52,6 +52,10 @@ namespace tnt::tensor::einsum::operators {
 
 		const Result <RESULT_TYPE> &getFullResult() const override { throw "Not yet implemented."; }
 
+		void clearCacheCanceled() const override {}
+
+		void clearCacheDone() const override {}
+
 	private:
 		void get(yield_push <RESULT_TYPE> &yield) const;
 	};
