@@ -8,6 +8,12 @@
 
 namespace tnt::tensor::einsum::operators {
 
+	class CancelProcessing : public std::exception {
+		const char *what() const throw() {
+			return "canceled evaluation";
+		}
+	};
+
 	enum OperatorType {
 		EINSUM,
 		CROSSPRODUCT

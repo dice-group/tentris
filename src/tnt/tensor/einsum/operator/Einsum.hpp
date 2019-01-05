@@ -48,6 +48,7 @@ namespace tnt::tensor::einsum::operators {
 		mutable bool may_have_results = false;
 		mutable bool result_calculated = false;
 		mutable Result<RESULT_TYPE> result{};
+		mutable ulong call_count = 0;
 
 	public:
 		/**
@@ -91,6 +92,14 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 	private:
+		void checkTimeout() const {
+			if (++call_count > 500) {
+				if (std::chrono::system_clock::now() > this->timeout)
+					throw CancelProcessing{};
+				else
+					call_count = 0;
+			}
+		}
 
 		void calcResult() const {
 			// generate operands only once
@@ -136,7 +145,7 @@ namespace tnt::tensor::einsum::operators {
 		 * Prepares the arguments for the recursive calculation of the results.
 		 * @param operands vector of tensors
 		 */
-		static void calcEinsum(Result<RESULT_TYPE> &result, const Operands &operands, const EinsumPlan &plan) {
+		void calcEinsum(Result<RESULT_TYPE> &result, const Operands &operands, const EinsumPlan &plan) const {
 			// unpacks HyperTrieTensors to HyperTries or value types T
 			// initialize emtpy result key
 			// plan first step
@@ -144,7 +153,13 @@ namespace tnt::tensor::einsum::operators {
 
 			Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
 			// start recursion
-			rekEinsum(result, operands, result_key, step);
+			try {
+				call_count = 0;
+				checkTimeout();
+				rekEinsum(result, operands, result_key, step);
+			} catch (CancelProcessing &ex) {
+				result.clear();
+			}
 		}
 
 		/**
@@ -155,8 +170,8 @@ namespace tnt::tensor::einsum::operators {
 		 * @param step current step. This holds also data to plan the next step.
 		 * @param label the current label that is to be processed in this recursive step
 		 */
-		static void rekEinsum(Result<RESULT_TYPE> &, const Operands &operands, const Key_t &result_key,
-		                      const EinsumPlan::Step &step);
+		void rekEinsum(Result<RESULT_TYPE> &, const Operands &operands, const Key_t &result_key,
+		               const EinsumPlan::Step &step) const;
 
 		static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
 
@@ -183,7 +198,8 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 		friend bool
-		rekEinsumBoolNonResult(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step);
+		rekEinsumBoolNonResult(const Einsum<distinct_binding> &einsum, const Operands &operands,
+		                       const Key_t &result_key, const EinsumPlan::Step &step);
 	};
 
 	template<>
@@ -227,7 +243,8 @@ namespace tnt::tensor::einsum::operators {
 
 	template<>
 	void Einsum<counted_binding>::rekEinsum(Result<counted_binding> &result, const Operands &operands,
-	                                        const Key_t &result_key, const EinsumPlan::Step &step) {
+	                                        const Key_t &result_key, const EinsumPlan::Step &step) const {
+		checkTimeout();
 		// there are steps left
 		if (not step.all_done) {
 			// calculate next operands and result_key from current operands, step, label and resultKey
@@ -259,7 +276,10 @@ namespace tnt::tensor::einsum::operators {
 	 */
 
 	inline bool
-	rekEinsumBoolNonResult(const Operands &operands, const Key_t &result_key, const EinsumPlan::Step &step) {
+	rekEinsumBoolNonResult(const Einsum<distinct_binding> &einsum, const Operands &operands, const Key_t &result_key,
+	                       const EinsumPlan::Step &step) {
+		einsum.checkTimeout();
+
 		// there are steps left
 		if (not step.all_done) {
 			// calculate next operands and result_key from current operands, step, label and resultKey
@@ -268,7 +288,7 @@ namespace tnt::tensor::einsum::operators {
 				const EinsumPlan::Step &next_step = step.nextStep(next_operands);
 				tnt::logging::log(fmt::format("{}\n", next_step));
 				// start next recursive step.
-				bool exists = rekEinsumBoolNonResult(next_operands, next_result_key, next_step);
+				bool exists = rekEinsumBoolNonResult(einsum, next_operands, next_result_key, next_step);
 				if (exists) // if a valid combination of label bindings was found return
 					return true;
 			}
@@ -286,7 +306,8 @@ namespace tnt::tensor::einsum::operators {
 
 	template<>
 	void Einsum<distinct_binding>::rekEinsum(Result<distinct_binding> &result, const Operands &operands,
-	                                         const Key_t &result_key, const EinsumPlan::Step &step) {
+	                                         const Key_t &result_key, const EinsumPlan::Step &step) const {
+		checkTimeout();
 		logTrace("step: {}"_format(step));
 		// there are steps with operand labels left
 		if (not step.result_labels_done) {
@@ -305,7 +326,7 @@ namespace tnt::tensor::einsum::operators {
 					result.insert(result_key);
 				}
 			}
-		} else if (not result.contains(result_key) and rekEinsumBoolNonResult(operands, result_key, step)) {
+		} else if (not result.contains(result_key) and rekEinsumBoolNonResult(*this, operands, result_key, step)) {
 			// there are no steps with operand labels left
 			// check if  a valid combination of non-result labels for the current result candidate exists
 			result.insert(result_key);
