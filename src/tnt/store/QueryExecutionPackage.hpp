@@ -81,11 +81,13 @@ namespace tnt::store::cache {
 		}
 
 		void done() {
-			if (std::chrono::system_clock::now() > keep_result_timeout) {
-				if (not is_distinct)
-					regular_operator_tree->clearCacheDone();
-				else
-					distinct_operator_tree->clearCacheDone();
+			if (not is_trivial_emtpy) {
+				if (std::chrono::system_clock::now() > keep_result_timeout) {
+					if (not is_distinct)
+						regular_operator_tree->clearCacheDone();
+					else
+						distinct_operator_tree->clearCacheDone();
+				}
 			}
 			keep_result_timeout = std::numeric_limits<std::chrono::system_clock::time_point>::min();
 
@@ -93,20 +95,23 @@ namespace tnt::store::cache {
 		}
 
 		void canceled() {
-			if (not is_distinct)
-				regular_operator_tree->clearCacheCanceled();
-			else
-				distinct_operator_tree->clearCacheCanceled();
-
+			if (not is_trivial_emtpy) {
+				if (not is_distinct)
+					regular_operator_tree->clearCacheCanceled();
+				else
+					distinct_operator_tree->clearCacheCanceled();
+			}
 			processing.unlock();
 		}
 
 		void setTimeout(const std::chrono::system_clock::time_point &timeout) {
 			this->timeout = timeout;
-			if (not is_distinct)
-				regular_operator_tree->setTimeout(timeout);
-			else
-				distinct_operator_tree->setTimeout(timeout);
+			if (not is_trivial_emtpy) {
+				if (not is_distinct)
+					regular_operator_tree->setTimeout(timeout);
+				else
+					distinct_operator_tree->setTimeout(timeout);
+			}
 		}
 
 		std::chrono::system_clock::time_point getTimeout() const { return timeout; }

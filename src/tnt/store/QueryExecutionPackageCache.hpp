@@ -45,7 +45,7 @@ namespace tnt::store::cache {
 		std::shared_ptr<QueryExecutionPackage> get(const std::string &query) {
 			auto timeout = std::chrono::system_clock::now() + max_processing_time;
 
-			auto qep = this->SynchronizedCachedFactory::get(query);
+			auto qep = this->SynchronizedCachedFactory<std::string, QueryExecutionPackage>::get(query);
 			if (qep->queuing.try_lock_until(timeout)) {
 
 				if (qep->processing.try_lock()) {

@@ -45,7 +45,7 @@ namespace tnt::http {
 				// calculate the result
 				auto result_generator = query_package->getRegularGenerator();
 				// check if it timed out
-				if (system_clock::now() > timeout) {
+				if (system_clock::now() < timeout) {
 					response.headers().add<SPARQLJSON>();
 					auto stream = response.stream(Code::Ok);
 					steamJSON<counted_binding>(vars, std::move(result_generator), stream, store, timeout);
@@ -62,7 +62,7 @@ namespace tnt::http {
 				// calculate the result
 				auto result_generator = query_package->getDistinctGenerator();
 				// check if it timed out
-				if (timeout < system_clock::now()) {
+				if (system_clock::now() < timeout) {
 					response.headers().add<SPARQLJSON>();
 					auto stream = response.stream(Code::Ok);
 					steamJSON<distinct_binding>(vars, std::move(result_generator), stream, store, timeout);
