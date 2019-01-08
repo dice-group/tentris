@@ -29,8 +29,8 @@
 
 
 
-#define DEBUG 1 // todo: Find an appropriate place for enabling DEBUG
-#define TRACE 1 // todo: Find an appropriate place for enabling DEBUG
+// #define DEBUG 1 // todo: Find an appropriate place for enabling DEBUG
+// #define TRACE 1 // todo: Find an appropriate place for enabling DEBUG
 
 // #define GET_VARIABLE_NAME(Variable) (#Variable)
 
