@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(tnt CXX)
 set(tnt_VERSION_MAJOR 0)
-set(tnt_VERSION_MINOR firecracker)
+set(tnt_VERSION_MINOR pinwheel)
 
 set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
