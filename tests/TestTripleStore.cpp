@@ -1,26 +1,27 @@
 #include <gtest/gtest.h>
-#include "tnt/store/TripleStore.hpp"
-#include "tnt/store/RDF/NTripleParser.hpp"
-#include <experimental/filesystem>
 
-namespace fs = std::experimental::filesystem;
+#include <filesystem>
 
-using namespace tnt::store;
-using namespace tnt::util::types;
+#include <tnt/store/TripleStore.hpp>
+#include <tnt/store/RDF/NTripleParser.hpp>
+#include <tnt/util/FmtHelper.hpp>
 
-TEST(TestTripleStore, double_write) {
+namespace {
+    namespace fs = std::filesystem;
+
+    using namespace tnt::store;
+    using namespace tnt::util::types;
+}
+
+
+TEST(TestTripleStore, load_data) {
     TripleStore store{};
     std::string path = fs::current_path().string();
     path.append("/../../tests/ntriplefiles/ntriples.nt");
     store.loadRDF(path);
     for (auto &&[subject, predicate, object] :NTripleParser{path}) {
+        fmt::print("{} {} {}\n", subject, predicate, object);
         ASSERT_TRUE(store.contains({subject->getIdentifier(), predicate->getIdentifier(), object->getIdentifier()}));
     }
-
 }
 
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

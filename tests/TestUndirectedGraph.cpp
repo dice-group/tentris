@@ -1,69 +1,41 @@
 #include <gtest/gtest.h>
-#include "einsum/util/UndirectedGraph.hpp"
 
-TEST(TestUndirectedGraph, addEdge
-) {
-using namespace ::sparsetensor::operations::util;
-UndirectedGraph <uint8_t> graph{};
+#include <tnt/util/UndirectedGraph.hpp>
 
-graph.addEdge(1, 1);
-graph.addEdge(2, 3);
-graph.addEdge(3, 4);
+TEST(TestUndirectedGraph, addEdge) {
+    using namespace ::tnt::util;
+    UndirectedGraph<uint8_t> graph{};
 
-const unordered_set <unordered_set<uint8_t>> &connectedComponents = graph.getConnectedComponents();
+    graph.addEdge(1, 1);
+    graph.addEdge(2, 3);
+    graph.addEdge(3, 4);
 
-ASSERT_TRUE(connectedComponents
-.
-count(std::unordered_set<uint8_t>{1}
-));
+    const std::vector<std::set<uint8_t>> &connComp = graph.getConnectedComponents();
 
-ASSERT_TRUE(connectedComponents
-.
-count(std::unordered_set<uint8_t>{2, 3, 4}
-));
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1}), 1);
 
-ASSERT_TRUE(not connectedComponents.
-count(std::unordered_set<uint8_t>{1, 2, 3, 4}
-));
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{2, 3, 4}), 1);
 
-ASSERT_EQ(size(connectedComponents),
-2);
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3, 4}), 0);
+
+    ASSERT_EQ(size(connComp), 2);
 }
 
-TEST(TestUndirectedGraph, addFullGraph
-) {
-using namespace ::sparsetensor::operations::util;
-UndirectedGraph <uint8_t> graph{};
+TEST(TestUndirectedGraph, addCompleteGraph) {
+    using namespace ::tnt::util;
+    UndirectedGraph<uint8_t> graph{};
 
-graph.addCompleteGraph({
-1, 2, 3});
-graph.addCompleteGraph({
-3, 4});
-graph.addCompleteGraph({
-5, 6, 7});
+    graph.addCompleteGraph({1, 2, 3});
+    graph.addCompleteGraph({3, 4});
+    graph.addCompleteGraph({5, 6, 7});
 
-const unordered_set <unordered_set<uint8_t>> &connectedComponents = graph.getConnectedComponents();
+    const std::vector<std::set<uint8_t>> &connComp = graph.getConnectedComponents();
 
-ASSERT_TRUE(connectedComponents
-.
-count(std::unordered_set<uint8_t>{1, 2, 3, 4}
-));
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3, 4}), 1);
 
-ASSERT_TRUE(connectedComponents
-.
-count(std::unordered_set<uint8_t>{5, 6, 7}
-));
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{5, 6, 7}), 1);
 
-ASSERT_TRUE(not connectedComponents.
-count(std::unordered_set<uint8_t>{1, 2, 3}
-));
+    ASSERT_EQ(std::count(connComp.begin(), connComp.end(), std::set<uint8_t>{1, 2, 3}), 0);
 
-ASSERT_EQ(size(connectedComponents),
-2);
-}
-
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    ASSERT_EQ(size(connComp), 2);
 }

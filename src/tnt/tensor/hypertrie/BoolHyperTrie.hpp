@@ -180,7 +180,7 @@ namespace tnt::tensor::hypertrie {
             try {
                 return edges.at(key_part);
 
-            } catch (std::out_of_range ex) {
+            } catch (std::out_of_range &ex) {
                 return nullptr;
             }
         }
@@ -205,6 +205,7 @@ namespace tnt::tensor::hypertrie {
                     return current_subtrie->getLeafEdges().contains(key.at(0));
                 }
             }
+            return false; // never reached
         }
 
     public:
@@ -462,8 +463,9 @@ namespace tnt::tensor::hypertrie {
         }
 
     private:
-        void del_rek(const Key_t &key, std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
-                     PosCalc *pos_calc) {
+        void del_rek([[maybe_unused]] const Key_t &key,
+                     [[maybe_unused]] std::unordered_map<subkey_mask_t, BoolHyperTrie *> &finished_subtries,
+                     [[maybe_unused]] PosCalc *pos_calc) {
             throw "del_rek not yet implemented.";
         }
 
@@ -570,7 +572,7 @@ namespace tnt::tensor::hypertrie {
             }
         }
 
-        void del(const Key_t &coords) {
+        void del([[maybe_unused]]const Key_t &coords) {
             throw "Not yet implemented.";
         }
 
@@ -591,14 +593,14 @@ namespace tnt::tensor::hypertrie {
             }
         }
 
-        // TODO: do not test as it is currently not used
-        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
-            if (this->_depth == 1) {
-                return children._leaf_edges.end();
-            } else {
-                return children._inner_edges.at(key_pos).end();
-            }
-        }
+//        // TODO: do not test as it is currently not used
+//        std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator> end_(const key_pos_t &key_pos) {
+//            if (this->_depth == 1) {
+//                return children._leaf_edges.end();
+//            } else {
+//                return children._inner_edges.at(key_pos).end();
+//            }
+//        }
 
         // TODO: do not test as it is currently not used
         std::variant<leaf_edges::iterator, inner_edges::KeyView::iterator>
@@ -620,10 +622,8 @@ namespace tnt::tensor::hypertrie {
             }
         }
 
-        friend std::ostream &operator<<(std::ostream &out, BoolHyperTrie &trie) {
-            out << "<BoolHyperTrie: _depth=" << int(trie._depth) << ", leafcount=" << int(trie._leafcount) << ">";
-            return out;
-        }
+        friend struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie>;
+
 
     public:
         class DiagonalView {
@@ -644,11 +644,7 @@ namespace tnt::tensor::hypertrie {
             BoolHyperTrie *_result;
 
         public:
-            friend std::ostream &operator<<(std::ostream &os, const DiagonalView &view) {
-                os << "_positions: " << view._positions << " _min: " << view._min << " _max: " << view._max
-                   << " _min_ind: " << view._min_ind << " _max_ind: " << view._max_ind << " _size: " << view._size;
-                return os;
-            }
+            friend struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie::DiagonalView>;
 
         public:
             /**
@@ -1187,6 +1183,41 @@ namespace tnt::tensor::hypertrie {
         };
     };
 };
+
+template<>
+struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::hypertrie::BoolHyperTrie &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<BoolHyperTrie>"
+                         " _depth: {}"
+                         " _leafcount:   {}",
+                         p._depth, p._leafcount);
+    }
+};
+
+template<>
+struct fmt::formatter<tnt::tensor::hypertrie::BoolHyperTrie::DiagonalView> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::hypertrie::BoolHyperTrie::DiagonalView &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<BoolHyperTrie>"
+                         " _positions: {}"
+                         " _min:   {}"
+                         " _max:   {}"
+                         " _min_ind:   {}"
+                         " _max_ind:   {}"
+                         " _size:   {}",
+                         p._positions, p._min, p._max, p._min_ind, p._max_ind, p._size);
+    }
+};
+
 
 #endif //SPARSETENSOR_HYPERTRIE_BOOLHYPERTRIE_HPP
 

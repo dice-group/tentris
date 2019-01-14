@@ -1,86 +1,119 @@
 #ifndef TNT_CONFIG_HPP
 #define TNT_CONFIG_HPP
 
-#include <unistd.h>
-#include <cstdio>
-#include <cstdlib>
 #include <string>
-#include <getopt.h>
 
-#include "tnt/util/ArrayHelper.hpp"
+#include <cxxopts.hpp>
+
 #include "tnt/util/LogHelper.hpp"
 #include "tnt/util/SingletonFactory.hpp"
 
+
 namespace {
-    using namespace tnt::util::sync;
-    struct option long_options[] = {
-            {"port",    required_argument, nullptr, 'p'},
-            {"file",    required_argument, nullptr, 'f'},
-            {"timeout", required_argument, nullptr, 't'},
-    };
-};
+    using namespace ::tnt::logging;
+}
+
 namespace tnt::config {
+    /**
+     * The configuration of a TNT instance.
+     */
     struct Config;
 
-    class AtomicConfig : public SingletonFactory<Config> {
+    /**
+     * A Factory that assures that only one instance of Config is created per running TNT instance.
+     */
+    class AtomicConfig : public util::sync::SingletonFactory<Config> {
     public:
         AtomicConfig() : SingletonFactory<Config>{} {}
     };
 
     struct Config {
+        cxxopts::Options options{"TNT", "TNT, a tensor-based triple store with an HTTP sparql enpoint"};
+
+        /**
+         * The where TNT runs.
+         */
         mutable uint16_t port = 9080;
+        /**
+         * The relative or absolute path to the RDF file that TNT loads on startup.
+         */
         mutable std::string dataBaseFile{};
+        /**
+         * The timeout for query processing of single queries.
+         */
         mutable uint timeout = 180;
+        /**
+         * Number of threads used to serve http results. Each thread may use multiple others while calculating the result.
+         */
+        mutable uint8_t threads = std::thread::hardware_concurrency();
+
+
+        /**
+         * Initialization of command argument parser.
+         */
+        Config() {
+            options.add_options()
+                    ("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
+                    ("f,file", "ntriple file to load at startup", cxxopts::value<std::string>())
+                    ("t,timeout", "time in seconds until processing a request is canceled by the server",
+                     cxxopts::value<uint>()->default_value("180"))
+                    ("c,threads", "How many threads are used for handling http requests", cxxopts::value<uint8_t>()->default_value("0"));
+        }
 
         friend void init_config(int argc, char *argv[]);
     };
 
+    /**
+     * Parses the command line arguments that were passed to TNT into the Config instance managed by AtomicConfig.
+     * @param argc number of arguments
+     * @param argv array of char arrays with arguments
+     */
     void init_config(int argc, char **argv) {
+        Config &config = AtomicConfig::getInstance();
 
-        const std::string &argValues = ArrayHelper::ArrayToString(argv, argc);
-        logDebug("Called", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
-                 argValues);
+        try {
+            auto arguments = config.options.parse(argc, argv);
 
-        int opt = 0;
-        int long_index = 0;
+            if (arguments.count("port") == 1) {
+                auto port = arguments["port"].as<uint16_t>();
 
-        while ((opt = getopt_long(argc, argv, "p:f:t:", long_options, &long_index)) != -1) {
-            switch (opt) {
-                case 'p': {
-                    const int raw_port_number = atoi(optarg);
-                    if (0 > raw_port_number or raw_port_number > 65535) {
-                        logDebug("Port must be in range [0,65535].");
-                        logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
-                                 GET_VARIABLE_NAME(argv), argValues);
-                        exit(EXIT_FAILURE);
-                    }
-                    AtomicConfig::getInstance().port = uint16_t(raw_port_number);
-                }
-                    break;
-                case 'f':
-                    AtomicConfig::getInstance().dataBaseFile = optarg;
-                    break;
-                case 't': {
-                    const int raw_timeout = atoi(optarg);
-                    if (raw_timeout < 0) {
-                        AtomicConfig::getInstance().timeout = UINT_MAX;
-                    } else {
-                        AtomicConfig::getInstance().timeout = uint(raw_timeout);
-                    }
-                }
-                    break;
-                default: {
-                    logDebug("Port must be in range [0,65535].");
-                    logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc,
-                             GET_VARIABLE_NAME(argv), argValues);
-                    exit(EXIT_FAILURE);
-                }
+                config.port = port;
             }
-        }
-        logDebug("Finished", __PRETTY_FUNCTION__, GET_VARIABLE_NAME(argc), argc, GET_VARIABLE_NAME(argv),
-                 argValues);
-    }
 
+            if (arguments.count("file") == 1) {
+                auto file = arguments["file"].as<std::string>();
+
+                config.dataBaseFile = file;
+            }
+
+            if (arguments.count("timeout") == 1) {
+                auto timeout = arguments["timeout"].as<uint>();
+
+                if (timeout == 0)
+                    config.timeout = UINT_MAX;
+                else
+                    config.timeout = timeout;
+            }
+
+            if (arguments.count("threads") == 1) {
+                auto threads = arguments["threads"].as<uint8_t>();
+
+                if (threads != 0)
+                    config.threads = threads;
+            }
+        } catch (cxxopts::option_not_exists_exception &ex) {
+            if (std::string{"Option ‘help’ does not exist"}.compare(ex.what()) == 0) {
+                log(config.options.help());
+                exit(EXIT_SUCCESS);
+            } else {
+                log(ex.what());
+                exit(EXIT_FAILURE);
+            }
+        } catch (cxxopts::argument_incorrect_type &ex) {
+            log(ex.what());
+            exit(EXIT_FAILURE);
+        }
+    }
 
 };
 

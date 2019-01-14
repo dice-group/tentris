@@ -61,15 +61,7 @@ namespace tnt::tensor::hypertrie {
             std::tie(_min_keypart, _max_keypart) = BoolHyperTrie::DiagonalView::minimizeRange(_diagonals);
         }
 
-        friend std::ostream &operator<<(std::ostream &os, const Join &join1) {
-            os << "_key: " << join1._key << " _min_keypart: " << join1._min_keypart << " _max_keypart: "
-               << join1._max_keypart << " _result_key_pos: " << join1._result_key_pos << " _diagonal2result_pos: "
-               << join1._diagonal2result_pos;
-            os << " _diagonals: \n";
-            for (const auto &diag :join1._diagonals)
-                os << "   " << diag << "\n";
-            return os;
-        }
+        friend struct fmt::formatter<tnt::tensor::hypertrie::Join>;
 
 
         /**
@@ -123,11 +115,7 @@ namespace tnt::tensor::hypertrie {
                 }
             }
 
-            friend std::ostream &operator<<(std::ostream &os, const iterator &iterator) {
-                os << "_join: " << iterator._join << " _current_key_part: " << iterator._current_key_part
-                   << " _last_key_part: " << iterator._last_key_part << " _ended: " << iterator._ended;
-                return os;
-            }
+            friend struct fmt::formatter<tnt::tensor::hypertrie::Join::iterator>;
 
             /**
              * When this function is called _current_key_part
@@ -216,5 +204,47 @@ namespace tnt::tensor::hypertrie {
         }
     };
 }
+
+
+template<>
+struct fmt::formatter<tnt::tensor::hypertrie::Join> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::hypertrie::Join &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<Join>"
+                         " _key: {}"
+                         " _min_keypart:   {}"
+                         " _max_keypart: {}"
+                         " _result_key_pos:   {}"
+                         " _diagonal2result_pos: {}"
+                         " _diagonals : "
+                         "   {}",
+                         p._key,
+                         p._min_keypart,
+                         p._max_keypart,
+                         p._result_key_pos,
+                         p._diagonal2result_pos,
+                         join(p._diagonals.begin(), p._diagonals.end(), "\n   "));
+    }
+};
+
+template<>
+struct fmt::formatter<tnt::tensor::hypertrie::Join::iterator> {
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tnt::tensor::hypertrie::Join::iterator &p, FormatContext &ctx) {
+        return format_to(ctx.begin(),
+                         "<Join::iterator>"
+                         " _current_key_part: {}"
+                         " _last_key_part:    {}"
+                         " _ended:            {}",
+                         p._current_key_part, p._last_key_part, p._ended);
+    }
+};
 
 #endif //SPARSETENSOR_HYPERTRIE_JOIN

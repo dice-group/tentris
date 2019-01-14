@@ -1,339 +1,364 @@
 #ifndef SPARSETENSOR_EINSUM_EINSUMPLAN
 #define SPARSETENSOR_EINSUM_EINSUMPLAN
 
-#include <vector>
-#include <memory>
-#include <exception>
 #include <cmath>
+#include <exception>
+#include <memory>
 #include <ostream>
+#include <vector>
 
 #include "tnt/tensor/einsum/Subscript.hpp"
-#include "tnt/util/All.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/util/All.hpp"
+#include "tnt/util/LogHelper.hpp"
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 
 namespace {
-    using namespace tnt::util::types;
-    using namespace tnt::tensor::hypertrie;
+	using namespace tnt::util::types;
+	using namespace tnt::tensor::hypertrie;
 
-    //TODO: move to utils
-    template<typename T>
-    std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
-        std::set<label_t> sub_set;
-        std::copy_if(interable.cbegin(), interable.cend(),
-                     std::inserter(sub_set, sub_set.begin()),
-                     [&](const label_t &l) { return remove_ != l; });
-        return sub_set;
-    }
+	// TODO: move to utils
+	template<typename T>
+	std::set<label_t> getSubset(const T &interable, const label_t &remove_) {
+		std::set<label_t> sub_set;
+		std::copy_if(interable.cbegin(), interable.cend(), std::inserter(sub_set, sub_set.begin()),
+		             [&](const label_t &l) { return remove_ != l; });
+		return sub_set;
+	}
 
-    //TODO: move to utils
-    template<typename T>
-    std::set<T> setMinus(std::set<T> plusSet, std::set<T> minusSet1, std::set<T> minusSet2) {
-        std::set<T> result{};
-        for (const T &item : plusSet)
-            if (not minusSet1.count(item) and not minusSet2.count(item))
-                result.insert(item);
-        return result;
-    }
+	// TODO: move to utils
+	template<typename T>
+	std::set<T> setMinus(std::set<T> plusSet, std::set<T> minusSet1, std::set<T> minusSet2) {
+		std::set<T> result{};
+		for (const T &item : plusSet)
+			if (not minusSet1.count(item) and not minusSet2.count(item))
+				result.insert(item);
+		return result;
+	}
 
-};
+}; // namespace
 
 namespace tnt::tensor::einsum {
-    class EinsumPlan {
-    public:
-        enum STRATEGY {
-            RESULT_FIRST,
-            ONLY_BY_CARDINALITY // TODO: implement it
-        };
+	/**
+	 * An EinsumPlan models the order in which the labels of an Einstein summation expression are resolved.
+	 */
+	class EinsumPlan {
+	public:
+		class Step;
 
-        class Step;
+	private:
+		/**
+		 * The subscript that is base to this Plan.
+		 */
+		const std::shared_ptr<const Subscript> subscript;
+		/**
+		 * The set of result labels.
+		 */
+		const std::vector<label_t> result_labels;
+		/**
+		 * The first step of this plans. All further Steps are within that step.
+		 */
+		mutable Step *initial_step = nullptr;
 
-    private:
+	public:
+		explicit EinsumPlan(const std::shared_ptr<const Subscript> subscript)
+				: subscript(subscript), result_labels{subscript->getResultLabels()} {}
 
-        const std::shared_ptr<const Subscript> _subscript;
-        const std::vector<label_t> _result_labels;
-        mutable Step *initial_step = nullptr;
-    public:
-        explicit EinsumPlan(const std::shared_ptr<const Subscript> subscript, STRATEGY = RESULT_FIRST) :
-                _subscript(subscript),
-                _result_labels{subscript->getResultLabels()} {}
+		~EinsumPlan() {
+			delete initial_step;
+		}
 
-        ~EinsumPlan() {
-            if (initial_step != nullptr)
-                delete initial_step;
-        }
+		Step &getInitialStep(const Operands &operands) const {
+			if (initial_step == nullptr) {
+				initial_step = Step::getInitialStep(*this, operands);
+			}
+			return *initial_step;
+		}
 
-        Step &getInitialStep(const Operands &operands) const {
-            if (initial_step == nullptr) {
-                const std::set<label_t> result_label_set{_subscript->getResultLabels().cbegin(),
-                                                         _subscript->getResultLabels().cend()};
-                initial_step = new Step{_subscript, _subscript->getLabelPosInResult(), operands,
-                                        setMinus(_subscript->getAllLabels(), _subscript->getUniqueNonResultLabels(),
-                                                 _subscript->getLonelyNonResultLabels()), result_label_set};
-            }
-            return *initial_step;
-        }
+		const std::shared_ptr<const Subscript> getSubscript() const { return subscript; }
 
+		const std::vector<label_t> &getResultLabels() const { return result_labels; }
 
-        const std::shared_ptr<const Subscript> getSubscript() const {
-            return _subscript;
-        }
+		/**
+		 * This class models a step in the evaluation of a Einstein summation expression. Each step represents one label
+		 * that is resolved.
+		 */
+		class Step {
+		private:
+			mutable std::map<label_t, Step> next_step_cache;
+			const std::shared_ptr<const Subscript> subscript;
+			const std::map<label_t, label_pos_t> result_label_poss;
 
-        const std::vector<label_t> &getResultLabels() const {
-            return _result_labels;
-        }
+		public:
+			const label_t label;
 
+		private:
+			const std::set<label_t> label_candidates;
+			const std::set<label_t> unused_result_labels;
 
-        class Step {
-        private:
-            mutable std::map<label_t, Step> next_step_cache;
-            const std::shared_ptr<const Subscript> _subscript;
-            const std::map<label_t, label_pos_t> _result_label_poss;
-        public:
-            const label_t label;
-        private:
-            const std::set<label_t> _label_candidates;
-            const std::set<label_t> _unused_result_labels;
-        public:
-            const bool all_done;
-            const bool result_labels_done;
-        private:
-            std::vector<op_pos_t> _op_poss;
-            std::optional<key_pos_t> _result_pos;
-            std::map<op_pos_t, op_pos_t> _diagonal2result_pos;
-            std::vector<std::vector<key_pos_t>> _joinee_key_part_poss; ///< the joining key part positions of each join operand.
-            std::vector<op_pos_t> next_op_poss;
-            std::vector<std::vector<label_pos_t>> _unique_labels;
+		public:
+			const bool all_done;
+			const bool result_labels_done;
 
-        private:
+		private:
+			std::vector<op_pos_t> op_poss;
+			std::optional<key_pos_t> result_pos;
+			std::map<op_pos_t, op_pos_t> _diagonal2result_pos;
+			std::vector<std::vector<key_pos_t>> joinee_key_part_poss; ///< the joining key part positions of each join operand.
+			std::vector<op_pos_t> next_op_poss;
+			std::vector<std::vector<label_pos_t>> unique_label_poss;
 
-            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
-                 const label_t &min_card_label,
-                 const std::set<label_t> &label_candidates,
-                 const std::set<label_t> &unused_result_labels) :
-                    _subscript{subscript},
-                    _result_label_poss{result_label_poss},
-                    label{min_card_label},
-                    _label_candidates{getSubset(label_candidates, label)},
-                    _unused_result_labels{getSubset(unused_result_labels, label)},
-                    all_done{not bool(label_candidates.size())},
-                    result_labels_done{not bool(unused_result_labels.size())} {
-                if (not all_done) {
-                    _op_poss = _subscript->operandsWithLabel(label);
-                    auto found = _result_label_poss.find(label);
-                    if (found != _result_label_poss.end())
-                        _result_pos = {found->second};
-                    else
-                        _result_pos = std::nullopt;
+		private:
+			/**
+			 * Constructor for a step. All other Constructors must delegate to this one.
+			 * @param subscript the subscript for this step
+			 * @param result_label_poss the position of result labels
+			 * @param min_card_label the label which this step provides as best label
+			 * @param label_candidates the labels that are canditates to be calculated next. This may include min_card_label
+			 * @param unused_result_labels the result labels that have not been used yet
+			 */
+			Step(const std::shared_ptr<const Subscript> subscript,
+			     const std::map<label_t, label_pos_t> &result_label_poss,
+			     const label_t &min_card_label,
+			     const std::set<label_t> &label_candidates,
+			     const std::set<label_t> &unused_result_labels)
+					: subscript{subscript},
+					  result_label_poss{result_label_poss},
+					  label{min_card_label},
+					  label_candidates{getSubset(label_candidates, label)},
+					  unused_result_labels{getSubset(unused_result_labels, label)},
+					  all_done{label_candidates.empty()},
+					  result_labels_done{unused_result_labels.empty()} {
+				if (not all_done) {
+					op_poss = subscript->operandsWithLabel(label);
+					auto found = result_label_poss.find(label);
+					if (found != result_label_poss.end())
+						result_pos = {found->second};
+					else
+						result_pos = std::nullopt;
 
+					// the joining key part positions of each join operand.
+					joinee_key_part_poss.reserve(op_poss.size());
+					for (const op_pos_t &op_pos : op_poss) {
+						joinee_key_part_poss.emplace_back(subscript->labelPossInOperand(op_pos, label));
+					}
 
-                    // the joining key part positions of each join operand.
-                    _joinee_key_part_poss.reserve(_op_poss.size());
-                    for (const op_pos_t &op_pos : _op_poss) {
-                        _joinee_key_part_poss.emplace_back(_subscript->labelPossInOperand(op_pos, label));
-                    }
+					const auto subsc = subscript->removeLabel(label);
+					next_op_poss = subsc->getOriginalOpPoss();
 
-                    // TODO: only if label was left
-                    const std::shared_ptr<const Subscript> subsc = _subscript->removeLabel(label);
-                    next_op_poss = subsc->getOriginalOpPoss();
+					for (op_pos_t i = 0, j = 0; i < op_poss.size() and j < next_op_poss.size();) {
+						auto pos_of_join_in_operands = op_poss.at(i);
+						auto pos_of_result_in_operands = next_op_poss.at(j);
+						if (pos_of_join_in_operands == pos_of_result_in_operands) {
+							_diagonal2result_pos[i] = j;
+							++j;
+							++i;
+						} else if (pos_of_join_in_operands < pos_of_result_in_operands) {
+							++i;
+						} else {
+							++j;
+						}
+					}
+				} else {
+					// copy the sparse map of unique non-result contractions into a dense vector.
+					const auto &u_contr = subscript->getUniqueNonResultContractions();
 
+					for (const op_pos_t op_pos : range(op_pos_t(subscript->numberOfOperands()))) {
+						if (const auto found = u_contr.find(op_pos); found != u_contr.cend()) {
+							unique_label_poss.push_back(found->second.at(0));
+						} else {
+							unique_label_poss.emplace_back(std::vector<label_pos_t>{});
+						}
+					}
+				}
+			}
 
-                    for (op_pos_t i = 0, j = 0; i < _op_poss.size() and j < next_op_poss.size();) {
-                        auto pos_of_join_in_operands = _op_poss.at(i);
-                        auto pos_of_result_in_operands = next_op_poss.at(j);
-                        if (pos_of_join_in_operands == pos_of_result_in_operands) {
-                            _diagonal2result_pos[i] = j;
-                            ++j;
-                            ++i;
-                        } else if (pos_of_join_in_operands < pos_of_result_in_operands) {
-                            ++i;
-                        } else {
-                            ++j;
-                        }
-                    }
-                } else {
-                    for (const auto &op_pos: range(subscript->numberOfOperands())) {
-                        const std::map<op_pos_t, std::vector<std::vector<label_pos_t>>> &map = _subscript->getUniqueNonResultContractions();
-                        if (const auto found = map.find(op_pos);
-                                found != map.cend()) {
-                            _unique_labels.push_back(found->second.at(0));
-                        } else {
-                            _unique_labels.push_back({});
-                        }
-                    }
-                    for (const std::vector<std::vector<label_pos_t>> &unique :
-                            values(_subscript->getUniqueNonResultContractions())) {
-                        _unique_labels.push_back(unique[0]);
-                    }
-                }
-            }
+			/**
+			 * This constructor is used to construct non-initial steps. It is called only by internal functions.
+			 * @param subscript the subscript for this step
+			 * @param result_label_poss the position of result labels
+			 * @param operands the operands neccessary to calculate which label is calculated next best.
+			 * @param label_candidates the labels that are canditates to be calculated next
+			 * @param unused_result_labels the result labels that have not been used yet
+			 */
+			Step(const std::shared_ptr<const Subscript> subscript,
+			     const std::map<label_t, label_pos_t> &result_label_poss,
+			     const Operands &operands, const std::set<label_t> &label_candidates,
+			     const std::set<label_t> &unused_result_labels)
+					: Step(subscript, result_label_poss, getMinCardLabel(operands, label_candidates, *subscript),
+					       label_candidates, unused_result_labels) {}
 
+		public:
+			/**
+			 * Get the initial steps for a plan and a given operands.
+			 * @param plan the plan
+			 * @param operands the operands
+			 * @return the first step to process the operands with the plan.
+			 */
+			static Step *getInitialStep(const EinsumPlan &plan, const Operands &operands) {
+				const auto subscript = plan.subscript;
 
-        public:
+				const auto result_labels = subscript->getResultLabels();
+				const std::set<label_t> result_label_set{result_labels.cbegin(), result_labels.cend()};
 
-            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
-                 const Operands &operands, const std::set<label_t> &label_candidates,
-                 const std::set<label_t> &unused_result_labels) :
-                    Step(subscript, result_label_poss,
-                         getMinCardLabel(operands, label_candidates, unused_result_labels, *subscript),
-                         label_candidates, unused_result_labels) {}
+				const auto label_candidates = setMinus(subscript->getAllLabels(), subscript->getUniqueNonResultLabels(),
+				                                       subscript->getLonelyNonResultLabels());
 
-            Step(const std::shared_ptr<const Subscript> subscript, const std::map<label_t, label_pos_t> &result_label_poss,
-                 const Operands &operands, const std::set<label_t> &unused_result_labels) :
-                    Step(subscript, result_label_poss,
-                         getMinCardLabel(operands, subscript->getAllLabels(), unused_result_labels, *subscript),
-                         subscript->getAllLabels(), unused_result_labels) {}
+				const auto min_card_label = getMinCardLabel(operands, label_candidates, *subscript);
 
-            inline const std::map<label_t, label_pos_t> &getResultLabels() const {
-                return _result_label_poss;
-            }
+				return new Step{subscript, subscript->getLabelPosInResult(), min_card_label, label_candidates,
+				                result_label_set};
+			}
 
-            inline size_t getResultSize() const {
-                return _result_label_poss.size();
-            }
+			/**
+			 * Assuming you have an approriate operands list that shall be evaluated according to the subscript of this
+			 * Step. When using this.label to resolve this step, nextStep() returns the Step for the resulting operands.
+			 * @param operands the operands which are associated with this Step
+			 * @return the Step for operands that result from resolving the label proposed by this Step
+			 */
+			Step &nextStep(const Operands &operands) const {
+				if (all_done)
+					throw std::invalid_argument("Must not be called if all_done is true");
+				label_t next_label = getMinCardLabel(operands, label_candidates, *(subscript->removeLabel(label)));
 
-            Step &nextStep(const Operands &operands) const {
-                if (all_done)
-                    throw std::invalid_argument("Must not be called if all_done is true");
-                label_t label_ = getMinCardLabel(operands, _label_candidates, _unused_result_labels,
-                                                 *(_subscript->removeLabel(label)));
+				if (auto found = next_step_cache.find(next_label); found != next_step_cache.end()) {
+					return found->second;
+				} else {
+					const auto &result =
+							next_step_cache.emplace(next_label, Step{subscript->removeLabel(label), result_label_poss,
+							                                         next_label, label_candidates,
+							                                         unused_result_labels});
+					return result.first->second;
+				}
+			}
 
-                auto found = next_step_cache.find(label_);
-                if (found != next_step_cache.end()) {
-                    return found->second;
-                } else {
-                    const auto &result = next_step_cache.emplace(label_, Step{_subscript->removeLabel(label),
-                                                                              _result_label_poss, label_,
-                                                                              _label_candidates,
-                                                                              _unused_result_labels});
-                    return result.first->second;
-                }
+			const std::map<label_t, label_pos_t> &getResultLabels() const { return result_label_poss; }
 
-            }
+			size_t getResultSize() const { return result_label_poss.size(); }
 
-            inline const std::vector<op_pos_t> &getOperandPositions() const {
-                return _op_poss;
-            }
+			const std::vector<op_pos_t> &getOperandPositions() const { return op_poss; }
 
-            inline const std::vector<std::vector<key_pos_t>> &getKeyPartPoss() const {
-                return _joinee_key_part_poss;
-            };
+			const std::vector<std::vector<key_pos_t>> &getKeyPartPoss() const { return joinee_key_part_poss; }
 
-            inline const std::vector<op_pos_t> &getPosOfOperandsInResult() const {
-                return next_op_poss;
-            }
+			const std::vector<op_pos_t> &getPosOfOperandsInResult() const { return next_op_poss; }
 
-            /**
-             * Returns a mapping from {0..n}->{0..r} where n is the number of operands with label and r is the number of
-             * non-scalar hypertries that result from the operation described by this plan.
-             * @return a map that like defined above
-             */
-            inline const std::map<op_pos_t, op_pos_t> &getDiagonal2ResultMapping() const {
-                return _diagonal2result_pos;
-            }
+			/**
+             * Returns a mapping from {0..n}->{0..r} where n is the number of
+             * operands with label and r is the number of non-scalar hypertries
+             * that result from the operation described by this plan.
+			 * @return a map that like defined above
+			 */
+			const std::map<op_pos_t, op_pos_t> &
+			getDiagonal2ResultMapping() const { return _diagonal2result_pos; }
 
-            /**
-             * An optional position in the key that the key_part that fullfill this step must be written if it exists.
-             * @return an optional position in the key_part.
-             */
-            inline const std::optional<key_pos_t> &getResulKeyPos() const {
-                return _result_pos;
-            }
+			/**
+             * An optional position in the key that the key_part that fullfill this
+             * step must be written if it exists.
+			 * @return an optional position in the key_part.
+			 */
+			const std::optional<key_pos_t> &getResulKeyPos() const { return result_pos; }
 
-            const std::vector<std::vector<label_pos_t>> &getUniqueNonResultContractions() const {
-                return _unique_labels;
-            }
+			const std::vector<std::vector<label_pos_t>> &
+			getUniqueNonResultContractions() const { return unique_label_poss; }
 
-        private:
+		private:
+			/**
+			 *
+			 * @param operands
+			 * @param label_candidates
+			 * @param sc
+			 * @return
+			 */
+			static label_t getMinCardLabel(const Operands &operands,
+			                               const std::set<label_t> &label_candidates,
+			                               const Subscript &sc) {
+				if (label_candidates.size() == 1) {
+					return *label_candidates.begin();
+				} else {
 
-            static label_t
-            getMinCardLabel(const Operands &operands, const std::set<label_t> &label_candidates,
-                            const std::set<label_t> &unused_result_labels, const Subscript &sc) {
-                const std::set<label_t> &candidates_to_be_used = (not unused_result_labels.empty())
-                                                                 ? unused_result_labels : label_candidates;
-                unused_result_labels.size();
-                if (candidates_to_be_used.size() == 1) {
-                    return *candidates_to_be_used.begin();
-                } else {
+					label_t min_label = *label_candidates.begin();
+					double min_cardinality = std::numeric_limits<double>::infinity();
+					for (const label_t &label : label_candidates) {
+						if (const double label_cardinality = calcCard(operands, label, sc);
+								label_cardinality < min_cardinality) {
+							min_cardinality = label_cardinality;
+							min_label = label;
+						}
+					}
+					return min_label;
+				}
+			}
 
-                    label_t min_label = *candidates_to_be_used.begin();
-                    double min_cardinality = INFINITY;
-                    for (const label_t &label: candidates_to_be_used) {
-                        if (const double label_cardinality = calcCard(operands, label, sc); label_cardinality <
-                                                                                            min_cardinality) {
-                            min_cardinality = label_cardinality;
-                            min_label = label;
-                        }
-                    }
-                    return min_label;
-                }
-            }
+			/**
+			 * Calculates the cardinality of an Label in an Step.
+			 * @tparam T type of the values hold by processed Tensors (Tensor).
+			 * @param operands Operands for this Step.
+			 * @param step current step
+			 * @param label the label
+			 * @return label's cardinality in current step.
+			 */
+			static double calcCard(const Operands &operands, const label_t &label, const Subscript &sc) {
+				// get operands that have the label
+				const std::vector<op_pos_t> &op_poss = sc.operandsWithLabel(label);
 
-            /**
-             * Calculates the cardinality of an Label in an Step.
-             * @tparam T type of the values hold by processed Tensors (Tensor).
-             * @param operands Operands for this Step.
-             * @param step current step
-             * @param label the label
-             * @return label's cardinality in current step.
-             */
-            static double calcCard(const Operands &operands, const label_t &label, const Subscript &sc) {
-                // get operands that have the label
-                const std::vector<op_pos_t> &op_poss = sc.operandsWithLabel(label);
+				std::vector<double> dim_cardinalities(op_poss.size(), 1.0);
+				double min_dim_cardinality = std::numeric_limits<double>::infinity();
+				auto label_count = 0;
 
-                std::vector<double> dim_cardinalities(op_poss.size(), INFINITY);
-                std::vector<double> operand_cardinalities(op_poss.size(), INFINITY);
-                double min_dim_cardinality = INFINITY;
+				// iterate the operands that hold the label
+				for (auto[i, op_pos] : enumerate(op_poss)) {
+					const auto &operand = operands[op_pos];
+					const auto dim_cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
+					const auto dim_card = *std::min_element(dim_cards.cbegin(), dim_cards.cend());
 
-                //iterate the operands that hold the label
-                for (const auto &[i, op_pos] : enumerate(op_poss)) {
-                    // get operand
-                    const BoolHyperTrie *operand = operands.at(op_pos);
-                    // get cardinality of the operand in this dimension
-                    const std::vector<size_t> cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
+					label_count += dim_cards.size();
+					if (dim_card == 0)
+						return 0;
 
-                    // calc it's cardinality
-                    const size_t &dim_cardinality = *std::min_element(cards.cbegin(), cards.cend());
-                    // if it is zero the overall cardinality is zero
-                    if (dim_cardinality == 0)
-                        return 0;
+					// update minimal dimenension cardinality
+					if (dim_card < min_dim_cardinality)
+						min_dim_cardinality = dim_card;
+					// update maximum dimenension cardinality
 
-                    if (dim_cardinality < min_dim_cardinality)
-                        min_dim_cardinality = dim_cardinality;
-                    dim_cardinalities[i] = dim_cardinality;
-                    operand_cardinalities[i] = operand->size();
-                }
+					dim_cardinalities[i] = dim_card;
+				}
 
-                // see: A. Swami and K. B. Schiefer, “On the estimation of join result sizes,” in International Conference on Extending Database Technology, 1994, pp. 287–300. (290-291)
-                const int i1 = std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
-                                               std::multiplies<size_t>());
-                const int i2 = std::accumulate(operand_cardinalities.cbegin(), operand_cardinalities.cend(), 1,
-                                               std::multiplies<size_t>());
-                const double d = min_dim_cardinality
-                                 * i2
-                                 / i1
-                                 //                 prefer smaller min_dim cardinality
-                                 + (1 - (1 / min_dim_cardinality));
-//                                 + (double(1) / double(op_poss.size()));
-                return d;
-            }
+				// see: A. Swami and K. B. Schiefer, “On the estimation of join
+				// result sizes,” in International Conference on Extending Database
+				// Technology, 1994, pp. 287–300. (290-291)
+				const int dim_cards =
+						std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
+						                std::multiplies<>());
+				const double card = std::pow(min_dim_cardinality, label_count) / dim_cards;
+				return card;
+			}
 
-        public:
-            friend std::ostream &operator<<(std::ostream &os, const Step &step) {
-                os << "Step: \n" << step._subscript;
-                os << "  label: " << step.label << "\n";
-                os << "  _label_candidates: " << step._label_candidates << "\n";
-                os << "  all_done: " << step.all_done << "\n";
-                os << "  _op_poss: " << step._op_poss << "\n";
-                os << "  _result_pos: " << step._result_pos << "\n";
-                os << "  _next_op_position: " << step.next_op_poss;
-                return os;
-            }
+		public:
+			friend struct ::fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step>;
+		};
+	};
+}; // namespace tnt::tensor::einsum
 
-        };
-    };
+template<>
+struct fmt::formatter<tnt::tensor::einsum::EinsumPlan::Step> {
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
-
+	template<typename FormatContext>
+	auto format(const tnt::tensor::einsum::EinsumPlan::Step &p, FormatContext &ctx) {
+		return format_to(ctx.begin(),
+		                 "<Step> \n"
+		                 "{}\n"
+		                 " label: {}\n"
+		                 " label_candidates: {}\n"
+		                 " all_done: {}\n"
+		                 " op_poss: {}\n"
+		                 " result_pos: {}\n"
+		                 " next_op_poss: {}\n",
+		                 *p.subscript, p.label, p.label_candidates, p.all_done, p.op_poss, p.result_pos,
+		                 p.next_op_poss);
+	}
 };
 
-
-#endif //SPARSETENSOR_EINSUM_EINSUMPLAN
+#endif // SPARSETENSOR_EINSUM_EINSUMPLAN

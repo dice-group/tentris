@@ -1,301 +1,338 @@
 #ifndef SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
 #define SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
 
-
 #include <algorithm>
+#include <memory>
 #include <numeric>
 #include <vector>
-#include <memory>
 
-#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/tensor/einsum/EinsumPlan.hpp"
-#include "tnt/tensor/hypertrie/Join.hpp"
-#include "tnt/tensor/einsum/operator/Slice.hpp"
-#include "tnt/util/All.hpp"
+#include "tnt/tensor/Result.hpp"
 #include "tnt/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tnt/tensor/einsum/operator/OperatorNode.hpp"
+#include "tnt/tensor/einsum/operator/Slice.hpp"
+#include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
+#include "tnt/tensor/hypertrie/Join.hpp"
+#include "tnt/util/All.hpp"
+#include "tnt/util/LogHelper.hpp"
 
 namespace {
-    using namespace tnt::tensor::hypertrie;
-    using namespace tnt::util::types;
-    using Join = tnt::tensor::hypertrie::Join;
-}
+	using namespace tnt::tensor::hypertrie;
+	using namespace tnt::util::types;
+	using Join = tnt::tensor::hypertrie::Join;
+	using namespace ::tnt::logging;
+} // namespace
 
 namespace tnt::tensor::einsum::operators {
-    /**
-     * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convenction Operation. In most cases this
-     * operator should only be used as sub operator of a CrossProduct as it is not very effective if an cross product is involved.
-     * @see CrossProduct
-     */
-    template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-    class Einsum : public OperatorNode<RESULT_TYPE> {
-    protected:
-        /**
-         * The evaluation plan for this->subscript.
-         */
-        mutable EinsumPlan _plan;
-        mutable std::vector<Slice<RESULT_TYPE>> _predecessors{};
-        mutable Operands _operands{};
-        mutable bool _operands_generated = false;
-        mutable bool _may_have_results = false;
+	/**
+	 * This is an basic Einstein-Summation Operator that can perform any Einstein Summation Convention Operation. In
+	 * most cases this operator should only be used as sub operator of a CrossProduct as it is not very effective if an
+	 * cross product is involved.
+	 * @see CrossProduct
+	 */
+	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
+	class Einsum : public OperatorNode<RESULT_TYPE> {
+	public:
+		using Slice_t = Slice<RESULT_TYPE>;
+		using yield_pull_t = yield_pull<RESULT_TYPE>;
+		using yield_push_t = yield_push<RESULT_TYPE>;
 
-    public:
+	protected:
+		/**
+		 * The evaluation plan for this->subscript.
+		 */
+		mutable EinsumPlan plan;
+		mutable std::vector<Slice_t> predecessors{};
+		mutable Operands operands{};
+		mutable bool operands_generated = false;
+		mutable bool may_have_results = false;
+		mutable bool result_calculated = false;
+		mutable Result<RESULT_TYPE> result{};
+		mutable ulong call_count = 0;
 
-        /**
-         * Constructor.
-         * @param subscript its subscript.
-         * @param slice_keys the key to its operators
-         * @param trie the tries that shall be sliced.
-         */
-        Einsum(const std::shared_ptr<const Subscript> subscript, const std::vector<SliceKey_t> &slice_keys,
-               const std::vector<BoolHyperTrie *> &tries)
-                : OperatorNode<RESULT_TYPE>{}, _plan{subscript} {
-            this->type = OperatorType::EINSUM;
-            for (const auto &[slice_key, trie] : zip(slice_keys, tries)) {
-                _predecessors.push_back({slice_key, trie});
-            }
-        }
+	public:
+		/**
+		 * Constructor.
+		 * @param subscript its subscript.
+		 * @param slice_keys the key to its operators
+		 * @param trie the tries that shall be sliced.
+		 */
+		Einsum(const std::shared_ptr<const Subscript> subscript, const std::vector<SliceKey_t> &slice_keys,
+		       const std::vector<BoolHyperTrie *> &tries)
+				: OperatorNode<RESULT_TYPE>{}, plan{subscript} {
+			this->type = OperatorType::EINSUM;
+			for (const auto[slice_key, trie] : zip(slice_keys, tries)) {
+				predecessors.push_back({slice_key, trie});
+			}
+		}
 
-        Einsum(Einsum &&) = default;
+		Einsum(Einsum &&) = default;
 
-        /**
-         * Prepares the arguments for the recursive calculation of the results.
-         * @param operands vector of tensors
-         */
-        static void calcEinsum(yield_push<RESULT_TYPE> &yield, const Operands &operands, const EinsumPlan &plan) {
-            // unpacks HyperTrieTensors to HyperTries or value types T
-            // initialize emtpy result key
-            // plan first step
-            EinsumPlan::Step step = plan.getInitialStep(operands);
+		virtual ~Einsum() = default;
 
-            Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
-            // start recursion
-            rekEinsum(yield, operands, result_key, step);
-        }
+		yield_pull_t get() const override { return yield_pull_t(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1)); }
 
-        /**
-         * Acutal recursion to calculate the result
-         * @param operands vector of current operands
-         * @param result_key current result key. Is filled step by step. When all positions are filled this key represents
-         * the key of an result value.
-         * @param step current step. This holds also data to plan the next step.
-         * @param label the current label that is to be processed in this recursive step
-         */
-        static void
-        rekEinsum(yield_push<RESULT_TYPE> &yield, const Operands &operands, const Key_t &result_key,
-                  const EinsumPlan::Step &step);
+		const Result<RESULT_TYPE> &getFullResult() const override {
+			calcResult();
+			return result;
+		}
 
-        static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
+		void clearCacheCanceled() const override {
+			if (not result_calculated or result.distinct_size() > 500) {
+				result_calculated = false;
+				result.clear();
+			}
+		}
 
-    private:
-        /**
-         * Extracts the operands needed for the given Einsum Operator.
-         * @param operands all operands that are input to this CrossProduct
-         * @param einsum the Einsum Operator that the operands shall be extracted
-         * @return the operands relevant for the given Einsum Operator
-         */
-        Operands extractRelevantOperands(const Operands &all_operands) const {
-            Operands operands{};
-            for (const op_pos_t &op_pos : _plan.getSubscript()->getOriginalOpPoss()) {
-                operands.push_back(all_operands.at(op_pos));
-            }
-            return operands;
-        }
+		void clearCacheDone() const override {
+			if (result.distinct_size() > 500) {
+				result_calculated = false;
+				result.clear();
+			}
+		}
 
-    public:
-        yield_pull<RESULT_TYPE> get() const override{
-            return yield_pull<RESULT_TYPE>(boost::bind(&Einsum<RESULT_TYPE>::get, this, _1));
-        }
+	private:
+		void checkTimeout() const {
+			if (++call_count > 500) {
+				if (std::chrono::system_clock::now() > this->timeout)
+					throw CancelProcessing{};
+				else
+					call_count = 0;
+			}
+		}
 
-    private:
-        void get(yield_push<RESULT_TYPE> &yield) const {
-            if (not _operands_generated) {
-                _operands_generated = true;
+		void calcResult() const {
+			// generate operands only once
+			if (not operands_generated) {
+				operands_generated = true;
 
-                for (Slice<RESULT_TYPE> &slice : _predecessors) {
-                    switch (slice.slice_type) {
-                        case Slice<RESULT_TYPE>::SCALAR: {
-                            if (not slice.getScalar())
-                                return;
-                            break;
-                        }
+				for (Slice_t &slice : predecessors) {
+					switch (slice.slice_type) {
+						case Slice_t::SCALAR: {
+							if (not slice.getScalar())
+								return;
+							break;
+						}
 
-                        case Slice<RESULT_TYPE>::HYPERTRIE: {
-                            BoolHyperTrie *trie = slice.getHyperTrie();
-                            if (trie == nullptr)
-                                return;
-                            _operands.push_back(trie);
-                            break;
-                        }
-                    }
-                }
-                _may_have_results = true;
-            }
+						case Slice_t::HYPERTRIE: {
+							BoolHyperTrie *trie = slice.getHyperTrie();
+							if (trie == nullptr)
+								return;
+							operands.push_back(trie);
+							break;
+						}
+					}
+				}
+				may_have_results = true;
+			}
 
-            if (_may_have_results) {
-                calcEinsum(yield, _operands, _plan);
-            }
-        }
+			if (may_have_results and not result_calculated) {
+				calcEinsum(result, operands, plan);
+				result_calculated = true;
+			}
+		}
 
-    public:
-        class iterator {
-            bool _ended;
-            const std::unique_ptr<yield_pull<RESULT_TYPE>> _results;
-        public:
-            explicit iterator(const Einsum &einsum, bool ended = false) :
-                    _ended{ended},
-                    _results{(not ended) ? std::unique_ptr<yield_pull<RESULT_TYPE>>{
-                            new yield_pull<RESULT_TYPE>(boost::bind(&get, &einsum))}
-                                         : std::unique_ptr<yield_pull<RESULT_TYPE>>{}} {
-                if (not _ended)
-                    _ended = not(*_results);
-            }
+		void get(yield_push_t &yield) const {
 
-            const RESULT_TYPE &operator*() {
-                return _results.get();
-            }
+			calcResult();
 
-            iterator &operator++() {
-                _results();
-                _ended = not(*_results);
-                return *this;
-            }
+			for (const auto &binding : result) {
+				yield(binding);
+			}
+		}
 
-            bool operator==(const iterator &rhs) const {
-                return _ended == rhs._ended;
-            }
+		/**
+		 * Prepares the arguments for the recursive calculation of the results.
+		 * @param operands vector of tensors
+		 */
+		void calcEinsum(Result<RESULT_TYPE> &result, const Operands &operands, const EinsumPlan &plan) const {
+			// unpacks HyperTrieTensors to HyperTries or value types T
+			// initialize emtpy result key
+			// plan first step
+			EinsumPlan::Step step = plan.getInitialStep(operands);
 
-            bool operator!=(const iterator &rhs) const {
-                return !(rhs == *this);
-            }
+			Key_t result_key = Key_t(step.getResultSize(), KEY_PART_MAX);
+			// start recursion
+			try {
+				call_count = 0;
+				checkTimeout();
+				rekEinsum(result, operands, result_key, step);
+			} catch (CancelProcessing &ex) {
+				result.clear();
+			}
+		}
 
-        };
+		/**
+		 * Acutal recursion to calculate the result
+		 * @param operands vector of current operands
+		 * @param result_key current result key. Is filled step by step. When all positions are filled this key represents
+		 * the key of an result value.
+		 * @param step current step. This holds also data to plan the next step.
+		 * @param label the current label that is to be processed in this recursive step
+		 */
+		void rekEinsum(Result<RESULT_TYPE> &, const Operands &operands, const Key_t &result_key,
+		               const EinsumPlan::Step &step) const;
 
-        iterator begin() {
-            return iterator{*this};
-        };
+		static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
 
-        iterator end() {
-            return iterator{*this, true};
-        };
-    };
 
-    template<>
-    typename counted_binding::count_t Einsum<counted_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
-        const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
-        std::vector<size_t> results(operands.size());
-        for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
-            const auto &[op, unique_contraction] = op_and_contr;
+	public:
+		typename RESULT_TYPE::collection_t::iterator begin() {
+			calcResult();
+			return result.begin();
+		}
 
-            if (not unique_contraction.empty() and op->depth() == 3)
-                for (const BoolHyperTrie *hyperTrie : BoolHyperTrie::DiagonalView{op, unique_contraction})
-                    results[op_pos] += hyperTrie->size();
-            else
-                results[op_pos] += op->size();
-        }
-        return std::accumulate(results.begin(), results.end(), size_t(1), std::multiplies<size_t>());
-    }
+		typename RESULT_TYPE::collection_t::iterator end() {
+			calcResult();
+			return result.end();
+		}
 
-    template<>
-    void Einsum<counted_binding>::rekEinsum(
-            yield_push<counted_binding> &yield,
-            const Operands &operands,
-            const Key_t &result_key,
-            const EinsumPlan::Step &step) {
-        using RESULT_TYPE = std::tuple<Key_t, size_t>;
-        // there are steps left
-        if (not step.all_done) {
-            // calculate next operands and result_key from current operands, step, label and resultKey
-            Join join{result_key, operands, step};
+		typename RESULT_TYPE::collection_t::const_iterator cbegin() const {
+			calcResult();
+			return result.cbegin();
+		}
 
-            for (const auto&[next_operands, next_result_key] : join) {
-                const EinsumPlan::Step &next_step = step.nextStep(next_operands);
-                // start next recursive step.
-                rekEinsum(yield, next_operands, next_result_key, next_step);
-            }
-        } else { // there are no steps left
-            if (not operands.empty()) { // there are lonely and/or unique labels left.
-                const size_t i = contract(operands, step);
-                if (i > 0)
-                    yield({result_key, i});
-            } else { // no labels left
-                yield({result_key, 1});
-            }
-        }
-    };
+		typename RESULT_TYPE::collection_t::const_iterator cend() const {
+			calcResult();
+			return result.cend();
+		}
 
-    template<>
-    bool Einsum<distinct_binding >::contract(const Operands &operands, const EinsumPlan::Step &step) {
-        const std::vector<std::vector<label_pos_t>> &unique_contractions = step.getUniqueNonResultContractions();
-        std::vector<bool> results(operands.size(), false);
-        for (const auto &[op_pos, op_and_contr] : enumerate(zip(operands, unique_contractions))) {
-            const auto &[op, unique_contraction] = op_and_contr;
+		friend bool
+		rekEinsumBoolNonResult(const Einsum<distinct_binding> &einsum, const Operands &operands,
+		                       const Key_t &result_key, const EinsumPlan::Step &step);
+	};
 
-            if (not unique_contraction.empty() and op->depth() == 3)
-                for ([[maybe_unused]]const BoolHyperTrie *hyperTrie :
-                        BoolHyperTrie::DiagonalView{op, unique_contraction}) {
-                    results[op_pos] = true;
-                    break;
-                }
-            else
-                results[op_pos] = true;
-        }
-        return std::accumulate(results.begin(), results.end(), true, std::logical_and<bool>());
-    }
+	template<>
+	typename counted_binding::count_t
+	Einsum<counted_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
 
-    void rekEinsumBoolNonResult(
-            yield_push<distinct_binding> &yield,
-            const Operands &operands,
-            const Key_t &result_key,
-            const EinsumPlan::Step &step) {
-        // there are steps left
-        if (not step.all_done) {
-            // calculate next operands and result_key from current operands, step, label and resultKey
-            Join join{result_key, operands, step};
-            for (const auto&[next_operands, next_result_key] : join) {
-                const EinsumPlan::Step &next_step = step.nextStep(next_operands);
-                // start next recursive step.
-                rekEinsumBoolNonResult(yield, next_operands, next_result_key, next_step);
-                break;
-            }
-        } else { // there are no steps left
-            if (not operands.empty()) {
-                if (Einsum<distinct_binding>::contract(operands, step)) {
-                    // there are lonely and/or unique labels left.
-                    yield(result_key);
-                }
-            } else { // no labels left
-                yield(result_key);
-            }
-        }
-    };
+		std::vector<counted_binding::count_t> results(operands.size(), 0);
+		for (const auto[op_pos, op_and_contr] : enumerate(zip(operands, step.getUniqueNonResultContractions()))) {
+			const auto &[op, unique_contraction] = op_and_contr;
 
-    template<>
-    void Einsum<distinct_binding>::rekEinsum(
-            yield_push<distinct_binding> &yield,
-            const Operands &operands,
-            const Key_t &result_key,
-            const EinsumPlan::Step &step) {
-        // there are steps left
-        if (step.result_labels_done) {
-            rekEinsumBoolNonResult(yield, operands, result_key, step);
-        } else if (not step.all_done) {
-            // calculate next operands and result_key from current operands, step, label and resultKey
-            Join join{result_key, operands, step};
-            for (const auto&[next_operands, next_result_key] : join) {
-                const EinsumPlan::Step &next_step = step.nextStep(next_operands);
-                // start next recursive step.
-                rekEinsum(yield, next_operands, next_result_key, next_step);
-            }
-        } else { // there are no steps left
-            if (not operands.empty()) {
-                if (contract(operands, step)) { // there are lonely and/or unique labels left.
-                    yield(result_key);
-                }
-            } else { // no labels left
-                yield(result_key);
-            }
-        }
-    };
-}
-#endif //SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
+			if (unique_contraction.empty() or op->depth() != 3) {
+				results[op_pos] += op->size();
+			} else {
+				for (const BoolHyperTrie *hyperTrie : BoolHyperTrie::DiagonalView{op, unique_contraction})
+					results[op_pos] += hyperTrie->size();
+			}
+		}
+		return std::accumulate(results.begin(), results.end(), counted_binding::count_t(1), std::multiplies<>());
+	}
+
+	template<>
+	distinct_binding::count_t
+	Einsum<distinct_binding>::contract(const Operands &operands, const EinsumPlan::Step &step) {
+		std::vector<distinct_binding::count_t> results(operands.size(), false);
+		// A unique label is a label that is only present at one operand but there it must be present at least twice. If
+		// it is present only once it is an lonely label.
+		for (const auto[op_pos, op_and_contr] : enumerate(zip(operands, step.getUniqueNonResultContractions()))) {
+			const auto &[op, unique_contraction] = op_and_contr;
+			if (unique_contraction.empty() or op->depth() != 3) {
+				results[op_pos] = true;
+			} else { // not unique_contraction.empty() and op->depth() == 3
+				// it could be that there is one unique label and one lonely label.
+				// TODO: compute an estimation if it is better to first process the unique label oder the lonely label
+				BoolHyperTrie::DiagonalView diag{op, unique_contraction};
+				if (diag.begin() != diag.end())
+					results[op_pos] = true;
+			}
+		}
+		return std::accumulate(results.begin(), results.end(), true, std::logical_and<>());
+	}
+
+	template<>
+	void Einsum<counted_binding>::rekEinsum(Result<counted_binding> &result, const Operands &operands,
+	                                        const Key_t &result_key, const EinsumPlan::Step &step) const {
+		checkTimeout();
+		// there are steps left
+		if (not step.all_done) {
+			// calculate next operands and result_key from current operands, step, label and resultKey
+			Join join{result_key, operands, step};
+
+			for (const auto &[next_operands, next_result_key] : join) {
+				const EinsumPlan::Step &next_step = step.nextStep(next_operands);
+				// start next recursive step.
+				rekEinsum(result, next_operands, next_result_key, next_step);
+			}
+		} else {                                 // there are no steps left
+			if (not operands.empty()) { // there are lonely and/or unique labels left.
+				const size_t i = contract(operands, step);
+				if (i > 0)
+					result.insert({result_key, i});
+			} else { // no labels left
+				result.insert({result_key, 1});
+			}
+		}
+	};
+
+	/**
+	 * Assume a distinct/bool query/einsum operation. If all result labels were processed it is sufficient to check if
+	 * any valid combination for the remaining labels exists.
+	 * @param operands
+	 * @param result_key
+	 * @param step
+	 * @return if a valid combination of label bindings was found return
+	 */
+
+	inline bool
+	rekEinsumBoolNonResult(const Einsum<distinct_binding> &einsum, const Operands &operands, const Key_t &result_key,
+	                       const EinsumPlan::Step &step) {
+		einsum.checkTimeout();
+
+		// there are steps left
+		if (not step.all_done) {
+			// calculate next operands and result_key from current operands, step, label and resultKey
+			Join join{result_key, operands, step};
+			for (const auto[next_operands, next_result_key] : join) {
+				const EinsumPlan::Step &next_step = step.nextStep(next_operands);
+				tnt::logging::log(fmt::format("{}\n", next_step));
+				// start next recursive step.
+				bool exists = rekEinsumBoolNonResult(einsum, next_operands, next_result_key, next_step);
+				if (exists) // if a valid combination of label bindings was found return
+					return true;
+			}
+			// no valid combination of label bindings was found for this step
+			return false;
+
+		} else {                            // there are no steps left
+			if (operands.empty()) { // there are no further labels left. all operands are already reduced to scalars.
+				return true;
+			} else { // no labels left
+				return Einsum<distinct_binding>::contract(operands, step);
+			}
+		}
+	};
+
+	template<>
+	void Einsum<distinct_binding>::rekEinsum(Result<distinct_binding> &result, const Operands &operands,
+	                                         const Key_t &result_key, const EinsumPlan::Step &step) const {
+		checkTimeout();
+		logTrace("step: {}"_format(step));
+		// there are steps with operand labels left
+		if (not step.result_labels_done) {
+			// calculate next operands and result_key from current operands, step, label and resultKey
+			Join join{result_key, operands, step};
+			for (const auto &[next_operands, next_result_key] : join) {
+				const EinsumPlan::Step &next_step = step.nextStep(next_operands);
+				// start next recursive step.
+				rekEinsum(result, next_operands, next_result_key, next_step);
+			}
+		} else if (step.all_done) {
+			if (operands.empty()) { // there are no further labels left. all operands are already reduced to scalars.
+				result.insert(result_key);
+			} else { // no labels left
+				if (Einsum<distinct_binding>::contract(operands, step)) {
+					result.insert(result_key);
+				}
+			}
+		} else if (not result.contains(result_key) and rekEinsumBoolNonResult(*this, operands, result_key, step)) {
+			// there are no steps with operand labels left
+			// check if  a valid combination of non-result labels for the current result candidate exists
+			result.insert(result_key);
+		}
+
+	};
+
+} // namespace tnt::tensor::einsum::operators
+#endif // SPARSETENSOR_EINSUM_OPERATOR_EINSUM_HPP
