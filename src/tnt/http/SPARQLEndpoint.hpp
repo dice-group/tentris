@@ -38,11 +38,6 @@ namespace {
 } // namespace
 namespace tnt::http {
 	/**
-	 * Counts the number of open connections.
-	 */
-	static std::atomic_uint open_connections{0};
-
-	/**
 	 * Main SPARQL endpoint. Parses HTTP queries and returns SPARQL JSON Results.
 	 */
 	class SPARQLEndpoint : public Handler {
@@ -53,13 +48,6 @@ namespace tnt::http {
 
 		void onRequest(const Request &request, ResponseWriter response) override {
 			log("### Request begin ###");
-			if (open_connections > 100) {
-				response.send(Code::Service_Unavailable);
-				log("canceled: more than 100 connections are open.\n");
-				return;
-			} else {
-				++open_connections;
-			}
 
 			try { // if something fails return an internal server error
 				// only answer sparql querys to GET /sparql
@@ -84,11 +72,9 @@ namespace tnt::http {
 									// This catch is only for logging.
 									// Returning a HTTP response must be handled in the function that times out, i.e.:
 									// runQuery(response, query_package, AtomicTripleStore::getInstance());
-									--open_connections;
 									logCanceled("timeout", &exc);
 									return;
 								}
-								--open_connections;
 								log("Resources at the end:");
 								log_health_data();
 								log("### Request end ###\n");
@@ -96,7 +82,6 @@ namespace tnt::http {
 							} catch (const std::invalid_argument &exc) {
 								// handles if the request was not parsable in:
 								// auto query_package = AtomicTripleStore::getInstance().query(sparqlQueryStr);
-								--open_connections;
 								response.send(Code::Bad_Request, "Could not parse the requested query.");
 								logCanceled("unparsable query", &exc);
 
@@ -106,12 +91,10 @@ namespace tnt::http {
 								// handles timeouts of
 								// auto query_package = AtomicTripleStore::getInstance().query(sparqlQueryStr);
 								response.send(Http::Code::Request_Timeout);
-								--open_connections;
 								logCanceled("timeout", &exc);
 								return;
 							} catch (const std::exception &exc) {
 								// if the execution of the query should fail return an internal server error
-								--open_connections;
 								response.send(Code::Internal_Server_Error);
 								logCanceled("internal server error", &exc);
 								return;
@@ -120,21 +103,18 @@ namespace tnt::http {
 					}
 				}
 				response.send(Code::I_m_a_teapot);
-				--open_connections;
 				log("Request to something that doesn't exist.\n");
 				log("### Request end ###\n");
 				log("");
 				return;
 			} catch (std::exception &exc) {
 				response.send(Code::Internal_Server_Error);
-				--open_connections;
 				log("Unhandled exception {}"_format(exc));
 
 				return;
 			} catch (...) {
 				std::exception_ptr exc = std::current_exception();
 				response.send(Code::Internal_Server_Error);
-				--open_connections;
 				logCanceled("Unhandled exception");
 				return;
 			}
