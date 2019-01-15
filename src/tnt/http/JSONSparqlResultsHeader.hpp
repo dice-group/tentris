@@ -9,14 +9,14 @@
 namespace tnt::http {
     class SPARQLJSON : public Pistache::Http::Header::Header {
     public:
-        NAME("Content-Type");
+        NAME("Content-Type")
 
         SPARQLJSON() {}
 
-        void parse([[maybe_unused]] const std::string &str) {
+        void parse([[maybe_unused]] const std::string &str) override {
         }
 
-        void write(std::ostream &os) const {
+        void write(std::ostream &os) const override {
             os << "application/sparql-results+json";
         }
     };
