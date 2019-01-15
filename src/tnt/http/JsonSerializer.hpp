@@ -24,7 +24,7 @@ namespace {
 namespace tnt::http {
 	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
 	void steamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
-	               const TripleStore &store, const system_clock::time_point &timeout) {
+				   const TripleStore &store, const system_clock::time_point &timeout) {
 		ulong result_count = 0;
 
 		stream << "{\"head\":{\"vars\":[";
@@ -45,7 +45,7 @@ namespace tnt::http {
 			std::stringstream json_result{};
 			json_result << "{";
 			bool firstKey = true;
-			for (const auto &[binding, var] : zip(key, vars)) {
+			for (const auto[binding, var] : zip(key, vars)) {
 				Term &term = *store.getTermIndex().inv().at(binding);
 
 				if (firstKey) {

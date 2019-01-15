@@ -23,8 +23,13 @@ namespace tnt::tensor::einsum::operators {
 	class OperatorNode {
 	protected:
 		std::chrono::system_clock::time_point timeout;
+		size_t cache_bucket_size;
+
+		OperatorNode(size_t cache_bucket_size) : cache_bucket_size{cache_bucket_size} {}
 
 	public:
+
+
 		OperatorType type;
 
 		virtual yield_pull <RESULT_TYPE> get() const = 0;
@@ -35,7 +40,10 @@ namespace tnt::tensor::einsum::operators {
 
 		virtual void clearCacheDone() const = 0;
 
-		virtual void setTimeout(const std::chrono::system_clock::time_point &timeout) { this->timeout = timeout; }
+		virtual void setTimeout(const std::chrono::system_clock::time_point &timeout) {
+			this->timeout = timeout;
+			this->cache_bucket_size = cache_bucket_size;
+		}
 	};
 } // namespace tnt::tensor::einsum::operators
 

@@ -57,9 +57,10 @@ namespace tnt::tensor::einsum::operators {
 		 * @param slice_keys the key to its operators
 		 * @param trie the tries that shall be sliced.
 		 */
-		Einsum(const std::shared_ptr<const Subscript> subscript, const std::vector<SliceKey_t> &slice_keys,
-		       const std::vector<BoolHyperTrie *> &tries)
-				: OperatorNode<RESULT_TYPE>{}, plan{subscript} {
+		Einsum(size_t cache_bucket_size, const std::shared_ptr<const Subscript> subscript,
+			   const std::vector<SliceKey_t> &slice_keys,
+			   const std::vector<BoolHyperTrie *> &tries)
+				: OperatorNode<RESULT_TYPE>{cache_bucket_size}, plan{subscript} {
 			this->type = OperatorType::EINSUM;
 			for (const auto[slice_key, trie] : zip(slice_keys, tries)) {
 				predecessors.push_back({slice_key, trie});
@@ -78,21 +79,21 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 		void clearCacheCanceled() const override {
-			if (not result_calculated or result.distinct_size() > 500) {
+			if (not result_calculated or result.distinct_size() > this->cache_bucket_size) {
 				result_calculated = false;
 				result.clear();
 			}
 		}
 
 		void clearCacheDone() const override {
-			if (result.distinct_size() > 500) {
+			if (result.distinct_size() > this->cache_bucket_size) {
 				result_calculated = false;
 				result.clear();
 			}
 		}
 
 	private:
-		void checkTimeout() const {
+		inline void checkTimeout() const {
 			if (++call_count > 500) {
 				if (std::chrono::system_clock::now() > this->timeout)
 					throw CancelProcessing{};
@@ -171,7 +172,7 @@ namespace tnt::tensor::einsum::operators {
 		 * @param label the current label that is to be processed in this recursive step
 		 */
 		void rekEinsum(Result<RESULT_TYPE> &, const Operands &operands, const Key_t &result_key,
-		               const EinsumPlan::Step &step) const;
+					   const EinsumPlan::Step &step) const;
 
 		static typename RESULT_TYPE::count_t contract(const Operands &operands, const EinsumPlan::Step &step);
 
@@ -199,7 +200,7 @@ namespace tnt::tensor::einsum::operators {
 
 		friend bool
 		rekEinsumBoolNonResult(const Einsum<distinct_binding> &einsum, const Operands &operands,
-		                       const Key_t &result_key, const EinsumPlan::Step &step);
+							   const Key_t &result_key, const EinsumPlan::Step &step);
 	};
 
 	template<>
@@ -243,7 +244,7 @@ namespace tnt::tensor::einsum::operators {
 
 	template<>
 	void Einsum<counted_binding>::rekEinsum(Result<counted_binding> &result, const Operands &operands,
-	                                        const Key_t &result_key, const EinsumPlan::Step &step) const {
+											const Key_t &result_key, const EinsumPlan::Step &step) const {
 		checkTimeout();
 		// there are steps left
 		if (not step.all_done) {
@@ -277,7 +278,7 @@ namespace tnt::tensor::einsum::operators {
 
 	inline bool
 	rekEinsumBoolNonResult(const Einsum<distinct_binding> &einsum, const Operands &operands, const Key_t &result_key,
-	                       const EinsumPlan::Step &step) {
+						   const EinsumPlan::Step &step) {
 		einsum.checkTimeout();
 
 		// there are steps left
@@ -306,7 +307,7 @@ namespace tnt::tensor::einsum::operators {
 
 	template<>
 	void Einsum<distinct_binding>::rekEinsum(Result<distinct_binding> &result, const Operands &operands,
-	                                         const Key_t &result_key, const EinsumPlan::Step &step) const {
+											 const Key_t &result_key, const EinsumPlan::Step &step) const {
 		checkTimeout();
 		logTrace("step: {}"_format(step));
 		// there are steps with operand labels left

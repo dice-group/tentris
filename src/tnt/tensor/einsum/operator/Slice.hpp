@@ -30,7 +30,8 @@ namespace tnt::tensor::einsum::operators {
 
 	public:
 		Slice(const SliceKey_t &key, const BoolHyperTrie *trie)
-				: slice_type{hasSlices(key) ? HYPERTRIE : SCALAR}, _key{key}, _trie{trie} {}
+				: OperatorNode<RESULT_TYPE>{0}, slice_type{hasSlices(key) ? HYPERTRIE : SCALAR}, _key{key},
+				  _trie{trie} {}
 
 		virtual ~Slice() = default;
 

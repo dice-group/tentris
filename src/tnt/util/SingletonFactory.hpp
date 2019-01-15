@@ -7,39 +7,43 @@
 #include <mutex>
 
 namespace tnt::util::sync {
-    template<typename Class>
-    class SingletonFactory {
-    public:
-        static Class &getInstance() {
-            Class *inst = instance.load(std::memory_order_acquire);
-            if (!inst) {
-                std::lock_guard<std::mutex> myLock(mutex);
-                inst = instance.load(std::memory_order_relaxed);
-                if (!inst) {
-                    inst = new Class();
-                    instance.store(inst, std::memory_order_release);
-                }
-            }
-            return *inst;
-        }
+	template<typename Class>
+	class SingletonFactory {
+	public:
+		static Class &getInstance() {
+			Class *inst = instance.load(std::memory_order_acquire);
+			if (!inst) {
+				std::lock_guard<std::mutex> myLock(mutex);
+				inst = instance.load(std::memory_order_relaxed);
+				if (!inst) {
+					inst = make_instance();
+					instance.store(inst, std::memory_order_release);
+				}
+			}
+			return *inst;
+		}
 
-    protected:
-        SingletonFactory() = default;
+	protected:
+		SingletonFactory() = default;
 
-        ~SingletonFactory() = default;
+		~SingletonFactory() = default;
 
-        SingletonFactory(const SingletonFactory &) = delete;
+		SingletonFactory(const SingletonFactory &) = delete;
 
-        SingletonFactory &operator=(const SingletonFactory &) = delete;
+		SingletonFactory &operator=(const SingletonFactory &) = delete;
 
-        static std::atomic<Class *> instance;
-        static std::mutex mutex;
-    };
+		static std::atomic<Class *> instance;
+		static std::mutex mutex;
 
-    template<typename Class>
-    std::atomic<Class *> SingletonFactory<Class>::instance;
+		static Class *make_instance() {
+			return new Class();
+		}
+	};
 
-    template<typename Class>
-    std::mutex  SingletonFactory<Class>::mutex;
+	template<typename Class>
+	std::atomic<Class *> SingletonFactory<Class>::instance;
+
+	template<typename Class>
+	std::mutex  SingletonFactory<Class>::mutex;
 }
 #endif //TNT_SINGLETONFACTORY_HPP

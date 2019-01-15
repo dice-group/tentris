@@ -2,6 +2,7 @@
 #define TNT_SPARQLREQUESTTHREAD_HPP
 
 #include "tnt/http/JsonSerializer.hpp"
+#include "tnt/http/JSONSparqlResultsHeader.hpp"
 #include "tnt/store/QueryExecutionPackage.hpp"
 #include "tnt/store/SPARQL/ParsedSPARQL.hpp"
 #include "tnt/store/TripleStore.hpp"
@@ -34,7 +35,7 @@ namespace tnt::http {
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
 	void runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
-	              TripleStore &store) {
+				  TripleStore &store) {
 
 		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 		const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();

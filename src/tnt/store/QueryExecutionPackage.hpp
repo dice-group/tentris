@@ -40,13 +40,14 @@ namespace tnt::store::cache {
 		std::chrono::system_clock::time_point keep_result_timeout =
 				std::numeric_limits<std::chrono::system_clock::time_point>::min();
 
-	public:
 		/**
 		 * Indicates if the QueryExecutionPackage represents an distinct query or not. If it is distinct use only
 		 * the methods with distinct in their names. Otherwise use only the methods with regular in their names
 		 */
 		bool is_distinct;
 		bool is_trivial_emtpy;
+
+        size_t cache_bucket_size;
 
 	private:
 		std::unique_ptr<OperatorNode<counted_binding>> regular_operator_tree;
@@ -60,9 +61,9 @@ namespace tnt::store::cache {
 		 * @param termIndex term store attached to the trie
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
-		QueryExecutionPackage(const std::string &sparql_string, BoolHyperTrie &trie, const TermStore &termIndex)
+        QueryExecutionPackage(const std::string &sparql_string, BoolHyperTrie &trie, const TermStore &termIndex, size_t cache_bucket_size)
 				: parsedSPARQL{sparql_string},
-				  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)} {
+                  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)}, cache_bucket_size{cache_bucket_size} {
 
 			const auto slice_keys = generateSliceKeys(parsedSPARQL.getBgps(), trie, termIndex);
 
@@ -104,13 +105,13 @@ namespace tnt::store::cache {
 			processing.unlock();
 		}
 
-		void setTimeout(const std::chrono::system_clock::time_point &timeout) {
+        void setTimeout(const std::chrono::system_clock::time_point &timeout) {
 			this->timeout = timeout;
 			if (not is_trivial_emtpy) {
 				if (not is_distinct)
-					regular_operator_tree->setTimeout(timeout);
+                    regular_operator_tree->setTimeout(timeout);
 				else
-					distinct_operator_tree->setTimeout(timeout);
+                    distinct_operator_tree->setTimeout(timeout);
 			}
 		}
 
@@ -133,10 +134,10 @@ namespace tnt::store::cache {
 		                                                             const std::vector<BoolHyperTrie *> &hypertries) {
 			if (auto subsubscripts = subscript->getSubSubscripts(); not subsubscripts.empty()) {
 				return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
-						new CrossProduct<RESULT_TYPE>{subscript, slice_keys, hypertries}};
+                        new CrossProduct<RESULT_TYPE>{cache_bucket_size, subscript, slice_keys, hypertries}};
 			} else {
 				return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
-						new Einsum<RESULT_TYPE>{subscript, slice_keys, hypertries}};
+                        new Einsum<RESULT_TYPE>{cache_bucket_size, subscript, slice_keys, hypertries}};
 			}
 		}
 

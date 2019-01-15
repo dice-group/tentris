@@ -36,8 +36,8 @@ namespace tnt::store {
         mutable QueryExecutionPackage_cache query_cache;
 
     public:
-        explicit TripleStore(uint cache_capacity = 1000) :
-                query_cache{trie, termIndex, cache_capacity} {}
+        explicit TripleStore(size_t cache_capacity = 500, size_t cache_bucket_size = 500, std::chrono::system_clock::duration timeout = std::chrono::seconds(180)) :
+                query_cache{trie, termIndex, cache_capacity, cache_bucket_size, timeout} {}
 
 
         TermStore &getTermIndex() {

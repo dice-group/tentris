@@ -18,7 +18,7 @@ namespace tnt::store::cache {
 	protected:
 		QueryExecutionPackage *construct(const std::string &key) override {
 			try {
-				auto *qep = new QueryExecutionPackage{key, trie, termIndex};
+                auto *qep = new QueryExecutionPackage{key, trie, termIndex, cache_bucket_size};
 				return qep;
 			} catch ([[maybe_unused]] std::invalid_argument &exc) {
 			}
@@ -28,11 +28,13 @@ namespace tnt::store::cache {
 		BoolHyperTrie &trie;
 		TermStore &termIndex;
 
+        size_t cache_bucket_size;
+
 	public: // TODO: use atomic config to initialize ot
-		QueryExecutionPackage_cache(BoolHyperTrie &trie, TermStore &termIndex, uint capacity = 500,
+        QueryExecutionPackage_cache(BoolHyperTrie &trie, TermStore &termIndex, size_t cache_capacity = 500, size_t cache_bucket_size = 500,
 		                            std::chrono::system_clock::duration max_processing_time = std::chrono::seconds(180))
-				: SynchronizedCachedFactory{capacity}, max_processing_time{max_processing_time}, trie{trie}, termIndex{
-				termIndex} {}
+                : SynchronizedCachedFactory{cache_capacity}, max_processing_time{max_processing_time}, trie{trie}, termIndex{
+                termIndex}, cache_bucket_size{cache_bucket_size} {}
 
 		/**
 		 * Get a query execution package for this query.

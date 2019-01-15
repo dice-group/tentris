@@ -59,20 +59,21 @@ namespace tnt::tensor::einsum::operators {
 
 		/**
 		 * Constructor
-         * @param subscript the passed Subscript must represent the dimension layout of the HyperTrieTenors
-         * (HyperTrieTenor) that will be passed to getResult() . It will be bracketing out cross product factors will be
-         * done internally.
+		 * @param subscript the passed Subscript must represent the dimension layout of the HyperTrieTenors
+		 * (HyperTrieTenor) that will be passed to getResult() . It will be bracketing out cross product factors will be
+		 * done internally.
 		 */
-		CrossProduct(const std::shared_ptr<const Subscript> subscript, const std::vector<SliceKey_t> &slice_keys,
-		             const std::vector<BoolHyperTrie *> &tries)
-				: OperatorNode<RESULT_TYPE>{}, subscript{subscript} {
+		CrossProduct(const size_t cache_bucket_size, const std::shared_ptr<const Subscript> subscript,
+					 const std::vector<SliceKey_t> &slice_keys,
+					 const std::vector<BoolHyperTrie *> &tries)
+				: OperatorNode<RESULT_TYPE>{cache_bucket_size}, subscript{subscript} {
 			this->type = OperatorType::CROSSPRODUCT;
 			auto[sub_slice_keys, sub_tries] = extractSliceKeysAndTries(subscript, slice_keys, tries);
 			for (const auto &[sub_subscript, sub_slice_key, sub_tries] :
 					zip(subscript->getSubSubscripts(), sub_slice_keys, sub_tries)) {
 				// TODO: use Slices directly for subsubscripts with empty result labels
 				predecessors.emplace_back(std::shared_ptr<OperatorNode<RESULT_TYPE>>{
-						new Einsum<RESULT_TYPE>{sub_subscript, sub_slice_key, sub_tries}});
+						new Einsum<RESULT_TYPE>{cache_bucket_size, sub_subscript, sub_slice_key, sub_tries}});
 			}
 		}
 
@@ -113,9 +114,9 @@ namespace tnt::tensor::einsum::operators {
 		}
 
 		void rek_set_key(yield_push <RESULT_TYPE> &yield, Key_t &result_key,
-		                 const std::vector<op2result_pos_t> &pos_mappings, count_t &total_count,
-		                 const size_t last_op_pos,
-		                 const size_t op_pos = 0) const {
+						 const std::vector<op2result_pos_t> &pos_mappings, count_t &total_count,
+						 const size_t last_op_pos,
+						 const size_t op_pos = 0) const {
 			const op2result_pos_t &pos_mapping = pos_mappings.at(op_pos);
 			if (op_pos != last_op_pos) {
 				for (const auto &binding : predecessors.at(op_pos)->getFullResult()) {
@@ -157,8 +158,8 @@ namespace tnt::tensor::einsum::operators {
 		 */
 		std::tuple<std::vector<std::vector<SliceKey_t>>, std::vector<std::vector<BoolHyperTrie *>>>
 		extractSliceKeysAndTries(const std::shared_ptr<const Subscript> subscript,
-		                         const std::vector<SliceKey_t> &slice_keys,
-		                         const std::vector<BoolHyperTrie *> &tries) {
+								 const std::vector<SliceKey_t> &slice_keys,
+								 const std::vector<BoolHyperTrie *> &tries) {
 			const std::vector<std::shared_ptr<Subscript>> &subsubscripts = subscript->getSubSubscripts();
 
 			std::vector<std::vector<SliceKey_t>> sub_slices_keys(subsubscripts.size());
