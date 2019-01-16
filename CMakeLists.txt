@@ -25,7 +25,7 @@ ENDIF ()
 
 # build antlr4
 add_definitions(-DANTLR4CPP_STATIC)
-set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
+set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.2-complete.jar)
 include(ExternalAntlr4Cpp)
 
 find_package(ANTLR REQUIRED)
