@@ -14,7 +14,7 @@ namespace {
 }
 
 
-TEST(TestJoin, full_sc_1_10_1___0) {
+TEST(TestJoin, DISABLED_full_sc_1_10_1___0) {
     BoolHyperTrie tensor_0 = {{0},
                               {1},
                               {2}};

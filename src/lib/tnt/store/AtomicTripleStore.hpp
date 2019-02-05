@@ -4,12 +4,12 @@
 
 #include "tnt/util/SingletonFactory.hpp"
 #include "tnt/store/TripleStore.hpp"
-#include "tnt/config/Config.cpp"
+#include "tnt/store/config/AtomicTripleStoreConfig.cpp"
 
 namespace {
     using namespace tnt::store;
     using namespace tnt::util::sync;
-    using namespace tnt::config;
+	using namespace tnt::store::config;
 }
 
 namespace tnt::store {
@@ -22,8 +22,8 @@ namespace tnt::store {
 
     protected:
         static TripleStore *make_instance(){
-            const auto & config = AtomicConfig::getInstance();
-            return new TripleStore(config.cache_size, config.cache_size);
+            const auto & config = AtomicTripleStoreConfig::getInstance();
+            return new TripleStore{config.cache_size, config.cache_bucket_capacity, config.timeout};
         }
     };
 };

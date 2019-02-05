@@ -12,7 +12,6 @@
 #include <pistache/http.h>
 #include <pistache/router.h>
 
-#include "tnt/config/Config.cpp"
 #include "tnt/http/JSONSparqlResultsHeader.hpp"
 #include "tnt/http/JsonSerializer.hpp"
 #include "tnt/http/RunQuery.hpp"
@@ -26,7 +25,6 @@ namespace {
 	using namespace ::Pistache;
 	using namespace ::Pistache::Http;
 	using namespace ::tnt::util::types;
-	using namespace ::tnt::config;
 	using namespace ::tnt::tensor::einsum;
 	using namespace ::tnt::tensor::hypertrie;
 	using namespace ::tnt::tensor::einsum::operators;

@@ -94,30 +94,45 @@ set(libraries_to_link
         Boost::boost # header only boost libraries
         fmt::fmt
         ${Boost_LIBRARIES}
-        ${Pistache_LIBRARY}
         )
 
 # make a library of the code
-add_library(libsparsetensor STATIC
+add_library(tentris SHARED
         src/
         )
 
-target_link_libraries(libsparsetensor
+target_link_libraries(tentris
+        PRIVATE
         ${libraries_to_link}
         )
 
-target_include_directories(libsparsetensor PUBLIC
-        src/
+target_include_directories(tentris PUBLIC
+        src/lib/
         )
 
 # main executable target
-add_executable(tnt_exec src/Main.cpp)
-target_include_directories(tnt_exec PRIVATE
-        src/
+add_executable(tentris_server src/exec/HTTPEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/DaemonConfig.hpp)
+
+target_link_libraries(tentris_server
+        PRIVATE
+        ${libraries_to_link}
+        ${Pistache_LIBRARY}
+        tentris
         )
 
-target_link_libraries(tnt_exec
-        PRIVATE ${libraries_to_link}
+add_executable(tentris_daemon src/exec/StorageDeamon.cpp src/exec/config/ServerConfig.hpp src/exec/config/DaemonConfig.hpp)
+target_link_libraries(tentris_daemon
+        PRIVATE
+        ${libraries_to_link}
+        tentris
+        )
+
+
+add_executable(tentris_query src/exec/QueryClient.cpp)
+target_link_libraries(tentris_query
+        PRIVATE
+        ${libraries_to_link}
+        tentris
         )
 
 enable_testing() # enable this to enable testing

@@ -10,7 +10,6 @@
 #include "tnt/tensor/einsum/Subscript.hpp"
 #include "tnt/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tnt/util/All.hpp"
-#include "tnt/util/LogHelper.hpp"
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 

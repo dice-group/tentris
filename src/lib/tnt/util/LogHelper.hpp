@@ -1,5 +1,5 @@
-#ifndef MACRO_HPP
-#define MACRO_HPP
+#ifndef LOGHELPER_HPP
+#define LOGHELPER_HPP
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/core.hpp>
@@ -152,4 +152,4 @@ namespace tnt::logging {
 	}
 }
 
-#endif
+#endif // LOGHELPER_HPP

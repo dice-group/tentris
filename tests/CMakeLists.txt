@@ -12,7 +12,8 @@ include(GoogleTest)
 add_executable(tests Tests.cpp)
 target_link_libraries(tests gmock
         gtest
-        libsparsetensor)
+        tentris
+        ${libraries_to_link})
 target_include_directories(tests PUBLIC googlemock/include googletest/include)
 # detect the tests
 gtest_discover_tests(tests)
