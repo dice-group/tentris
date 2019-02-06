@@ -9,7 +9,7 @@
 namespace tnt::tensor::einsum::operators {
 
 	class CancelProcessing : public std::exception {
-		const char *what() const throw() {
+		const char *what() const throw() override {
 			return "canceled evaluation";
 		}
 	};
@@ -25,7 +25,10 @@ namespace tnt::tensor::einsum::operators {
 		std::chrono::system_clock::time_point timeout;
 		size_t cache_bucket_size;
 
-		OperatorNode(size_t cache_bucket_size) : cache_bucket_size{cache_bucket_size} {}
+		explicit OperatorNode(size_t cache_bucket_size) : cache_bucket_size{cache_bucket_size} {}
+
+	public:
+		virtual ~OperatorNode() = default;
 
 	public:
 

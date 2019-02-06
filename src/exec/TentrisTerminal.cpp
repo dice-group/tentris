@@ -23,6 +23,12 @@ namespace {
 	using namespace tnt::tensor::einsum::operators;
 	using namespace iter;
 }
+high_resolution_clock::time_point query_start;
+high_resolution_clock::time_point query_end;
+high_resolution_clock::time_point parse_start;
+high_resolution_clock::time_point parse_end;
+high_resolution_clock::time_point execute_start;
+high_resolution_clock::time_point execute_end;
 
 template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
 size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results,
@@ -36,7 +42,13 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 
 	std::vector<Term const *> binding(size(vars));
 
+	bool first = true;
+
 	for (const auto &result : results) {
+		if (first){
+			first = false;
+			execute_end = high_resolution_clock::now();
+		}
 
 		const Key_t &key = RESULT_TYPE::getKey(result);
 
@@ -56,6 +68,10 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 			}
 		}
 	}
+	if (first){ // if no bindings are returned
+		first = false;
+		execute_end = high_resolution_clock::now();
+	}
 	return result_count;
 }
 
@@ -67,14 +83,18 @@ void commandlineInterface(TripleStore &triple_store) {
 
 		std::getline(std::cin, sparql_str);
 
-		high_resolution_clock::time_point start = high_resolution_clock::now();
+		query_start = high_resolution_clock::now();
 
 		try {
+			parse_start = high_resolution_clock::now();
 			std::shared_ptr<QueryExecutionPackage> query_package = triple_store.query(sparql_str);
 			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 			const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
 
 			const auto timeout = query_package->getTimeout();
+
+			parse_end = high_resolution_clock::now();
+			execute_start = high_resolution_clock::now();
 
 			switch (sparqlQuery.getSelectModifier()) {
 				case SelectModifier::NONE: {
@@ -102,8 +122,10 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getDistinctGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator), triple_store,
+						auto nb = writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator), triple_store,
 													   timeout);
+						std::cout.flush();
+						std::cerr << "number_of_bindings: " << nb << std::endl;
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -116,9 +138,24 @@ void commandlineInterface(TripleStore &triple_store) {
 			std::cerr << e.what() << std::endl;
 		}
 		std::cout.flush();
-		auto time_span = duration_cast<std::chrono::nanoseconds>(high_resolution_clock::now() - start);
-		std::cerr << "totaltime: " << time_span.count() << " ns" << std::endl;
-		std::cerr << "totaltime: " << duration_cast<std::chrono::milliseconds>(time_span).count() << " ms" << std::endl;
+		query_end = high_resolution_clock::now();
+
+		auto parsing_time = duration_cast<std::chrono::nanoseconds>(parse_end - parse_start);
+		auto execution_time = duration_cast<std::chrono::nanoseconds>(execute_end - execute_start);
+		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
+		auto serialization_time = total_time - execution_time - parsing_time;
+
+		std::cerr << "queryparsingtime:  " << fmt::format("{:15}",parsing_time.count()) << " ns\n";
+
+
+		std::cerr << "executiontime:     " << fmt::format("{:15}",execution_time.count()) << " ns\n";
+
+		std::cerr << "serializationtime: " << fmt::format("{:15}",serialization_time.count()) << " ns\n";
+
+
+		std::cerr << "totaltime:         " << fmt::format("{:15}",total_time.count()) << " ns\n";
+		std::cerr << "totaltime:         " << fmt::format("{:15}",duration_cast<std::chrono::milliseconds>(total_time).count()) << " ms\n";
+
 		std::cerr.flush();
 	}
 }
