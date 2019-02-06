@@ -7,7 +7,6 @@
 #include <thread>
 
 #include "config/TerminalConfig.hpp"
-#include "config/TermStorePointerFilename.hpp"
 
 #include <tnt/tensor/einsum/operator/GeneratorInterface.hpp>
 #include <tnt/store/QueryExecutionPackage.hpp>
@@ -70,7 +69,6 @@ void commandlineInterface(TripleStore &triple_store) {
 
 		high_resolution_clock::time_point start = high_resolution_clock::now();
 
-		// std::cin >> sparql_str;
 		try {
 			std::shared_ptr<QueryExecutionPackage> query_package = triple_store.query(sparql_str);
 			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
@@ -87,7 +85,8 @@ void commandlineInterface(TripleStore &triple_store) {
 						auto nb = writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator),
 																triple_store,
 																timeout);
-						std::clog << "number_of_bindings: " << nb << std::endl;
+						std::cout.flush();
+						std::cerr << "number_of_bindings: " << nb << std::endl;
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -116,10 +115,10 @@ void commandlineInterface(TripleStore &triple_store) {
 		} catch (const std::invalid_argument &e) {
 			std::cerr << e.what() << std::endl;
 		}
-
-		duration<double> time_span = duration_cast<std::chrono::milliseconds>(high_resolution_clock::now() - start);
-		std::clog << "totaltime [ms]: " << time_span.count() << std::endl;
 		std::cout.flush();
+		auto time_span = duration_cast<std::chrono::nanoseconds>(high_resolution_clock::now() - start);
+		std::cerr << "totaltime: " << time_span.count() << " ns" << std::endl;
+		std::cerr << "totaltime: " << duration_cast<std::chrono::milliseconds>(time_span).count() << " ms" << std::endl;
 		std::cerr.flush();
 	}
 }
@@ -129,10 +128,10 @@ int main(int argc, char *argv[]) {
 	TerminalConfig cfg{argc, argv};
 
 	TripleStore triplestore{cfg.cache_size, cfg.cache_bucket_capacity, cfg.timeout};
-	if (not cfg.rdf_file.empty()){
-		std::clog << "Loading file " << cfg.rdf_file  << " ..." << std::endl;
+	if (not cfg.rdf_file.empty()) {
+		std::cerr << "Loading file " << cfg.rdf_file << " ..." << std::endl;
 		triplestore.loadRDF(cfg.rdf_file);
-		std::clog << "loading done." << std::endl;
+		std::cerr << "loading done." << std::endl;
 	}
 
 	std::thread commandline_client{commandlineInterface, std::ref(triplestore)};

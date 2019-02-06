@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10) # since 3.10 gtest_discover_tests is includ
 
 # clone gtest
 execute_process(COMMAND "bash" "clone_googletest.sh"
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests )
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
 add_subdirectory(googletest)
 
 # include for gtest_discover_tests
@@ -13,7 +13,7 @@ add_executable(tests Tests.cpp)
 target_link_libraries(tests gmock
         gtest
         tentris
-        ${libraries_to_link})
+        )
 target_include_directories(tests PUBLIC googlemock/include googletest/include)
 # detect the tests
 gtest_discover_tests(tests)

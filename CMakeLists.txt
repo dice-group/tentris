@@ -102,7 +102,7 @@ add_library(tentris SHARED
         )
 
 target_link_libraries(tentris
-        PRIVATE
+        PUBLIC
         ${libraries_to_link}
         )
 
@@ -111,19 +111,17 @@ target_include_directories(tentris PUBLIC
         )
 
 # main executable target
-add_executable(tentris_server src/exec/HTTPEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
+add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 
 target_link_libraries(tentris_server
         PRIVATE
-        ${libraries_to_link}
         ${Pistache_LIBRARY}
         tentris
         )
 
-add_executable(tentris_cmd src/exec/TerminalEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
-target_link_libraries(tentris_cmd
+add_executable(tentris_terminal src/exec/TentrisTerminal.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
+target_link_libraries(tentris_terminal
         PRIVATE
-        ${libraries_to_link}
         tentris
         )
 

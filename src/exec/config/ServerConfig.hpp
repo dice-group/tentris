@@ -26,7 +26,7 @@ struct ServerConfig : public TerminalConfig {
 	mutable uint threads = std::thread::hardware_concurrency();
 
 	ServerConfig() : TerminalConfig{} {
-		options = cxxopts::Options{"tentris_server", "Tentris SPARQL HTTP endpoint"};
+		options = cxxopts::Options{"tentris_server", "Tentris SPARQL HTTP endpoint."};
 		options.add_options()
 				("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
 				("c,threads", "How many threads are used for handling http requests",
