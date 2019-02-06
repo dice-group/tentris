@@ -111,7 +111,7 @@ target_include_directories(tentris PUBLIC
         )
 
 # main executable target
-add_executable(tentris_server src/exec/HTTPEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/DaemonConfig.hpp)
+add_executable(tentris_server src/exec/HTTPEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 
 target_link_libraries(tentris_server
         PRIVATE
@@ -120,7 +120,7 @@ target_link_libraries(tentris_server
         tentris
         )
 
-add_executable(tentris_cmd src/exec/CommandlineEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/DaemonConfig.hpp)
+add_executable(tentris_cmd src/exec/TerminalEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 target_link_libraries(tentris_cmd
         PRIVATE
         ${libraries_to_link}

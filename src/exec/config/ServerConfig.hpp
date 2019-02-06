@@ -6,14 +6,14 @@
 #include <cxxopts.hpp>
 #include <chrono>
 
-#include "DaemonConfig.hpp"
+#include "TerminalConfig.hpp"
 
 
 namespace {
 	using namespace ::tnt::logging;
 }
 
-struct ServerConfig : public DaemonConfig {
+struct ServerConfig : public TerminalConfig {
 
 	/**
 	 * The where TNT runs.
@@ -25,7 +25,7 @@ struct ServerConfig : public DaemonConfig {
 		 */
 	mutable uint threads = std::thread::hardware_concurrency();
 
-	ServerConfig() : DaemonConfig{} {
+	ServerConfig() : TerminalConfig{} {
 		options = cxxopts::Options{"tentris_server", "Tentris SPARQL HTTP endpoint"};
 		options.add_options()
 				("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
@@ -39,7 +39,7 @@ struct ServerConfig : public DaemonConfig {
 
 protected:
 	void parseArguments(const cxxopts::ParseResult &arguments) {
-		DaemonConfig::parseArguments(arguments);
+		TerminalConfig::parseArguments(arguments);
 		if (arguments.count("port") == 1) {
 			port = arguments["port"].as<uint16_t>();
 		}

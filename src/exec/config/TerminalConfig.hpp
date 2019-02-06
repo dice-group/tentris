@@ -1,5 +1,5 @@
-#ifndef TNT_DAEMONCONFIG_HPP
-#define TNT_DAEMONCONFIG_HPP
+#ifndef TNT_TERMINALCONFIG_HPP
+#define TNT_TERMINALCONFIG_HPP
 
 #include <string>
 
@@ -14,11 +14,10 @@ namespace {
 	using namespace ::tnt::logging;
 }
 
-struct DaemonConfig {
+struct TerminalConfig {
 protected:
-	cxxopts::Options options{"tentris_daemon", "Tentris database daemon.\n"
-											   "This daemon must be running to tentris_client. "
-											   "Multiple tentris_daemon instances at the same time must be run in different working directories."};
+	cxxopts::Options options{"tentris_terminal", "Tentris SPARQL endpoint with terminal interface. "
+												 "Just type your query and get the result."};
 public:
 	/**
 	 * The relative or absolute path to the RDF file that TNT loads on startup.
@@ -40,7 +39,7 @@ public:
 	/**
 	 * Initialization of command argument parser.
 	 */
-	DaemonConfig() {
+	TerminalConfig() {
 		options.add_options()
 				("f,file", "ntriple file to load at startup", cxxopts::value<std::string>())
 				("t,timeout", "time in seconds until processing a request is canceled by the server",
@@ -51,7 +50,7 @@ public:
 				 cxxopts::value<size_t>()->default_value("500"));
 	}
 
-	DaemonConfig(int argc, char **argv) : DaemonConfig{} {
+	TerminalConfig(int argc, char **argv) : TerminalConfig{} {
 		initConfig(argc, argv);
 	}
 
@@ -114,4 +113,4 @@ protected:
 };
 
 
-#endif //TNT_DAEMONCONFIG_HPP
+#endif //TNT_TERMINALCONFIG_HPP
