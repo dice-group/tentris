@@ -120,16 +120,8 @@ target_link_libraries(tentris_server
         tentris
         )
 
-add_executable(tentris_daemon src/exec/StorageDeamon.cpp src/exec/config/ServerConfig.hpp src/exec/config/DaemonConfig.hpp)
-target_link_libraries(tentris_daemon
-        PRIVATE
-        ${libraries_to_link}
-        tentris
-        )
-
-
-add_executable(tentris_query src/exec/QueryClient.cpp)
-target_link_libraries(tentris_query
+add_executable(tentris_cmd src/exec/CommandlineEndpoint.cpp src/exec/config/ServerConfig.hpp src/exec/config/DaemonConfig.hpp)
+target_link_libraries(tentris_cmd
         PRIVATE
         ${libraries_to_link}
         tentris

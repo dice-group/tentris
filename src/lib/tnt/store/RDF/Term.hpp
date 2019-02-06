@@ -196,4 +196,23 @@ struct fmt::formatter<tnt::store::rdf::Term> {
     }
 };
 
+template<>
+struct std::hash<tnt::store::rdf::Term *> {
+	size_t operator()(const tnt::store::rdf::Term *&v) const {
+		std::hash<std::string> hasher;
+		return hasher(v->getIdentifier());
+	}
+};
+
+template<>
+struct fmt::formatter<tnt::store::rdf::Term *> {
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+	template<typename FormatContext>
+	auto format(const tnt::store::rdf::Term *&p, FormatContext &ctx) {
+		return format_to(ctx.begin(), "{}", p->getIdentifier());
+	}
+};
+
 #endif //TEST_NODE_HPP
