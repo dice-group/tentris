@@ -38,7 +38,7 @@ public:
 	/**
 	 *
 	 */
-	mutable bool onlystdout = true;
+	mutable bool onlystdout;
 
 	/**
 	 * Initialization of command argument parser.
