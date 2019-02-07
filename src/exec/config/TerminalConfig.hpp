@@ -35,6 +35,10 @@ public:
 	 * Max number of bindings per query result that is cached.
 	 */
 	mutable size_t cache_bucket_capacity = 500;
+	/**
+	 *
+	 */
+	mutable bool onlystdout = true;
 
 	/**
 	 * Initialization of command argument parser.
@@ -47,7 +51,9 @@ public:
 				("l,cache_size", "Max number queries that may be cached.",
 				 cxxopts::value<size_t>()->default_value("500"))
 				("b,cache_bucket_capacity", "Max number of bindings per query result that is cached.",
-				 cxxopts::value<size_t>()->default_value("500"));
+				 cxxopts::value<size_t>()->default_value("500"))
+				("s,onlystdout", "Print non-payload info messages to stdout instead of stderr.",
+				cxxopts::value<bool>()->default_value("false"));
 	}
 
 	TerminalConfig(int argc, char **argv) : TerminalConfig{} {
@@ -108,6 +114,10 @@ protected:
 
 			if (cache_bucket_capacity_ != 0)
 				cache_bucket_capacity = cache_bucket_capacity_;
+		}
+
+		if (arguments.count("onlystdout") == 1) {
+			onlystdout = arguments["onlystdout"].as<bool>();
 		}
 	}
 };
