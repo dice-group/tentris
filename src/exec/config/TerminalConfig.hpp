@@ -44,6 +44,11 @@ public:
 	 * Initialization of command argument parser.
 	 */
 	TerminalConfig() {
+		addOptions();
+	}
+
+protected:
+	void addOptions() {
 		options.add_options()
 				("f,file", "ntriple file to load at startup", cxxopts::value<std::string>())
 				("t,timeout", "time in seconds until processing a request is canceled by the server",
@@ -53,8 +58,10 @@ public:
 				("b,cache_bucket_capacity", "Max number of bindings per query result that is cached.",
 				 cxxopts::value<size_t>()->default_value("500"))
 				("s,onlystdout", "Print non-payload info messages to stdout instead of stderr.",
-				cxxopts::value<bool>()->default_value("false"));
+				 cxxopts::value<bool>()->default_value("false"));
 	}
+
+public:
 
 	TerminalConfig(int argc, char **argv) : TerminalConfig{} {
 		initConfig(argc, argv);
