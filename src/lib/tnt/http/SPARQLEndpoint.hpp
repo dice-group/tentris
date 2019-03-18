@@ -70,6 +70,7 @@ namespace tnt::http {
 									// This catch is only for logging.
 									// Returning a HTTP response must be handled in the function that times out, i.e.:
 									// runQuery(response, query_package, AtomicTripleStore::getInstance());
+									query_package->canceled();
 									logCanceled("timeout", &exc);
 									return;
 								}
@@ -88,6 +89,7 @@ namespace tnt::http {
 							} catch (const TimeoutException &exc) {
 								// handles timeouts of
 								// auto query_package = AtomicTripleStore::getInstance().query(sparqlQueryStr);
+								// Should never happen if a reasonable timeout interval is used.
 								response.send(Http::Code::Request_Timeout);
 								logCanceled("timeout", &exc);
 								return;

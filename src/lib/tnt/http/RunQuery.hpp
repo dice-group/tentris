@@ -52,7 +52,6 @@ namespace tnt::http {
 					steamJSON<counted_binding>(vars, std::move(result_generator), stream, store, timeout);
 					query_package->done();
 				} else {
-					query_package->canceled();
 					response.send(Code::Request_Timeout);
 					throw TimeoutException{};
 				}
@@ -69,7 +68,6 @@ namespace tnt::http {
 					steamJSON<distinct_binding>(vars, std::move(result_generator), stream, store, timeout);
 					query_package->done();
 				} else {
-					query_package->canceled();
 					response.send(Code::Request_Timeout);
 					throw TimeoutException{};
 				}
