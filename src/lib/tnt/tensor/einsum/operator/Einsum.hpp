@@ -129,7 +129,6 @@ namespace tnt::tensor::einsum::operators {
 
 			if (may_have_results and not result_calculated) {
 				calcEinsum(result, operands, plan);
-				result_calculated = true;
 			}
 		}
 
@@ -158,6 +157,7 @@ namespace tnt::tensor::einsum::operators {
 				call_count = 0;
 				checkTimeout();
 				rekEinsum(result, operands, result_key, step);
+				result_calculated = true;
 			} catch (CancelProcessing &ex) {
 				result.clear();
 			}
