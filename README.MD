@@ -1,5 +1,7 @@
 # TNT: Tensor-based Triple Store
 
+[![Build Status](https://travis-ci.com/dice-group/tnt.svg?branch=master)](https://travis-ci.com/dice-group/tnt)
+
 *work in progress.*
 
 TNT is a SPARQL triple store to query RDF data for the Semantic Web. 
