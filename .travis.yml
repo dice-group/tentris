@@ -1,0 +1,10 @@
+os: linux
+dist: xenial
+sudo: true
+
+services:
+- docker
+
+script:
+ - sudo docker build -t dice-group/tentris-travis -f .travis/Dockerfile .
+ - sudo docker run --rm dice-group/tentris-travis
