@@ -326,8 +326,8 @@ namespace tnt::tensor::einsum {
 				// see: A. Swami and K. B. Schiefer, “On the estimation of join
 				// result sizes,” in International Conference on Extending Database
 				// Technology, 1994, pp. 287–300. (290-291)
-				const int dim_cards =
-						std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), 1,
+				const double dim_cards =
+						std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), double(1),
 						                std::multiplies<>());
 				const double card = std::pow(min_dim_cardinality, label_count) / dim_cards;
 				return card;
