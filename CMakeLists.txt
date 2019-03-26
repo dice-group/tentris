@@ -3,6 +3,12 @@ project(tnt CXX)
 set(tnt_VERSION_MAJOR 0)
 set(tnt_VERSION_MINOR pinwheel)
 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
 SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
