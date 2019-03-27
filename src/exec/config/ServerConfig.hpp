@@ -26,7 +26,7 @@ struct ServerConfig : public TerminalConfig {
 	mutable uint threads = std::thread::hardware_concurrency();
 
 	ServerConfig() {
-		options = {"tentris_terminal", "Tentris SPARQL endpoint with terminal interface. "
+		options = {"tentris_server", "Tentris SPARQL endpoint with terminal interface. "
 									   "Just type your query and get the result."};
 		addOptions();
 
@@ -41,7 +41,7 @@ struct ServerConfig : public TerminalConfig {
 	}
 
 protected:
-	void parseArguments(const cxxopts::ParseResult &arguments) {
+	void parseArguments(const cxxopts::ParseResult &arguments) override {
 		TerminalConfig::parseArguments(arguments);
 		if (arguments.count("port") == 1) {
 			port = arguments["port"].as<uint16_t>();

@@ -93,7 +93,7 @@ public:
 	}
 
 protected:
-	void parseArguments(const cxxopts::ParseResult &arguments) {
+	virtual void parseArguments(const cxxopts::ParseResult &arguments)  {
 		if (arguments.count("file") == 1) {
 			auto file = arguments["file"].as<std::string>();
 
