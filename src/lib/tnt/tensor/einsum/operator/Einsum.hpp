@@ -136,6 +136,8 @@ namespace tnt::tensor::einsum::operators {
 
 			calcResult();
 
+			log(fmt::format("{} result bindings", result.size()));
+
 			for (const auto &binding : result) {
 				yield(binding);
 			}

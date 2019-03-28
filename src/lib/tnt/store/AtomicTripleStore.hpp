@@ -12,19 +12,21 @@ namespace {
 	using namespace tnt::store::config;
 }
 
+namespace tnt::util::sync {
+	template <>
+	inline TripleStore * SingletonFactory<TripleStore>::make_instance(){
+		const auto & config = AtomicTripleStoreConfig::getInstance();
+		return new TripleStore{config.cache_size, config.cache_bucket_capacity, config.timeout};
+	}
+};
+
 namespace tnt::store {
+
     /**
      * A SingletonFactory that allows to share a single TripleStore instance between multiple threads.
      */
-    class AtomicTripleStore : public SingletonFactory<TripleStore> {
-    public:
-        AtomicTripleStore() : SingletonFactory<TripleStore>{} {}
 
-    protected:
-        static TripleStore *make_instance(){
-            const auto & config = AtomicTripleStoreConfig::getInstance();
-            return new TripleStore{config.cache_size, config.cache_bucket_capacity, config.timeout};
-        }
-    };
+
+	using AtomicTripleStore = SingletonFactory<TripleStore>;
 };
 #endif //TNT_ATOMIC_TRIPLE_STORE

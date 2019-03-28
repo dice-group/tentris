@@ -66,6 +66,7 @@ namespace tnt::http {
 								response.headers().add<SPARQLJSON>();
 								try {
 									runQuery(response, query_package, AtomicTripleStore::getInstance());
+									query_package->done();
 								} catch (const TimeoutException &exc) {
 									// This catch is only for logging.
 									// Returning a HTTP response must be handled in the function that times out, i.e.:

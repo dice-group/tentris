@@ -93,7 +93,7 @@ public:
 	}
 
 protected:
-	virtual void parseArguments(const cxxopts::ParseResult &arguments)  {
+	virtual void parseArguments(const cxxopts::ParseResult &arguments) {
 		if (arguments.count("file") == 1) {
 			auto file = arguments["file"].as<std::string>();
 
@@ -112,15 +112,16 @@ protected:
 		if (arguments.count("cache_size") == 1) {
 			auto cache_size_ = arguments["cache_size"].as<size_t>();
 
-			if (cache_size_ != 0)
+			if (cache_size_ == 0)
+				cache_size = 1;
+			else
 				cache_size = cache_size_;
 		}
 
 		if (arguments.count("cache_bucket_capacity") == 1) {
 			auto cache_bucket_capacity_ = arguments["cache_bucket_capacity"].as<size_t>();
 
-			if (cache_bucket_capacity_ != 0)
-				cache_bucket_capacity = cache_bucket_capacity_;
+			cache_bucket_capacity = cache_bucket_capacity_;
 		}
 
 		if (arguments.count("onlystdout") == 1) {

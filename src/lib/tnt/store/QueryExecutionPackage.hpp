@@ -82,13 +82,11 @@ namespace tnt::store::cache {
 		}
 
 		void done() {
-			if (not is_trivial_emtpy) {
-				if (std::chrono::system_clock::now() > keep_result_timeout) {
-					if (not is_distinct)
-						regular_operator_tree->clearCacheDone();
-					else
-						distinct_operator_tree->clearCacheDone();
-				}
+			if (not is_trivial_emtpy and std::chrono::system_clock::now() > keep_result_timeout) {
+				if (not is_distinct)
+					regular_operator_tree->clearCacheDone();
+				else
+					distinct_operator_tree->clearCacheDone();
 			}
 			keep_result_timeout = std::numeric_limits<std::chrono::system_clock::time_point>::min();
 

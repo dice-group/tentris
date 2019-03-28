@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
 	ServerConfig cfg{argc, argv};
 
-	auto store_cfg = AtomicTripleStoreConfig::getInstance();
+	auto &store_cfg = AtomicTripleStoreConfig::getInstance();
 	store_cfg.rdf_file = cfg.rdf_file;
 	store_cfg.timeout = cfg.timeout;
 	store_cfg.cache_size = cfg.cache_size;

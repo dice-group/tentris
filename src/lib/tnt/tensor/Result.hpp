@@ -15,6 +15,7 @@ namespace tnt::tensor {
 
 	private:
 		collection_t items;
+		size_t size_ = 0;
 
 	public:
 
@@ -44,11 +45,25 @@ namespace tnt::tensor {
 			items.clear();
 		}
 
+		size_t size() const noexcept {
+			return items.size();
+		}
+
 		size_t distinct_size() const noexcept {
 			return items.size();
 		}
 	};
 
+	template <>
+	void Result<::tnt::tensor::einsum::operators::counted_binding>::insert(const ::tnt::tensor::einsum::operators::counted_binding::binding_t &binding) {
+		size_ += ::tnt::tensor::einsum::operators::counted_binding::getCount(binding);
+		::tnt::tensor::einsum::operators::addToCollection<::tnt::tensor::einsum::operators::counted_binding>(items, binding);
+	}
+
+	template <>
+	size_t Result<::tnt::tensor::einsum::operators::counted_binding>::size()  const noexcept {
+		return size_;
+	}
 
 }
 

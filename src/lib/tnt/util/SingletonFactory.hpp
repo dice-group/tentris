@@ -10,7 +10,7 @@ namespace tnt::util::sync {
 	template<typename Class>
 	class SingletonFactory {
 	public:
-		static Class &getInstance() {
+		inline static Class &getInstance() {
 			Class *inst = instance.load(std::memory_order_acquire);
 			if (!inst) {
 				std::lock_guard<std::mutex> myLock(mutex);
@@ -32,18 +32,13 @@ namespace tnt::util::sync {
 
 		SingletonFactory &operator=(const SingletonFactory &) = delete;
 
-		static std::atomic<Class *> instance;
-		static std::mutex mutex;
+		inline static std::atomic<Class *> instance;
+		inline static std::mutex mutex;
 
-		static Class *make_instance() {
+		inline static Class *make_instance() {
 			return new Class();
 		}
 	};
 
-	template<typename Class>
-	std::atomic<Class *> SingletonFactory<Class>::instance;
-
-	template<typename Class>
-	std::mutex  SingletonFactory<Class>::mutex;
 }
 #endif //TNT_SINGLETONFACTORY_HPP

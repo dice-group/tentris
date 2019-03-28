@@ -50,7 +50,6 @@ namespace tnt::http {
 					response.headers().add<SPARQLJSON>();
 					auto stream = response.stream(Code::Ok);
 					steamJSON<counted_binding>(vars, std::move(result_generator), stream, store, timeout);
-					query_package->done();
 				} else {
 					response.send(Code::Request_Timeout);
 					throw TimeoutException{};
@@ -66,7 +65,6 @@ namespace tnt::http {
 					response.headers().add<SPARQLJSON>();
 					auto stream = response.stream(Code::Ok);
 					steamJSON<distinct_binding>(vars, std::move(result_generator), stream, store, timeout);
-					query_package->done();
 				} else {
 					response.send(Code::Request_Timeout);
 					throw TimeoutException{};
