@@ -8,6 +8,8 @@
 #include <unordered_map>
 
 #include <boost/container_hash/hash.hpp>
+#include <tsl/hopscotch_map.h>
+#include <tsl/hopscotch_set.h>
 
 #include <boost/bind.hpp>
 #include <boost/coroutine2/all.hpp>
@@ -44,7 +46,7 @@ namespace tnt::tensor::einsum::operators {
 		using count_t = size_t;
 		using binding_t = std::pair<const Key_t &, size_t>;
 		using collection_t = std::map<std::decay_t<key_t>, count_t>;
-		using unordered_collection_t = std::unordered_map<std::decay_t<key_t>, count_t, boost::hash<std::decay_t<key_t>>>;
+		using unordered_collection_t = tsl::hopscotch_map<std::decay_t<key_t>, count_t, boost::hash<std::decay_t<key_t>>>;
 
 		constexpr static key_t getKey(binding_t binding) { return binding.first; }
 
@@ -64,7 +66,7 @@ namespace tnt::tensor::einsum::operators {
 		using count_t = bool;
 		using binding_t = const Key_t &;
 		using collection_t = std::set<std::decay_t<key_t>>;
-		using unordered_collection_t = std::unordered_set<std::decay_t<key_t>, boost::hash<std::decay_t<key_t>>>;
+		using unordered_collection_t = tsl::hopscotch_set<std::decay_t<key_t>, boost::hash<std::decay_t<key_t>>>;
 
 		constexpr static key_t getKey(binding_t binding) { return binding; }
 
@@ -109,7 +111,8 @@ namespace tnt::tensor::einsum::operators {
 	static void addToCollection(typename RESULT_TYPE::collection_t &items, typename RESULT_TYPE::binding_t binding);
 
 	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-	static void addToCollection(typename RESULT_TYPE::unordered_collection_t &items, typename RESULT_TYPE::binding_t binding);
+	static void
+	addToCollection(typename RESULT_TYPE::unordered_collection_t &items, typename RESULT_TYPE::binding_t binding);
 
 	template<>
 	inline void
@@ -129,9 +132,10 @@ namespace tnt::tensor::einsum::operators {
 
 	template<>
 	inline void
-	addToCollection<counted_binding>(counted_binding::unordered_collection_t &items, counted_binding::binding_t binding) {
+	addToCollection<counted_binding>(counted_binding::unordered_collection_t &items,
+									 counted_binding::binding_t binding) {
 		if (auto found = items.find(counted_binding::getKey(binding)); found != items.end()) {
-			found->second += counted_binding::getCount(binding);
+			found.value() += counted_binding::getCount(binding);
 		} else {
 			items.insert_or_assign(counted_binding::getKey(binding), counted_binding::getCount(binding));
 		}
@@ -139,7 +143,8 @@ namespace tnt::tensor::einsum::operators {
 
 	template<>
 	inline void
-	addToCollection<distinct_binding>(distinct_binding::unordered_collection_t &items, distinct_binding::binding_t binding) {
+	addToCollection<distinct_binding>(distinct_binding::unordered_collection_t &items,
+									  distinct_binding::binding_t binding) {
 		items.insert(distinct_binding::getKey(binding));
 	}
 

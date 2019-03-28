@@ -85,6 +85,9 @@ target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
+# hopscotch-map
+add_subdirectory(thirdparty/hopscotch-map)
+
 #fmt
 add_subdirectory(thirdparty/fmt)
 
@@ -100,6 +103,7 @@ set(libraries_to_link
         Boost::boost # header only boost libraries
         fmt::fmt
         ${Boost_LIBRARIES}
+        tsl::hopscotch_map
         )
 
 # make a library of the code
