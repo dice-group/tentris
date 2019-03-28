@@ -300,36 +300,31 @@ namespace tnt::tensor::einsum {
 			static double calcCard(const Operands &operands, const label_t &label, const Subscript &sc) {
 				// get operands that have the label
 				const std::vector<op_pos_t> &op_poss = sc.operandsWithLabel(label);
-
-				std::vector<double> dim_cardinalities(op_poss.size(), 1.0);
-				double min_dim_cardinality = std::numeric_limits<double>::infinity();
+				std::vector<double> op_dim_cardinalities(op_poss.size(), 1.0);
 				auto label_count = 0;
+				auto min_dim_card = std::numeric_limits<size_t>::max();
 
 				// iterate the operands that hold the label
 				for (auto[i, op_pos] : enumerate(op_poss)) {
 					const auto &operand = operands[op_pos];
-					const auto dim_cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
-					const auto dim_card = *std::min_element(dim_cards.cbegin(), dim_cards.cend());
+					const auto op_dim_cards = operand->getCards(sc.labelPossInOperand(op_pos, label));
+					const auto min_op_dim_card = *std::min_element(op_dim_cards.cbegin(), op_dim_cards.cend());
+					const auto max_op_dim_card = *std::max_element(op_dim_cards.cbegin(), op_dim_cards.cend());
 
-					label_count += dim_cards.size();
-					if (dim_card == 0)
-						return 0;
-
+					label_count += op_dim_cards.size();
 					// update minimal dimenension cardinality
-					if (dim_card < min_dim_cardinality)
-						min_dim_cardinality = dim_card;
-					// update maximum dimenension cardinality
+					if (min_op_dim_card < min_dim_card)
+						min_dim_card = min_op_dim_card;
 
-					dim_cardinalities[i] = dim_card;
+					op_dim_cardinalities[i] = double(max_op_dim_card); // / op_dim_cards.size();
 				}
 
-				// see: A. Swami and K. B. Schiefer, “On the estimation of join
-				// result sizes,” in International Conference on Extending Database
-				// Technology, 1994, pp. 287–300. (290-291)
-				const double dim_cards =
-						std::accumulate(dim_cardinalities.cbegin(), dim_cardinalities.cend(), double(1),
-						                std::multiplies<>());
-				const double card = std::pow(min_dim_cardinality, label_count) / dim_cards;
+				auto const min_dim_card_d = double(min_dim_card);
+				const double card =
+						std::accumulate(op_dim_cardinalities.cbegin(), op_dim_cardinalities.cend(), double(1),
+										[&](double a, double b) {
+											return a * min_dim_card_d / b;
+										});
 				return card;
 			}
 
