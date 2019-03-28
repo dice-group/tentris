@@ -323,8 +323,9 @@ namespace tnt::tensor::einsum {
 				const double card =
 						std::accumulate(op_dim_cardinalities.cbegin(), op_dim_cardinalities.cend(), double(1),
 										[&](double a, double b) {
-											return a * min_dim_card_d / b;
-										});
+											return a * min_dim_card_d  / b;
+										})  / sizes.size();
+
 				return card;
 			}
 
