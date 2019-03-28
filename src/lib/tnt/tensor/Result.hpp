@@ -42,6 +42,7 @@ namespace tnt::tensor {
 		typename collection_t::const_iterator cend() const noexcept { return items.cend(); }
 
 		void clear() noexcept {
+			size_ = 0;
 			items.clear();
 		}
 
