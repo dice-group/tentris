@@ -11,10 +11,10 @@ namespace tnt::tensor {
 		using binding_t = typename RESULT_TYPE::binding_t;
 		using key_t = typename RESULT_TYPE::key_t;
 		using count_t = typename RESULT_TYPE::count_t;
-		using collection_t = typename RESULT_TYPE::collection_t;
+		using unordered_collection_t = typename RESULT_TYPE::unordered_collection_t;
 
 	private:
-		collection_t items;
+		unordered_collection_t items;
 		size_t size_ = 0;
 
 	public:
@@ -29,17 +29,17 @@ namespace tnt::tensor {
 
 		bool empty() const noexcept { return items.empty(); }
 
-		typename collection_t::iterator begin() noexcept { return items.begin(); }
+		typename unordered_collection_t::iterator begin() noexcept { return items.begin(); }
 
-		typename collection_t::iterator end() noexcept { return items.end(); }
+		typename unordered_collection_t::iterator end() noexcept { return items.end(); }
 
-		typename collection_t::const_iterator begin() const noexcept { return items.begin(); }
+		typename unordered_collection_t::const_iterator begin() const noexcept { return items.begin(); }
 
-		typename collection_t::const_iterator end() const noexcept { return items.end(); }
+		typename unordered_collection_t::const_iterator end() const noexcept { return items.end(); }
 
-		typename collection_t::const_iterator cbegin() const noexcept { return items.cbegin(); }
+		typename unordered_collection_t::const_iterator cbegin() const noexcept { return items.cbegin(); }
 
-		typename collection_t::const_iterator cend() const noexcept { return items.cend(); }
+		typename unordered_collection_t::const_iterator cend() const noexcept { return items.cend(); }
 
 		void clear() noexcept {
 			size_ = 0;

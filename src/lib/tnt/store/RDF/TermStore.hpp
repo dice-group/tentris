@@ -2,6 +2,7 @@
 #define TNT_STORE_RDFTERMINDEX
 
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <tuple>
 #include <ostream>
@@ -72,8 +73,8 @@ namespace tnt::store::rdf {
             }
         };
 
-        std::map<key_part_t, std::unique_ptr<Term> *> _id2term{};
-        std::map<std::unique_ptr<Term>, key_part_t, TermPtrComp> _term2id{};
+        std::unordered_map<key_part_t, std::unique_ptr<Term> *> _id2term{};
+        std::unordered_map<std::unique_ptr<Term>, key_part_t> _term2id{};
         key_part_t _next_id{};
         RevTermStore _inverse;
     public:
@@ -99,9 +100,9 @@ namespace tnt::store::rdf {
             try {
                 return _term2id.at(term);
             } catch (...) {
-                std::pair<std::map<std::unique_ptr<Term>, key_part_t>::iterator, bool> pair =
+                auto pair =
                         _term2id.insert(std::make_pair(std::move(term), _next_id));
-                std::pair<const std::unique_ptr<Term>, key_part_t> &entry = *pair.first;
+				auto &entry = *pair.first;
                 const key_part_t &id = entry.second;
                 std::unique_ptr<Term> *pTerm = const_cast<std::unique_ptr<Term> *>(&entry.first);
                 _id2term.insert({id, pTerm});
