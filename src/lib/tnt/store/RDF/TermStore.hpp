@@ -14,7 +14,26 @@ namespace {
     using namespace tnt::util::types;
 }
 
+template<>
+struct std::hash<tnt::store::rdf::Term *>
+{
+	size_t operator()(tnt::store::rdf::Term const *f) const
+	{
+		return std::hash<tnt::store::rdf::Term>()(*f);
+	}
+};
+
+template <>
+struct std::equal_to<std::unique_ptr<tnt::store::rdf::Term>> {
+	bool operator()(const std::unique_ptr<tnt::store::rdf::Term> &lhs, const std::unique_ptr<tnt::store::rdf::Term> &rhs) const {
+		return  std::equal_to<tnt::store::rdf::Term>()(*lhs.get(), *rhs.get());
+	}
+};
+
 namespace tnt::store::rdf {
+
+
+
     class TermStore {
     public:
         friend struct fmt::formatter<tnt::store::rdf::TermStore>;
@@ -171,3 +190,4 @@ struct fmt::formatter<tnt::store::rdf::TermStore::RevTermStore> {
 };
 
 #endif //TNT_STORE_RDFTERMINDEX
+
