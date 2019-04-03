@@ -2,177 +2,179 @@
 #define SPARSETENSOR_HYPERTRIE_POSCALC_HPP
 
 
+
 #include <cstdint>
-#include <map>
+#include <boost/container/flat_map.hpp>
 #include <vector>
-
+#include <memory>
+#include <itertools.hpp>
 #include "tnt/util/All.hpp"
-
 namespace {
     using namespace tnt::util::types;
 }
 
 namespace tnt::tensor::hypertrie {
-    /**
-     * Provides translation between position in superkeys with subkeys. (1,2,4) for example is a subkey of (1,2,3,4).
-     * And the other way around.
-     */
-    class PosCalc {
+	/**
+		* Provides translation between position in superkeys with subkeys. (1,2,4) for example is a subkey of (1,2,3,4).
+		* And the other way around.
+		*/
+	// TODO: make threadsafe
+	class PosCalc {
+		template<typename key, typename value>
+		using flat_map = ::boost::container::flat_map<key, value>;
+	public:
+		using key_pos_t = uint8_t;
+		using subkey_mask_t = ::std::vector<bool>;
+	private:
+		/**
+		 * Stores for superkey positions to which subkey positions they map.
+		 */
+		const std::vector<key_pos_t> key_to_subkey;
 
-        /**
-         * Holds all instances.
-         */
-        inline static std::map<std::vector<bool>, PosCalc *> instances{};
-    public:
-        /**
-         * Length of superkeys.
-         */
-        const key_pos_t key_length;
+		/**
+		 * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
+		 */
+		const std::vector<key_pos_t> subkey_to_key;
 
-        /**
-         * Length of subkeys.
-         */
-        const key_pos_t subkey_length;
-    private:
-        /**
-         * Stores for superkey positions to which subkey positions they map.
-         */
-        std::vector<key_pos_t> key_to_subkey;
+		/**
+		 * removed_positions bit vector of positions removed from superkey to subkey.
+		 */
+		const subkey_mask_t removed_positions;
 
-        /**
-         * Stores for subkey positions to which superkey positions they map. So this is also a list of all currently relevant superkey pos.
-         */
-        std::vector<key_pos_t> subkey_to_key;
+		/**
+		 * Cache for PosCalcs of subkeys that are 1 shorter.
+		 */
+		mutable std::vector<PosCalc const *> next_pos_calcs;
 
-        /**
-         * removed_positions bit vector of positions removed from superkey to subkey.
-         */
-        subkey_mask_t removed_positions;
+		PosCalc(std::vector<key_pos_t> &&keyToSubkey,
+				std::vector<key_pos_t> &&subkeyToKey,
+				const subkey_mask_t &removedPositions) :
+				key_to_subkey{keyToSubkey},
+				subkey_to_key{subkeyToKey},
+				removed_positions{removedPositions},
+				next_pos_calcs(this->keyLength()) {}
 
-        /**
-         * Cache for PosCalcs of subkeys that are 1 shorter.
-         */
-        std::vector<PosCalc *> next_pos_calcs;
+	public:
 
-        /**
-             * Private construcor.
-             * @param key_length  length of superkeys.
-             * @param subkey_length length of subkeys.
-             */
-        PosCalc(key_pos_t key_length, key_pos_t subkey_length) : key_length(key_length),
-                                                                 subkey_length(subkey_length),
-                                                                 key_to_subkey(std::vector<key_pos_t>(key_length)),
-                                                                 subkey_to_key(std::vector<key_pos_t>(subkey_length)),
-                                                                 removed_positions(subkey_mask_t(key_length)),
-                                                                 next_pos_calcs(std::vector<PosCalc *>(key_length)) {}
+		key_pos_t keyLength() const {
+			return key_to_subkey.size();
+		}
 
-    public:
-        /**
-         * Convert a superkey position to a subkey key position.
-         * @param key_pos superkey position
-         * @return subkey position
-         */
-        inline key_pos_t key_to_subkey_pos(key_pos_t key_pos) const {
-            return key_to_subkey[key_pos];
-        }
+		key_pos_t subkeyLength() const {
+			return subkey_to_key.size();
+		}
 
-        /**
-         * Convert a subkey position to a superkey position.
-         * @param subkey_pos subkey position
-         * @return superkey position
-         */
-        inline key_pos_t subkey_to_key_pos(key_pos_t subkey_pos) const {
-            return subkey_to_key[subkey_pos];
-        }
+		/**
+		 * Convert a superkey position to a subkey key position.
+		 * @param key_pos superkey position
+		 * @return subkey position
+		 */
+		key_pos_t key_to_subkey_pos(key_pos_t key_pos) const {
+			return key_to_subkey[key_pos];
+		}
 
-        /**
-         * Get all keypositions that this subkey contains.
-         * @return vector of key positions.
-         */
-        inline const std::vector<key_pos_t> &getKeyPoss() const {
-            return subkey_to_key;
-        }
+		/**
+		 * Convert a subkey position to a superkey position.
+		 * @param subkey_pos subkey position
+		 * @return superkey position
+		 */
+		key_pos_t subkey_to_key_pos(key_pos_t subkey_pos) const {
+			return subkey_to_key[subkey_pos];
+		}
 
-        /**
-         * bit vector of positions removed from superkey to subkey.
-         * @return bit vector
-         */
-        inline const subkey_mask_t &getSubKeyMask() const {
-            return removed_positions;
-        }
+		/**
+		 * Get all keypositions that this subkey contains.
+		 * @return vector of key positions.
+		 */
+		const std::vector<key_pos_t> &getKeyPoss() const {
+			return subkey_to_key;
+		}
 
-        /**
-         * PosCalcs of subkeys that has one position less.
-         * @param key_pos position of superkey to be removed.
-         * @return PosCalc like this but without position key_pos.
-         */
-        inline PosCalc *use(const key_pos_t &key_pos) {
-            PosCalc *child = next_pos_calcs.at(key_pos);
-            if (child == nullptr) {
-                std::vector<bool> used_pos_mask(this->key_length, true);
-                for (uint8_t subkey_pos : this->subkey_to_key)
-                    used_pos_mask[subkey_pos] = false;
-                used_pos_mask[key_pos] = true;
+		/**
+		 * bit vector of positions removed from superkey to subkey.
+		 * @return bit vector
+		 */
+		const subkey_mask_t &getSubKeyMask() const {
+			return removed_positions;
+		}
 
-                child = getInstance(used_pos_mask);
-                next_pos_calcs[key_pos] = child;
-            }
-            return child;
-        }
+		/**
+		 * PosCalcs of subkeys that has one position less.
+		 * @param key_pos position of superkey to be removed.
+		 * @return PosCalc like this but without position key_pos.
+		 */
+		PosCalc const *use(const key_pos_t &key_pos) const {
+			PosCalc const *child = next_pos_calcs.at(key_pos);
+			if (child == nullptr) {
+				std::vector<bool> used_pos_mask(this->keyLength(), true);
+				for (auto subkey_pos : this->subkey_to_key)
+					used_pos_mask[subkey_pos] = false;
+				used_pos_mask[key_pos] = true;
 
-        /**
-         * Get an instance for a vector of used positions.
-         * @param removed_positions bit vector of positions removed from superkey to subkey.
-         * @return an instance
-         */
-        static PosCalc *getInstance(const std::vector<bool> &removed_positions) {
-            auto instance_ = instances.find(removed_positions);
-            if (instance_ != instances.end()) {
-                // if an instance already exists return it
-                return instance_->second;
-            } else {
-                // else create it and store it for reuse
-                uint8_t key_length = uint8_t(removed_positions.size());
+				child = getInstance(used_pos_mask);
+				next_pos_calcs[key_pos] = child;
+			}
+			return child;
+		}
 
-                uint8_t subkey_length = 0;
-                for (bool removed_pos : removed_positions) {
-                    subkey_length += not removed_pos;
-                }
+		/**
+		 * Holds all instances.
+		 */
+		inline static flat_map<std::vector<bool>, std::unique_ptr<PosCalc const>> instances{};
 
-                PosCalc *instance = new PosCalc(key_length, subkey_length);
+		/**
+		 * Get an instance for a vector of used positions.
+		 * @param removed_positions bit vector of positions removed from superkey to subkey.
+		 * @return an instance
+		 */
+		static PosCalc const *getInstance(const std::vector<bool> &removed_positions) {
+			auto instance_ = instances.find(removed_positions);
+			if (instance_ != instances.end()) {
+				// if an instance already exists return it
+				return instance_->second.get();
+			} else {
+				// else create it and store it for reuse
+				auto key_length = key_pos_t(removed_positions.size());
 
-                uint8_t offset = 0;
+				key_pos_t subkey_length = std::count(removed_positions.begin(), removed_positions.end(), false);
 
-                for (uint8_t key_pos = 0; key_pos < key_length; key_pos++) {
-                    instance->removed_positions[key_pos] = removed_positions[key_pos];
+				subkey_mask_t next_removed_positions(key_length);
+				std::vector<key_pos_t> next_key_to_subkey(key_length);
+				std::vector<key_pos_t> next_subkey_to_key(subkey_length);
 
-                    if (removed_positions[key_pos]) {
-                        offset++;
-                    } else {
-                        const uint8_t subkey_pos = key_pos - offset;
+				key_pos_t offset = 0;
 
-                        instance->key_to_subkey[key_pos] = subkey_pos;
-                        instance->subkey_to_key[subkey_pos] = key_pos;
+				for (auto key_pos : iter::range(key_length)) {
 
-                    }
-                }
+					if (removed_positions[key_pos]) {
+						offset++;
+					} else {
+						const key_pos_t subkey_pos = key_pos - offset;
 
-                instances.insert_or_assign(removed_positions, instance);
-                return instance;
-            }
-        }
+						next_key_to_subkey[key_pos] = subkey_pos;
+						next_subkey_to_key[subkey_pos] = key_pos;
+					}
+				}
 
-        /**
-         * Get an instance for a empty vector of used positions of given length.
-         * @param removed_positions length of the empty vector.
-         * @return an instance
-         */
-        static PosCalc *getInstance(const size_t &length) {
-            subkey_mask_t keymask(length);
-            return getInstance(keymask);
-        }
+				instances[removed_positions] = std::unique_ptr<PosCalc const>{new PosCalc{
+						std::move(next_key_to_subkey), std::move(next_subkey_to_key), removed_positions}};
+				return instances[removed_positions].get();
+			}
+		}
 
-    };
+		/**
+		 * Get an instance for a empty vector of used positions of given length.
+		 * @param removed_positions length of the empty vector.
+		 * @return an instance
+		 */
+		static PosCalc const *getInstance(const size_t &length) {
+			subkey_mask_t key_mask(length);
+			return getInstance(key_mask);
+		}
+
+	};
+
+
 }
 
 
