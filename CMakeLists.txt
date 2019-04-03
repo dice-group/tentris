@@ -3,6 +3,12 @@ project(tnt CXX)
 set(tnt_VERSION_MAJOR 0)
 set(tnt_VERSION_MINOR pinwheel)
 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
 SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
@@ -79,6 +85,9 @@ target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
+# hopscotch-map
+add_subdirectory(thirdparty/hopscotch-map)
+
 #fmt
 add_subdirectory(thirdparty/fmt)
 
@@ -94,30 +103,36 @@ set(libraries_to_link
         Boost::boost # header only boost libraries
         fmt::fmt
         ${Boost_LIBRARIES}
-        ${Pistache_LIBRARY}
+        tsl::hopscotch_map
         )
 
 # make a library of the code
-add_library(libsparsetensor STATIC
+add_library(tentris SHARED
         src/
         )
 
-target_link_libraries(libsparsetensor
+target_link_libraries(tentris
+        PUBLIC
         ${libraries_to_link}
         )
 
-target_include_directories(libsparsetensor PUBLIC
-        src/
+target_include_directories(tentris PUBLIC
+        src/lib/
         )
 
 # main executable target
-add_executable(tnt_exec src/Main.cpp)
-target_include_directories(tnt_exec PRIVATE
-        src/
+add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
+
+target_link_libraries(tentris_server
+        PRIVATE
+        ${Pistache_LIBRARY}
+        tentris
         )
 
-target_link_libraries(tnt_exec
-        PRIVATE ${libraries_to_link}
+add_executable(tentris_terminal src/exec/TentrisTerminal.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
+target_link_libraries(tentris_terminal
+        PRIVATE
+        tentris
         )
 
 enable_testing() # enable this to enable testing
