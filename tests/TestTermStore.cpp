@@ -19,7 +19,7 @@ TEST(TestTermStore, inverse) {
     store[std::string{"\"xx\""}];
     TermStore::RevTermStore &inv = store.inv();
 
-    const std::unique_ptr<Term> &ptr = inv.at(id_);
+    const std::shared_ptr<Term> &ptr = inv.at(id_);
     ASSERT_EQ(ptr->getIdentifier(), std::string{"\"xx\""});
     ASSERT_EQ(inv.size(), 1);
     ASSERT_EQ(&inv.inv(), &store);

@@ -12,6 +12,7 @@
 #include "tnt/util/All.hpp"
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <tsl/hopscotch_set.h>
 
 namespace {
 	using namespace tnt::util::types;
@@ -303,6 +304,7 @@ namespace tnt::tensor::einsum {
 				std::vector<double> op_dim_cardinalities(op_poss.size(), 1.0);
 				auto label_count = 0;
 				auto min_dim_card = std::numeric_limits<size_t>::max();
+				tsl::hopscotch_set<size_t> sizes{op_poss.size()*2};
 
 				// iterate the operands that hold the label
 				for (auto[i, op_pos] : enumerate(op_poss)) {
@@ -311,12 +313,15 @@ namespace tnt::tensor::einsum {
 					const auto min_op_dim_card = *std::min_element(op_dim_cards.cbegin(), op_dim_cards.cend());
 					const auto max_op_dim_card = *std::max_element(op_dim_cards.cbegin(), op_dim_cards.cend());
 
+					for (const auto &op_dim_card : op_dim_cards)
+						sizes.insert(op_dim_card);
+
 					label_count += op_dim_cards.size();
 					// update minimal dimenension cardinality
 					if (min_op_dim_card < min_dim_card)
 						min_dim_card = min_op_dim_card;
 
-					op_dim_cardinalities[i] = double(max_op_dim_card); // / op_dim_cards.size();
+					op_dim_cardinalities[i] = double(max_op_dim_card); //
 				}
 
 				auto const min_dim_card_d = double(min_dim_card);
