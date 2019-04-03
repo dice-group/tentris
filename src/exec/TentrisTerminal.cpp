@@ -26,7 +26,7 @@ namespace {
 
 bool onlystdout = false;
 
-std::ostream &logsink(){
+std::ostream &logsink() {
 	if (onlystdout)
 		return std::cout;
 	else
@@ -55,7 +55,7 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 	bool first = true;
 
 	for (const auto &result : results) {
-		if (first){
+		if (first) {
 			first = false;
 			execute_end = high_resolution_clock::now();
 		}
@@ -78,7 +78,7 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 			}
 		}
 	}
-	if (first){ // if no bindings are returned
+	if (first) { // if no bindings are returned
 		first = false;
 		execute_end = high_resolution_clock::now();
 	}
@@ -116,7 +116,7 @@ void commandlineInterface(TripleStore &triple_store) {
 																triple_store,
 																timeout);
 						std::cout.flush();
-						logsink() << "number_of_bindings: " << nb << std::endl;
+						logsink() << "number of bindings: " << nb << std::endl;
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -132,10 +132,11 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getDistinctGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						auto nb = writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator), triple_store,
-													   timeout);
+						auto nb = writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator),
+																 triple_store,
+																 timeout);
 						std::cout.flush();
-						logsink() << "number_of_bindings: " << nb << std::endl;
+						logsink() << "number of bindings: " << nb << std::endl;
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -155,16 +156,17 @@ void commandlineInterface(TripleStore &triple_store) {
 		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
 		auto serialization_time = total_time - execution_time - parsing_time;
 
-		logsink() << "queryparsingtime:  " << fmt::format("{:15}",parsing_time.count()) << " ns\n";
+		logsink() << "queryparsingtime:  " << fmt::format("{:15}", parsing_time.count()) << " ns\n";
 
 
-		logsink() << "executiontime:     " << fmt::format("{:15}",execution_time.count()) << " ns\n";
+		logsink() << "executiontime:     " << fmt::format("{:15}", execution_time.count()) << " ns\n";
 
-		logsink() << "serializationtime: " << fmt::format("{:15}",serialization_time.count()) << " ns\n";
+		logsink() << "serializationtime: " << fmt::format("{:15}", serialization_time.count()) << " ns\n";
 
 
-		logsink() << "totaltime:         " << fmt::format("{:15}",total_time.count()) << " ns\n";
-		logsink() << "totaltime:         " << fmt::format("{:15}",duration_cast<std::chrono::milliseconds>(total_time).count()) << " ms\n";
+		logsink() << "totaltime:         " << fmt::format("{:15}", total_time.count()) << " ns\n";
+		logsink() << "totaltime:         "
+				  << fmt::format("{:15}", duration_cast<std::chrono::milliseconds>(total_time).count()) << " ms\n";
 
 		logsink().flush();
 	}
@@ -181,9 +183,8 @@ int main(int argc, char *argv[]) {
 	if (not cfg.rdf_file.empty()) {
 		logsink() << "Loading file " << cfg.rdf_file << " ..." << std::endl;
 		triplestore.loadRDF(cfg.rdf_file);
-		logsink() << "loading done." << std::endl;
+		logsink() << fmt::format("... loading finished. {} triples loaded.", triplestore.size()) << std::endl;;
 	}
-
 
 
 	std::thread commandline_client{commandlineInterface, std::ref(triplestore)};
