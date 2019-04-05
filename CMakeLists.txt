@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
 SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 
+option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
 else()
@@ -134,8 +136,7 @@ target_link_libraries(tentris_terminal
         PRIVATE
         tentris
         )
-
-enable_testing() # enable this to enable testing
-if (CMAKE_TESTING_ENABLED)
+if (TENTRIS_BUILD_TESTS)
+    enable_testing() # enable this to enable testing
     add_subdirectory(tests)
 endif ()
