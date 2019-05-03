@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "tnt/util/container/BinarySearch.hpp"
-using namespace tnt::util::container;
+#include "tentris/util/container/BinarySearch.hpp"
+using namespace tentris::util::container;
 TEST(TestBinarySearch, insertInRightOrder) {
 
     // Data

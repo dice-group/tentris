@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include <tnt/util/UndirectedGraph.hpp>
+#include <tentris/util/UndirectedGraph.hpp>
 
 TEST(TestUndirectedGraph, addEdge) {
-    using namespace ::tnt::util;
+    using namespace ::tentris::util;
     UndirectedGraph<uint8_t> graph{};
 
     graph.addEdge(1, 1);
@@ -22,7 +22,7 @@ TEST(TestUndirectedGraph, addEdge) {
 }
 
 TEST(TestUndirectedGraph, addCompleteGraph) {
-    using namespace ::tnt::util;
+    using namespace ::tentris::util;
     UndirectedGraph<uint8_t> graph{};
 
     graph.addCompleteGraph({1, 2, 3});

@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 
-#include <tnt/tensor/einsum/EinsumPlan.hpp>
-#include <tnt/tensor/hypertrie/Join.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/tensor/einsum/EinsumPlan.hpp>
+#include <tentris/tensor/hypertrie/Join.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 
 
 namespace {
-    using Step = tnt::tensor::einsum::EinsumPlan::Step;
-    using namespace tnt::util::types;
-    using namespace tnt::tensor::hypertrie;
-    using namespace tnt::tensor::einsum;
+    using Step = tentris::tensor::einsum::EinsumPlan::Step;
+    using namespace tentris::util::types;
+    using namespace tentris::tensor::hypertrie;
+    using namespace tentris::tensor::einsum;
 }
 
 

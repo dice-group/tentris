@@ -2,19 +2,19 @@
 #include <filesystem>
 #include <csignal>
 
-#include <tnt/store/TripleStore.hpp>
+#include <tentris/store/TripleStore.hpp>
 #include "config/ServerConfig.hpp"
-#include <tnt/store/AtomicTripleStore.hpp>
-#include <tnt/store/config/AtomicTripleStoreConfig.cpp>
-#include <tnt/http/SPARQLEndpoint.hpp>
+#include <tentris/store/AtomicTripleStore.hpp>
+#include <tentris/store/config/AtomicTripleStoreConfig.cpp>
+#include <tentris/http/SPARQLEndpoint.hpp>
 
 #include <fmt/format.h>
 
 
 namespace {
 	using namespace Pistache;
-	using namespace tnt::http;
-	using namespace tnt::store::config;
+	using namespace tentris::http;
+	using namespace tentris::store::config;
 	namespace fs = std::filesystem;
 	using namespace fmt::literals;
 }

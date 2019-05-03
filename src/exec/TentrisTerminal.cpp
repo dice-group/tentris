@@ -8,9 +8,9 @@
 
 #include "config/TerminalConfig.hpp"
 
-#include <tnt/tensor/einsum/operator/GeneratorInterface.hpp>
-#include <tnt/store/QueryExecutionPackage.hpp>
-#include <tnt/store/TripleStore.hpp>
+#include <tentris/tensor/einsum/operator/GeneratorInterface.hpp>
+#include <tentris/store/QueryExecutionPackage.hpp>
+#include <tentris/store/TripleStore.hpp>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -18,9 +18,9 @@
 #include <itertools.hpp>
 
 namespace {
-	using namespace tnt::store;
+	using namespace tentris::store;
 	using namespace std::filesystem;
-	using namespace tnt::tensor::einsum::operators;
+	using namespace tentris::tensor::einsum::operators;
 	using namespace iter;
 }
 

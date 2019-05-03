@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include <tnt/store/RDF/TermStore.hpp>
+#include <tentris/store/RDF/TermStore.hpp>
 
 namespace {
-    using namespace tnt::store;
-    using namespace tnt::util::types;
+    using namespace tentris::store;
+    using namespace tentris::util::types;
 }
 TEST(TestTermStore, double_write) {
     TermStore store{};

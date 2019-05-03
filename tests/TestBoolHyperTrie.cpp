@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/tensor/hypertrie/BoolHyperTrie.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 
-using namespace tnt::util::types;
-using namespace tnt::tensor::hypertrie;
+using namespace tentris::util::types;
+using namespace tentris::tensor::hypertrie;
 
 TEST(TestBoolHyperTrie, test_single_write_read0) {
 

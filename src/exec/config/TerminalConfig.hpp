@@ -1,17 +1,17 @@
-#ifndef TNT_TERMINALCONFIG_HPP
-#define TNT_TERMINALCONFIG_HPP
+#ifndef TENTRIS_TERMINALCONFIG_HPP
+#define TENTRIS_TERMINALCONFIG_HPP
 
 #include <string>
 
 #include <cxxopts.hpp>
 #include <chrono>
 
-#include <tnt/util/LogHelper.hpp>
-#include <tnt/util/SingletonFactory.hpp>
+#include <tentris/util/LogHelper.hpp>
+#include <tentris/util/SingletonFactory.hpp>
 
 
 namespace {
-	using namespace ::tnt::logging;
+	using namespace ::tentris::logging;
 }
 
 struct TerminalConfig {
@@ -20,7 +20,7 @@ protected:
 												 "Just type your query and get the result."};
 public:
 	/**
-	 * The relative or absolute path to the RDF file that TNT loads on startup.
+	 * The relative or absolute path to the RDF file that TENTRIS loads on startup.
 	 */
 	mutable std::string rdf_file{};
 	/**
@@ -131,4 +131,4 @@ protected:
 };
 
 
-#endif //TNT_TERMINALCONFIG_HPP
+#endif //TENTRIS_TERMINALCONFIG_HPP

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include <tnt/tensor/hypertrie/PosCalc.hpp>
+#include <tentris/tensor/hypertrie/PosCalc.hpp>
 
-using namespace tnt::tensor::hypertrie;
+using namespace tentris::tensor::hypertrie;
 
 TEST(TestPosCalc, every_different_instance_must_exist_only_once) {
     std::vector<bool> vec1 = std::vector<bool>(3);

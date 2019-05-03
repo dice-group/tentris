@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-#include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
-#include <tnt/tensor/einsum/operator/Einsum.hpp>
+#include <tentris/tensor/hypertrie/BoolHyperTrie.hpp>
+#include <tentris/tensor/einsum/operator/Einsum.hpp>
 
-using namespace tnt::util::types;
-using namespace tnt::tensor::hypertrie;
-using namespace tnt::tensor::einsum::operators;
-using namespace tnt::tensor::einsum;
+using namespace tentris::util::types;
+using namespace tentris::tensor::hypertrie;
+using namespace tentris::tensor::einsum::operators;
+using namespace tentris::tensor::einsum;
 
 //TODO: reenable
 

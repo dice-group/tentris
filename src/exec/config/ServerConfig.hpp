@@ -1,5 +1,5 @@
-#ifndef TNT_SERVERCONFIG_HPP
-#define TNT_SERVERCONFIG_HPP
+#ifndef TENTRIS_SERVERCONFIG_HPP
+#define TENTRIS_SERVERCONFIG_HPP
 
 #include <string>
 
@@ -10,13 +10,13 @@
 
 
 namespace {
-	using namespace ::tnt::logging;
+	using namespace ::tentris::logging;
 }
 
 struct ServerConfig : public TerminalConfig {
 
 	/**
-	 * The where TNT runs.
+	 * The where TENTRIS runs.
 	 */
 	mutable uint16_t port = 9080;
 
@@ -58,4 +58,4 @@ protected:
 
 };
 
-#endif //TNT_SERVERCONFIG_HPP
+#endif //TENTRIS_SERVERCONFIG_HPP

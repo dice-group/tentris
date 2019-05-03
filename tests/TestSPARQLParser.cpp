@@ -4,14 +4,14 @@
 #include <regex>
 #include <filesystem>
 
-#include <tnt/store/SPARQL/ParsedSPARQL.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/store/SPARQL/ParsedSPARQL.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 
 namespace {
     namespace fs = std::filesystem;
-    using namespace tnt::store::sparql;
-    using namespace tnt::store::rdf;
+    using namespace tentris::store::sparql;
+    using namespace tentris::store::rdf;
 }
 
 std::vector<std::string> load_queries(const std::string &query_file_path) {
@@ -29,7 +29,7 @@ std::vector<std::string> load_queries(const std::string &query_file_path) {
 bool parse_queries(const std::string &file) {
     std::vector<std::string> queries = load_queries(file);
 
-    using namespace tnt::store::sparql;
+    using namespace tentris::store::sparql;
     bool no_errors = true;
     fmt::print(" ### {}\n", file);
     std::set<int> lines_with_errors{};
@@ -70,7 +70,7 @@ TEST(TestSPARQLParser, DISABLED_ParseSingleQuery) {
 
     const std::string query = "PREFIX  dc:   <http://purl.org/dc/elements/1.1/>  PREFIX  :     <http://dbpedia.org/resource/>  PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>  PREFIX  dbpedia2: <http://dbpedia.org/property/>  PREFIX  foaf: <http://xmlns.com/foaf/0.1/>  PREFIX  owl:  <http://www.w3.org/2002/07/owl#>  PREFIX  xsd:  <http://www.w3.org/2001/XMLSchema#>  PREFIX  dbpedia: <http://dbpedia.org/>  PREFIX  rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>  PREFIX  skos: <http://www.w3.org/2004/02/skos/core#>  "
                               " SELECT  *  WHERE    { ?data rdf:type <http://dbpedia.org/ontology/FormulaOneRacer> .      ?wins <http://dbpedia.org/ontology/wins> 10    }";
-    using namespace tnt::store::sparql;
+    using namespace tentris::store::sparql;
     ParsedSPARQL q{query};
     fmt::print("{}", q);
 }

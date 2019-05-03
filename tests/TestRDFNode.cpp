@@ -2,16 +2,16 @@
 
 #include <iostream>
 
-#include <tnt/store/RDF/Term.hpp>
+#include <tentris/store/RDF/Term.hpp>
 
 // TODO: make it a real testcase
 
 namespace {
-    using namespace tnt::store::rdf;
+    using namespace tentris::store::rdf;
 }
 
 TEST(Node, DISABLED_polymorphism) {
-    using namespace tnt::store;
+    using namespace tentris::store;
 
     const char *string = "\"asdasd\"^^<dsa>";
     std::string lit{string};

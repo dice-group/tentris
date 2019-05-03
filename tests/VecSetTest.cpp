@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include <tnt/util/container/VecSet.hpp>
+#include <tentris/util/container/VecSet.hpp>
 
 namespace {
-    using namespace tnt::util::container;
+    using namespace tentris::util::container;
 }
 
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-project(tnt CXX)
-set(tnt_VERSION_MAJOR 0)
-set(tnt_VERSION_MINOR pinwheel)
+project(tentris CXX)
+set(tentris_VERSION_MAJOR 0)
+set(tentris_VERSION_MINOR pinwheel)
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -42,7 +42,7 @@ find_package(ANTLR REQUIRED)
 antlr_target(SPARQLGrammar
         Sparql.g4
         LEXER PARSER LISTENER VISITOR
-        PACKAGE tnt::a4grammar::sparql)
+        PACKAGE tentris::a4grammar::sparql)
 
 #TODO: seperate sources and headers
 #set(ANTLR_SPARQLGrammar_headers ${ANTLR_SPARQLGrammar_CXX_OUTPUTS})
@@ -96,8 +96,6 @@ add_subdirectory(thirdparty/fmt)
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
-        pthread
-        # Threads::Threads # for use of threads
         cppitertools
         datetimelib
         cxxopts
