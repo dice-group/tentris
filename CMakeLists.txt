@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(tentris CXX)
-set(tentris_VERSION_MAJOR 0)
-set(tentris_VERSION_MINOR pinwheel)
+set(tentris_VERSION_MAJOR 1)
+set(tentris_VERSION_MINOR brick)
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -97,6 +97,7 @@ set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
         cppitertools
+        Threads::Threads
         datetimelib
         cxxopts
         antlr4_sparql
