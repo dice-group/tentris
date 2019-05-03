@@ -2,11 +2,11 @@
 
 #include <random>
 
-#include <tnt/util/container/VecMap.hpp>
+#include <tentris/util/container/VecMap.hpp>
 
 
 namespace {
-    using namespace tnt::util::container;
+    using namespace tentris::util::container;
 }
 
 

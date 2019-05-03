@@ -1,14 +1,26 @@
 cmake_minimum_required(VERSION 3.10)
-project(tnt CXX)
-set(tnt_VERSION_MAJOR 0)
-set(tnt_VERSION_MINOR pinwheel)
+project(tentris CXX)
+set(tentris_VERSION_MAJOR 1)
+set(tentris_VERSION_MINOR brick)
+
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+    endif()
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
 SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 
+option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
+endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -21,7 +33,7 @@ ENDIF ()
 
 # build antlr4
 add_definitions(-DANTLR4CPP_STATIC)
-set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.1-complete.jar)
+set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.2-complete.jar)
 include(ExternalAntlr4Cpp)
 
 find_package(ANTLR REQUIRED)
@@ -30,7 +42,7 @@ find_package(ANTLR REQUIRED)
 antlr_target(SPARQLGrammar
         Sparql.g4
         LEXER PARSER LISTENER VISITOR
-        PACKAGE tnt::a4grammar::sparql)
+        PACKAGE tentris::a4grammar::sparql)
 
 #TODO: seperate sources and headers
 #set(ANTLR_SPARQLGrammar_headers ${ANTLR_SPARQLGrammar_CXX_OUTPUTS})
@@ -75,48 +87,55 @@ target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
+# hopscotch-map
+add_subdirectory(thirdparty/hopscotch-map)
+
 #fmt
 add_subdirectory(thirdparty/fmt)
 
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
-        pthread
-        # Threads::Threads # for use of threads
         cppitertools
+        Threads::Threads
         datetimelib
         cxxopts
         antlr4_sparql
         Boost::boost # header only boost libraries
         fmt::fmt
         ${Boost_LIBRARIES}
-        ${Pistache_LIBRARY}
+        tsl::hopscotch_map
         )
 
 # make a library of the code
-add_library(libsparsetensor STATIC
+add_library(tentris SHARED
         src/
         )
 
-target_link_libraries(libsparsetensor
+target_link_libraries(tentris
+        PUBLIC
         ${libraries_to_link}
         )
 
-target_include_directories(libsparsetensor PUBLIC
-        src/
+target_include_directories(tentris PUBLIC
+        src/lib/
         )
 
 # main executable target
-add_executable(tnt_exec src/Main.cpp)
-target_include_directories(tnt_exec PRIVATE
-        src/
+add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
+
+target_link_libraries(tentris_server
+        PRIVATE
+        ${Pistache_LIBRARY}
+        tentris
         )
 
-target_link_libraries(tnt_exec
-        PRIVATE ${libraries_to_link}
+add_executable(tentris_terminal src/exec/TentrisTerminal.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
+target_link_libraries(tentris_terminal
+        PRIVATE
+        tentris
         )
-
-enable_testing() # enable this to enable testing
-if (CMAKE_TESTING_ENABLED)
+if (TENTRIS_BUILD_TESTS)
+    enable_testing() # enable this to enable testing
     add_subdirectory(tests)
 endif ()

@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
 
-#include <tnt/tensor/hypertrie/BoolHyperTrie.hpp>
-#include <tnt/tensor/einsum/operator/Einsum.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/tensor/hypertrie/BoolHyperTrie.hpp>
+#include <tentris/tensor/einsum/operator/Einsum.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 namespace {
-    using namespace tnt::util::types;
-    using namespace tnt::tensor::einsum;
+    using namespace tentris::util::types;
+    using namespace tentris::tensor::einsum;
 }
 
 
@@ -150,7 +150,7 @@ TEST(TestSubscript, remove_label) {
 }
 
 //TEST(TestSubscript, optimize) {
-//    using namespace ::tnt::operations;
+//    using namespace ::tentris::operations;
 //    // data
 //    vector<vector<label_t >> raw_op_sc{
 //            {3, 2, 1},

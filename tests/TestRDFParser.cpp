@@ -2,12 +2,12 @@
 
 #include <filesystem>
 
-#include <tnt/store/RDF/NTripleParser.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/store/RDF/NTripleParser.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 
 namespace {
-    using namespace tnt::store::rdf;
+    using namespace tentris::store::rdf;
     namespace fs = std::filesystem;
 }
 

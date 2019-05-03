@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include <tnt/store/RDF/TermStore.hpp>
+#include <tentris/store/RDF/TermStore.hpp>
 
 namespace {
-    using namespace tnt::store;
-    using namespace tnt::util::types;
+    using namespace tentris::store;
+    using namespace tentris::util::types;
 }
 TEST(TestTermStore, double_write) {
     TermStore store{};
@@ -19,7 +19,7 @@ TEST(TestTermStore, inverse) {
     store[std::string{"\"xx\""}];
     TermStore::RevTermStore &inv = store.inv();
 
-    const std::unique_ptr<Term> &ptr = inv.at(id_);
+    const std::shared_ptr<Term> &ptr = inv.at(id_);
     ASSERT_EQ(ptr->getIdentifier(), std::string{"\"xx\""});
     ASSERT_EQ(inv.size(), 1);
     ASSERT_EQ(&inv.inv(), &store);

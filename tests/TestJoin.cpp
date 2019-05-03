@@ -1,20 +1,20 @@
 #include <gtest/gtest.h>
 
-#include <tnt/tensor/einsum/EinsumPlan.hpp>
-#include <tnt/tensor/hypertrie/Join.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/tensor/einsum/EinsumPlan.hpp>
+#include <tentris/tensor/hypertrie/Join.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 
 
 namespace {
-    using Step = tnt::tensor::einsum::EinsumPlan::Step;
-    using namespace tnt::util::types;
-    using namespace tnt::tensor::hypertrie;
-    using namespace tnt::tensor::einsum;
+    using Step = tentris::tensor::einsum::EinsumPlan::Step;
+    using namespace tentris::util::types;
+    using namespace tentris::tensor::hypertrie;
+    using namespace tentris::tensor::einsum;
 }
 
 
-TEST(TestJoin, full_sc_1_10_1___0) {
+TEST(TestJoin, DISABLED_full_sc_1_10_1___0) {
     BoolHyperTrie tensor_0 = {{0},
                               {1},
                               {2}};

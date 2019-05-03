@@ -2,15 +2,15 @@
 
 #include <filesystem>
 
-#include <tnt/store/TripleStore.hpp>
-#include <tnt/store/RDF/NTripleParser.hpp>
-#include <tnt/util/FmtHelper.hpp>
+#include <tentris/store/TripleStore.hpp>
+#include <tentris/store/RDF/NTripleParser.hpp>
+#include <tentris/util/FmtHelper.hpp>
 
 namespace {
     namespace fs = std::filesystem;
 
-    using namespace tnt::store;
-    using namespace tnt::util::types;
+    using namespace tentris::store;
+    using namespace tentris::util::types;
 }
 
 
