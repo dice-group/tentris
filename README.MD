@@ -1,28 +1,35 @@
-# TNT: Tensor-based Triple Store
+# Tentris: Tensor-based Triple Store
 
 [![Build Status](https://travis-ci.com/dice-group/tnt.svg?branch=development)](https://travis-ci.com/dice-group/tnt)
 
-*work in progress.*
+<span style="font-variant:small-caps;">Tentris</span> is a triple store to query RDF data using SPARQL for the Semantic Web. 
+It is based on tensors and tensor algebra. 
+Currently, it supports SELECT queries with or without DISTINCT and a WHERE-bock with triple patterns.
 
-TNT is a SPARQL triple store to query RDF data for the Semantic Web. 
-It is based on tensors and tensor algebra. Currently, it supports only SELECT with or without DISTINCT and a WHERE-bock with triple patterns only.  
+Further SPARQL features are to follow.   
 
-## usage
-### start
+## running tentris 
+Tentris provides two ways of running it. Either as a HTTP endpoint or as a interactive commandline tool. 
+HTTP endpoint.
+### HTTP endpoint
+#### start
+To start Tentris as a HTTP endpoint start it with
 after building run
 ```
-tnt_exec -p 8090 -f my_nt_file.nt
+tentris_server -p 8090 -f my_nt_file.nt
 ```
-to load the data from the provided `.nt` file and serve SPARQL endpoint at port 8090.
+to load the data from the provided `.nt` file and serve SPARQL endpoint at port 8090. 
+For more options commandline options see ` tentris_server --help`. 
 
-### query
-The endpoint may be queried locally at: `127.0.0.1:8090/sparql?query=*your query*`. 
+#### query
+The endpoint may now be queried locally at: `127.0.0.1:8090/sparql?query=*your query*`. 
 
-*Notice*: the query string `*your query*` must be URL encoded. You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
+*Notice*: the query string `*your query*` must be URL encoded. 
+You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
 
-### usage example
+#### usage example
 
-Consider the query below against a small SP²Bench data set:
+Consider the query below against a [SP²Bench](http://dbis.informatik.uni-freiburg.de/forschung/projekte/SP2B/) data set:
 ``` 
 PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX bench: <http://localhost/vocabulary/bench/>
@@ -34,88 +41,83 @@ WHERE {
 }
 ```
 
-To run it start TNT with: 
+To run the query start Tentris with: 
 ```
-tnt_exec -p 3030 -f tests/dataset/sp2b.nt 
+tentris_server -p 3030 -f sp2b.nt 
 ```
+You can find a populated sp2b.nt file in [tests/dataset/sp2b.nt](tests/dataset/sp2b.nt).
 
-Then visit with a browser of your choice the IRI to see the resul:
+now, visit the follwing IRI in a browser to send the query to your Tentris endpoint:
 
 <http://127.0.0.1:3030/sparql?query=PREFIX%20rdf%3A%20%20%20%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23%3E%0APREFIX%20bench%3A%20%3Chttp%3A%2F%2Flocalhost%2Fvocabulary%2Fbench%2F%3E%0A%0ASELECT%20DISTINCT%20%3Farticle%0AWHERE%20%7B%0A%20%20%3Farticle%20rdf%3Atype%20bench%3AArticle%20.%0A%20%20%3Farticle%20%3Fproperty%20%3Fvalue%20%0A%7D>
 
+## commandline tool
+
+For small experiments it is sometimes more convenient to use a commandline tool for querying an RDF graph. 
+Therefore, Tentris provides a commandline interface.  
+
+To start Tentris as a interactive commandline tool, run:
+```
+tentris_terminal -f my_nt_file.nt
+```
+
+After the RDF data from `my_nt_file.nt` is loaded, you type your query and hit ENTER. After the result was printed, you can enter your next query. 
+
+For more commandline options see `tentris_terminal`.
 
 ## prerequisites
 
 ### build tools
 
-Compiling is currently only tested on Ubuntu 18.04 with g++-7 and some g++-8 headers.
+Tentris is known to build successfully on Ubuntu 18.04 and newer. 
+Building was tested with GCC 8 and clang 7.
 
-To compile install the following build tools:
+The following packages are required to build tetnris:
 ```
-sudo apt install build-essential g++7 g++8 cmake
+sudo apt install build-essential cmake uuid-dev libserd-dev libboost-all-dev g++ git openjdk-8-jdk
 ```
-
-To run tests you need to additionally install gtest:
-```
-sudo apt install libgtest-dev
-```
- 
-and compile it:
-```
-cd /usr/src/gtest && sudo cmake . && sudo make && sudo mv libg* /usr/lib/ && cd -
-``` 
 
 ### dependencies
 
+Additionally, [pistache](https://github.com/oktal/pistache) needs to be compiled and installed on your system.
+But don't worry. It is really easy. Just follow the steps below.
 
-Clone, build and install pistache. Therefore, see below or at <https://github.com/oktal/pistache>.
-
-To download the latest available release, clone the repository over github.
+To download the latest available release, clone the repository from github:
 ```
 git clone https://github.com/oktal/pistache.git
 ```
 Then, init the submodules:
 ```
+cd pistache
 git submodule update --init
 ```
-Now, compile the sources:
-
+Now, make a build directory, go there, run cmake and compile the sources:
 ```
-cd pistache
 mkdir build
 cd build
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 make
 sudo make install
 ```
-
- 
-
-
-antlr4 is downloaded and compiled automatically during the build but requires uuid:
-
-```
-sudo apt install uuid-dev
-```
-If you want to deploy tnt without compiling it with by the cmake tartet install antlr4 with:
-
-```
-curl http://www.antlr.org/download/antlr4-cpp-runtime-4.7.1-source.zip  --output antlr4.zip && mkdir antlr4 && unzip -d antlr4 antlr4.zip && cd antlr4 && cmake && make && sudo make install
-sudo ldconfig
-```
-
-For parsing `.nt` files libserd is required:
-```
-sudo apt install libserd-dev
-```
-
-Further, boost and boost-context is required:
-```
-sudo apt install libboost-dev libboost-context-dev
-```
-
-
-
 ## build
+After you installed all dependencies, you can complile tentris now. 
+Make sure you are connected to the internet as Tentris downloads things at several points throughout the build processes.
 
-run `cmake CMakeLists.txt && make` in this directory.
+If you did not so far, clone Tentris:
+```
+git clone https://github.com/dice-group/tentris.git
+```
+Make sure you are in the cloned folder:
+```
+cd tentris
+```
+Now, make a build directory, go there, run cmake and compile the sources: 
+```bash
+mkdir build 
+/tentris/build
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. 
+cd /tentris/build
+make tentris_server tentris_terminal
+```
+Now is the time to get yourself a coffee. In about 
+When you build Tentris for the first time, it will take some time. 
