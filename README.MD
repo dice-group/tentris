@@ -1,6 +1,6 @@
-# Tentris: Tensor-based Triple Store
+# Tentris: A Tensor-based Triple Store
 
-[![Build Status](https://travis-ci.com/dice-group/tnt.svg?branch=development)](https://travis-ci.com/dice-group/tnt)
+[![Build Status](https://travis-ci.com/dice-group/tentris.svg?branch=development)](https://travis-ci.com/dice-group/tentris)
 
 <span style="font-variant:small-caps;">Tentris</span> is a triple store to query RDF data using SPARQL for the Semantic Web. 
 It is based on tensors and tensor algebra. 
@@ -114,10 +114,13 @@ cd tentris
 Now, make a build directory, go there, run cmake and compile the sources: 
 ```bash
 mkdir build 
-/tentris/build
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. 
-cd /tentris/build
-make tentris_server tentris_terminal
+make
 ```
 Now is the time to get yourself a coffee. In about 
 When you build Tentris for the first time, it will take some time. 
+
+## debug and tests
+To compile Tentris with debugging symbols, proceed as above but change the cmake command to `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .. `.
+
+To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
