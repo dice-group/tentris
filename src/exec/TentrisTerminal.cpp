@@ -11,6 +11,7 @@
 #include <tentris/tensor/einsum/operator/GeneratorInterface.hpp>
 #include <tentris/store/QueryExecutionPackage.hpp>
 #include <tentris/store/TripleStore.hpp>
+#include <tentris/util/LogHelper.hpp>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -45,7 +46,7 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 					const TripleStore &store, const system_clock::time_point &timeout) {
 	stream << fmt::format("{}\n", fmt::join(vars, ","));
 
-	auto invTermINdex = store.getTermIndex().inv();
+	auto invTermIndex = store.getTermIndex().inv();
 
 	int timeout_check = 0;
 	size_t result_count = 0;
@@ -63,7 +64,7 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 		const Key_t &key = RESULT_TYPE::getKey(result);
 
 		for (const auto[pos, id] : enumerate(key))
-			binding[pos] = invTermINdex.at(id).get();
+			binding[pos] = invTermIndex.at(id).get();
 		auto binding_string = fmt::format("{}\n", fmt::join(binding.begin(), binding.end(), ","));
 
 		for ([[maybe_unused]] const auto c : range(RESULT_TYPE::getCount(result))) {
@@ -73,13 +74,13 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 				timeout_check = 0;
 				stream.flush();
 				if (system_clock::now() > timeout) {
+					logsink() << "ERROR: timeout\n";
 					return result_count;
 				}
 			}
 		}
 	}
 	if (first) { // if no bindings are returned
-		first = false;
 		execute_end = high_resolution_clock::now();
 	}
 	return result_count;
@@ -92,6 +93,8 @@ void commandlineInterface(TripleStore &triple_store) {
 		std::string sparql_str;
 
 		std::getline(std::cin, sparql_str);
+
+		size_t number_of_bindings = 0;
 
 		query_start = high_resolution_clock::now();
 
@@ -112,11 +115,9 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getRegularGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						auto nb = writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator),
+						number_of_bindings = writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator),
 																triple_store,
 																timeout);
-						std::cout.flush();
-						logsink() << "number of bindings: " << nb << std::endl;
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -132,11 +133,9 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getDistinctGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						auto nb = writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator),
+						number_of_bindings = writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator),
 																 triple_store,
 																 timeout);
-						std::cout.flush();
-						logsink() << "number of bindings: " << nb << std::endl;
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -146,15 +145,17 @@ void commandlineInterface(TripleStore &triple_store) {
 				}
 			}
 		} catch (const std::invalid_argument &e) {
-			logsink() << e.what() << std::endl;
+			logsink() << "ERROR: Query is not parsable." << std::endl;
 		}
-		std::cout.flush();
 		query_end = high_resolution_clock::now();
 
 		auto parsing_time = duration_cast<std::chrono::nanoseconds>(parse_end - parse_start);
 		auto execution_time = duration_cast<std::chrono::nanoseconds>(execute_end - execute_start);
 		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
 		auto serialization_time = total_time - execution_time - parsing_time;
+
+
+		logsink() << "number of bindings:" << fmt::format("{:15}", number_of_bindings) << "\n";
 
 		logsink() << "queryparsingtime:  " << fmt::format("{:15}", parsing_time.count()) << " ns\n";
 
@@ -166,7 +167,7 @@ void commandlineInterface(TripleStore &triple_store) {
 
 		logsink() << "totaltime:         " << fmt::format("{:15}", total_time.count()) << " ns\n";
 		logsink() << "totaltime:         "
-				  << fmt::format("{:15}", duration_cast<std::chrono::milliseconds>(total_time).count()) << " ms\n";
+				  << fmt::format("{:9}", duration_cast<std::chrono::milliseconds>(total_time).count()) << "       ms\n";
 
 		logsink().flush();
 	}
@@ -174,6 +175,7 @@ void commandlineInterface(TripleStore &triple_store) {
 
 
 int main(int argc, char *argv[]) {
+	tentris::logging::init_logging();
 	TerminalConfig cfg{argc, argv};
 
 	TripleStore triplestore{cfg.cache_size, cfg.cache_bucket_capacity, cfg.timeout};
