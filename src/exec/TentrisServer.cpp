@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	Address address(Ipv4::any(), {cfg.port});
 	auto opts = Http::Endpoint::options()
 			.threads(cfg.threads)
-			.flags(Tcp::Options::InstallSignalHandler | Tcp::Options::ReuseAddr);
+			.flags(Tcp::Options::ReuseAddr);
 	auto server = std::make_shared<Http::Endpoint>(address);
 	server->init(opts);
 	server->setHandler(Http::make_handler<SPARQLEndpoint>());
