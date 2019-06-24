@@ -16,6 +16,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <fmt/time.h>
 #include <itertools.hpp>
 
 namespace {
@@ -34,12 +35,20 @@ std::ostream &logsink() {
 		return std::cerr;
 }
 
-high_resolution_clock::time_point query_start;
-high_resolution_clock::time_point query_end;
-high_resolution_clock::time_point parse_start;
-high_resolution_clock::time_point parse_end;
-high_resolution_clock::time_point execute_start;
-high_resolution_clock::time_point execute_end;
+inline std::string tp2s(system_clock::time_point timepoint) {
+	auto in_time_t = system_clock::to_time_t(timepoint);
+
+	std::stringstream ss;
+	ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+	return ss.str();
+};
+
+system_clock::time_point query_start;
+system_clock::time_point query_end;
+system_clock::time_point parse_start;
+system_clock::time_point parse_end;
+system_clock::time_point execute_start;
+system_clock::time_point execute_end;
 
 template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
 size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results,
@@ -58,7 +67,7 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 	for (const auto &result : results) {
 		if (first) {
 			first = false;
-			execute_end = high_resolution_clock::now();
+			execute_end = system_clock::now();
 		}
 
 		const Key_t &key = RESULT_TYPE::getKey(result);
@@ -75,13 +84,14 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 				stream.flush();
 				if (system_clock::now() > timeout) {
 					logsink() << "ERROR: timeout\n";
+					fmt::print("t actTO: {}\n", tp2s(system_clock::now()));
 					return result_count;
 				}
 			}
 		}
 	}
 	if (first) { // if no bindings are returned
-		execute_end = high_resolution_clock::now();
+		execute_end = system_clock::now();
 	}
 	return result_count;
 }
@@ -90,24 +100,30 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 void commandlineInterface(TripleStore &triple_store) {
 	while (true) {
 
+
 		std::string sparql_str;
 
 		std::getline(std::cin, sparql_str);
 
+		query_start = system_clock::now();
+
+
 		size_t number_of_bindings = 0;
 
-		query_start = high_resolution_clock::now();
+		std::chrono::system_clock::time_point timeout;
+
 
 		try {
-			parse_start = high_resolution_clock::now();
+			parse_start = system_clock::now();
 			std::shared_ptr<QueryExecutionPackage> query_package = triple_store.query(sparql_str);
 			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 			const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
 
-			const auto timeout = query_package->getTimeout();
+			timeout = query_package->getTimeout();
 
-			parse_end = high_resolution_clock::now();
-			execute_start = high_resolution_clock::now();
+
+			parse_end = system_clock::now();
+			execute_start = system_clock::now();
 
 			switch (sparqlQuery.getSelectModifier()) {
 				case SelectModifier::NONE: {
@@ -116,8 +132,8 @@ void commandlineInterface(TripleStore &triple_store) {
 					// check if it timed out
 					if (system_clock::now() < timeout) {
 						number_of_bindings = writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator),
-																triple_store,
-																timeout);
+																		   triple_store,
+																		   timeout);
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -133,9 +149,10 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getDistinctGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						number_of_bindings = writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator),
-																 triple_store,
-																 timeout);
+						number_of_bindings = writeNTriple<distinct_binding>(std::cout, vars,
+																			std::move(result_generator),
+																			triple_store,
+																			timeout);
 						query_package->done();
 					} else {
 						query_package->canceled();
@@ -147,13 +164,17 @@ void commandlineInterface(TripleStore &triple_store) {
 		} catch (const std::invalid_argument &e) {
 			logsink() << "ERROR: Query is not parsable." << std::endl;
 		}
-		query_end = high_resolution_clock::now();
+		query_end = system_clock::now();
+
 
 		auto parsing_time = duration_cast<std::chrono::nanoseconds>(parse_end - parse_start);
 		auto execution_time = duration_cast<std::chrono::nanoseconds>(execute_end - execute_start);
 		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
 		auto serialization_time = total_time - execution_time - parsing_time;
 
+		fmt::print("t START: {}\n", tp2s(query_start));
+		fmt::print("t TO   : {}\n", tp2s(timeout));
+		fmt::print("t END  : {}\n", tp2s(query_end));
 
 		logsink() << "number of bindings:" << fmt::format("{:15}", number_of_bindings) << "\n";
 
@@ -184,8 +205,14 @@ int main(int argc, char *argv[]) {
 
 	if (not cfg.rdf_file.empty()) {
 		logsink() << "Loading file " << cfg.rdf_file << " ..." << std::endl;
+		auto start_time = system_clock::now();
 		triplestore.loadRDF(cfg.rdf_file);
-		logsink() << fmt::format("... loading finished. {} triples loaded.", triplestore.size()) << std::endl;;
+		auto duration = system_clock::now() - start_time;
+		logsink() << fmt::format("... loading finished. {} triples loaded.", triplestore.size()) << std::endl;
+		logsink() << "duration: {} h {} min {} s"_format(
+				(duration_cast<hours>(duration) % 24).count(),
+				(duration_cast<minutes>(duration) % 60).count(),
+				(duration_cast<seconds>(duration) % 60).count()) << std::endl;
 	}
 
 
