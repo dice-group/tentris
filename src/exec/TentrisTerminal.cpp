@@ -28,6 +28,10 @@ namespace {
 
 bool onlystdout = false;
 
+enum Errors {
+	OK, UNPARSABLE, PROCESSING_TIMEOUT, SERIALIZATION_TIMEOUT, UNEXPECTED, SEVERE_UNEXPECTED
+};
+
 std::ostream &logsink() {
 	if (onlystdout)
 		return std::cout;
@@ -50,14 +54,21 @@ system_clock::time_point parse_end;
 system_clock::time_point execute_start;
 system_clock::time_point execute_end;
 
+Errors error;
+size_t number_of_bindings;
+
+std::chrono::system_clock::time_point timeout;
+std::chrono::system_clock::time_point actual_timeout;
+
 template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results,
-					const TripleStore &store, const system_clock::time_point &timeout) {
+void
+writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results,
+			 const TripleStore &store) {
 	stream << fmt::format("{}\n", fmt::join(vars, ","));
 
 	auto invTermIndex = store.getTermIndex().inv();
 
-	int timeout_check = 0;
+	uint timeout_check = 0;
 	size_t result_count = 0;
 
 	std::vector<Term const *> binding(size(vars));
@@ -82,10 +93,11 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 			if (++timeout_check == 500) {
 				timeout_check = 0;
 				stream.flush();
-				if (system_clock::now() > timeout) {
-					logsink() << "ERROR: timeout\n";
-					fmt::print("t actTO: {}\n", tp2s(system_clock::now()));
-					return result_count;
+				if (auto current_time = system_clock::now(); current_time > timeout) {
+					::error = Errors::SERIALIZATION_TIMEOUT;
+					actual_timeout = current_time;
+					number_of_bindings = result_count;
+					return;
 				}
 			}
 		}
@@ -93,7 +105,7 @@ size_t writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yie
 	if (first) { // if no bindings are returned
 		execute_end = system_clock::now();
 	}
-	return result_count;
+	number_of_bindings = result_count;
 }
 
 [[noreturn]]
@@ -108,9 +120,8 @@ void commandlineInterface(TripleStore &triple_store) {
 		query_start = system_clock::now();
 
 
-		size_t number_of_bindings = 0;
-
-		std::chrono::system_clock::time_point timeout;
+		number_of_bindings = 0;
+		::error = Errors::OK;
 
 
 		try {
@@ -121,7 +132,6 @@ void commandlineInterface(TripleStore &triple_store) {
 
 			timeout = query_package->getTimeout();
 
-
 			parse_end = system_clock::now();
 			execute_start = system_clock::now();
 
@@ -131,14 +141,16 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getRegularGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						number_of_bindings = writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator),
-																		   triple_store,
-																		   timeout);
-						query_package->done();
+						writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator), triple_store);
+						if (::error == Errors::OK) {
+							query_package->done();
+							break;
+						}
 					} else {
-						query_package->canceled();
-						continue;
+						::error = Errors::PROCESSING_TIMEOUT;
+						actual_timeout = system_clock::now();
 					}
+					query_package->canceled();
 					break;
 				}
 				case SelectModifier::REDUCE:
@@ -149,20 +161,25 @@ void commandlineInterface(TripleStore &triple_store) {
 					auto result_generator = query_package->getDistinctGenerator();
 					// check if it timed out
 					if (system_clock::now() < timeout) {
-						number_of_bindings = writeNTriple<distinct_binding>(std::cout, vars,
-																			std::move(result_generator),
-																			triple_store,
-																			timeout);
-						query_package->done();
+						writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator), triple_store);
+						if (::error == Errors::OK) {
+							query_package->done();
+							break;
+						}
 					} else {
-						query_package->canceled();
-						continue;
+						::error = Errors::PROCESSING_TIMEOUT;
+						actual_timeout = system_clock::now();
 					}
+					query_package->canceled();
 					break;
 				}
 			}
 		} catch (const std::invalid_argument &e) {
-			logsink() << "ERROR: Query is not parsable." << std::endl;
+			::error = Errors::UNPARSABLE;
+		} catch (const std::exception &e) {
+			::error = Errors::SEVERE_UNEXPECTED;
+		} catch (...) {
+			::error = Errors::UNEXPECTED;
 		}
 		query_end = system_clock::now();
 
@@ -171,24 +188,50 @@ void commandlineInterface(TripleStore &triple_store) {
 		auto execution_time = duration_cast<std::chrono::nanoseconds>(execute_end - execute_start);
 		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
 		auto serialization_time = total_time - execution_time - parsing_time;
+		switch (::error) {
+			case OK:
+				logsink() << "SUCCESSFUL\n";
+				break;
+			case UNPARSABLE:
+				logsink() << "ERROR: UNPARSABLE QUERY\n";
+				break;
+			case PROCESSING_TIMEOUT:
+				logsink() << "ERROR: TIMEOUT DURING PROCESSING\n";
+				break;
+			case SERIALIZATION_TIMEOUT:
+				logsink() << "ERROR: TIMEOUT DURING SERIALIZATION\n";
+				break;
+			case UNEXPECTED:
+				logsink() << "ERROR: UNEXPECTED\n";
+				break;
+			case SEVERE_UNEXPECTED:
+				logsink() << "ERROR: SEVERE UNEXPECTED\n";
+				break;
+		}
 
-		fmt::print("t START: {}\n", tp2s(query_start));
-		fmt::print("t TO   : {}\n", tp2s(timeout));
-		fmt::print("t END  : {}\n", tp2s(query_end));
 
-		logsink() << "number of bindings:" << fmt::format("{:15}", number_of_bindings) << "\n";
+		logsink() << fmt::format("start:              {}\n", tp2s(query_start));
+		logsink() << fmt::format("planned timeout:    {}\n", tp2s(timeout));
+		if (::error == Errors::PROCESSING_TIMEOUT or ::error == Errors::SERIALIZATION_TIMEOUT)
+			logsink() << fmt::format("actual timeout:     {}\n", tp2s(actual_timeout));
+		logsink() << fmt::format("end:                {}\n", tp2s(query_end));
 
-		logsink() << "queryparsingtime:  " << fmt::format("{:15}", parsing_time.count()) << " ns\n";
+		if (::error == Errors::OK or ::error == Errors::PROCESSING_TIMEOUT or
+			::error == Errors::SERIALIZATION_TIMEOUT) {
+			logsink() << "number of bindings: " << fmt::format("{:18}", number_of_bindings) << "\n";
+
+			logsink() << "parsing time:       " << fmt::format("{:18}", parsing_time.count()) << " ns\n";
 
 
-		logsink() << "executiontime:     " << fmt::format("{:15}", execution_time.count()) << " ns\n";
+			logsink() << "execution time:     " << fmt::format("{:18}", execution_time.count()) << " ns\n";
+			if (::error != Errors::PROCESSING_TIMEOUT)
+				logsink() << "serialization time: " << fmt::format("{:18}", serialization_time.count()) << " ns\n";
+		}
 
-		logsink() << "serializationtime: " << fmt::format("{:15}", serialization_time.count()) << " ns\n";
-
-
-		logsink() << "totaltime:         " << fmt::format("{:15}", total_time.count()) << " ns\n";
-		logsink() << "totaltime:         "
-				  << fmt::format("{:9}", duration_cast<std::chrono::milliseconds>(total_time).count()) << "       ms\n";
+		logsink() << "total time:         " << fmt::format("{:18}", total_time.count()) << " ns\n";
+		logsink() << "total time:         "
+				  << fmt::format("{:12}", duration_cast<std::chrono::milliseconds>(total_time).count())
+				  << "       ms\n";
 
 		logsink().flush();
 	}
