@@ -1,6 +1,6 @@
 # Tentris: A Tensor-based Triple Store
 
-[![Build Status](https://travis-ci.com/dice-group/tentris.svg?branch=development)](https://travis-ci.com/dice-group/tentris?branch=development)
+[![Build Status](https://travis-ci.com/dice-group/tentris.svg)](https://travis-ci.com/dice-group/tentris)
 
 <span style="font-variant:small-caps;">Tentris</span> is a triple store to query RDF data using SPARQL for the Semantic Web. 
 It is based on tensors and tensor algebra. 
