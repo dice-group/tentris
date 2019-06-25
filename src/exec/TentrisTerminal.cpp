@@ -142,15 +142,14 @@ void commandlineInterface(TripleStore &triple_store) {
 					// check if it timed out
 					if (system_clock::now() < timeout) {
 						writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator), triple_store);
-						if (::error == Errors::OK) {
-							query_package->done();
-							break;
-						}
+						std::thread cleanup_thread([=] { query_package->done(); });
+						cleanup_thread.detach();
 					} else {
 						::error = Errors::PROCESSING_TIMEOUT;
 						actual_timeout = system_clock::now();
+						std::thread cleanup_thread([=] { query_package->canceled(); });
+						cleanup_thread.detach();
 					}
-					query_package->canceled();
 					break;
 				}
 				case SelectModifier::REDUCE:
@@ -162,24 +161,26 @@ void commandlineInterface(TripleStore &triple_store) {
 					// check if it timed out
 					if (system_clock::now() < timeout) {
 						writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator), triple_store);
-						if (::error == Errors::OK) {
-							query_package->done();
-							break;
-						}
+						std::thread cleanup_thread([=] { query_package->done(); });
+						cleanup_thread.detach();
+						break;
 					} else {
 						::error = Errors::PROCESSING_TIMEOUT;
 						actual_timeout = system_clock::now();
+						std::thread cleanup_thread([=] { query_package->canceled(); });
+						cleanup_thread.detach();
 					}
-					query_package->canceled();
 					break;
 				}
 			}
 		} catch (const std::invalid_argument &e) {
 			::error = Errors::UNPARSABLE;
+			logDebug(fmt::format("UNPARSABLE reason: {}", e.what()));
 		} catch (const std::exception &e) {
-			::error = Errors::SEVERE_UNEXPECTED;
-		} catch (...) {
 			::error = Errors::UNEXPECTED;
+			logDebug(fmt::format("UNEXPECTED reason: {}", e.what()));
+		} catch (...) {
+			::error = Errors::SEVERE_UNEXPECTED;
 		}
 		query_end = system_clock::now();
 
