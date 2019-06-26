@@ -7,6 +7,8 @@
 #include "tentris/store/TripleStore.hpp"
 #include "tentris/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tentris/util/HTTPUtils.hpp"
+#include "QueryResultState.hpp"
+
 
 #include <pistache/http.h>
 
@@ -19,13 +21,15 @@ namespace {
 	using namespace std::chrono;
 	using TripleStore = tentris::store::TripleStore;
 	using namespace Pistache::Http;
-	using namespace tentris::store::rdf;
+    using Status = tentris::http::ResultState ;
+    using namespace tentris::store::rdf;
 }; // namespace
 namespace tentris::http {
 	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-	void steamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
+	Status streamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
 				   const TripleStore &store, const system_clock::time_point &timeout) {
 		ulong result_count = 0;
+		const ulong flush_result_count = 500;
 
 		stream << "{\"head\":{\"vars\":[";
 		bool firstTime = true;
@@ -81,26 +85,29 @@ namespace tentris::http {
 			}
 			json_result << "}";
 
-			if (result_count += RESULT_TYPE::getCount(result); result_count > 20) {
-				if (system_clock::now() > timeout) {
-					stream << "]}}\n" << ends;
-					throw TimeoutException{result_count};
-				} else {
-					result_count = 0;
-				}
-			}
-
 			std::string json_result_binding = json_result.str();
 			for ([[maybe_unused]] const auto &c : range(RESULT_TYPE::getCount(result))) {
+                result_count += vars.size();
 				if (firstResult) {
 					firstResult = false;
 					stream << json_result_binding.c_str();
 				} else {
 					stream << "," << json_result_binding.c_str();
+					// flush the content from time to time.
+                    if (result_count > flush_result_count) {
+                        if (system_clock::now() > timeout) {
+                            stream << "]}}\n" << ends;
+                            return Status::SERIALIZATION_TIMEOUT;
+                        } else {
+                            result_count = 0;
+                            stream << flush;
+                        }
+                    }
 				}
 			}
 		}
 		stream << "]}}\n" << ends;
+		return Status::OK;
 	}
 } // namespace tentris::http
 

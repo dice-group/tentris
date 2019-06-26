@@ -34,7 +34,7 @@ namespace tentris::http {
 	 * @param store a instance of a triple store
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
-	void runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
+    Status runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
 				  TripleStore &store) {
 
 		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
@@ -49,32 +49,28 @@ namespace tentris::http {
 				if (system_clock::now() < timeout) {
 					response.headers().add<SPARQLJSON>();
 					auto stream = response.stream(Code::Ok);
-					steamJSON<counted_binding>(vars, std::move(result_generator), stream, store, timeout);
-				} else {
-					response.send(Code::Request_Timeout);
-					throw TimeoutException{};
+					return streamJSON<counted_binding>(vars, std::move(result_generator), stream, store, timeout);
+				} else{
+				    return Status::PROCESSING_TIMEOUT;
 				}
-				break;
 			}
 			case SelectModifier::DISTINCT: {
 				logDebug("Running select distinct query.");
-				// calculate the result
-				auto result_generator = query_package->getDistinctGenerator();
-				// check if it timed out
-				if (system_clock::now() < timeout) {
-					response.headers().add<SPARQLJSON>();
-					auto stream = response.stream(Code::Ok);
-					steamJSON<distinct_binding>(vars, std::move(result_generator), stream, store, timeout);
-				} else {
-					response.send(Code::Request_Timeout);
-					throw TimeoutException{};
-				}
-				break;
+                auto result_generator = query_package->getDistinctGenerator();
+                // check if it timed out
+                if (system_clock::now() < timeout) {
+                    response.headers().add<SPARQLJSON>();
+                    auto stream = response.stream(Code::Ok);
+                    return streamJSON<distinct_binding>(vars, std::move(result_generator), stream, store, timeout);
+                } else{
+                    return Status::PROCESSING_TIMEOUT;
+                }
 			}
-			default:
-				logDebug("Query type is not yet supported.");
-				response.send(Code::Not_Implemented);
+            default:
+                break;
 		}
+        logDebug("Query type is not yet supported.");
+        return Status::UNPARSABLE;
 	}
 } // namespace tentris::http
 

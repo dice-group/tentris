@@ -93,6 +93,10 @@ add_subdirectory(thirdparty/hopscotch-map)
 #fmt
 add_subdirectory(thirdparty/fmt)
 
+#TBB
+add_subdirectory(thirdparty/tbb)
+
+
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
@@ -105,6 +109,7 @@ set(libraries_to_link
         fmt::fmt
         ${Boost_LIBRARIES}
         tsl::hopscotch_map
+        tbb
         )
 
 # make a library of the code
