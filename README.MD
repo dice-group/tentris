@@ -114,6 +114,7 @@ cd tentris
 Now, make a build directory, go there, run cmake and compile the sources: 
 ```bash
 mkdir build 
+cd build
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. 
 make
 ```
