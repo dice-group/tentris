@@ -7,6 +7,7 @@
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
 #include <tentris/http/SPARQLEndpoint.hpp>
+#include <restinio/all.hpp>
 
 #include <fmt/format.h>
 
@@ -59,6 +60,21 @@ int main(int argc, char *argv[]) {
 	}
 
 	// create endpoint
+	using namespace restinio;
+	auto router = std::make_unique<router::express_router_t<>>();
+	router->http_get(
+			R"(/sparql)",
+			[](auto req, auto params) {
+				const auto qp = parse_query(req->header().query());
+				return req->create_response()
+						.set_body(
+								fmt::format("meter_id={} (year={}/mon={}/day={})",
+								            cast_to<int>(params["meter_id"]),
+								            opt_value<int>(qp, "year"),
+								            opt_value<int>(qp, "mon"),
+								            opt_value<int>(qp, "day")))
+						.done();
+			});
 
 	Address address(Ipv4::any(), {cfg.port});
 	auto opts = Http::Endpoint::options()

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(tentris CXX)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
@@ -6,30 +6,23 @@ set(tentris_VERSION_MINOR brick)
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
-    endif()
-endif()
+    endif ()
+endif ()
 
 set(CMAKE_CXX_STANDARD 17)
-set(BUILD_SHARED_LIBS OFF)
-SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
-
-option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
+# set(BUILD_SHARED_LIBS OFF)
+# SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
-else()
+else ()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-endif()
+endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # find boost
-SET(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED COMPONENTS context system log thread log_setup)
-IF (Boost_FOUND)
-    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
-ENDIF ()
 
 # build antlr4
 add_definitions(-DANTLR4CPP_STATIC)
@@ -62,9 +55,6 @@ target_include_directories(antlr4_sparql
 target_link_libraries(antlr4_sparql antlr4_static)
 add_dependencies(antlr4_sparql antlr4_static)
 
-#include pistache
-find_package(Pistache REQUIRED)
-
 #include threads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -94,7 +84,21 @@ add_subdirectory(thirdparty/hopscotch-map)
 add_subdirectory(thirdparty/fmt)
 
 #TBB
-add_subdirectory(thirdparty/tbb)
+# add_subdirectory(thirdparty/tbb)
+# set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+
+set(CMAKE_MODULE_PATH ${CONAN_CMAKE_MODULE_PATH} ${CMAKE_MODULE_PATH})
+
+find_package(TBB REQUIRED)
+
+find_package(restinio CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+#find_package(Boost 1.69.0 REQUIRED)
+
+# add_subdirectory(thirdparty/restinio/dev)
 
 
 set(libraries_to_link
@@ -105,11 +109,15 @@ set(libraries_to_link
         datetimelib
         cxxopts
         antlr4_sparql
-        Boost::boost # header only boost libraries
+        ${CONAN_LIBS}
+        #Boost::boost
+        # Boost::context Boost::log Boost::thread Boost::log_setup
+        #Boost::boost # header only boost libraries
         fmt::fmt
-        ${Boost_LIBRARIES}
+        #${Boost_LIBRARIES}
         tsl::hopscotch_map
         tbb
+        restinio::restinio
         )
 
 # make a library of the code
