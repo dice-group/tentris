@@ -42,7 +42,7 @@ namespace tentris::http {
 		const auto timeout = query_package->getTimeout();
 		switch (sparqlQuery.getSelectModifier()) {
 			case SelectModifier::NONE: {
-				logDebug("Running select query.");
+				logTrace("Running select query.");
 				// calculate the result
 				auto result_generator = query_package->getRegularGenerator();
 				// check if it timed out
@@ -55,7 +55,7 @@ namespace tentris::http {
 				}
 			}
 			case SelectModifier::DISTINCT: {
-				logDebug("Running select distinct query.");
+				logTrace("Running select distinct query.");
                 auto result_generator = query_package->getDistinctGenerator();
                 // check if it timed out
                 if (system_clock::now() < timeout) {
@@ -69,7 +69,7 @@ namespace tentris::http {
             default:
                 break;
 		}
-        logDebug("Query type is not yet supported.");
+		logTrace("Query type is not yet supported.");
         return Status::UNPARSABLE;
 	}
 } // namespace tentris::http
