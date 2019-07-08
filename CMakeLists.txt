@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(tentris CXX)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -10,8 +11,6 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
 endif ()
 
 set(CMAKE_CXX_STANDARD 17)
-# set(BUILD_SHARED_LIBS OFF)
-# SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
@@ -22,15 +21,12 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-# find boost
-
 # build antlr4
 add_definitions(-DANTLR4CPP_STATIC)
 set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.2-complete.jar)
 include(ExternalAntlr4Cpp)
 
 find_package(ANTLR REQUIRED)
-
 
 antlr_target(SPARQLGrammar
         Sparql.g4
@@ -71,34 +67,17 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
-
 add_library(datetimelib INTERFACE)
 target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
-# hopscotch-map
-add_subdirectory(thirdparty/hopscotch-map)
-
-#fmt
-add_subdirectory(thirdparty/fmt)
-
-#TBB
-# add_subdirectory(thirdparty/tbb)
-# set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
-
-set(CMAKE_MODULE_PATH ${CONAN_CMAKE_MODULE_PATH} ${CMAKE_MODULE_PATH})
-
 find_package(TBB REQUIRED)
 
 find_package(restinio CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-#find_package(Boost 1.69.0 REQUIRED)
-
-# add_subdirectory(thirdparty/restinio/dev)
+find_package(tsl-hopscotch-map 2.2.1 REQUIRED)
+find_package(Boost 1.69.0 REQUIRED COMPONENTS context system log thread log_setup)
 
 
 set(libraries_to_link
@@ -109,15 +88,16 @@ set(libraries_to_link
         datetimelib
         cxxopts
         antlr4_sparql
-        ${CONAN_LIBS}
-        #Boost::boost
-        # Boost::context Boost::log Boost::thread Boost::log_setup
-        #Boost::boost # header only boost libraries
         fmt::fmt
-        #${Boost_LIBRARIES}
-        tsl::hopscotch_map
-        tbb
         restinio::restinio
+        tsl-hopscotch-map
+        TBB
+        Boost::boost
+        Boost::context
+        Boost::system
+        Boost::log
+        Boost::thread
+        Boost::log_setup
         )
 
 # make a library of the code
