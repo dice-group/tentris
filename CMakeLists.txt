@@ -97,10 +97,10 @@ set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
         cppitertools
-       # Threads::Threads
+        Threads::Threads
         datetimelib
         cxxopts
-        # antlr4_sparql
+        antlr4_sparql
         Boost::boost # header only boost libraries
         fmt::fmt
         restinio::restinio

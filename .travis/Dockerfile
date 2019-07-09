@@ -5,7 +5,7 @@ RUN pip3 install conan
 RUN mkdir /conan_cache
 COPY conanfile.txt /conan_cache/conanfile.txt
 RUN conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
-RUN cd /conan_cache && conan install . --build=missing
+RUN cd /conan_cache && conan install . --build=missing --settings compiler.libcxx="libstdc++11"
 
 COPY cmake /tentris/cmake/
 COPY thirdparty /tentris/thirdparty/
@@ -14,6 +14,5 @@ COPY src /tentris/src/
 COPY CMakeLists.txt /tentris/CMakeLists.txt
 COPY conanfile.txt /tentris/conanfile.txt
 
-RUN mkdir /tentris/build && cd /tentris/build
-RUN cd /tentris/build && conan install .. --build=missing
-CMD cd /tentris/build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j tentris_server
+RUN mkdir /tentris/build && cd /tentris/build && conan install .. --build=missing --settings compiler.libcxx="libstdc++11"
+CMD cd /tentris/build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j tentris_server tentris_terminal

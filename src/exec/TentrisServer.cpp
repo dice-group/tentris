@@ -74,7 +74,11 @@ int main(int argc, char *argv[]) {
 	using traits_t =
 	restinio::traits_t<
 			restinio::asio_timer_manager_t,
+#ifdef DEBUG
 			restinio::shared_ostream_logger_t,
+#else
+			null_logger_t,
+#endif
 			restinio::router::express_router_t<>
 	>;
 
