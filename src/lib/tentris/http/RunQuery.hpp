@@ -9,7 +9,8 @@
 #include "tentris/tensor/einsum/operator/GeneratorInterface.hpp"
 
 #include <chrono>
-#include <pistache/http.h>
+#include <restinio/all.hpp>
+
 
 #include <tentris/util/LogHelper.hpp>
 
@@ -34,7 +35,7 @@ namespace tentris::http {
 	 * @param store a instance of a triple store
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
-    Status runQuery(ResponseWriter &response, const std::shared_ptr<QueryExecutionPackage> &query_package,
+    Status runQuery(restinio::request_handle_t &req, const std::shared_ptr<QueryExecutionPackage> &query_package,
 				  TripleStore &store) {
 
 		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
@@ -47,9 +48,10 @@ namespace tentris::http {
 				auto result_generator = query_package->getRegularGenerator();
 				// check if it timed out
 				if (system_clock::now() < timeout) {
-					response.headers().add<SPARQLJSON>();
-					auto stream = response.stream(Code::Ok);
-					return streamJSON<counted_binding>(vars, std::move(result_generator), stream, store, timeout);
+					auto resp = req->create_response<restinio::chunked_output_t>(restinio::status_ok());
+					resp.append_header( restinio::http_field::content_type, "application/sparql-results+json" );
+					resp.flush();
+					return streamJSON<counted_binding>(vars, std::move(result_generator), resp, store, timeout);
 				} else{
 				    return Status::PROCESSING_TIMEOUT;
 				}
@@ -59,9 +61,10 @@ namespace tentris::http {
                 auto result_generator = query_package->getDistinctGenerator();
                 // check if it timed out
                 if (system_clock::now() < timeout) {
-                    response.headers().add<SPARQLJSON>();
-                    auto stream = response.stream(Code::Ok);
-                    return streamJSON<distinct_binding>(vars, std::move(result_generator), stream, store, timeout);
+	                auto resp = req->create_response<restinio::chunked_output_t>(restinio::status_ok());
+	                resp.append_header( restinio::http_field::content_type, "application/sparql-results+json" );
+	                resp.flush();
+                    return streamJSON<distinct_binding>(vars, std::move(result_generator), resp, store, timeout);
                 } else{
                     return Status::PROCESSING_TIMEOUT;
                 }

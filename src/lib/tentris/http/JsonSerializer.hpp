@@ -26,22 +26,24 @@ namespace {
 }; // namespace
 namespace tentris::http {
 	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-	Status streamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
+	Status streamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, restinio::response_builder_t< restinio::chunked_output_t > &stream,
 				   const TripleStore &store, const system_clock::time_point &timeout) {
+		using namespace std::string_literals;
+
 		ulong result_count = 0;
 		const ulong flush_result_count = 500;
 
-		stream << "{\"head\":{\"vars\":[";
+		stream.append_chunk("{\"head\":{\"vars\":["s);
 		bool firstTime = true;
 		for (const auto &var : vars) {
 			if (firstTime) {
 				firstTime = false;
-				stream << "\"" << var.name.c_str() << "\"";
+				stream.append_chunk("\"{}\""_format(var.name));
 			} else {
-				stream << ",\"" << var.name.c_str() << "\"";
+				stream.append_chunk(",\"{}\""_format(var.name));
 			}
 		}
-		stream << "]},\"results\":{\"bindings\":[";
+		stream.append_chunk("]},\"results\":{\"bindings\":["s);
 		bool firstResult = true;
 
 		for (const auto &result : results) {
@@ -90,23 +92,26 @@ namespace tentris::http {
                 result_count += vars.size();
 				if (firstResult) {
 					firstResult = false;
-					stream << json_result_binding.c_str();
+					stream.append_chunk(json_result_binding);
 				} else {
-					stream << "," << json_result_binding.c_str();
+					stream.append_chunk(",");
+					stream.append_chunk(json_result_binding);
 					// flush the content from time to time.
                     if (result_count > flush_result_count) {
                         if (system_clock::now() > timeout) {
-                            stream << "]}}\n" << ends;
+	                        stream.append_chunk("]}}\n");
+	                        stream.done();
                             return Status::SERIALIZATION_TIMEOUT;
                         } else {
                             result_count = 0;
-                            stream << flush;
+                            stream.flush();
                         }
                     }
 				}
 			}
 		}
-		stream << "]}}\n" << ends;
+		stream.append_chunk("]}}\n");
+		stream.done();
 		return Status::OK;
 	}
 } // namespace tentris::http

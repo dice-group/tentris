@@ -1,8 +1,10 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.13)
 project(tentris CXX)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+# message("${CONAN_LIBS}")
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -11,6 +13,10 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
 endif ()
 
 set(CMAKE_CXX_STANDARD 17)
+set(BUILD_SHARED_LIBS OFF)
+SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
+
+option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
@@ -51,10 +57,6 @@ target_include_directories(antlr4_sparql
 target_link_libraries(antlr4_sparql antlr4_static)
 add_dependencies(antlr4_sparql antlr4_static)
 
-#include threads
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-
 #include cppitertools, see https://github.com/ryanhaining/cppitertools
 add_library(cppitertools INTERFACE)
 target_include_directories(cppitertools INTERFACE
@@ -84,20 +86,15 @@ set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
         cppitertools
-        Threads::Threads
         datetimelib
         cxxopts
         antlr4_sparql
         fmt::fmt
         restinio::restinio
-        tsl-hopscotch-map
-        TBB
-        Boost::boost
-        Boost::context
-        Boost::system
-        Boost::log
-        Boost::thread
-        Boost::log_setup
+        tbb
+        http_parser
+        ${Boost_LIBRARIES}
+        ${conan_libs}
         )
 
 # make a library of the code

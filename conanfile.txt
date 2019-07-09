@@ -13,6 +13,7 @@ restinio:boost_libs=static
 [generators]
 cmake_find_package
 cmake_paths
+cmake
 
 [imports]
 bin, *.dll -> ./bin # Copies all dll files from packages bin folder to my "bin" folder
