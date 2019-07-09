@@ -2,7 +2,6 @@
 #define TENTRIS_SPARQLREQUESTTHREAD_HPP
 
 #include "tentris/http/JsonSerializer.hpp"
-#include "tentris/http/JSONSparqlResultsHeader.hpp"
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/TripleStore.hpp"
@@ -16,19 +15,17 @@
 
 namespace {
 	using ParsedSPARQL = tentris::store::sparql::ParsedSPARQL;
-	using ResponseWriter = Pistache::Http::ResponseWriter;
 	using Variable = tentris::store::sparql::Variable;
 	using SelectModifier = tentris::store::sparql::SelectModifier;
 	using TripleStore = tentris::store::TripleStore;
 	using namespace tentris::store::cache;
 	using namespace tentris::tensor::einsum::operators;
-	using Code = Pistache::Http::Code;
 	using namespace std::chrono;
 	using namespace ::tentris::logging;
 }; // namespace
 namespace tentris::http {
 	/**
-	 * Executes a QueryExecutionPackage and writes its as JSON to a Pistache ResponseWriter. The execution is stopped
+	 * Executes a QueryExecutionPackage and writes its as JSON to a result. The execution is stopped
 	 * when time_out is reached.
 	 * @param response the writer to write the result of the query to.
 	 * @param query_package a query package that is executed to produce the result

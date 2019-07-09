@@ -10,17 +10,14 @@
 #include "QueryResultState.hpp"
 
 
-#include <pistache/http.h>
 
 #include <iostream>
 
 namespace {
 	using Variable = tentris::store::sparql::Variable;
-	using ResponseStream = Pistache::Http::ResponseStream;
 	using namespace tentris::tensor::einsum::operators;
 	using namespace std::chrono;
 	using TripleStore = tentris::store::TripleStore;
-	using namespace Pistache::Http;
     using Status = tentris::http::ResultState ;
     using namespace tentris::store::rdf;
 }; // namespace

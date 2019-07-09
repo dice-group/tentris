@@ -1,5 +1,3 @@
-#define RESTINIO_USE_BOOST_ASIO
-
 #include <filesystem>
 #include <csignal>
 
@@ -14,7 +12,6 @@
 
 
 namespace {
-	using namespace Pistache;
 	using namespace tentris::http;
 	using namespace tentris::store::config;
 	namespace fs = std::filesystem;

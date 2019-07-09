@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.12)
 project(tentris CXX)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
@@ -26,6 +26,13 @@ endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
+# find boost
+SET(Boost_USE_STATIC_LIBS ON)
+find_package(Boost REQUIRED COMPONENTS context system log thread log_setup)
+IF (Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+ENDIF ()
 
 # build antlr4
 add_definitions(-DANTLR4CPP_STATIC)
@@ -57,6 +64,10 @@ target_include_directories(antlr4_sparql
 target_link_libraries(antlr4_sparql antlr4_static)
 add_dependencies(antlr4_sparql antlr4_static)
 
+#include threads
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 #include cppitertools, see https://github.com/ryanhaining/cppitertools
 add_library(cppitertools INTERFACE)
 target_include_directories(cppitertools INTERFACE
@@ -74,21 +85,23 @@ target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
+
 find_package(TBB REQUIRED)
 
 find_package(restinio CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(tsl-hopscotch-map 2.2.1 REQUIRED)
-find_package(Boost 1.69.0 REQUIRED COMPONENTS context system log thread log_setup)
 
 
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
         serd-0 # for parsing ntriples
         cppitertools
+       # Threads::Threads
         datetimelib
         cxxopts
-        antlr4_sparql
+        # antlr4_sparql
+        Boost::boost # header only boost libraries
         fmt::fmt
         restinio::restinio
         tbb
@@ -116,7 +129,6 @@ add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerC
 
 target_link_libraries(tentris_server
         PRIVATE
-        ${Pistache_LIBRARY}
         tentris
         )
 

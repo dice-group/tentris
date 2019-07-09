@@ -12,7 +12,6 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/AtomicCleanupTaskGroup.hpp"
-#include "tentris/http/JSONSparqlResultsHeader.hpp"
 #include "tentris/http/JsonSerializer.hpp"
 #include "tentris/http/RunQuery.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
@@ -22,8 +21,6 @@
 #include "tentris/util/LogHelper.hpp"
 
 namespace {
-	using namespace ::Pistache;
-	using namespace ::Pistache::Http;
 	using namespace ::tentris::util::types;
 	using namespace ::tentris::tensor::einsum;
 	using namespace ::tentris::tensor::hypertrie;
