@@ -150,7 +150,7 @@ namespace tentris::http {
 
 			try {
 
-				const auto query_params = restinio::parse_query(req->header().query());
+				const auto query_params = restinio::parse_query<restinio::parse_query_traits::javascript_compatible>(req->header().query());
 				if (query_params.has("query")) {
 					auto query = std::string(query_params["query"]);
 					// check if there is actually an query
