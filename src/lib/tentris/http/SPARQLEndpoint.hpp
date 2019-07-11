@@ -146,18 +146,20 @@ namespace tentris::http {
 		Status status = Status::OK;
 		std::string error_message = "";
 		std::shared_ptr<QueryExecutionPackage> query_package;
+        std::string query_string = "";
 		try {
 
 			try {
 
 				const auto query_params = restinio::parse_query<restinio::parse_query_traits::javascript_compatible>(req->header().query());
 				if (query_params.has("query")) {
-					auto query = std::string(query_params["query"]);
+                    query_string = std::string(query_params["query"]);
 					// check if there is actually an query
 					try {
-						query_package = AtomicTripleStore::getInstance().query(query);
+						query_package = AtomicTripleStore::getInstance().query(query_string);
 					} catch (const TimeoutException &exc) {
 						status = Status::PROCESSING_TIMEOUT;
+                        error_message = exc.what();
 					} catch (const std::invalid_argument &exc) {
 						status = Status::UNPARSABLE;
 						error_message = exc.what();
@@ -192,7 +194,7 @@ namespace tentris::http {
 					case UNPARSABLE:
 						logError(" ## unparsable query\n"
 						         "request_id: {}\n"_format(request_id) +
-						         "query_string: {}\n"_format(query_package->getSparqlStr())
+						         "query_string: {}\n"_format(query_string)
 						);
 						handled = req->create_response(restinio::http_status_line_t{restinio::status_code::bad_request,
 						                                                            "Could not parse the requested query."s}).connection_close().done();
