@@ -15,4 +15,4 @@ COPY CMakeLists.txt /tentris/CMakeLists.txt
 COPY conanfile.txt /tentris/conanfile.txt
 
 RUN mkdir /tentris/build && cd /tentris/build && conan install .. --build=missing --settings compiler.libcxx="libstdc++11"
-CMD cd /tentris/build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j tentris_server tentris_terminal
+CMD cd /tentris/build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j tentris_server
