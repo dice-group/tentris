@@ -26,6 +26,7 @@ namespace {
     using namespace tentris::tensor::einsum;
     using namespace tentris::store::rdf;
     using SparqlParser = tentris::a4grammar::sparql::SparqlParser;
+    using namespace fmt::literals;
 };
 namespace tentris::store::sparql {
     using VarOrTerm = std::variant<Variable, Term>;
@@ -63,6 +64,7 @@ namespace tentris::store::sparql {
 
 
     class ParsedSPARQL {
+
 
         std::string sparql_str;
         std::istringstream str_stream;
@@ -353,13 +355,15 @@ namespace tentris::store::sparql {
                 if (auto *pname_both = prefixedName->PNAME_LN();pname_both) {
                     const std::string &pname_both_str = pname_both->getText();
                     unsigned long i = pname_both_str.find(':') + 1;
-                    const std::string &resolvedPrefix = prefixes.at(
-                            std::string{pname_both_str, 0, i});
-                    return {"<" + resolvedPrefix +
-                            std::string{pname_both_str, i,
-                                        pname_both_str.size() - i} +
-                            ">"};
+                    auto prefix_string = std::string{pname_both_str, 0, i};
+                    auto suffix_string = std::string{pname_both_str, i, pname_both_str.size() - i};
+                    try {
+                        return "<{}{}>"_format(prefixes.at(prefix_string), suffix_string);
+                    } catch (const std::out_of_range &exc) {
+                        throw std::invalid_argument{"Undefined prefix {} used."_format(prefix_string)};
+                    }
                 } else {
+                    // TODO: this looks wrong
                     auto *default_prefix = prefixedName->PNAME_NS();
                     const std::string &resolvedPrefix = prefixes.at(default_prefix->getText());
                     return {"<" + resolvedPrefix + ">"};

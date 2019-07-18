@@ -1,13 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 project(tentris CXX)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+# message("${CONAN_LIBS}")
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
-    endif()
-endif()
+    endif ()
+endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SHARED_LIBS OFF)
@@ -17,9 +20,9 @@ option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
-else()
+else ()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-endif()
+endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -37,7 +40,6 @@ set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.2-complete
 include(ExternalAntlr4Cpp)
 
 find_package(ANTLR REQUIRED)
-
 
 antlr_target(SPARQLGrammar
         Sparql.g4
@@ -62,9 +64,6 @@ target_include_directories(antlr4_sparql
 target_link_libraries(antlr4_sparql antlr4_static)
 add_dependencies(antlr4_sparql antlr4_static)
 
-#include pistache
-find_package(Pistache REQUIRED)
-
 #include threads
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -81,17 +80,18 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
-
 add_library(datetimelib INTERFACE)
 target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
-# hopscotch-map
-add_subdirectory(thirdparty/hopscotch-map)
 
-#fmt
-add_subdirectory(thirdparty/fmt)
+find_package(TBB REQUIRED)
+
+find_package(restinio CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(tsl-hopscotch-map 2.2.1 REQUIRED)
+
 
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
@@ -103,8 +103,11 @@ set(libraries_to_link
         antlr4_sparql
         Boost::boost # header only boost libraries
         fmt::fmt
+        restinio::restinio
+        tbb
+        http_parser
         ${Boost_LIBRARIES}
-        tsl::hopscotch_map
+        ${conan_libs}
         )
 
 # make a library of the code
@@ -126,7 +129,6 @@ add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerC
 
 target_link_libraries(tentris_server
         PRIVATE
-        ${Pistache_LIBRARY}
         tentris
         )
 

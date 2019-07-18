@@ -7,37 +7,40 @@
 #include "tentris/store/TripleStore.hpp"
 #include "tentris/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tentris/util/HTTPUtils.hpp"
+#include "QueryResultState.hpp"
 
-#include <pistache/http.h>
+
 
 #include <iostream>
 
 namespace {
 	using Variable = tentris::store::sparql::Variable;
-	using ResponseStream = Pistache::Http::ResponseStream;
 	using namespace tentris::tensor::einsum::operators;
 	using namespace std::chrono;
 	using TripleStore = tentris::store::TripleStore;
-	using namespace Pistache::Http;
-	using namespace tentris::store::rdf;
+    using Status = tentris::http::ResultState ;
+    using namespace tentris::store::rdf;
 }; // namespace
 namespace tentris::http {
 	template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-	void steamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, ResponseStream &stream,
+	Status streamJSON(const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results, restinio::response_builder_t< restinio::chunked_output_t > &stream,
 				   const TripleStore &store, const system_clock::time_point &timeout) {
-		ulong result_count = 0;
+		using namespace std::string_literals;
 
-		stream << "{\"head\":{\"vars\":[";
+		ulong result_count = 0;
+		const ulong flush_result_count = 500;
+
+		stream.append_chunk("{\"head\":{\"vars\":["s);
 		bool firstTime = true;
 		for (const auto &var : vars) {
 			if (firstTime) {
 				firstTime = false;
-				stream << "\"" << var.name.c_str() << "\"";
+				stream.append_chunk("\"{}\""_format(var.name));
 			} else {
-				stream << ",\"" << var.name.c_str() << "\"";
+				stream.append_chunk(",\"{}\""_format(var.name));
 			}
 		}
-		stream << "]},\"results\":{\"bindings\":[";
+		stream.append_chunk("]},\"results\":{\"bindings\":["s);
 		bool firstResult = true;
 
 		for (const auto &result : results) {
@@ -81,26 +84,32 @@ namespace tentris::http {
 			}
 			json_result << "}";
 
-			if (result_count += RESULT_TYPE::getCount(result); result_count > 20) {
-				if (system_clock::now() > timeout) {
-					stream << "]}}\n" << ends;
-					throw TimeoutException{result_count};
-				} else {
-					result_count = 0;
-				}
-			}
-
 			std::string json_result_binding = json_result.str();
 			for ([[maybe_unused]] const auto &c : range(RESULT_TYPE::getCount(result))) {
+                result_count += vars.size();
 				if (firstResult) {
 					firstResult = false;
-					stream << json_result_binding.c_str();
+					stream.append_chunk(json_result_binding);
 				} else {
-					stream << "," << json_result_binding.c_str();
+					stream.append_chunk(",");
+					stream.append_chunk(json_result_binding);
+					// flush the content from time to time.
+                    if (result_count > flush_result_count) {
+                        if (system_clock::now() > timeout) {
+	                        stream.append_chunk("]}}\n");
+	                        stream.done();
+                            return Status::SERIALIZATION_TIMEOUT;
+                        } else {
+                            result_count = 0;
+                            stream.flush();
+                        }
+                    }
 				}
 			}
 		}
-		stream << "]}}\n" << ends;
+		stream.append_chunk("]}}\n");
+		stream.done();
+		return Status::OK;
 	}
 } // namespace tentris::http
 

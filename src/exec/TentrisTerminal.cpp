@@ -18,6 +18,7 @@
 #include <fmt/ranges.h>
 #include <fmt/time.h>
 #include <itertools.hpp>
+#include "tentris/http/QueryResultState.hpp"
 
 namespace {
 	using namespace tentris::store;
@@ -28,9 +29,7 @@ namespace {
 
 bool onlystdout = false;
 
-enum Errors {
-	OK, UNPARSABLE, PROCESSING_TIMEOUT, SERIALIZATION_TIMEOUT, UNEXPECTED, SEVERE_UNEXPECTED
-};
+using Errors = tentris::http::ResultState ;
 
 std::ostream &logsink() {
 	if (onlystdout)
@@ -190,24 +189,26 @@ void commandlineInterface(TripleStore &triple_store) {
 		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
 		auto serialization_time = total_time - execution_time - parsing_time;
 		switch (::error) {
-			case OK:
+		    case Errors::OK:
 				logsink() << "SUCCESSFUL\n";
 				break;
-			case UNPARSABLE:
+			case Errors::UNPARSABLE:
 				logsink() << "ERROR: UNPARSABLE QUERY\n";
 				break;
-			case PROCESSING_TIMEOUT:
+			case Errors::PROCESSING_TIMEOUT:
 				logsink() << "ERROR: TIMEOUT DURING PROCESSING\n";
 				break;
-			case SERIALIZATION_TIMEOUT:
+			case Errors::SERIALIZATION_TIMEOUT:
 				logsink() << "ERROR: TIMEOUT DURING SERIALIZATION\n";
 				break;
-			case UNEXPECTED:
+			case Errors::UNEXPECTED:
 				logsink() << "ERROR: UNEXPECTED\n";
 				break;
-			case SEVERE_UNEXPECTED:
+			case Errors::SEVERE_UNEXPECTED:
 				logsink() << "ERROR: SEVERE UNEXPECTED\n";
 				break;
+            default:
+                break;
 		}
 
 

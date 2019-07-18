@@ -134,6 +134,55 @@ namespace tentris::logging {
 				(duration_cast<seconds>(duration) % 60).count()));
 	}
 
+	/**
+	 * Make a Timestamp string without the date out of a time_point
+	 * @tparam clock the clock used by the time_point. Should be inferred automatically in most cases.
+	 * @param time_point the time_point of interest
+	 * @return a string
+	 */
+	template<typename clock>
+	inline std::string toTimestampStr(time_point<clock> time_point) {
+		using namespace std::chrono;
+		auto const time_point_t = system_clock::to_time_t(time_point);
+		auto tse = time_point.time_since_epoch();
+		return fmt::format("{:%H:%M:%S}.{:03d}'{:03d}'{:03d}", *std::localtime(&time_point_t),
+		                   duration_cast<milliseconds>(tse).count() % 1000,
+		                   duration_cast<microseconds>(tse).count() % 1000,
+		                   duration_cast<nanoseconds>(tse).count() % 1000);
+	}
+
+	/**
+	 * Make a date string out of a time_point
+	 * @tparam clock the clock used by the time_point. Should be inferred automatically in most cases.
+	 * @param time_point the time_point of interest
+	 * @return a string
+	 */
+	template<typename clock>
+	inline std::string toDateStr(time_point<clock> time_point) {
+		auto const time_point_t = std::chrono::system_clock::to_time_t(time_point);
+		return fmt::format("{:%Y-%m-%d}", *std::localtime(&time_point_t));
+	}
+
+	/**
+	 * Make a duration string out of the distance between two time_points
+	 * @tparam clock the clock used by the time_points. Should be inferred automatically in most cases.
+	 * @param start_time start time
+	 * @param end_time end time
+	 * @return a string
+	 */
+	template<typename clock>
+	inline std::string toDurationStr(time_point<clock> start_time, time_point<clock> end_time) {
+		using namespace std::chrono;
+		auto duration = end_time - start_time;
+		return "{:02d}h{:02d}m{:02d}s.{:03d}'{:03d}'{:03d}"_format(
+				duration_cast<hours>(duration).count(),
+				duration_cast<minutes>(duration).count() % 60,
+				duration_cast<seconds>(duration).count() % 60,
+				duration_cast<milliseconds>(duration).count() % 1000,
+				duration_cast<microseconds>(duration).count() % 1000,
+				duration_cast<nanoseconds>(duration).count() % 1000);
+	}
+
 	inline void logDebug([[maybe_unused]]std::string msg) {
 #if DEBUG
 		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << msg;
