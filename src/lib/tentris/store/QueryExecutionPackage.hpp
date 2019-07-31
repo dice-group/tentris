@@ -38,7 +38,7 @@ namespace tentris::store::cache {
 		 * the methods with distinct in their names. Otherwise use only the methods with regular in their names
 		 */
 		bool is_distinct;
-		bool is_trivial_emtpy;
+		bool is_trivial_empty;
 
 		size_t cache_bucket_size;
 
@@ -63,8 +63,8 @@ namespace tentris::store::cache {
 
 			const auto slice_keys = generateSliceKeys(parsedSPARQL.getBgps(), trie, termIndex);
 
-			is_trivial_emtpy = slice_keys.empty();
-			if (not is_trivial_emtpy) {
+			is_trivial_empty = slice_keys.empty();
+			if (not is_trivial_empty) {
 
 				const auto subscript = parsedSPARQL.getSubscript();
 
@@ -75,7 +75,7 @@ namespace tentris::store::cache {
 					if (opt_slice)
 						hypertries.emplace_back(opt_slice.value());
 					else {
-						is_trivial_emtpy = true;
+						is_trivial_empty = true;
 						return;
 					}
 				}
@@ -87,7 +87,7 @@ namespace tentris::store::cache {
 		}
 
 		void done() {
-			if (not is_trivial_emtpy and std::chrono::system_clock::now() > keep_result_timeout) {
+			if (not is_trivial_empty and std::chrono::system_clock::now() > keep_result_timeout) {
 				if (not is_distinct);// regular_operator_tree->clearCacheDone();
 				else;// distinct_operator_tree->clearCacheDone();
 			}
@@ -97,7 +97,7 @@ namespace tentris::store::cache {
 		}
 
 		void canceled() {
-			if (not is_trivial_emtpy) {
+			if (not is_trivial_empty) {
 				if (not is_distinct);//	regular_operator_tree->clearCacheCanceled();
 				else;//distinct_operator_tree->clearCacheCanceled();
 			}
@@ -106,7 +106,7 @@ namespace tentris::store::cache {
 
 		void setTimeout(const TimeoutType &timeout) {
 			this->timeout = timeout;
-			if (not is_trivial_emtpy) {
+			if (not is_trivial_empty) {
 				if (not is_distinct);//regular_operator_tree->setTimeout(timeout);
 				else;//distinct_operator_tree->setTimeout(timeout);
 			}
@@ -194,8 +194,8 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 		return format_to(ctx.begin(),
 		                 " parsedSPARQL:     {}\n"
 		                 " is_distinct:      {}\n"
-		                 " is_trivial_emtpy: {}\n",
-		                 p.parsedSPARQL, p.is_distinct, p.is_trivial_emtpy);
+		                 " is_trivial_empty: {}\n",
+		                 p.parsedSPARQL, p.is_distinct, p.is_trivial_empty);
 		// TODO: implement print for operator
 	}
 };

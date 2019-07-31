@@ -34,14 +34,13 @@ namespace tentris::http {
 	                       const QueryExecutionPackage::TimeoutType timeout, const std::vector<Variable> &vars) {
 		logTrace("Running select query.");
 		// calculate the result
-		std::shared_ptr<void> result_generator = query_package->getEinsum();
-		auto &einsum = *static_cast<Einsum<RESULT_TYPE> *>(result_generator.get());
+
 		// check if it timed out
 		if (system_clock::now() < timeout) {
 			auto resp = req->create_response<restinio::chunked_output_t>(restinio::status_ok());
 			resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
 			resp.flush();
-			return streamJSON<RESULT_TYPE>(vars, einsum, resp, store, timeout);
+			return streamJSON<RESULT_TYPE>(vars, query_package, resp, store, timeout);
 		} else {
 			return Status::PROCESSING_TIMEOUT;
 		}

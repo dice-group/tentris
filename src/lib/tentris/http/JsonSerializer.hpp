@@ -24,7 +24,7 @@ namespace tentris::http {
 	}; // namespace
 
 	template<typename RESULT_TYPE>
-	Status streamJSON(const std::vector<Variable> &vars, Einsum<RESULT_TYPE> &results,
+	Status streamJSON(const std::vector<Variable> &vars,const std::shared_ptr<QueryExecutionPackage> &query_package,
 	                  restinio::response_builder_t<restinio::chunked_output_t> &stream,
 	                  const TripleStore &store, const system_clock::time_point &timeout) {
 		using namespace std::string_literals;
@@ -45,64 +45,70 @@ namespace tentris::http {
 		stream.append_chunk(R"(]},"results":{"bindings":[)");
 		bool firstResult = true;
 
-		for (const EinsumEntry<RESULT_TYPE> &result : results) {
-			std::stringstream json_result{};
-			json_result << "{";
-			bool firstKey = true;
-			for (const auto[binding, var] : zip(result.key, vars)) {
-				Term &term = *store.getTermIndex().inv().at(binding);
+		if (not query_package->is_trivial_empty) {
+			std::shared_ptr<void> raw_results = query_package->getEinsum();
+			auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 
-				if (firstKey) {
-					firstKey = false;
-				} else {
-					json_result << ",";
+
+			for (const EinsumEntry<RESULT_TYPE> &result : results) {
+				std::stringstream json_result{};
+				json_result << "{";
+				bool firstKey = true;
+				for (const auto[binding, var] : zip(result.key, vars)) {
+					Term &term = *store.getTermIndex().inv().at(binding);
+
+					if (firstKey) {
+						firstKey = false;
+					} else {
+						json_result << ",";
+					}
+
+					json_result << "\"" << var.name << "\":{";
+
+					const Term::NodeType &termType = term.type();
+					switch (termType) {
+						case Term::URI:
+							json_result << R"("type":"uri")";
+							break;
+						case Term::BNode:
+							json_result << R"("type":"bnode")";
+							break;
+						case Term::Literal:
+							json_result << R"("type":"literal")";
+							break;
+					} // todo check default
+
+					json_result << R"(,"value":")" << escapeJsonString(term.get_value());
+					if (termType == Term::Literal) {
+						const Literal &literal = static_cast<Literal &>(term);
+						if (literal.hasType())
+							json_result << R"(","datatype":")" << literal.getType();
+						else if (literal.hasLang())
+							json_result << R"(","xml:lang":")" << literal.getLang();
+					}
+					json_result << "\"}";
 				}
+				json_result << "}";
 
-				json_result << "\"" << var.name << "\":{";
-
-				const Term::NodeType &termType = term.type();
-				switch (termType) {
-					case Term::URI:
-						json_result << R"("type":"uri")";
-						break;
-					case Term::BNode:
-						json_result << R"("type":"bnode")";
-						break;
-					case Term::Literal:
-						json_result << R"("type":"literal")";
-						break;
-				} // todo check default
-
-				json_result << R"(,"value":")" << escapeJsonString(term.get_value());
-				if (termType == Term::Literal) {
-					const Literal &literal = static_cast<Literal &>(term);
-					if (literal.hasType())
-						json_result << R"(","datatype":")" << literal.getType();
-					else if (literal.hasLang())
-						json_result << R"(","xml:lang":")" << literal.getLang();
-				}
-				json_result << "\"}";
-			}
-			json_result << "}";
-
-			std::string json_result_binding = json_result.str();
-			for ([[maybe_unused]] const auto &c : range(result.value)) {
-				result_count += vars.size();
-				if (firstResult) {
-					firstResult = false;
-					stream.append_chunk(json_result_binding);
-				} else {
-					stream.append_chunk(",");
-					stream.append_chunk(json_result_binding);
-					// flush the content from time to time.
-					if (result_count > flush_result_count) {
-						if (system_clock::now() > timeout) {
-							stream.append_chunk("]}}\n");
-							stream.done();
-							return Status::SERIALIZATION_TIMEOUT;
-						} else {
-							result_count = 0;
-							stream.flush();
+				std::string json_result_binding = json_result.str();
+				for ([[maybe_unused]] const auto &c : range(result.value)) {
+					result_count += vars.size();
+					if (firstResult) {
+						firstResult = false;
+						stream.append_chunk(json_result_binding);
+					} else {
+						stream.append_chunk(",");
+						stream.append_chunk(json_result_binding);
+						// flush the content from time to time.
+						if (result_count > flush_result_count) {
+							if (system_clock::now() > timeout) {
+								stream.append_chunk("]}}\n");
+								stream.done();
+								return Status::SERIALIZATION_TIMEOUT;
+							} else {
+								result_count = 0;
+								stream.flush();
+							}
 						}
 					}
 				}
