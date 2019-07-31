@@ -6,13 +6,13 @@
 
 namespace einsum::internal {
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class JoinOperator {
 
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		using Join_t = Join<key_part_type, map_type, set_type>;
-		using Operator_t = Operator<key_part_type, map_type, set_type>;
+		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
 		using CardinalityEstimation_t = CardinalityEstimation<key_part_type, map_type, set_type>;
 
 
@@ -35,9 +35,9 @@ namespace einsum::internal {
 		JoinOperator(std::shared_ptr<Subscript> subscript) : subscript(std::move(subscript)) {}
 
 
-		static UnsignedEntry<key_part_type> next(void *self_raw) {
+		static Entry <key_part_type, value_type> next(void *self_raw) {
 			JoinOperator &self = *static_cast<JoinOperator *>(self_raw);
-			UnsignedEntry<key_part_type> entry = *self.sub_operator_iter;
+			Entry <key_part_type, value_type> entry = *self.sub_operator_iter;
 			if (self.is_result_label)
 				entry.key[self.label_pos_in_result] = self.current_key_part;
 

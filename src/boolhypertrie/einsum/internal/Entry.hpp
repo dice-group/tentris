@@ -29,17 +29,15 @@ namespace einsum::internal {
 		}
 	};
 
-	// TODO: extend to bool-valued
-	template<typename key_part_type, typename value_type = size_t>
+	template<typename key_part_type_, typename value_type_ = size_t, typename = std::enable_if_t<(std::is_integral_v<value_type_>)>>
 	struct Entry {
-		using Key_t = Key<key_part_type>;
-		using Value_t = value_type;
-		Value_t value;
-		Key_t key;
+		using key_part_type = key_part_type_;
+		using key_type = Key<key_part_type>;
+		using value_type = value_type_;
+		value_type value;
+		key_type key;
 	};
 
-	template<typename key_part_type>
-	using UnsignedEntry = Entry<key_part_type>;
 }
 #endif //HYPERTRIE_ENTRY_HPP
 

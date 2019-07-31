@@ -5,11 +5,11 @@
 
 namespace einsum::internal {
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class CartesianOperator {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
-		using Operator_t = Operator<key_part_type, map_type, set_type>;
+		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
 
 		using SubResult = tsl::hopscotch_map<Key < key_part_type>, size_t, KeyHash <key_part_type >>;
 
@@ -21,7 +21,7 @@ namespace einsum::internal {
 
 		std::size_t iterated_pos; // set in load_impl
 		typename Operator_t::iterator iterated_sub_operator_iterator; // set in load_impl // updated in next
-		UnsignedEntry <key_part_type> iterated_sub_operator_entry; // set in load_impl // updated in next
+		Entry <key_part_type, value_type> iterated_sub_operator_entry; // set in load_impl // updated in next
 		OriginalResultPoss iterated_sub_operator_result_mapping; // set in load_impl
 		FullCarthesianResult calculated_operands; // set in load_impl // updated in next
 		bool ended_ = true; // set in load_impl // updated in load_impl, next
@@ -35,7 +35,7 @@ namespace einsum::internal {
 		}
 
 
-		static UnsignedEntry <key_part_type> next(void *self_raw) {
+		static Entry <key_part_type, value_type> next(void *self_raw) {
 			auto &self = *static_cast<CartesianOperator *>(self_raw);
 			// get the accumulated entry from the from pre-calculated carth_operands
 			auto entry = *self.calculated_operands;
@@ -136,11 +136,16 @@ namespace einsum::internal {
 		}
 
 
-		static void writeToEntry(const OriginalResultPoss &original_result_poss, UnsignedEntry <key_part_type> &sink,
-		                         const UnsignedEntry <key_part_type> &source, const std::size_t last_value = 1) {
+		static void
+		writeToEntry(const OriginalResultPoss &original_result_poss, Entry <key_part_type, value_type> &sink,
+		             const Entry <key_part_type, value_type> &source,
+		             [[maybe_unused]]const key_part_type last_value = 1) {
 			for (auto i : iter::range(original_result_poss.size()))
 				sink.key[original_result_poss[i]] = source.key[i];
-			sink.value = sink.value * source.value / last_value;
+			if constexpr (std::is_same_v<key_part_type, bool>)
+				sink.value = sink.value or source.value;
+			else
+				sink.value = sink.value * source.value / last_value;
 		}
 
 
@@ -148,7 +153,7 @@ namespace einsum::internal {
 			std::vector<SubResult> sub_results;
 			typename std::vector<typename SubResult::const_iterator> iters; // set in constructor
 			typename std::vector<typename SubResult::const_iterator> ends;
-			UnsignedEntry <key_part_type> current_entry;
+			Entry <key_part_type, value_type> current_entry;
 			std::vector<OriginalResultPoss> result_mapping;
 			bool ended_ = false;
 
@@ -166,7 +171,7 @@ namespace einsum::internal {
 				restart();
 			}
 
-			const UnsignedEntry <key_part_type> &operator*() {
+			const Entry <key_part_type, value_type> &operator*() {
 				return current_entry;
 			}
 
@@ -190,7 +195,7 @@ namespace einsum::internal {
 			}
 
 			void restart() {
-				current_entry.value = 1;
+				current_entry.value = key_part_type(1);
 				ended_ = false;
 				for (auto i: range(sub_results.size())) {
 					const auto &sub_result = sub_results[i];

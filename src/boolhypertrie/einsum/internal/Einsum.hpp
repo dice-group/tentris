@@ -11,14 +11,13 @@
 #include "einsum/internal/EntryGeneratorOperator.hpp"
 
 namespace einsum::internal {
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class Einsum {
 
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		using Join_t = Join<key_part_type, map_type, set_type>;
-		using Operator_t = Operator<key_part_type, map_type, set_type>;
-		using CardinalityEstimation_t = CardinalityEstimation<key_part_type, map_type, set_type>;
+		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
 
 		std::shared_ptr<Subscript> subscript{};
 		std::vector<const_BoolHypertrie_t> operands{};
@@ -55,10 +54,5 @@ namespace einsum::internal {
 			std::logic_error("not yet implemented.");
 		}
 	};
-
-	template<typename key_part_type, template<typename, typename> class map_type,
-			template<typename> class set_type>
-	Einsum<key_part_type, map_type, set_type> einsum() {}
-
 }
 #endif //HYPERTRIE_EINSUM_HPP

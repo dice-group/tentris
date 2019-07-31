@@ -8,27 +8,27 @@
 namespace einsum::internal {
 
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class CartesianOperator;
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class JoinOperator;
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class ResolveOperator;
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class CountOperator;
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class EntryGeneratorOperator;
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class Operator {
 	public:
@@ -37,19 +37,19 @@ namespace einsum::internal {
 
 		template<typename T>
 		static constexpr Subscript::Type getType() {
-			if (std::is_same_v<T, JoinOperator<key_part_type, map_type, set_type>>) {
+			if (std::is_same_v<T, JoinOperator<value_type, key_part_type, map_type, set_type>>) {
 				return Subscript::Type::Join;
 			}
-			if (std::is_same_v<T, ResolveOperator<key_part_type, map_type, set_type>>) {
+			if (std::is_same_v<T, ResolveOperator<value_type, key_part_type, map_type, set_type>>) {
 				return Subscript::Type::Resolve;
 			}
-			if (std::is_same_v<T, CountOperator<key_part_type, map_type, set_type>>) {
+			if (std::is_same_v<T, CountOperator<value_type, key_part_type, map_type, set_type>>) {
 				return Subscript::Type::Count;
 			}
-			if (std::is_same_v<T, CartesianOperator<key_part_type, map_type, set_type>>) {
+			if (std::is_same_v<T, CartesianOperator<value_type, key_part_type, map_type, set_type>>) {
 				return Subscript::Type::Cartesian;
 			}
-			if (std::is_same_v<T, CartesianOperator<key_part_type, map_type, set_type>>) {
+			if (std::is_same_v<T, CartesianOperator<value_type, key_part_type, map_type, set_type>>) {
 				return Subscript::Type::EntryGenerator;
 			}
 			return Subscript::Type::None;
@@ -65,7 +65,7 @@ namespace einsum::internal {
 		 * @param self pointer to the actual operator instance
 		 * @return the next Entry. Afterwards the Iterator is automatically forwarded.
 		 */
-		UnsignedEntry<key_part_type> (*next_fp)(void *self);
+		Entry <key_part_type, value_type> (*next_fp)(void *self);
 
 		/**
 		 * Pointer to the ended Function of the operator implementation.
@@ -88,15 +88,15 @@ namespace einsum::internal {
 		construct(std::shared_ptr<Subscript> subscript) {
 			switch (subscript->type) {
 				case Subscript::Type::Join:
-					return {std::make_shared<JoinOperator<key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<JoinOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
 				case Subscript::Type::Resolve:
-					return {std::make_shared<ResolveOperator<key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<ResolveOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
 				case Subscript::Type::Count:
-					return {std::make_shared<CountOperator<key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<CountOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
 				case Subscript::Type::Cartesian:
-					return {std::make_shared<CartesianOperator<key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<CartesianOperator<value_type,key_part_type, map_type, set_type >>(subscript)};
 				case Subscript::Type::EntryGenerator:
-					return {std::make_shared<EntryGeneratorOperator<key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<EntryGeneratorOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
 				default:
 					throw std::invalid_argument{"subscript is of an undefined type."};
 			}
@@ -157,7 +157,7 @@ namespace einsum::internal {
 			 * Returns the next entry and forwards the iterator. equal to operator*
 			 * @return
 			 */
-			inline UnsignedEntry<key_part_type> operator*() const {
+			inline Entry <key_part_type, value_type> operator*() const {
 				return std::invoke(op->next_fp, op->operator_instance.get());
 			}
 
@@ -165,7 +165,7 @@ namespace einsum::internal {
 			 * Returns the next entry and forwards the iterator. equal to operator*
 			 * @return
 			 */
-			inline UnsignedEntry<key_part_type> value() const {
+			inline Entry <key_part_type, value_type> value() const {
 				return std::invoke(op->next_fp, op->operator_instance.get());
 			}
 

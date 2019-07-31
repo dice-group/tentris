@@ -2,13 +2,13 @@
 #define HYPERTRIE_COUNTOPERATOR_HPP
 namespace einsum::internal {
 
-	template<typename key_part_type, template<typename, typename> class map_type,
+	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class CountOperator {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 
 		std::shared_ptr<Subscript> subscript;
-		size_t count;
+		value_type count;
 		bool _ended;
 
 
@@ -17,12 +17,12 @@ namespace einsum::internal {
 				: subscript(std::move(subscript)) {}
 
 
-		static UnsignedEntry <key_part_type> next(void *self_raw) {
+		static Entry <key_part_type, value_type> next(void *self_raw) {
 			auto &self = *static_cast<CountOperator *>(self_raw);
 			self._ended = true;
-			return UnsignedEntry<key_part_type>{self.count,
-			                                    Key<key_part_type>(self.subscript->resultLabelCount(),
-			                                                       std::numeric_limits<key_part_type>::max())};
+			return Entry<key_part_type, value_type>{self.count,
+			                                        Key<key_part_type>(self.subscript->resultLabelCount(),
+			                                                           std::numeric_limits<key_part_type>::max())};
 		}
 
 		static bool ended(void *self_raw) {

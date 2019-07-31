@@ -32,49 +32,32 @@ namespace hypertrie {
 
 		using Join = typename ::hypertrie::internal::interface::join<key_part_type, map_type, set_type>::Join;
 
-		using Einsum = typename ::einsum::internal::Einsum<key_part_type, map_type, set_type>;
-
+		template<typename value_type>
+		using Einsum = typename ::einsum::internal::Einsum<value_type, key_part_type, map_type, set_type>;
 
 		template<pos_type depth>
 		using RawBoolhypertrie = typename ::hypertrie::internal::interface::rawboolhypertrie<key_part_type, map_type, set_type>::template RawBoolHypertrie<depth>;
 
 
-		template<typename Sink>
-		static void
-		einsum(std::shared_ptr<Subscript> subscript, std::vector<const_BoolHypertrie> operands, Sink result) {
-			tsl::hopscotch_map<std::vector<key_part_type>, std::size_t, KeyHash> results{};
-			for (const auto &operand : operands)
-				if (operand.size() == 0)
-					return;
-
-			auto op = ::einsum::internal::Operator<key_part_type, map_type, set_type>::construct(subscript);
-			op.load(operands);
-			for (auto &&entry : op) {
-				result.add(std::move(entry));
-			}
-		}
-
 		template<typename value_type = size_t>
 		using EinsumEntry = ::einsum::internal::Entry<key_part_type, value_type>;
-		using EinsumUnsignedEntry = ::einsum::internal::UnsignedEntry<key_part_type>;
 
+		using KeyHash = ::einsum::internal::KeyHash<key_part_type>;
+
+		template<typename value_type = std::size_t>
 		static auto einsum2map(std::shared_ptr<Subscript> subscript, std::vector<const_BoolHypertrie> operands) {
-			tsl::hopscotch_map<std::vector<key_part_type>, std::size_t, KeyHash> results{};
+			tsl::hopscotch_map<std::vector<key_part_type>, value_type, KeyHash> results{};
 			for (const auto &operand : operands)
 				if (operand.size() == 0)
 					return results;
 
-			auto op = ::einsum::internal::Operator<key_part_type, map_type, set_type>::construct(subscript);
+			auto op = ::einsum::internal::Operator<value_type, key_part_type, map_type, set_type>::construct(subscript);
 			op.load(operands);
 			for (auto &&entry : op) {
 				results[entry.key] += entry.value;
 			}
 			return results;
 		}
-
-		using KeyHash = ::einsum::internal::KeyHash<key_part_type>;
-
-
 	};
 
 }
