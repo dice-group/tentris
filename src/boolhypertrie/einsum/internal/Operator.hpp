@@ -173,7 +173,7 @@ namespace einsum::internal {
 			 * Is true as long as there are more entrys retrievable via operator* or value.
 			 * @return
 			 */
-			operator bool() {
+			operator bool() const {
 				return not std::invoke(op->ended_fp, op->operator_instance.get());
 
 			}
