@@ -24,7 +24,7 @@ struct std::hash<tentris::store::rdf::Term *> {
 template<>
 struct std::equal_to<std::shared_ptr<tentris::store::rdf::Term>> {
 	bool operator()(const std::shared_ptr<tentris::store::rdf::Term> &lhs,
-					const std::shared_ptr<tentris::store::rdf::Term> &rhs) const {
+	                const std::shared_ptr<tentris::store::rdf::Term> &rhs) const {
 		return std::equal_to<tentris::store::rdf::Term>()(*lhs.get(), *rhs.get());
 	}
 };
@@ -43,7 +43,7 @@ namespace tentris::store::rdf {
 
 		protected:
 			explicit RevTermStore(TermStore
-								  &rdf_term_index) : _original(rdf_term_index) {}
+			                      &rdf_term_index) : _original(rdf_term_index) {}
 
 		public:
 			const std::shared_ptr<Term> &at(const key_part_t &index) const {
@@ -119,11 +119,11 @@ namespace tentris::store::rdf {
 		}
 
 		const key_part_t &operator[](std::shared_ptr<Term> term) {
-			try {
-				return _term2id.at(term);
-			} catch (...) {
-				auto pair =
-						_term2id.insert(std::make_pair(std::move(term), _next_id));
+			auto found = _term2id.find(term);
+			if (found != _term2id.end())
+				return found->second;
+			else {
+				auto pair = _term2id.insert(std::make_pair(std::move(term), _next_id));
 				auto &entry = *pair.first;
 				const key_part_t &id = entry.second;
 				std::shared_ptr<Term> pTerm = entry.first;
@@ -173,9 +173,9 @@ struct fmt::formatter<tentris::store::rdf::TermStore> {
 	auto format(const tentris::store::rdf::TermStore &p, FormatContext &ctx) {
 		auto entries = values(p._id2term);
 		return format_to(ctx.begin(),
-						 " Entries:\n"
-						 "   {}\n",
-						 join(entries.begin(), entries.end(), "\n   "));
+		                 " Entries:\n"
+		                 "   {}\n",
+		                 join(entries.begin(), entries.end(), "\n   "));
 	}
 };
 
@@ -187,8 +187,8 @@ struct fmt::formatter<tentris::store::rdf::TermStore::RevTermStore> {
 	template<typename FormatContext>
 	auto format(const tentris::store::rdf::TermStore::RevTermStore &p, FormatContext &ctx) {
 		return format_to(ctx.begin(),
-						 "{}",
-						 p.inv());
+		                 "{}",
+		                 p.inv());
 	}
 };
 
