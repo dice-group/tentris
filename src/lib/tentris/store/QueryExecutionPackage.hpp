@@ -7,23 +7,16 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/tensor/einsum/operator/CrossProduct.hpp"
-#include "tentris/tensor/einsum/operator/Einsum.hpp"
-#include "tentris/tensor/einsum/operator/GeneratorInterface.hpp"
-#include "tentris/tensor/einsum/operator/OperatorNode.hpp"
-#include "tentris/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tentris/util/SynchronizedCachedFactory.hpp"
-
-namespace {
-	using namespace tentris::tensor::einsum::operators;
-	using namespace tentris::store::sparql;
-	using namespace tentris::util::types;
-	using namespace tentris::tensor::einsum;
-	using namespace tentris::tensor::hypertrie;
-	using BoolHyperTrie = tentris::tensor::hypertrie::BoolHyperTrie;
-}; // namespace
+#include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store::cache {
+
+	namespace {
+		using namespace tentris::store::sparql;
+		using namespace tentris::util::types;
+		using namespace tentris::tensor;
+	}; // namespace
 
 	/**
 	 * A QueryExecutionPackage contains everything that is necessary to execute a given sparql query for a state of the
@@ -47,11 +40,10 @@ namespace tentris::store::cache {
 		bool is_distinct;
 		bool is_trivial_emtpy;
 
-        size_t cache_bucket_size;
+		size_t cache_bucket_size;
 
 	private:
-		std::unique_ptr<OperatorNode<counted_binding>> regular_operator_tree;
-		std::unique_ptr<OperatorNode<distinct_binding>> distinct_operator_tree;
+		std::shared_ptr<void> einsum_operator;
 
 	public:
 		/**
@@ -61,9 +53,11 @@ namespace tentris::store::cache {
 		 * @param termIndex term store attached to the trie
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
-        QueryExecutionPackage(const std::string &sparql_string, BoolHyperTrie &trie, const TermStore &termIndex, size_t cache_bucket_size)
+		QueryExecutionPackage(const std::string &sparql_string, const_BoolHypertrie trie, const TermStore &termIndex,
+		                      size_t cache_bucket_size)
 				: parsedSPARQL{sparql_string},
-                  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)}, cache_bucket_size{cache_bucket_size} {
+				  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)},
+				  cache_bucket_size{cache_bucket_size} {
 
 			const auto slice_keys = generateSliceKeys(parsedSPARQL.getBgps(), trie, termIndex);
 
@@ -72,21 +66,29 @@ namespace tentris::store::cache {
 
 				const auto subscript = parsedSPARQL.getSubscript();
 
-				const auto hypertries = std::vector<BoolHyperTrie *>(slice_keys.size(),
-				                                                     &const_cast<BoolHyperTrie &>(trie));
+				// todo: do slicing here
+				std::vector<const_BoolHypertrie> hypertries{};
+				for (const auto &slice_key: slice_keys) {
+					std::optional<const_BoolHypertrie> opt_slice = std::get<std::optional<const_BoolHypertrie>>(
+							trie[slice_key]);
+					if (opt_slice)
+						hypertries.emplace_back(opt_slice.value());
+					else {
+						is_trivial_emtpy = true;
+						return;
+					}
+				}
 				if (not is_distinct)
-					regular_operator_tree = buildOperatorTree<counted_binding>(slice_keys, subscript, hypertries);
+					einsum_operator = buildOperatorTree<counted_binding>(subscript, hypertries);
 				else
-					distinct_operator_tree = buildOperatorTree<distinct_binding>(slice_keys, subscript, hypertries);
+					einsum_operator = buildOperatorTree<distinct_binding>(subscript, hypertries);
 			}
 		}
 
 		void done() {
 			if (not is_trivial_emtpy and std::chrono::system_clock::now() > keep_result_timeout) {
-				if (not is_distinct)
-					regular_operator_tree->clearCacheDone();
-				else
-					distinct_operator_tree->clearCacheDone();
+				if (not is_distinct);// regular_operator_tree->clearCacheDone();
+				else;// distinct_operator_tree->clearCacheDone();
 			}
 			keep_result_timeout = std::numeric_limits<std::chrono::system_clock::time_point>::min();
 
@@ -95,21 +97,17 @@ namespace tentris::store::cache {
 
 		void canceled() {
 			if (not is_trivial_emtpy) {
-				if (not is_distinct)
-					regular_operator_tree->clearCacheCanceled();
-				else
-					distinct_operator_tree->clearCacheCanceled();
+				if (not is_distinct);//	regular_operator_tree->clearCacheCanceled();
+				else;//distinct_operator_tree->clearCacheCanceled();
 			}
 			processing.unlock();
 		}
 
-        void setTimeout(const std::chrono::system_clock::time_point &timeout) {
+		void setTimeout(const std::chrono::system_clock::time_point &timeout) {
 			this->timeout = timeout;
 			if (not is_trivial_emtpy) {
-				if (not is_distinct)
-                    regular_operator_tree->setTimeout(timeout);
-				else
-                    distinct_operator_tree->setTimeout(timeout);
+				if (not is_distinct);//regular_operator_tree->setTimeout(timeout);
+				else;//distinct_operator_tree->setTimeout(timeout);
 			}
 		}
 
@@ -126,17 +124,12 @@ namespace tentris::store::cache {
 		 * times.
 		 * @return
 		 */
-		template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
-		std::unique_ptr<OperatorNode<RESULT_TYPE>> buildOperatorTree(const std::vector<SliceKey_t> &slice_keys,
-		                                                             const std::shared_ptr<const Subscript> subscript,
-		                                                             const std::vector<BoolHyperTrie *> &hypertries) {
-			if (auto subsubscripts = subscript->getSubSubscripts(); not subsubscripts.empty()) {
-				return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
-                        new CrossProduct<RESULT_TYPE>{cache_bucket_size, subscript, slice_keys, hypertries}};
-			} else {
-				return std::unique_ptr<OperatorNode<RESULT_TYPE>>{
-                        new Einsum<RESULT_TYPE>{cache_bucket_size, subscript, slice_keys, hypertries}};
-			}
+		template<typename RESULT_TYPE>
+		std::shared_ptr<void> buildOperatorTree(
+				const std::shared_ptr<Subscript> subscript,
+				const std::vector<const_BoolHypertrie> &hypertries
+		) {
+			return std::make_shared<Einsum>(subscript, hypertries);
 		}
 
 	public:
@@ -144,48 +137,8 @@ namespace tentris::store::cache {
 
 		const std::string &getSparqlStr() const { return parsedSPARQL.getSparqlStr(); }
 
-		const OperatorNode<distinct_binding> &getDistinctOpTree() const {
-			if (is_distinct)
-				return *distinct_operator_tree;
-			else
-				throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
-		}
-
-		const OperatorNode<counted_binding> &getRegularOpTree() const {
-			if (not is_distinct)
-				return *regular_operator_tree;
-			else
-				throw std::domain_error("This Packackage holds a distinct Operator tree.");
-		}
-
-		/**
-		 * Returns an generator for the result if this->is_distinct
-		 * @return result generator
-		 */
-		yield_pull<distinct_binding> getDistinctGenerator() const {
-			if (is_distinct) {
-				if (not is_trivial_emtpy)
-					return distinct_operator_tree->get();
-				else
-					return yield_pull<distinct_binding>(
-							[&]([[maybe_unused]] yield_push<distinct_binding> &yield) { return; });
-			} else
-				throw std::domain_error("This Packackage holds a non-distinct Operator tree.");
-		}
-
-		/**
-		 * Returns an generator for the result if not this->is_distinct
-		 * @return result generator
-		 */
-		yield_pull<counted_binding> getRegularGenerator() const {
-			if (not is_distinct) {
-				if (not is_trivial_emtpy)
-					return regular_operator_tree->get();
-				else
-					return yield_pull<counted_binding>(
-							[&]([[maybe_unused]] yield_push<counted_binding> &yield) { return; });
-			} else
-				throw std::domain_error("This Packackage holds a distinct Operator tree.");
+		const std::shared_ptr<void> &getDistinctOpTree() const {
+			return einsum_operator;
 		}
 
 		friend struct ::fmt::formatter<QueryExecutionPackage>;
@@ -199,8 +152,9 @@ namespace tentris::store::cache {
 		 * @param termIndex intex for trie
 		 * @return slice keys for the BoolHyperTrie
 		 */
-		static std::vector<SliceKey_t> generateSliceKeys(const std::set<TriplePattern> &bgps, const BoolHyperTrie &trie,
-		                                                 const TermStore &termIndex) {
+		static std::vector<SliceKey_t>
+		generateSliceKeys(const std::set<TriplePattern> &bgps, const const_BoolHypertrie &trie,
+		                  const TermStore &termIndex) {
 			std::vector<SliceKey_t> slice_keys{};
 			for (const auto &op_key : bgps) {
 				SliceKey_t slice_key(3, std::nullopt);
@@ -219,7 +173,7 @@ namespace tentris::store::cache {
 				}
 				if (no_slices) {
 					// one triple without variables was not in storeF
-					if (not std::get<bool>(trie.get(slice_key)))
+					if (not std::get<bool>(trie[slice_key]))
 						return {};
 				} else
 					slice_keys.push_back(slice_key);

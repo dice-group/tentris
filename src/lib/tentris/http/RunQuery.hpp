@@ -5,7 +5,6 @@
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/TripleStore.hpp"
-#include "tentris/tensor/einsum/operator/GeneratorInterface.hpp"
 
 #include <chrono>
 #include <restinio/all.hpp>

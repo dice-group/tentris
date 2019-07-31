@@ -11,33 +11,30 @@
 #include <serd-0/serd/serd.h>
 
 #include "tentris/store/RDF/TermStore.hpp"
-#include "tentris/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/tensor/einsum/operator/Einsum.hpp"
 #include "tentris/store/QueryExecutionPackageCache.hpp"
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/util/LogHelper.hpp"
+#include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace {
 	using namespace tentris::store::cache;
 	using namespace tentris::util::types;
-	using namespace tentris::tensor::einsum;
-	using namespace tentris::tensor::einsum::operators;
 	using namespace tentris::store::sparql;
-	using namespace tentris::tensor::hypertrie;
 	using namespace ::tentris::logging;
+	using namespace tentris::tensor;
 }
 
 namespace tentris::store {
 	class TripleStore {
 
 		TermStore termIndex{};
-		BoolHyperTrie trie{3};
+		BoolHypertrie trie{3};
 		mutable QueryExecutionPackage_cache query_cache;
 
 	public:
 		explicit TripleStore(size_t cache_capacity = 500, size_t cache_bucket_size = 500,
-							 std::chrono::system_clock::duration timeout = std::chrono::seconds(180)) :
+		                     std::chrono::system_clock::duration timeout = std::chrono::seconds(180)) :
 				query_cache{trie, termIndex, cache_capacity, cache_bucket_size, timeout} {}
 
 
@@ -75,7 +72,10 @@ namespace tentris::store {
 			const std::shared_ptr<Term> &subject = parseTerm(std::get<0>(triple));
 			const std::shared_ptr<Term> &predicate = parseTerm(std::get<1>(triple));
 			const std::shared_ptr<Term> &object = parseTerm(std::get<2>(triple));
-			return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
+			if(termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object)){
+				return trie[{termIndex.at(subject), termIndex.at(predicate), termIndex.at(object)}];
+			}
+			return false;
 		}
 
 		std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
@@ -102,23 +102,23 @@ namespace tentris::store {
 	}
 
 	auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
-					const SerdNode *lang_node) -> std::shared_ptr<Term> {
+	                const SerdNode *lang_node) -> std::shared_ptr<Term> {
 		std::optional<std::string> type = (type_node != nullptr)
-										  ? std::optional<std::string>{{(char *) (type_node->buf),
-																			   size_t(type_node->n_bytes)}}
-										  : std::nullopt;
+		                                  ? std::optional<std::string>{{(char *) (type_node->buf),
+				                                                               size_t(type_node->n_bytes)}}
+		                                  : std::nullopt;
 		std::optional<std::string> lang = (lang_node != nullptr)
-										  ? std::optional<std::string>{{(char *) (lang_node->buf),
-																			   size_t(lang_node->n_bytes)}}
-										  : std::nullopt;
+		                                  ? std::optional<std::string>{{(char *) (lang_node->buf),
+				                                                               size_t(lang_node->n_bytes)}}
+		                                  : std::nullopt;
 		return std::shared_ptr<Term>{
 				new Literal{std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type}};
 	};
 
 	auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
-					   const SerdNode *subject,
-					   const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
-					   const SerdNode *object_lang) -> SerdStatus {
+	                   const SerdNode *subject,
+	                   const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
+	                   const SerdNode *object_lang) -> SerdStatus {
 		auto *store = (tentris::store::TripleStore *) handle;
 		std::shared_ptr<Term> subject_term;
 		std::shared_ptr<Term> predicate_term;
@@ -164,7 +164,7 @@ namespace tentris::store {
 
 	void TripleStore::loadRDF(std::string file_path) {
 		SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, nullptr, nullptr, nullptr, &serd_callback,
-										 nullptr);
+		                                 nullptr);
 		serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
 	}
 

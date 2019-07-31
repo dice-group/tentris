@@ -5,7 +5,6 @@
 #include "tentris/store/RDF/Term.hpp"
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/store/TripleStore.hpp"
-#include "tentris/tensor/einsum/operator/GeneratorInterface.hpp"
 #include "tentris/util/HTTPUtils.hpp"
 #include "QueryResultState.hpp"
 
