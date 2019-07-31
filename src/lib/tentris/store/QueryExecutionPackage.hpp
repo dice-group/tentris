@@ -7,7 +7,6 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/util/SynchronizedCachedFactory.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store::cache {
@@ -23,14 +22,15 @@ namespace tentris::store::cache {
 	 * RDF graph.
 	 */
 	struct QueryExecutionPackage {
+		using TimeoutType = std::chrono::system_clock::time_point;
 	private:
 		ParsedSPARQL parsedSPARQL;
-		std::chrono::system_clock::time_point timeout;
+		TimeoutType timeout;
 
 	public:
 		std::timed_mutex processing;
 		std::timed_mutex queuing;
-		std::chrono::system_clock::time_point keep_result_timeout =
+		TimeoutType keep_result_timeout =
 				std::numeric_limits<std::chrono::system_clock::time_point>::min();
 
 		/**
@@ -53,7 +53,9 @@ namespace tentris::store::cache {
 		 * @param termIndex term store attached to the trie
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
-		QueryExecutionPackage(const std::string &sparql_string, const_BoolHypertrie trie, const TermStore &termIndex,
+		QueryExecutionPackage(const std::string &sparql_string,
+		                      const const_BoolHypertrie &trie,
+		                      const TermStore &termIndex,
 		                      size_t cache_bucket_size)
 				: parsedSPARQL{sparql_string},
 				  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)},
@@ -66,7 +68,6 @@ namespace tentris::store::cache {
 
 				const auto subscript = parsedSPARQL.getSubscript();
 
-				// todo: do slicing here
 				std::vector<const_BoolHypertrie> hypertries{};
 				for (const auto &slice_key: slice_keys) {
 					std::optional<const_BoolHypertrie> opt_slice = std::get<std::optional<const_BoolHypertrie>>(
@@ -79,9 +80,9 @@ namespace tentris::store::cache {
 					}
 				}
 				if (not is_distinct)
-					einsum_operator = buildOperatorTree<counted_binding>(subscript, hypertries);
+					einsum_operator = generateEinsum<COUNTED_t>(subscript, hypertries);
 				else
-					einsum_operator = buildOperatorTree<distinct_binding>(subscript, hypertries);
+					einsum_operator = generateEinsum<DISTINCT_t>(subscript, hypertries);
 			}
 		}
 
@@ -103,7 +104,7 @@ namespace tentris::store::cache {
 			processing.unlock();
 		}
 
-		void setTimeout(const std::chrono::system_clock::time_point &timeout) {
+		void setTimeout(const TimeoutType &timeout) {
 			this->timeout = timeout;
 			if (not is_trivial_emtpy) {
 				if (not is_distinct);//regular_operator_tree->setTimeout(timeout);
@@ -111,7 +112,7 @@ namespace tentris::store::cache {
 			}
 		}
 
-		std::chrono::system_clock::time_point getTimeout() const { return timeout; }
+		TimeoutType getTimeout() const { return timeout; }
 
 	private:
 		/**
@@ -125,11 +126,9 @@ namespace tentris::store::cache {
 		 * @return
 		 */
 		template<typename RESULT_TYPE>
-		std::shared_ptr<void> buildOperatorTree(
-				const std::shared_ptr<Subscript> subscript,
-				const std::vector<const_BoolHypertrie> &hypertries
-		) {
-			return std::make_shared<Einsum>(subscript, hypertries);
+		std::shared_ptr<void> generateEinsum(const std::shared_ptr<Subscript> &subscript,
+		                                     const std::vector<const_BoolHypertrie> &hypertries) {
+			return std::make_shared<Einsum<RESULT_TYPE>>(subscript, hypertries);
 		}
 
 	public:
@@ -137,7 +136,7 @@ namespace tentris::store::cache {
 
 		const std::string &getSparqlStr() const { return parsedSPARQL.getSparqlStr(); }
 
-		const std::shared_ptr<void> &getDistinctOpTree() const {
+		std::shared_ptr<void> getEinsum() const {
 			return einsum_operator;
 		}
 

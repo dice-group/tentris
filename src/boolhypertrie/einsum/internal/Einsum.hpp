@@ -25,7 +25,7 @@ namespace einsum::internal {
 
 	public:
 		Einsum(std::shared_ptr<Subscript> subscript, const std::vector<const_BoolHypertrie_t> &operands)
-				: subscript(std::move(subscript)), operands(operands), op{this->subscript} {}
+				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)} {}
 
 		const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;

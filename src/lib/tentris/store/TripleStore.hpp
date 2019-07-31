@@ -73,7 +73,8 @@ namespace tentris::store {
 			const std::shared_ptr<Term> &predicate = parseTerm(std::get<1>(triple));
 			const std::shared_ptr<Term> &object = parseTerm(std::get<2>(triple));
 			if(termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object)){
-				return trie[{termIndex.at(subject), termIndex.at(predicate), termIndex.at(object)}];
+				BoolHypertrie::Key key{termIndex.at(subject), termIndex.at(predicate), termIndex.at(object)};
+				return trie[key];
 			}
 			return false;
 		}

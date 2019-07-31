@@ -4,7 +4,8 @@ set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
- message("${CONAN_LIBS}")
+#set(CMAKE_MODULE_PATH ${CONAN_CMAKE_MODULE_PATH} ${CMAKE_MODULE_PATH})
+message("${CONAN_LIBS}")
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -28,11 +29,11 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # find boost
-#SET(Boost_USE_STATIC_LIBS ON)
-#find_package(Boost REQUIRED COMPONENTS context system log thread log_setup)
-#IF (Boost_FOUND)
-#    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
-#ENDIF ()
+SET(Boost_USE_STATIC_LIBS ON)
+find_package(Boost REQUIRED COMPONENTS system log thread log_setup)
+IF (Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+ENDIF ()
 
 # build antlr4
 add_definitions(-DANTLR4CPP_STATIC)

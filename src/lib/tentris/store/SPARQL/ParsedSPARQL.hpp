@@ -215,7 +215,7 @@ namespace tentris::store::sparql {
 			return sparql_str;
 		}
 
-		const std::shared_ptr<const Subscript> getSubscript() const {
+		const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
 		}
 

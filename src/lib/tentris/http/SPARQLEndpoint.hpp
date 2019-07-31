@@ -20,19 +20,17 @@
 #include "tentris/util/HTTPUtils.hpp"
 #include "tentris/util/LogHelper.hpp"
 
-namespace {
-	using namespace ::tentris::util::types;
-	using namespace ::tentris::tensor::einsum;
-	using namespace ::tentris::tensor::hypertrie;
-	using namespace ::tentris::tensor::einsum::operators;
-	using namespace ::tentris::store::sparql;
-	using namespace ::tentris::store::cache;
-	using AtomicTripleStore = ::tentris::store::AtomicTripleStore;
-	using namespace ::std::chrono;
-	using namespace ::tentris::logging;
-	using namespace std::string_literals;
-} // namespace
+
 namespace tentris::http {
+	namespace {
+		using namespace ::tentris::util::types;
+		using namespace ::tentris::store::sparql;
+		using namespace ::tentris::store::cache;
+		using AtomicTripleStore = ::tentris::store::AtomicTripleStore;
+		using namespace ::std::chrono;
+		using namespace ::tentris::logging;
+		using namespace std::string_literals;
+	} // namespace
 
 
 	inline static void processingDone(std::shared_ptr<QueryExecutionPackage> query_package, std::string request_id,
