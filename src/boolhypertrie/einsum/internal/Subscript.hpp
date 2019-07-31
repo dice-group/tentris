@@ -53,6 +53,7 @@ namespace einsum::internal {
 			mutable std::vector<OriginalOperandPoss> original_operand_poss_of_sub_subscript;
 			mutable std::vector<OriginalResultPoss> original_result_poss_of_sub_subscript;
 			mutable std::shared_ptr<Subscript> subscript;
+
 		public:
 			CartesianSubSubscripts() = default;
 
@@ -227,6 +228,7 @@ namespace einsum::internal {
 
 	public:
 		Type type;
+		mutable bool all_result_done;
 
 		Subscript() = default;
 
@@ -242,6 +244,15 @@ namespace einsum::internal {
 
 		Subscript(const std::string &subscript_str) : Subscript(from_string(subscript_str)) {}
 
+		bool calcAllResultDone(const tsl::hopscotch_set<Label> &operand_labels,
+		                       const tsl::hopscotch_set<Label> &result_labels) {
+			for (auto result_label : result_labels) {
+				if (operand_labels.count(result_label))
+					return false;
+			}
+			return true;
+		}
+
 		Subscript(RawSubscript raw_subscript, Type type = Type::None)
 				: raw_subscript(raw_subscript),
 				  operands_label_set(raw_subscript.getOperandsLabelSet()),
@@ -251,7 +262,8 @@ namespace einsum::internal {
 				  type((type == Type::CarthesianMapping) ? Type::CarthesianMapping : calcState(raw_subscript,
 				                                                                               operands_label_set,
 				                                                                               result_label_set,
-				                                                                               connected_components)) {
+				                                                                               connected_components)),
+				  all_result_done(calcAllResultDone(operands_label_set, result_label_set)) {
 			switch (this->type) {
 
 				case Type::Join: {

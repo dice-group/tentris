@@ -8,6 +8,7 @@ namespace einsum::internal {
 	template<typename value_type, typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
 	class CartesianOperator {
+		constexpr static const bool bool_value_type = std::is_same_v<value_type, bool>;
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
 
@@ -39,6 +40,12 @@ namespace einsum::internal {
 			auto &self = *static_cast<CartesianOperator *>(self_raw);
 			// get the accumulated entry from the from pre-calculated carth_operands
 			auto entry = *self.calculated_operands;
+			if constexpr (bool_value_type) {
+				if (self.subscript->all_result_done) {
+					self.ended_ = true;
+					return entry;
+				}
+			}
 			// add also the iterated carth_operand to that entry
 			writeToEntry(self.iterated_sub_operator_result_mapping, entry, self.iterated_sub_operator_entry);
 
@@ -113,6 +120,19 @@ namespace einsum::internal {
 				if (cart_op_pos == iterated_pos)
 					continue;
 				auto &cart_op = sub_operators[cart_op_pos];
+				if constexpr (bool_value_type) {
+					if (subscript->all_result_done) {
+						auto cart_op_oter = cart_op.begin();
+						if (not cart_op_oter) {
+							ended_ = true;
+							return;
+						}
+						auto entry = *cart_op_oter;
+						sub_result[entry.key] = entry.value;
+						sub_results.emplace_back(std::move(sub_result));
+						continue;
+					}
+				}
 				for (auto entry : cart_op)
 					sub_result[entry.key] += entry.value;
 				if (sub_result.empty()) {
