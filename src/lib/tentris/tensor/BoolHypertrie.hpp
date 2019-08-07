@@ -2,17 +2,8 @@
 #define TENTRIS_BOOLHYPERTRIE_HPP
 
 #include <hypertrie/boolhypertrie.hpp>
-#include <unordered_set>
-#include <unordered_map>
-#include <tsl/hopscotch_set.h>
-#include <tsl/hopscotch_map.h>
-#include <absl/hash/hash.h>
-
 
 namespace tentris::tensor {
-
-
-// hypertrie::internal::container::
 	using ht = typename hypertrie::template boolhypertrie<unsigned long, hypertrie::internal::container::tsl_sparse_map,
 			hypertrie::internal::container::boost_flat_set>;
 

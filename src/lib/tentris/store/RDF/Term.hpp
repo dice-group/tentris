@@ -9,7 +9,6 @@
 #include <optional>
 #include <exception>
 #include <regex>
-#include <absl/hash/hash.h>
 
 namespace {
 	const std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
@@ -181,7 +180,7 @@ namespace tentris::store::rdf {
 template<>
 struct std::hash<tentris::store::rdf::Term> {
 	size_t operator()(const tentris::store::rdf::Term &v) const {
-		absl::Hash<std::string> hasher;
+		std::hash<std::string> hasher;
 		return hasher(v.getIdentifier());
 	}
 };
@@ -200,7 +199,7 @@ struct fmt::formatter<tentris::store::rdf::Term> {
 template<>
 struct std::hash<tentris::store::rdf::Term const *> {
 	size_t operator()(const tentris::store::rdf::Term *&v) const {
-		absl::Hash<std::string> hasher;
+		std::hash<std::string> hasher;
 		return hasher(v->getIdentifier());
 	}
 };

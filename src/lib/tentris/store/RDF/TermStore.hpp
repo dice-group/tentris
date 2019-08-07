@@ -7,7 +7,6 @@
 #include <memory>
 #include <tuple>
 #include <ostream>
-#include <absl/hash/hash.h>
 
 #include "tentris/util/All.hpp"
 #include "tentris/store/RDF/Term.hpp"
@@ -92,7 +91,7 @@ namespace tentris::store::rdf {
 		};
 
 		tsl::hopscotch_map<key_part_t, std::shared_ptr<Term>> _id2term{};
-		tsl::hopscotch_map<std::shared_ptr<Term>, key_part_t, absl::Hash<std::shared_ptr<Term>>,
+		tsl::hopscotch_map<std::shared_ptr<Term>, key_part_t, std::hash<std::shared_ptr<Term>>,
 				std::equal_to<std::shared_ptr<Term>>,
 				std::allocator<std::pair<std::shared_ptr<Term>, key_part_t>>,
 				30, true
