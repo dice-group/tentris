@@ -13,7 +13,9 @@ namespace hypertrie::internal::interface {
 		template<pos_type depth>
 		using RawBoolHypertrie = hypertrie::internal::RawBoolHypertrie<depth, key_part_type, map_type, set_type>;
 		 template<pos_type depth, pos_type diag_depth>
-		using RawDiagonal = hypertrie::internal::RawDiagonal<diag_depth, depth, key_part_type, map_type, set_type, void>;
+		using RawHashDiagonal = hypertrie::internal::RawHashDiagonal<diag_depth, depth, key_part_type, map_type, set_type, void>;
+		template<pos_type depth, pos_type diag_depth>
+		using RawOrderedDiagonal = hypertrie::internal::RawHashDiagonal<diag_depth, depth, key_part_type, map_type, set_type, void>;
 	};
 }
 

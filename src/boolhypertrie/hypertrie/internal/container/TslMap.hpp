@@ -2,13 +2,14 @@
 #define HYPERTRIE_TSLMAP_HPP
 
 #include <tsl/sparse_map.h>
+#include <absl/hash/hash.h>
 
 namespace hypertrie::internal::container {
 
     template<typename Key, typename T>
     using tsl_sparse_map  =  tsl::sparse_map<Key,
             T,
-            std::hash<Key>,
+		    absl::Hash<Key>,
             std::equal_to<Key>,
             std::allocator<std::pair<Key, T>>,
             tsl::sh::power_of_two_growth_policy<2>,

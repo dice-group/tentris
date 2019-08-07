@@ -4,6 +4,7 @@ restinio/0.5.1@stiffstream/stable
 boost/1.69.0@conan/stable
 tsl-hopscotch-map/2.2.1@tessil/stable
 fmt/5.3.0@bincrafters/stable
+abseil/20180600@bincrafters/stable
 
 [options]
 restinio:boost_libs=static

@@ -9,7 +9,8 @@ namespace hypertrie::internal::interface {
 	template<typename key_part_type = unsigned long, template<typename, typename> class map_type = hypertrie::internal::container::tsl_sparse_map,
 			template<typename> class set_type = hypertrie::internal::container::boost_flat_set>
 	struct join {
-		using Join = hypertrie::internal::Join<key_part_type, map_type, set_type>;
+		using HashJoin = hypertrie::internal::HashJoin<key_part_type, map_type, set_type>;
+		using OrderedJoin = hypertrie::internal::OrderedJoin<key_part_type, map_type, set_type>;
 	};
 }
 

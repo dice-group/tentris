@@ -14,7 +14,8 @@ namespace hypertrie::internal::interface {
 	struct boolhypertrie {
 		using BoolHypertrie = hypertrie::internal::BoolHypertrie<key_part_type, map_type, set_type>;
 		using const_BoolHypertrie = hypertrie::internal::const_BoolHypertrie<key_part_type, map_type, set_type>;
-		using Diagonal = hypertrie::internal::Diagonal<key_part_type, map_type, set_type>;
+		using HashDiagonal = hypertrie::internal::HashDiagonal<key_part_type, map_type, set_type>;
+		using OrderedDiagonal = hypertrie::internal::OrderedDiagonal<key_part_type, map_type, set_type>;
 	};
 }
 

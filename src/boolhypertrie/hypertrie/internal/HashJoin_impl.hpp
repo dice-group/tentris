@@ -19,16 +19,14 @@ namespace {
 
 namespace hypertrie::internal {
 
-	template<typename key_part_type>
-	class Join<key_part_type, container::tsl_sparse_map, container::boost_flat_set> {
+	template<typename key_part_type,
+			template<typename, typename> class map_type,
+			template<typename> class set_type>
+	class HashJoin {
 
 	public:
-		template<typename key, typename value>
-		using map_type = container::tsl_sparse_map<key, value>;
-		template<typename key>
-		using set_type = container::boost_flat_set<key>;
 		using const_BoolHypertrie = typename interface::boolhypertrie<key_part_type, map_type, set_type>::const_BoolHypertrie;
-		using Diagonal = typename interface::boolhypertrie<key_part_type, map_type, set_type>::Diagonal;
+		using Diagonal = typename interface::boolhypertrie<key_part_type, map_type, set_type>::HashDiagonal;
 		using poss_type = std::vector<pos_type>;
 
 	private:
@@ -37,14 +35,14 @@ namespace hypertrie::internal {
 
 	public:
 
-		Join() = default;
+		HashJoin() = default;
 
-		Join(Join &) = default;
+		HashJoin(HashJoin &) = default;
 
-		Join(const Join &) = default;
+		HashJoin(const HashJoin &) = default;
 
 
-		Join(std::vector<const_BoolHypertrie> hypertries, std::vector<poss_type> positions)
+		HashJoin(std::vector<const_BoolHypertrie> hypertries, std::vector<poss_type> positions)
 				: hypertries(std::move(hypertries)), positions(std::move(positions)) {}
 
 		class iterator {
@@ -66,7 +64,7 @@ namespace hypertrie::internal {
 		public:
 			iterator() = default;
 
-			iterator(const Join &join) {
+			iterator(const HashJoin &join) {
 				pos_type out_pos = 0;
 				for (const auto &[pos, join_poss, hypertrie] : zip(range(join.hypertries.size()), join.positions,
 				                                                   join.hypertries)) {

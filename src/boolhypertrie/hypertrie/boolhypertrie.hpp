@@ -28,9 +28,11 @@ namespace hypertrie {
 
 		using const_BoolHypertrie = typename ::hypertrie::internal::interface::boolhypertrie<key_part_type, map_type, set_type>::const_BoolHypertrie;
 
-		using Diagonal = typename ::hypertrie::internal::interface::boolhypertrie<key_part_type, map_type, set_type>::Diagonal;
+		using OrderedDiagonal = typename ::hypertrie::internal::interface::boolhypertrie<key_part_type, map_type, set_type>::OrderedDiagonal;
+		using HashDiagonal = typename ::hypertrie::internal::interface::boolhypertrie<key_part_type, map_type, set_type>::HashDiagonal;
 
-		using Join = typename ::hypertrie::internal::interface::join<key_part_type, map_type, set_type>::Join;
+		using OrderedJoin = typename ::hypertrie::internal::interface::join<key_part_type, map_type, set_type>::OrderedJoin;
+		using HashJoin = typename ::hypertrie::internal::interface::join<key_part_type, map_type, set_type>::HashJoin;
 
 		template<typename value_type>
 		using Einsum = typename ::einsum::internal::Einsum<value_type, key_part_type, map_type, set_type>;

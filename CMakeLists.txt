@@ -90,6 +90,7 @@ find_package(TBB REQUIRED)
 
 find_package(restinio CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+
 find_package(tsl-hopscotch-map 2.2.1 REQUIRED)
 
 add_subdirectory(thirdparty/sparse-map)
@@ -110,6 +111,7 @@ target_link_libraries(boolhypertrie
 #        Boost::boost # header only boost libraries
         ${Boost_LIBRARIES}
         tsl::sparse_map
+        absl_hash
         sparsepp
         ${conan_libs}
         )

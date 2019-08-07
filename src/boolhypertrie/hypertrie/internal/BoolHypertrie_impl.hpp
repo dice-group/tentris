@@ -1,7 +1,6 @@
 #ifndef HYPERTRIE_BOOLHYPERTRIE_IMPL_HPP
 #define HYPERTRIE_BOOLHYPERTRIE_IMPL_HPP
 
-class Diagonal;
 
 #include "hypertrie/internal/util/CONSTANTS.hpp"
 
@@ -13,7 +12,11 @@ class Diagonal;
 namespace hypertrie::internal {
 	template<typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
-	class Diagonal;
+	class HashDiagonal;
+
+	template<typename key_part_type, template<typename, typename> class map_type,
+			template<typename> class set_type>
+	class OrderedDiagonal;
 
 	template<typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
@@ -27,7 +30,9 @@ namespace hypertrie::internal {
 		template<pos_type depth>
 		using RawBoolHypertrie = typename hypertrie::internal::interface::rawboolhypertrie<key_part_type, map_type, set_type>::template RawBoolHypertrie<depth>;
 		template<pos_type depth, pos_type diag_depth>
-		using RawDiagonal = typename hypertrie::internal::interface::rawboolhypertrie<key_part_type, map_type, set_type>::template RawDiagonal<diag_depth, depth>;
+		using RawHashDiagonal = typename hypertrie::internal::interface::rawboolhypertrie<key_part_type, map_type, set_type>::template RawHashDiagonal<diag_depth, depth>;
+		template<pos_type depth, pos_type diag_depth>
+		using RawOrderedDiagonal = typename hypertrie::internal::interface::rawboolhypertrie<key_part_type, map_type, set_type>::template RawOrderedDiagonal<diag_depth, depth>;
 	public:
 		typedef std::vector<std::optional<key_part_type>> SliceKey;
 		typedef std::vector<key_part_type> Key;
@@ -299,7 +304,12 @@ namespace hypertrie::internal {
 		template<typename, template<typename, typename> class,
 				template<typename> class>
 		friend
-		class Diagonal;
+		class HashDiagonal;
+
+		template<typename, template<typename, typename> class,
+				template<typename> class>
+		friend
+		class OrderedDiagonal;
 
 		class iterator {
 		protected:
@@ -391,7 +401,9 @@ namespace hypertrie::internal {
 		template<pos_type depth>
 		using RawBoolHypertrie = typename base::template RawBoolHypertrie<depth>;
 		template<pos_type depth, pos_type diag_depth>
-		using RawDiagonal =  typename base::template RawDiagonal<diag_depth, depth>;
+		using RawHashDiagonal =  typename base::template RawHashDiagonal<diag_depth, depth>;
+		template<pos_type depth, pos_type diag_depth>
+		using RawOrderedDiagonal =  typename base::template RawOrderedDiagonal<diag_depth, depth>;
 		// proxy for fields:
 		using base::depth_;
 		using base::hypertrie;

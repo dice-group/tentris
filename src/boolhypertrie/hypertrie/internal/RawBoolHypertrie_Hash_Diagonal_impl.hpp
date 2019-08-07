@@ -10,18 +10,13 @@
 
 namespace hypertrie::internal {
 
-	// TODO: maybe removed?
-	template<pos_type diag_depth, pos_type depth, typename key_part_type, typename enabled>
-	class RawDiagonal<diag_depth, depth, key_part_type, container::tsl_sparse_map, container::boost_flat_set, enabled> {
-
-	};
-
-	template<pos_type diag_depth, pos_type depth, typename key_part_type>
-	class RawDiagonal<diag_depth, depth, key_part_type, container::tsl_sparse_map, container::boost_flat_set, std::enable_if_t<(
+	template<pos_type diag_depth, pos_type depth, typename key_part_type, template<typename, typename> typename map_type,
+			template<typename> typename set_type>
+	class RawHashDiagonal<diag_depth, depth, key_part_type, map_type, set_type, std::enable_if_t<(
 			depth == diag_depth and depth >= 1)>> {
 
 		template<pos_type depth_>
-		using RawBoolHypertrie_t = RawBoolHypertrie<depth_, key_part_type, container::tsl_sparse_map, container::boost_flat_set>;
+		using RawBoolHypertrie_t = RawBoolHypertrie<depth_, key_part_type, map_type, set_type>;
 		using children_type = typename RawBoolHypertrie_t<depth>::children_type;
 		using child_type = typename RawBoolHypertrie_t<depth>::child_type;
 	private:
@@ -30,11 +25,11 @@ namespace hypertrie::internal {
 		typename children_type::const_iterator end;
 
 	public:
-		explicit RawDiagonal(const RawBoolHypertrie_t<depth> &boolhypertrie) :
+		explicit RawHashDiagonal(const RawBoolHypertrie_t<depth> &boolhypertrie) :
 				rawboolhypertrie{boolhypertrie} {}
 
 		static void init(void *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			if constexpr (depth > 1) {
 				const auto min_card_pos = diag.rawboolhypertrie.minCardPos();
 				const auto &min_dim_edges = diag.rawboolhypertrie.edges[min_card_pos];
@@ -52,7 +47,7 @@ namespace hypertrie::internal {
 		}
 
 		static key_part_type currentKeyPart(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			if constexpr (depth > 1)
 				return diag.iter->first;
 			else
@@ -60,12 +55,12 @@ namespace hypertrie::internal {
 		}
 
 		static bool getValueByKeyPart(void const *diag_ptr, key_part_type key_part) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			return diag.rawboolhypertrie.diagonal(key_part);
 		}
 
 		static void inc(void *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			if constexpr  (depth > 1) {
 				assert(not empty(diag_ptr));
 				do {
@@ -77,12 +72,12 @@ namespace hypertrie::internal {
 		}
 
 		static bool empty(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			return diag.iter == diag.end;
 		}
 
 		static size_t size(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			if constexpr (depth > 1) {
 				const auto min_card_pos = diag.rawboolhypertrie.minCardPos();
 				return diag.rawboolhypertrie.edges[min_card_pos].size();
@@ -92,12 +87,13 @@ namespace hypertrie::internal {
 		}
 	};
 
-	template<pos_type diag_depth, pos_type depth, typename key_part_type>
-	class RawDiagonal<diag_depth, depth, key_part_type, container::tsl_sparse_map, container::boost_flat_set, std::enable_if_t<(
+	template<pos_type diag_depth, pos_type depth, typename key_part_type, template<typename, typename> typename map_type,
+			template<typename> typename set_type>
+	class RawHashDiagonal<diag_depth, depth, key_part_type, map_type, set_type, std::enable_if_t<(
 			depth > diag_depth and depth > 1)>> {
 
 		template<pos_type depth_>
-		using RawBoolHypertrie_t = RawBoolHypertrie<depth_, key_part_type, container::tsl_sparse_map, container::boost_flat_set>;
+		using RawBoolHypertrie_t = RawBoolHypertrie<depth_, key_part_type, map_type, set_type>;
 		using children_type = typename RawBoolHypertrie_t<depth>::children_type;
 		using child_type = typename RawBoolHypertrie_t<depth>::child_type;
 	public:
@@ -110,17 +106,17 @@ namespace hypertrie::internal {
 		value_type value;
 
 	public:
-		RawDiagonal(RawBoolHypertrie_t<depth> const *const boolhypertrie, std::vector<pos_type> positions)
+		RawHashDiagonal(RawBoolHypertrie_t<depth> const *const boolhypertrie, std::vector<pos_type> positions)
 				: rawboolhypertrie{boolhypertrie}, diag_poss{std::move(positions)} {}
 
-		RawDiagonal(RawBoolHypertrie_t<depth> const &boolhypertrie, std::vector<pos_type> positions)
-				: RawDiagonal(&boolhypertrie, positions) {}
+		RawHashDiagonal(RawBoolHypertrie_t<depth> const &boolhypertrie, std::vector<pos_type> positions)
+				: RawHashDiagonal(&boolhypertrie, positions) {}
 
-		RawDiagonal(std::shared_ptr<RawBoolHypertrie_t<depth> const> const &boolhypertrie,
-		            std::vector<pos_type> positions) : RawDiagonal(boolhypertrie.get(), positions) {}
+		RawHashDiagonal(std::shared_ptr<RawBoolHypertrie_t<depth> const> const &boolhypertrie,
+		            std::vector<pos_type> positions) : RawHashDiagonal(boolhypertrie.get(), positions) {}
 
 		static void init(void *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			auto min_card_pos_it = diag.rawboolhypertrie->minCardPos(diag.diag_poss);
 			const auto &min_dim_edges = diag.rawboolhypertrie->edges[*min_card_pos_it];
 			if constexpr (diag_depth > 1) {
@@ -146,12 +142,12 @@ namespace hypertrie::internal {
 		}
 
 		static key_part_type currentKeyPart(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			return diag.iter->first;
 		}
 
 		static value_type currentValue(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			if constexpr (diag_depth == 1)
 				return diag.iter->second;
 			else
@@ -159,7 +155,7 @@ namespace hypertrie::internal {
 		}
 
 		static value_type getValueByKeyPart(void const *diag_ptr, key_part_type key_part) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			if constexpr (diag_depth == 1) {
 				return diag.rawboolhypertrie->get(diag.diag_poss[0], key_part);
 			} else {
@@ -173,7 +169,7 @@ namespace hypertrie::internal {
 		}
 
 		static void inc(void *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			if constexpr  (diag_depth == 1) {
 				++diag.iter;
 			} else {
@@ -192,12 +188,12 @@ namespace hypertrie::internal {
 		}
 
 		static bool empty(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			return diag.iter == diag.end;
 		}
 
 		static size_t size(void const *diag_ptr) {
-			auto &diag = *static_cast<RawDiagonal const *>(diag_ptr);
+			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
 			if constexpr (depth > 1) {
 				const auto min_card_pos = diag.rawboolhypertrie->minCardPos();
 				return diag.rawboolhypertrie->edges[min_card_pos].size();

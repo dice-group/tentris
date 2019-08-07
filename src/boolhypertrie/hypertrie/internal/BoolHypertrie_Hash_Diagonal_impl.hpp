@@ -15,7 +15,7 @@ namespace hypertrie::internal {
 
 	template<typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
-	class Diagonal {
+	class HashDiagonal {
 
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		template<pos_type depth>
@@ -23,7 +23,7 @@ namespace hypertrie::internal {
 		using Key = typename const_BoolHypertrie_t::Key;
 		using SliceKey = typename const_BoolHypertrie_t::SliceKey;
 		template<pos_type depth, pos_type diag_depth>
-		using RawDiagonal =  typename hypertrie::internal::interface::rawboolhypertrie<key_part_type, container::tsl_sparse_map, container::boost_flat_set>::template RawDiagonal<diag_depth, depth>;
+		using RawHashDiagonal =  typename hypertrie::internal::interface::rawboolhypertrie<key_part_type, map_type, set_type>::template RawHashDiagonal<diag_depth, depth>;
 
 		struct RawDiagFunctions {
 			void (*init)(void *);
@@ -47,11 +47,11 @@ namespace hypertrie::internal {
 		template<pos_type depth, pos_type diag_depth_>
 		inline static RawDiagFunctions getRawDiagFunctions() {
 			return RawDiagFunctions{
-					&RawDiagonal<diag_depth_, depth>::init,
-					&RawDiagonal<diag_depth_, depth>::currentKeyPart,
+					&RawHashDiagonal<diag_depth_, depth>::init,
+					&RawHashDiagonal<diag_depth_, depth>::currentKeyPart,
 					[]([[maybe_unused]]void const *diag_ptr) -> const_BoolHypertrie_t {
 						if constexpr (depth > diag_depth_) {
-							return const_BoolHypertrie_t(RawDiagonal<diag_depth_, depth>::currentValue(diag_ptr));
+							return const_BoolHypertrie_t(RawHashDiagonal<diag_depth_, depth>::currentValue(diag_ptr));
 						} else {
 							throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
 						}
@@ -59,7 +59,7 @@ namespace hypertrie::internal {
 					[]([[maybe_unused]]void const *diag_ptr,
 					   [[maybe_unused]]key_part_type key_part) -> const_BoolHypertrie_t {
 						if constexpr (depth > diag_depth_) {
-							auto raw_result = RawDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part);
+							auto raw_result = RawHashDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part);
 							if (raw_result)
 
 								return const_BoolHypertrie_t(raw_result);
@@ -73,12 +73,12 @@ namespace hypertrie::internal {
 						if constexpr (depth > diag_depth_) {
 							throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
 						} else {
-							return bool(RawDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part));
+							return bool(RawHashDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part));
 						}
 					},
-					&RawDiagonal<diag_depth_, depth>::inc,
-					&RawDiagonal<diag_depth_, depth>::empty,
-					&RawDiagonal<diag_depth_, depth>::size
+					&RawHashDiagonal<diag_depth_, depth>::inc,
+					&RawHashDiagonal<diag_depth_, depth>::empty,
+					&RawHashDiagonal<diag_depth_, depth>::size
 			};
 		}
 
@@ -122,10 +122,10 @@ namespace hypertrie::internal {
 		getRawDiagonal(const const_BoolHypertrie_t &boolhypertrie, [[maybe_unused]]const poss_type &positions) {
 			if constexpr (depth == diag_depth_) {
 				const auto &raw_boolhypertrie = *(static_cast<RawBoolHypertrie<depth> const *>(boolhypertrie.hypertrie.get()));
-				return std::make_shared<RawDiagonal<diag_depth_, depth>>(raw_boolhypertrie);
+				return std::make_shared<RawHashDiagonal<diag_depth_, depth>>(raw_boolhypertrie);
 			} else {
 				const auto &raw_boolhypertrie = *(static_cast<RawBoolHypertrie<depth> const *>(boolhypertrie.hypertrie.get()));
-				return std::make_shared<RawDiagonal<diag_depth_, depth>>(raw_boolhypertrie, positions);
+				return std::make_shared<RawHashDiagonal<diag_depth_, depth>>(raw_boolhypertrie, positions);
 			}
 		}
 
@@ -213,25 +213,25 @@ namespace hypertrie::internal {
 
 	public:
 
-		Diagonal() = default;
+		HashDiagonal() = default;
 
-		Diagonal(Diagonal &) = default;
+		HashDiagonal(HashDiagonal &) = default;
 
-		Diagonal(const Diagonal &) = default;
+		HashDiagonal(const HashDiagonal &) = default;
 
-		Diagonal(Diagonal &&) noexcept = default;
+		HashDiagonal(HashDiagonal &&) noexcept = default;
 
-		Diagonal &operator=(Diagonal &&) = default;
+		HashDiagonal &operator=(HashDiagonal &&) = default;
 
-		Diagonal &operator=(const Diagonal &) = default;
+		HashDiagonal &operator=(const HashDiagonal &) = default;
 
 
-		Diagonal(const_BoolHypertrie_t const *const boolhypertrie, const poss_type &positions) :
+		HashDiagonal(const_BoolHypertrie_t const *const boolhypertrie, const poss_type &positions) :
 				raw_diag(getRawDiagonal(*boolhypertrie, positions)),
 				raw_diag_funcs(&functions[boolhypertrie->depth() - 1][positions.size() - 1]) {}
 
-		Diagonal(const const_BoolHypertrie_t &boolhypertrie, const poss_type &positions) :
-				Diagonal(&boolhypertrie, positions) {}
+		HashDiagonal(const const_BoolHypertrie_t &boolhypertrie, const poss_type &positions) :
+				HashDiagonal(&boolhypertrie, positions) {}
 
 
 		/*
@@ -304,7 +304,7 @@ namespace hypertrie::internal {
 			return std::invoke(raw_diag_funcs->size, raw_diag.get());
 		}
 
-		bool operator<(const Diagonal &other) const {
+		bool operator<(const HashDiagonal &other) const {
 			return this->size() < other.size();
 		}
 	};

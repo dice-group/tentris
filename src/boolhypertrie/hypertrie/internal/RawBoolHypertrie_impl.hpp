@@ -31,7 +31,11 @@ namespace hypertrie::internal {
 
 	template<pos_type diag_depth, pos_type depth, typename key_part_type, template<typename, typename> typename map_type,
 			template<typename> typename set_type, typename = typename std::enable_if_t<(diag_depth <= depth)>>
-	class RawDiagonal;
+	class RawHashDiagonal;
+
+	template<pos_type diag_depth, pos_type depth, typename key_part_type, template<typename, typename> typename map_type,
+			template<typename> typename set_type, typename = typename std::enable_if_t<(diag_depth <= depth)>>
+	class RawOrderedDiagonal;
 
 	using pos_type = uint8_t;
 
@@ -149,7 +153,12 @@ namespace hypertrie::internal {
 		template<pos_type, pos_type, typename, template<typename, typename> typename,
 				template<typename> typename, typename>
 		friend
-		class RawDiagonal;
+		class RawHashDiagonal;
+
+		template<pos_type, pos_type, typename, template<typename, typename> typename,
+				template<typename> typename, typename>
+		friend
+		class RawOrderedDiagonal;
 
 		class iterator {
 		public:
@@ -704,7 +713,11 @@ namespace hypertrie::internal {
 		template<pos_type, pos_type, typename, template<typename, typename> typename,
 				template<typename> typename, typename>
 		friend
-		class RawDiagonal;
+		class RawHashDiagonal;
+		template<pos_type, pos_type, typename, template<typename, typename> typename,
+				template<typename> typename, typename>
+		friend
+		class RawOrderedDiagonal;
 
 		class iterator {
 			template<pos_type depth_>

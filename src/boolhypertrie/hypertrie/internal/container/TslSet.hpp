@@ -8,7 +8,7 @@ namespace hypertrie::internal::container {
     template<typename Key>
     using tsl_sparse_set = tsl::sparse_set<
             Key,
-            std::hash<Key>,
+            absl::Hash<Key>,
             std::equal_to<Key>,
             std::allocator<Key>,
             tsl::sh::power_of_two_growth_policy<2>,
