@@ -5,7 +5,7 @@
 
 namespace tentris::tensor {
 	using ht = typename hypertrie::template boolhypertrie<unsigned long, hypertrie::internal::container::tsl_sparse_map,
-			hypertrie::internal::container::boost_flat_set>;
+			hypertrie::internal::container::tsl_sparse_set>;
 
 	using BoolHypertrie = ht::BoolHypertrie;
 	using const_BoolHypertrie = ht::const_BoolHypertrie;

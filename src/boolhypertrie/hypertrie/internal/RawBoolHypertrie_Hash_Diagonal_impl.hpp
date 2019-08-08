@@ -54,8 +54,8 @@ namespace hypertrie::internal {
 				return *diag.iter;
 		}
 
-		static bool getValueByKeyPart(void const *diag_ptr, key_part_type key_part) {
-			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
+		static bool contains(void *diag_ptr, key_part_type key_part) {
+			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			return diag.rawboolhypertrie.diagonal(key_part);
 		}
 
@@ -97,13 +97,13 @@ namespace hypertrie::internal {
 		using children_type = typename RawBoolHypertrie_t<depth>::children_type;
 		using child_type = typename RawBoolHypertrie_t<depth>::child_type;
 	public:
-		using value_type = std::shared_ptr<RawBoolHypertrie_t<depth - diag_depth> const>;
+		using value_type = std::shared_ptr<RawBoolHypertrie_t<depth - diag_depth>>;
 	private:
 		mutable RawBoolHypertrie_t<depth> const *rawboolhypertrie;
 		std::vector<pos_type> diag_poss;
-		typename children_type::const_iterator iter;
-		typename children_type::const_iterator end;
-		value_type value;
+		typename children_type::iterator iter;
+		typename children_type::iterator end;
+		value_type *value;
 
 	public:
 		RawHashDiagonal(RawBoolHypertrie_t<depth> const *const boolhypertrie, std::vector<pos_type> positions)
@@ -112,13 +112,13 @@ namespace hypertrie::internal {
 		RawHashDiagonal(RawBoolHypertrie_t<depth> const &boolhypertrie, std::vector<pos_type> positions)
 				: RawHashDiagonal(&boolhypertrie, positions) {}
 
-		RawHashDiagonal(std::shared_ptr<RawBoolHypertrie_t<depth> const> const &boolhypertrie,
-		            std::vector<pos_type> positions) : RawHashDiagonal(boolhypertrie.get(), positions) {}
+		RawHashDiagonal(std::shared_ptr<RawBoolHypertrie_t<depth>> const &boolhypertrie,
+		                std::vector<pos_type> positions) : RawHashDiagonal(boolhypertrie.get(), positions) {}
 
 		static void init(void *diag_ptr) {
 			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			auto min_card_pos_it = diag.rawboolhypertrie->minCardPos(diag.diag_poss);
-			const auto &min_dim_edges = diag.rawboolhypertrie->edges[*min_card_pos_it];
+			auto &min_dim_edges = diag.rawboolhypertrie->edges[*min_card_pos_it];
 			if constexpr (diag_depth > 1) {
 				auto min_card_pos = *min_card_pos_it;
 				diag.diag_poss.erase(min_card_pos_it);
@@ -130,14 +130,11 @@ namespace hypertrie::internal {
 			diag.end = min_dim_edges.end();
 			if (not empty(diag_ptr)) {
 				if constexpr (diag_depth > 1) {
-					typename child_type::SliceKey slice_key{};
-					for (const auto pos : diag.diag_poss) {
-						slice_key[pos] = diag.iter->first;
-					}
-					diag.value = diag.iter->second->template operator[]<(depth  - diag_depth )>(slice_key);
-					if (not bool(diag.value))
+					diag.value = diag.iter->second->template diagonal<diag_depth - 1>(diag.diag_poss, diag.iter->first);
+					if (not bool(*diag.value))
 						inc(diag_ptr);
-				}
+				} else
+					diag.value = &diag.iter.value();
 			}
 		}
 
@@ -146,44 +143,30 @@ namespace hypertrie::internal {
 			return diag.iter->first;
 		}
 
-		static value_type currentValue(void const *diag_ptr) {
+		static value_type *currentValue(void const *diag_ptr) {
 			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
-			if constexpr (diag_depth == 1)
-				return diag.iter->second;
-			else
 				return diag.value;
 		}
 
-		static value_type getValueByKeyPart(void const *diag_ptr, key_part_type key_part) {
-			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
-			if constexpr (diag_depth == 1) {
-				return diag.rawboolhypertrie->get(diag.diag_poss[0], key_part);
-			} else {
-
-				typename RawBoolHypertrie_t<depth>::SliceKey slice_key{};
-				for (const auto pos : diag.diag_poss) {
-					slice_key[pos] = key_part;
-				}
-				return diag.rawboolhypertrie->template operator[]<(depth - diag_depth)>(slice_key);
-			}
+		static bool contains(void *diag_ptr, key_part_type key_part) {
+			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
+			diag.value = diag.rawboolhypertrie->template diagonal<diag_depth>(diag.diag_poss, key_part);
+			return bool(*diag.value);
 		}
 
 		static void inc(void *diag_ptr) {
 			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			if constexpr  (diag_depth == 1) {
 				++diag.iter;
+				diag.value = &diag.iter.value();
 			} else {
 				assert(not empty(diag_ptr));
-				typename child_type::SliceKey slice_key{};
 				do {
 					++diag.iter;
 					if (empty(diag_ptr))
 						return;
-					for (const auto pos : diag.diag_poss) {
-						slice_key[pos] = diag.iter->first;
-					}
-					diag.value = diag.iter->second->template operator[]<(depth - diag_depth)>(slice_key);
-				} while (not bool(diag.value));
+					diag.value = diag.iter->second->template diagonal<diag_depth - 1>(diag.diag_poss, diag.iter->first);
+				} while (not bool(*diag.value));
 			}
 		}
 

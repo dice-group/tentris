@@ -82,6 +82,12 @@ namespace hypertrie::internal {
 		template<typename key>
 		using set_type = set_type_t<key>;
 		constexpr static const pos_type depth = 1;
+
+		static auto &const_emtpy_instance() {
+			static thread_local std::shared_ptr<boolhypertrie_c<depth>> inst{};
+			return inst;
+		}
+
 	protected:
 		edges_type edges{};
 	public:
@@ -100,6 +106,17 @@ namespace hypertrie::internal {
 		bool operator[](Key key) const {
 			return edges.count(key[0]);
 		}
+
+	protected:
+		template<pos_type slice_count, typename  = typename std::enable_if_t<(slice_count == 1)>>
+		[[nodiscard]]
+		bool
+		diagonal_rek([[maybe_unused]]const std::vector<pos_type> &positions, [[maybe_unused]]std::vector<bool> &done,
+		             const key_part_type_t &key_part) const {
+			return edges.count(key_part);
+		}
+
+	public:
 
 		template<pos_type slice_count, typename  = typename std::enable_if_t<(slice_count == 0)>>
 		auto operator[](const SliceKey &key) const {
@@ -127,7 +144,7 @@ namespace hypertrie::internal {
 		}
 
 		[[nodiscard]]
-		child_type diagonal(key_part_type_t key_part) const {
+		child_type diagonal(const key_part_type_t &key_part) const {
 			return edges.count(key_part);
 		}
 
@@ -164,7 +181,7 @@ namespace hypertrie::internal {
 		public:
 			using self_type =  iterator;
 			using value_type = std::vector<key_part_type>;
-		private:
+		protected:
 			typename edges_type::const_iterator iter;
 			typename edges_type::const_iterator end;
 		public:
@@ -256,8 +273,13 @@ namespace hypertrie::internal {
 		using set_type = set_type_t<key>;
 		constexpr static const pos_type depth = depth_t;
 
+		static auto &const_emtpy_instance() {
+			static thread_local std::shared_ptr<boolhypertrie_c<depth>> inst{};
+			return inst;
+		}
+
 	protected:
-		edges_type edges;
+		mutable edges_type edges;
 		size_t _size = 0;
 	public:
 		RawBoolHypertrie() = default;
@@ -281,7 +303,7 @@ namespace hypertrie::internal {
 			}
 		}
 
-	private:
+	protected:
 		[[nodiscard]]
 		static auto extractPossAndKeyParts(const SliceKey &key) {
 			std::vector<pos_type> positions;
@@ -294,6 +316,63 @@ namespace hypertrie::internal {
 				}
 			return std::pair{positions, key_parts};
 		}
+
+	public:
+		template<pos_type diag_depth, typename  = typename std::enable_if_t<((diag_depth > 0) and
+		                                                                     (diag_depth <= depth))>>
+		[[nodiscard]]
+		auto diagonal(const std::vector<pos_type> &positions, const key_part_type_t &key_part) const {
+			assert(positions.size() == diag_depth);
+			std::vector<bool> done(positions.size(), false);
+			return this->template diagonal_rek<diag_depth>(positions, done, key_part);
+		}
+
+		[[nodiscard]]
+		bool diagonal(const key_part_type_t &key_part) const {
+			pos_type min_pos = minCardPos();
+			auto found = edges[min_pos].find(key_part);
+			if (found != edges[min_pos].end())
+				return found->second->diagonal(key_part);
+			else
+				return false;
+		}
+
+
+	protected:
+		template<pos_type diag_depth, typename  = typename std::enable_if_t<((diag_depth > 0) and
+		                                                                     (diag_depth <= depth))>>
+		[[nodiscard]]
+		auto diagonal_rek(const std::vector<pos_type> &positions, std::vector<bool> &done,
+		                  const key_part_type_t &key_part) const
+		-> std::conditional_t<(depth != diag_depth), std::shared_ptr<boolhypertrie_c<
+				depth - diag_depth>> *, bool> {
+			std::size_t min_i = 0;
+			auto min_size = std::numeric_limits<std::size_t>::max();
+			std::size_t delta = 0;
+			for (auto i : range(positions.size()))
+				if (not done[i]) {
+					if (auto current_size = edges[positions[i]].size(); current_size < min_size) {
+						min_i = i;
+						min_size = current_size;
+					}
+				} else {
+					delta += 1;
+					continue;
+				}
+
+			auto min_pos = positions[min_i] - delta;
+			done[min_i] = true;
+			auto found = edges[min_pos].find(key_part);
+			if (found != edges[min_pos].end()) {
+				if constexpr (diag_depth == 1)
+					return &found.value();
+				else
+					return found->second->template diagonal_rek<diag_depth - 1>(positions, done, key_part);
+			}
+			if constexpr (depth != diag_depth) return &boolhypertrie_c<depth - diag_depth>::const_emtpy_instance();
+			else return false;
+		}
+
 
 	public:
 		template<pos_type slice_count, typename  = typename std::enable_if_t<((slice_count >= 0) and
@@ -317,7 +396,7 @@ namespace hypertrie::internal {
 		template<pos_type slice_count>
 		[[nodiscard]] auto
 		resolve(std::vector<pos_type> &&positions, std::vector<key_part_type> &&key_parts, const PosCalc *posCalc) const
-		-> std::shared_ptr<boolhypertrie_c<slice_count> const> {
+		-> std::shared_ptr<boolhypertrie_c<slice_count>> {
 			auto pos_it = minCardPos(positions, posCalc);
 			auto key_part_it = key_parts.begin() + std::distance(positions.begin(), pos_it);
 			auto child = get(posCalc->key_to_subkey_pos(*pos_it), *key_part_it);
@@ -339,7 +418,7 @@ namespace hypertrie::internal {
 
 	public:
 		[[nodiscard]]
-		std::shared_ptr<child_type const> get(pos_type position, key_part_type_t key_part) const {
+		std::shared_ptr<child_type> get(pos_type position, key_part_type_t key_part) const {
 			auto found = edges[position].find(key_part);
 			if (found != edges[position].end()) {
 				return found->second;
@@ -348,7 +427,7 @@ namespace hypertrie::internal {
 			}
 		}
 
-	private:
+	protected:
 		/**
 		 * This must only be used interally for setting key_parts
 		 * @param position
@@ -367,12 +446,6 @@ namespace hypertrie::internal {
 
 	public:
 
-		[[nodiscard]]
-		bool diagonal(key_part_type_t key_part) const {
-			Key diagonal_key;
-			diagonal_key.fill(key_part);
-			return (*this)[diagonal_key];
-		}
 
 		[[nodiscard]]
 		std::vector<size_t> getCards(const std::vector<pos_type> &positions) const {
@@ -714,6 +787,7 @@ namespace hypertrie::internal {
 				template<typename> typename, typename>
 		friend
 		class RawHashDiagonal;
+
 		template<pos_type, pos_type, typename, template<typename, typename> typename,
 				template<typename> typename, typename>
 		friend
@@ -728,7 +802,7 @@ namespace hypertrie::internal {
 		public:
 			using self_type =  iterator;
 			using value_type = std::vector<key_part_type>;
-		private:
+		protected:
 			boolhypertrie_c<depth> const *const raw_boolhypertrie;
 
 			std::vector<key_part_type> key;
@@ -769,7 +843,7 @@ namespace hypertrie::internal {
 				return it.ended_;
 			}
 
-		private:
+		protected:
 
 			inline void init_rek() {
 				// get the iterator
@@ -792,7 +866,7 @@ namespace hypertrie::internal {
 				childen_t<current_depth + 1> &parent_it = std::get<current_depth>(iters);
 
 				// resolve the current depth raw_boolhypertrie
-				std::shared_ptr<boolhypertrie_c<current_depth> const> current_boolhypertrie = parent_it->second;
+				std::shared_ptr<boolhypertrie_c<current_depth>> current_boolhypertrie = parent_it->second;
 				// set the current depth raw_boolhypertrie iterator
 
 				if constexpr (current_depth > 1) {
