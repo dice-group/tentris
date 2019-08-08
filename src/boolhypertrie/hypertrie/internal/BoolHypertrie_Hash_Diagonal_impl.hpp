@@ -32,7 +32,7 @@ namespace hypertrie::internal {
 
 			const_BoolHypertrie_t (*currentValue)(void const *);
 
-			const_BoolHypertrie_t (*getValueByKeyPart)(void const *, key_part_type);
+			std::shared_ptr<void const> (*getValueByKeyPart)(void const *, key_part_type);
 
 			bool (*contains)(void const *, key_part_type);
 
@@ -43,39 +43,43 @@ namespace hypertrie::internal {
 			size_t (*size)(void const *);
 		};
 
+		template<pos_type diag_depth_, pos_type depth>
+		static auto call_currentValue([[maybe_unused]]void const *diag_ptr) -> const_BoolHypertrie_t {
+			if constexpr (depth > diag_depth_) {
+				return const_BoolHypertrie_t(RawHashDiagonal<diag_depth_, depth>::currentValue(diag_ptr));
+			} else {
+				throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
+			}
+		}
+
+		template<pos_type diag_depth_, pos_type depth>
+		static auto call_getValueByKeyPart([[maybe_unused]]void const *diag_ptr,
+		                                   [[maybe_unused]]key_part_type key_part) -> std::shared_ptr<void const> {
+			if constexpr (depth > diag_depth_) {
+				return RawHashDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part);
+			} else {
+				throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
+			}
+		}
+
+		template<pos_type diag_depth_, pos_type depth>
+		static auto
+		call_contains([[maybe_unused]]void const *diag_ptr, [[maybe_unused]]key_part_type key_part) -> bool {
+			if constexpr (depth > diag_depth_) {
+				throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
+			} else {
+				return bool(RawHashDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part));
+			}
+		}
 
 		template<pos_type depth, pos_type diag_depth_>
 		inline static RawDiagFunctions getRawDiagFunctions() {
 			return RawDiagFunctions{
 					&RawHashDiagonal<diag_depth_, depth>::init,
 					&RawHashDiagonal<diag_depth_, depth>::currentKeyPart,
-					[]([[maybe_unused]]void const *diag_ptr) -> const_BoolHypertrie_t {
-						if constexpr (depth > diag_depth_) {
-							return const_BoolHypertrie_t(RawHashDiagonal<diag_depth_, depth>::currentValue(diag_ptr));
-						} else {
-							throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
-						}
-					},
-					[]([[maybe_unused]]void const *diag_ptr,
-					   [[maybe_unused]]key_part_type key_part) -> const_BoolHypertrie_t {
-						if constexpr (depth > diag_depth_) {
-							auto raw_result = RawHashDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part);
-							if (raw_result)
-
-								return const_BoolHypertrie_t(raw_result);
-							else
-								return const_BoolHypertrie_t(depth - diag_depth_);
-						} else {
-							throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
-						}
-					},
-					[]([[maybe_unused]]void const *diag_ptr, [[maybe_unused]]key_part_type key_part) -> bool {
-						if constexpr (depth > diag_depth_) {
-							throw std::invalid_argument{"currentValue is only implemented for depth > diag_depth"};
-						} else {
-							return bool(RawHashDiagonal<diag_depth_, depth>::getValueByKeyPart(diag_ptr, key_part));
-						}
-					},
+					&call_currentValue<diag_depth_, depth>,
+					&call_getValueByKeyPart<diag_depth_, depth>,
+					&call_contains<diag_depth_, depth>,
 					&RawHashDiagonal<diag_depth_, depth>::inc,
 					&RawHashDiagonal<diag_depth_, depth>::empty,
 					&RawHashDiagonal<diag_depth_, depth>::size
@@ -239,7 +243,7 @@ namespace hypertrie::internal {
 		* It checks if the current key_part is valid and increments it until it is valid.
 		*/
 		void init() const { // #
-			std::invoke(raw_diag_funcs->init, raw_diag.get());
+			raw_diag_funcs->init(raw_diag.get());
 		}
 
 		/*
@@ -248,12 +252,12 @@ namespace hypertrie::internal {
 		*/
 		[[nodiscard]]
 		key_part_type currentKeyPart() const { // #
-			return std::invoke(raw_diag_funcs->currentKeyPart, raw_diag.get());
+			return raw_diag_funcs->currentKeyPart(raw_diag.get());
 		}
 
 		[[nodiscard]]
 		const_BoolHypertrie_t currentValue() const {
-			return std::invoke(raw_diag_funcs->currentValue, raw_diag.get());
+			return raw_diag_funcs->currentValue(raw_diag.get());
 		}
 
 		/**
@@ -262,8 +266,8 @@ namespace hypertrie::internal {
 		 * @return
 		 */
 		[[nodiscard]]
-		const_BoolHypertrie_t operator[](key_part_type key_part) {
-			return std::invoke(raw_diag_funcs->getValueByKeyPart, raw_diag.get(), key_part);
+		std::shared_ptr<void const> operator[](key_part_type key_part) {
+			return raw_diag_funcs->getValueByKeyPart(raw_diag.get(), key_part);
 		}
 
 		/**
@@ -273,7 +277,7 @@ namespace hypertrie::internal {
 		 */
 		[[nodiscard]]
 		bool contains(key_part_type key_part) {
-			return std::invoke(raw_diag_funcs->contains, raw_diag.get(), key_part);
+			return raw_diag_funcs->contains(raw_diag.get(), key_part);
 		}
 
 		/*
@@ -281,7 +285,7 @@ namespace hypertrie::internal {
 		* Increments the diagonal to the next valid key_part.
 		*/
 		void operator++() { // #
-			return std::invoke(raw_diag_funcs->inc, raw_diag.get());
+			return raw_diag_funcs->inc(raw_diag.get());
 		}
 
 		/*
@@ -291,7 +295,7 @@ namespace hypertrie::internal {
 		*/
 		[[nodiscard]]
 		bool empty() const { // #
-			return std::invoke(raw_diag_funcs->empty, raw_diag.get());
+			return raw_diag_funcs->empty(raw_diag.get());
 		}
 
 		/*
@@ -301,7 +305,7 @@ namespace hypertrie::internal {
 		*/
 		[[nodiscard]]
 		size_t size() const {
-			return std::invoke(raw_diag_funcs->size, raw_diag.get());
+			return raw_diag_funcs->size(raw_diag.get());
 		}
 
 		bool operator<(const HashDiagonal &other) const {

@@ -1,5 +1,6 @@
 #ifndef HYPERTRIE_BOOLHYPERTRIE_ORDERED_DIAGONAL_IMPL_HPP
 #define HYPERTRIE_BOOLHYPERTRIE_ORDERED_DIAGONAL_IMPL_HPP
+
 #include "hypertrie/internal/util/CONSTANTS.hpp"
 
 #include "hypertrie/internal/BoolHypertrie_impl.hpp"
@@ -11,9 +12,9 @@ namespace hypertrie::internal {
 	template<typename key_part_type>
 	class BoolHypertrie<key_part_type, container::boost_flat_map, container::boost_flat_set>
 			: public BoolHypertrieImpl<key_part_type, container::boost_flat_map, container::boost_flat_set> {
-		typedef BoolHypertrieImpl<key_part_type, container::boost_flat_map, container::boost_flat_set> super_t;
-		template <pos_type depth>
-		using RawBoolHypertrie = typename super_t ::template RawBoolHypertrie<depth>;
+		typedef BoolHypertrieImpl <key_part_type, container::boost_flat_map, container::boost_flat_set> super_t;
+		template<pos_type depth>
+		using RawBoolHypertrie = typename super_t::template RawBoolHypertrie<depth>;
 
 	public:
 		explicit BoolHypertrie(pos_type depth)
@@ -120,7 +121,7 @@ namespace hypertrie::internal {
  * It checks if the current key_part is valid and increments it until it is valid.
  */
 			void init() const {
-				std::invoke(raw_diag_funcs.init, raw_diag_ptr);
+				raw_diag_funcs.init(raw_diag_ptr);
 			}
 
 /**
@@ -128,7 +129,7 @@ namespace hypertrie::internal {
  * Returns the current value.
  */
 			key_part_type getKeyPart() const {
-				return std::invoke(raw_diag_funcs.getKeyPart, raw_diag_ptr);
+				return std::invoke(raw_diag_funcs.getKeyPart(raw_diag_ptr);
 			}
 
 /**
@@ -138,7 +139,7 @@ namespace hypertrie::internal {
  * @return the current key_part. A subsequent call to getKeyPart() returns the same value.
  */
 			key_part_type setLower(key_part_type key_part) {
-				return std::invoke(raw_diag_funcs.setLower, raw_diag_ptr, key_part);
+				return raw_diag_funcs.setLower(raw_diag_ptr, key_part);
 			}
 
 /**
@@ -149,7 +150,7 @@ namespace hypertrie::internal {
  * @return if key_part is valid for this Diagonal.
  */
 			bool containsAndIncrement(key_part_type key_part) {
-				return std::invoke(raw_diag_funcs.containsAndIncrement, raw_diag_ptr, key_part);
+				return raw_diag_funcs.containsAndIncrement(raw_diag_ptr, key_part);
 			}
 
 /**
@@ -157,7 +158,7 @@ namespace hypertrie::internal {
  * Increments the diagonal to the next valid key_part.
  */
 			void operator++() {
-				return std::invoke(raw_diag_funcs.inc, raw_diag_ptr);
+				return raw_diag_funcs.inc(raw_diag_ptr);
 			}
 
 /**
@@ -166,7 +167,7 @@ namespace hypertrie::internal {
  * @return
  */
 			bool empty() const {
-				return std::invoke(raw_diag_funcs.empty, raw_diag_ptr);
+				return raw_diag_funcs.empty(raw_diag_ptr);
 			}
 
 /**
@@ -175,7 +176,7 @@ namespace hypertrie::internal {
  * @return number of potential key_parts left
  */
 			size_t size() const {
-				return std::invoke(raw_diag_funcs.size, raw_diag_ptr);
+				return raw_diag_funcs.size(raw_diag_ptr);
 			}
 
 /**
