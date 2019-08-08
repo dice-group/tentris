@@ -92,18 +92,18 @@ namespace hypertrie::internal {
 
 		explicit const_BoolHypertrie(pos_type depth) : depth_(depth), hypertrie(get_hypertrie(depth)) {}
 
-		inline static const_BoolHypertrie instance(pos_type depth, const std::shared_ptr<void const> &boolhypertrie) {
+		inline static const_BoolHypertrie instance(pos_type depth, void *boolhypertrie) {
 			switch (depth) {
 				case 1:
-					return instance<1>(std::static_pointer_cast<RawBoolHypertrie<1> const>(boolhypertrie));
+					return instance<1>(*static_cast<std::shared_ptr<RawBoolHypertrie<1>>*>(boolhypertrie));
 				case 2:
-					return instance<2>(std::static_pointer_cast<RawBoolHypertrie<2> const>(boolhypertrie));
+					return instance<2>(*static_cast<std::shared_ptr<RawBoolHypertrie<2>>*>(boolhypertrie));
 				case 3:
-					return instance<3>(std::static_pointer_cast<RawBoolHypertrie<3> const>(boolhypertrie));
+					return instance<3>(*static_cast<std::shared_ptr<RawBoolHypertrie<3>>*>(boolhypertrie));
 				case 4:
-					return instance<4>(std::static_pointer_cast<RawBoolHypertrie<4> const>(boolhypertrie));
+					return instance<4>(*static_cast<std::shared_ptr<RawBoolHypertrie<4>>*>(boolhypertrie));
 				case 5:
-					return instance<5>(std::static_pointer_cast<RawBoolHypertrie<5> const>(boolhypertrie));
+					return instance<5>(*static_cast<std::shared_ptr<RawBoolHypertrie<5>>*>(boolhypertrie));
 				default:
 					throw std::logic_error{"not implemented."};
 			}
@@ -111,13 +111,13 @@ namespace hypertrie::internal {
 
 	protected:
 		template<pos_type depth>
-		explicit const_BoolHypertrie(const std::shared_ptr<RawBoolHypertrie<depth> const> &boolhypertrie)
+		explicit const_BoolHypertrie(const std::shared_ptr<RawBoolHypertrie<depth>> &boolhypertrie)
 				: depth_(depth), hypertrie(std::const_pointer_cast<RawBoolHypertrie<depth>>(
-				const_cast<std::shared_ptr<RawBoolHypertrie<depth> const> &>(boolhypertrie))) {}
+				const_cast<std::shared_ptr<RawBoolHypertrie<depth>> &>(boolhypertrie))) {}
 
 		template<pos_type depth>
 		inline static const_BoolHypertrie
-		instance(const std::shared_ptr<RawBoolHypertrie<depth> const> &boolhypertrie) {
+		instance(const std::shared_ptr<RawBoolHypertrie<depth>> &boolhypertrie) {
 			return const_BoolHypertrie(boolhypertrie);
 		}
 
@@ -126,7 +126,7 @@ namespace hypertrie::internal {
 		template<pos_type depth>
 		inline static std::vector<size_t>
 		rawGetCards(const std::shared_ptr<void> &hypertrie, const std::vector<pos_type> &positions) {
-			auto raw_hypertrie = std::static_pointer_cast<RawBoolHypertrie<depth> const>(hypertrie);
+			auto raw_hypertrie = std::static_pointer_cast<RawBoolHypertrie<depth>>(hypertrie);
 			return raw_hypertrie->getCards(positions);
 		}
 
@@ -159,19 +159,19 @@ namespace hypertrie::internal {
 		size_t size() const {
 			switch (depth_) {
 				case 1: {
-					return std::static_pointer_cast<RawBoolHypertrie<1> const>(hypertrie)->size();
+					return std::static_pointer_cast<RawBoolHypertrie<1>>(hypertrie)->size();
 				}
 				case 2: {
-					return std::static_pointer_cast<RawBoolHypertrie<2> const>(hypertrie)->size();
+					return std::static_pointer_cast<RawBoolHypertrie<2>>(hypertrie)->size();
 				}
 				case 3: {
-					return std::static_pointer_cast<RawBoolHypertrie<3> const>(hypertrie)->size();
+					return std::static_pointer_cast<RawBoolHypertrie<3>>(hypertrie)->size();
 				}
 				case 4: {
-					return std::static_pointer_cast<RawBoolHypertrie<4> const>(hypertrie)->size();
+					return std::static_pointer_cast<RawBoolHypertrie<4>>(hypertrie)->size();
 				}
 				case 5: {
-					return std::static_pointer_cast<RawBoolHypertrie<5> const>(hypertrie)->size();
+					return std::static_pointer_cast<RawBoolHypertrie<5>>(hypertrie)->size();
 				}
 				default:
 					throw std::logic_error{"not implemented."};
@@ -182,26 +182,26 @@ namespace hypertrie::internal {
 		bool operator[](const Key &key) const {
 			switch (depth_) {
 				case 1:
-					return std::static_pointer_cast<RawBoolHypertrie<1> const>(hypertrie)->operator[](key[0]);
+					return std::static_pointer_cast<RawBoolHypertrie<1>>(hypertrie)->operator[](key[0]);
 				case 2: {
 					typename RawBoolHypertrie<2>::Key raw_key;
 					std::copy_n(key.begin(), 2, raw_key.begin());
-					return std::static_pointer_cast<RawBoolHypertrie<2> const>(hypertrie)->operator[](raw_key);
+					return std::static_pointer_cast<RawBoolHypertrie<2>>(hypertrie)->operator[](raw_key);
 				}
 				case 3: {
 					typename RawBoolHypertrie<3>::Key raw_key;
 					std::copy_n(key.begin(), 3, raw_key.begin());
-					return std::static_pointer_cast<RawBoolHypertrie<3> const>(hypertrie)->operator[](raw_key);
+					return std::static_pointer_cast<RawBoolHypertrie<3>>(hypertrie)->operator[](raw_key);
 				}
 				case 4: {
 					typename RawBoolHypertrie<4>::Key raw_key;
 					std::copy_n(key.begin(), 4, raw_key.begin());
-					return std::static_pointer_cast<RawBoolHypertrie<4> const>(hypertrie)->operator[](raw_key);
+					return std::static_pointer_cast<RawBoolHypertrie<4>>(hypertrie)->operator[](raw_key);
 				}
 				case 5: {
 					typename RawBoolHypertrie<5>::Key raw_key;
 					std::copy_n(key.begin(), 5, raw_key.begin());
-					return std::static_pointer_cast<RawBoolHypertrie<5> const>(hypertrie)->operator[](raw_key);
+					return std::static_pointer_cast<RawBoolHypertrie<5>>(hypertrie)->operator[](raw_key);
 				}
 				default:
 					throw std::logic_error{"not implemented."};
@@ -222,7 +222,7 @@ namespace hypertrie::internal {
 		executeRawSlice(const std::shared_ptr<void> &hypertrie,
 		                typename RawBoolHypertrie<depth>::SliceKey raw_slice_key)
 		-> std::conditional_t<(result_depth > 0), std::optional<const_BoolHypertrie const>, bool> {
-			auto raw_hypertrie = std::static_pointer_cast<RawBoolHypertrie<depth> const>(hypertrie);
+			auto raw_hypertrie = std::static_pointer_cast<RawBoolHypertrie<depth>>(hypertrie);
 			if constexpr (result_depth > 0) {
 				auto result = raw_hypertrie->template operator[]<result_depth>(raw_slice_key);
 				if (result)
@@ -239,7 +239,7 @@ namespace hypertrie::internal {
 			switch (depth_) {
 				case 1: {
 					if (slice_key[0]) {
-						return std::static_pointer_cast<RawBoolHypertrie<1> const>(hypertrie)->operator[](
+						return std::static_pointer_cast<RawBoolHypertrie<1>>(hypertrie)->operator[](
 								*(slice_key[0]));
 					} else {
 						return {*this};

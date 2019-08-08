@@ -57,7 +57,7 @@ namespace hypertrie::internal {
 			poss_type pos_in_out{};
 			std::vector<pos_type> result_depths{};
 			std::vector<Diagonal> ops{};
-			std::vector<std::shared_ptr<void const>> raw_outs{};
+			std::vector<void*> raw_outs{};
 
 			bool ended = false;
 
@@ -108,27 +108,15 @@ namespace hypertrie::internal {
 					found = true;
 					// iterate all but the first Diagonal
 					for (const auto &[op_pos, operand]: iter::enumerate(util::skip<1>(ops), 1)) {
-						if (result_depths[op_pos]) {
-							raw_outs[op_pos] = operand[value.second];
-							if (not raw_outs[op_pos]) {
-								found = false;
-								break;
-							}
-						} else {
 							if (not operand.contains(value.second)) {
 								found = false;
 								break;
 							}
-						}
 					}
 					if (found) {
-						if (result_depths[0]) {
-							value.first[pos_in_out[0]] = smallest_operand.currentValue();
-						}
-						for (const auto &[op_pos, raw_op_ptr]: iter::enumerate(util::skip<1>(raw_outs), 1)) {
+						for (const auto &[op_pos, raw_op_ptr]: iter::enumerate(raw_outs)) {
 							if (const auto &result_depth = result_depths[op_pos]; result_depth)
-								value.first[pos_in_out[op_pos]] = const_BoolHypertrie::instance(result_depth,
-								                                                                raw_outs[op_pos]);
+								value.first[pos_in_out[op_pos]] = const_BoolHypertrie::instance(result_depth, ops[op_pos].currentValue());
 						}
 						++smallest_operand;
 						return;
