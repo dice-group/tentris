@@ -442,6 +442,19 @@ std::ostream &operator<<(std::ostream &stream, const einsum::internal::Subscript
 	return stream;
 }
 
+namespace fmt {
+	template <>
+	struct formatter<std::shared_ptr<einsum::internal::Subscript>> {
+		template <typename ParseContext>
+		constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+		template <typename FormatContext>
+		auto format(const std::shared_ptr<einsum::internal::Subscript> &sub_script, FormatContext &ctx) {
+			return format_to(ctx.begin(), "{}", sub_script->to_string());
+		}
+	};
+}
+
 
 template<>
 struct std::hash<einsum::internal::Subscript> {
