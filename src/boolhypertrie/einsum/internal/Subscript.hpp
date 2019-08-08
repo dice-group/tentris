@@ -45,6 +45,7 @@ namespace einsum::internal {
 		enum class Type {
 			None = 0, Join, Cartesian, Resolve, Count, EntryGenerator, CarthesianMapping
 		};
+		using Label = char;
 
 		class CartesianSubSubscripts {
 
@@ -305,29 +306,12 @@ namespace einsum::internal {
 				RawSubscript{std::move(operands), std::move(result)}, type} {}
 
 		std::string to_string() const {
-			std::map<Label, char> label_mapping;
-			char next_char = 'a';
 			std::vector<std::string> operand_strings;
 			operand_strings.reserve(raw_subscript.operands.size());
 			for (const auto &operand : raw_subscript.operands) {
-				std::string operand_string;
-				operand_string.reserve((operand.size()));
-				for (const auto &label : operand) {
-					if (not label_mapping.count(label)) {
-						label_mapping[label] = next_char++;
-					}
-					operand_string.push_back(label_mapping[label]);
-				}
-				operand_strings.push_back(std::move(operand_string));
+				operand_strings.push_back(fmt::format("{}", fmt::join(operand, "")));
 			}
-
-			std::string result_string;
-			result_string.reserve((raw_subscript.result.size()));
-			for (const auto &label : raw_subscript.result) {
-				assert(label_mapping.count(label));
-				result_string.push_back(label_mapping[label]);
-			}
-			return fmt::format("{}->{}", fmt::join(operand_strings, ","), result_string);
+			return fmt::format("{}->{}", fmt::join(operand_strings, ","), fmt::join(raw_subscript.result, ""));
 		}
 
 		static Subscript from_string(const std::string &subscript_str) {
@@ -336,7 +320,7 @@ namespace einsum::internal {
 			std::map<char, Label> char_mapping{};
 			OperandsSc operands_sc{};
 			ResultSc result_sc{};
-			Label next_label = 0;
+			Label next_label = 'a';
 
 			while (*iter != '-') {
 				OperandSc &operand_sc = operands_sc.emplace_back();

@@ -5,6 +5,12 @@
 #include "hypertrie/internal/BoolHypertrie.hpp"
 #include "hypertrie/internal/Join.hpp"
 
+#ifdef DEBUGEINSUM
+constexpr bool _debugeinsum_ = true;
+#else
+constexpr bool _debugeinsum_ = false;
+#endif
+
 namespace einsum::internal {
 
 	namespace {

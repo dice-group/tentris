@@ -39,6 +39,7 @@ namespace einsum::internal {
 			}
 			++self.operand_iter;
 			self.ended_ = not self.operand_iter;
+			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(entry.key, ","), entry.value, self.subscript);
 			return entry;
 		}
 
@@ -59,6 +60,7 @@ namespace einsum::internal {
 
 	private:
 		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
+			if(_debugeinsum_) fmt::print("Resolve {}\n", subscript);
 			assert(operands.size() == 1); // only one operand must be left to be resolved
 			operand_iter = operands[0].cbegin();
 			assert(operand_iter);

@@ -166,14 +166,16 @@ namespace tentris::store::sparql {
 
 
 
+				using Label = Subscript::Label;
 				// generate subscript
-				std::map<Variable, label_t> var_to_label{};
-				for (const auto &[id, var] : enumerate(variables)) {
-					var_to_label[var] = id;
+				std::map<Variable, Label> var_to_label{};
+				Label next_label = 'a';
+				for (const auto &var : variables) {
+					var_to_label[var] = next_label++;
 				}
-				std::vector<std::vector<label_t>> ops_labels{};
+				std::vector<std::vector<Label>> ops_labels{};
 				for (const auto &bgp : bgps) {
-					std::vector<label_t> op_labels{};
+					std::vector<Label> op_labels{};
 					int count = 0;
 					for (const std::variant<Variable, Term> &res : bgp)
 						if (std::holds_alternative<Variable>(res)) {
@@ -184,7 +186,7 @@ namespace tentris::store::sparql {
 						ops_labels.push_back(op_labels);
 				}
 
-				std::vector<label_t> result_labels{};
+				std::vector<Label> result_labels{};
 				for (const auto &query_variable : query_variables) {
 					result_labels.push_back(var_to_label[query_variable]);
 				}

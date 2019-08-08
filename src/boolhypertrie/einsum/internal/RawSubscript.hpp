@@ -7,13 +7,13 @@
 #include <tsl/hopscotch_set.h>
 
 namespace einsum::internal {
-	using Label = uint8_t;
+	using Label = char;
 	using OperandSc = std::vector<Label>;
 	using ResultSc = OperandSc;
 	using OperandsSc = std::vector<OperandSc>;
-	using OperandPos = OperandsSc::size_type;
-	using LabelPos = OperandSc::size_type;
-	using LabelPossInOperand = std::vector<Label>;
+	using OperandPos = uint8_t;
+	using LabelPos = uint8_t ;
+	using LabelPossInOperand = std::vector<LabelPos>;
 	using LabelPossInOperands = std::vector<LabelPossInOperand>;
 
 	class RawSubscript {

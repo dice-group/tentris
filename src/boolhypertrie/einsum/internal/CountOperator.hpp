@@ -20,6 +20,8 @@ namespace einsum::internal {
 		static Entry <key_part_type, value_type> next(void *self_raw) {
 			auto &self = *static_cast<CountOperator *>(self_raw);
 			self._ended = true;
+			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(Key<key_part_type>(self.subscript->resultLabelCount(),
+			                                                                                      std::numeric_limits<key_part_type>::max()), ","), self.count, self.subscript);
 			return Entry<key_part_type, value_type>{self.count,
 			                                        Key<key_part_type>(self.subscript->resultLabelCount(),
 			                                                           std::numeric_limits<key_part_type>::max())};

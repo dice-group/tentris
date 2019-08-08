@@ -39,7 +39,7 @@ namespace tentris::http {
 		try {
 			try {
 				AtomicCleanupTaskGroup::getInstance().run([=] {
-#if DEBUG
+#ifdef DEBUG
 					auto start_ram = get_memory_usage().physicalMem;
 					auto start_time = std::chrono::system_clock::now();
 
@@ -78,7 +78,7 @@ namespace tentris::http {
 								"request_id: {}"_format(request_id)
 						);
 					}
-#if DEBUG
+#ifdef DEBUG
 					auto end_ram = get_memory_usage().physicalMem;
 					auto end_time = std::chrono::system_clock::now();
 

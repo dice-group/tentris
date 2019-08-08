@@ -19,7 +19,7 @@ namespace einsum::internal {
 		 * @return
 		 */
 		static Label getMinCardLabel(const std::vector<const_BoolHypertrie_t> &operands,
-							  std::shared_ptr<Subscript> sc) {
+		                             std::shared_ptr<Subscript> sc) {
 			const tsl::hopscotch_set<Label> &operandsLabelSet = sc->getOperandsLabelSet();
 			if (operandsLabelSet.size() == 1) {
 				return *operandsLabelSet.begin();
@@ -34,6 +34,7 @@ namespace einsum::internal {
 						min_label = label;
 					}
 				}
+				if constexpr(_debugeinsum_) fmt::print("# min_label: {}\n", min_label);
 				return min_label;
 			}
 		}
@@ -54,7 +55,7 @@ namespace einsum::internal {
 			std::vector<double> op_dim_cardinalities(op_poss.size(), 1.0);
 			auto label_count = 0;
 			auto min_dim_card = std::numeric_limits<size_t>::max();
-			tsl::hopscotch_set<size_t> sizes{op_poss.size() * 2};
+			tsl::hopscotch_set<size_t> sizes{};
 
 			const LabelPossInOperands &label_poss_in_operands = sc->getLabelPossInOperands(label);
 			// iterate the operands that hold the label
@@ -75,12 +76,24 @@ namespace einsum::internal {
 				op_dim_cardinalities[i] = double(max_op_dim_card); //
 			}
 
+
 			auto const min_dim_card_d = double(min_dim_card);
-			const double card =
-					std::accumulate(op_dim_cardinalities.cbegin(), op_dim_cardinalities.cend(), double(1),
-									[&](double a, double b) {
-										return a * min_dim_card_d / b;
-									}) / sizes.size();
+			const double card = std::accumulate(op_dim_cardinalities.cbegin(), op_dim_cardinalities.cend(), double(1),
+			                                    [&](double a, double b) {
+				                                    return a * min_dim_card_d / b;
+			                                    }) / sizes.size();
+			if constexpr (_debugeinsum_)
+				fmt::print(
+						"# label: {}, "
+						"card: {}, "
+						"count: {}, "
+						"distinct_count: {}, "
+						"ops: [{}], "
+						"max_op_dim_cards: [{}], "
+						"min_card {}\n",
+						label, card, label_count, sizes.size(), fmt::join(op_poss, ","), fmt::join(op_dim_cardinalities, ","),
+						min_dim_card
+				);
 
 			return card;
 		}
