@@ -361,18 +361,18 @@ namespace hypertrie::internal {
 
 			iterator(const_BoolHypertrie const *const boolHypertrie) :
 					raw_methods(&getRawMethods(boolHypertrie->depth())),
-					raw_iterator(std::invoke(raw_methods->begin, *boolHypertrie)) {}
+					raw_iterator(raw_methods->begin( *boolHypertrie)) {}
 
 			iterator(const_BoolHypertrie &boolHypertrie) : iterator(&boolHypertrie) {}
 
 			self_type &operator++() {
-				std::invoke(raw_methods->inc, raw_iterator.get());
+				raw_methods->inc( raw_iterator.get());
 				return *this;
 			}
 
-			value_type operator*() const { return std::invoke(raw_methods->value, raw_iterator.get()); }
+			value_type operator*() const { return raw_methods->value( raw_iterator.get()); }
 
-			operator bool() const { return not std::invoke(raw_methods->ended, raw_iterator.get()); }
+			operator bool() const { return not raw_methods->ended( raw_iterator.get()); }
 
 		};
 

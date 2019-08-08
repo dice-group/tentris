@@ -98,9 +98,6 @@ namespace hypertrie::internal {
 				while (not smallest_operand.empty()) {
 
 					value.second = smallest_operand.currentKeyPart();
-					if (is_in_out[0]) {
-						value.first[pos_in_out[0]] = smallest_operand.currentValue();
-					}
 
 					found = true;
 					// iterate all but the first Diagonal
@@ -122,6 +119,9 @@ namespace hypertrie::internal {
 					}
 					++smallest_operand;
 					if (found) {
+						if (is_in_out[0]) {
+							value.first[pos_in_out[0]] = smallest_operand.currentValue();
+						}
 						return;
 					}
 				}
