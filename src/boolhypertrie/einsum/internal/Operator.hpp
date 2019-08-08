@@ -65,7 +65,7 @@ namespace einsum::internal {
 		 * @param self pointer to the actual operator instance
 		 * @return the next Entry. Afterwards the Iterator is automatically forwarded.
 		 */
-		Entry <key_part_type, value_type> (*next_fp)(void *self);
+		Entry<key_part_type, value_type> (*next_fp)(void *self);
 
 		/**
 		 * Pointer to the ended Function of the operator implementation.
@@ -90,13 +90,16 @@ namespace einsum::internal {
 				case Subscript::Type::Join:
 					return {std::make_shared<JoinOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
 				case Subscript::Type::Resolve:
-					return {std::make_shared<ResolveOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<ResolveOperator<value_type, key_part_type, map_type, set_type >>(
+							subscript)};
 				case Subscript::Type::Count:
 					return {std::make_shared<CountOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
 				case Subscript::Type::Cartesian:
-					return {std::make_shared<CartesianOperator<value_type,key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<CartesianOperator<value_type, key_part_type, map_type, set_type >>(
+							subscript)};
 				case Subscript::Type::EntryGenerator:
-					return {std::make_shared<EntryGeneratorOperator<value_type, key_part_type, map_type, set_type >>(subscript)};
+					return {std::make_shared<EntryGeneratorOperator<value_type, key_part_type, map_type, set_type >>(
+							subscript)};
 				default:
 					throw std::invalid_argument{"subscript is of an undefined type."};
 			}
@@ -157,16 +160,16 @@ namespace einsum::internal {
 			 * Returns the next entry and forwards the iterator. equal to operator*
 			 * @return
 			 */
-			inline Entry <key_part_type, value_type> operator*() const {
-				return std::invoke(op->next_fp, op->operator_instance.get());
+			inline Entry<key_part_type, value_type> operator*() const {
+				return op->next_fp(op->operator_instance.get());
 			}
 
 			/**
 			 * Returns the next entry and forwards the iterator. equal to operator*
 			 * @return
 			 */
-			inline Entry <key_part_type, value_type> value() const {
-				return std::invoke(op->next_fp, op->operator_instance.get());
+			inline Entry<key_part_type, value_type> value() const {
+				return op->next_fp(op->operator_instance.get());
 			}
 
 			/**
@@ -174,7 +177,7 @@ namespace einsum::internal {
 			 * @return
 			 */
 			operator bool() const {
-				return not std::invoke(op->ended_fp, op->operator_instance.get());
+				return not op->ended_fp(op->operator_instance.get());
 
 			}
 
@@ -182,7 +185,7 @@ namespace einsum::internal {
 			 * Returns true if the iteration is at its end.
 			 * @return
 			 */
-			inline bool ended() const { return std::invoke(op->ended_fp, op->operator_instance.get()); }
+			inline bool ended() const { return op->ended_fp(op->operator_instance.get()); }
 
 		};
 
@@ -191,11 +194,11 @@ namespace einsum::internal {
 		bool end() { return false; }
 
 		void load(std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands) {
-			std::invoke(load_fp, operator_instance.get(), std::move(operands));
+			load_fp(operator_instance.get(), std::move(operands));
 		}
 
 		std::size_t hash() const {
-			return std::invoke(hash_fp, operator_instance.get());
+			return hash_fp(operator_instance.get());
 		}
 
 		bool operator!=(const Operator &other) const { return hash() != other.hash(); };

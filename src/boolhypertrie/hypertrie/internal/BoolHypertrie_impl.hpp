@@ -92,6 +92,23 @@ namespace hypertrie::internal {
 
 		explicit const_BoolHypertrie(pos_type depth) : depth_(depth), hypertrie(get_hypertrie(depth)) {}
 
+		inline static const_BoolHypertrie instance(pos_type depth, const std::shared_ptr<void const> &boolhypertrie) {
+			switch (depth) {
+				case 1:
+					return instance<1>(std::static_pointer_cast<RawBoolHypertrie<1> const>(boolhypertrie));
+				case 2:
+					return instance<2>(std::static_pointer_cast<RawBoolHypertrie<2> const>(boolhypertrie));
+				case 3:
+					return instance<3>(std::static_pointer_cast<RawBoolHypertrie<3> const>(boolhypertrie));
+				case 4:
+					return instance<4>(std::static_pointer_cast<RawBoolHypertrie<4> const>(boolhypertrie));
+				case 5:
+					return instance<5>(std::static_pointer_cast<RawBoolHypertrie<5> const>(boolhypertrie));
+				default:
+					throw std::logic_error{"not implemented."};
+			}
+		}
+
 	protected:
 		template<pos_type depth>
 		explicit const_BoolHypertrie(const std::shared_ptr<RawBoolHypertrie<depth> const> &boolhypertrie)
@@ -361,18 +378,18 @@ namespace hypertrie::internal {
 
 			iterator(const_BoolHypertrie const *const boolHypertrie) :
 					raw_methods(&getRawMethods(boolHypertrie->depth())),
-					raw_iterator(raw_methods->begin( *boolHypertrie)) {}
+					raw_iterator(raw_methods->begin(*boolHypertrie)) {}
 
 			iterator(const_BoolHypertrie &boolHypertrie) : iterator(&boolHypertrie) {}
 
 			self_type &operator++() {
-				raw_methods->inc( raw_iterator.get());
+				raw_methods->inc(raw_iterator.get());
 				return *this;
 			}
 
-			value_type operator*() const { return raw_methods->value( raw_iterator.get()); }
+			value_type operator*() const { return raw_methods->value(raw_iterator.get()); }
 
-			operator bool() const { return not raw_methods->ended( raw_iterator.get()); }
+			operator bool() const { return not raw_methods->ended(raw_iterator.get()); }
 
 		};
 
