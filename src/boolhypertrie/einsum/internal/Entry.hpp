@@ -1,15 +1,24 @@
 #ifndef HYPERTRIE_ENTRY_HPP
 #define HYPERTRIE_ENTRY_HPP
 
-#include <boost/container_hash/hash.hpp>
-#include "hypertrie/internal/BoolHypertrie.hpp"
-#include "hypertrie/internal/Join.hpp"
-
-#ifdef DEBUGEINSUM
+#ifdef DEBUG
+#include <fmt/format.h>
+#include <fmt/core.h>
+#include <fmt/ostream.h>
+#include <fmt/chrono.h>
+#include <fmt/ranges.h>
+#include <fmt/time.h>
+#include <fmt/printf.h>
 constexpr bool _debugeinsum_ = true;
 #else
 constexpr bool _debugeinsum_ = false;
 #endif
+
+#include <boost/container_hash/hash.hpp>
+#include "hypertrie/internal/BoolHypertrie.hpp"
+#include "hypertrie/internal/Join.hpp"
+
+
 
 namespace einsum::internal {
 

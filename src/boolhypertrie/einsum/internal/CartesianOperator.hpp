@@ -96,7 +96,7 @@ namespace einsum::internal {
 		}
 
 		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
-			if(_debugeinsum_) fmt::print("Cartesian {}\n", subscript);
+			if constexpr(_debugeinsum_) fmt::print("Cartesian {}\n", subscript);
 			ended_ = false;
 			iterated_pos = 0; // todo: we can do better here
 			iterated_sub_operator_result_mapping = {
@@ -105,7 +105,7 @@ namespace einsum::internal {
 			std::vector<SubResult> sub_results{};
 			// load the non iterated sub_operators
 
-			if(_debugeinsum_) fmt::print("Cartesian sub start {}\n", subscript);
+			if constexpr(_debugeinsum_) fmt::print("Cartesian sub start {}\n", subscript);
 			for (auto cart_op_pos: iter::range(sub_operators.size())) {
 				if (cart_op_pos == iterated_pos)
 					continue;
@@ -116,7 +116,7 @@ namespace einsum::internal {
 					return;
 				}
 			}
-			if(_debugeinsum_) fmt::print("Cartesian sub gen {}\n", subscript);
+			if constexpr(_debugeinsum_) fmt::print("Cartesian sub gen {}\n", subscript);
 			// calculate results of non-iterated sub_operators
 			// TODO: parallelize
 			for (auto cart_op_pos: iter::range(sub_operators.size())) {
@@ -146,7 +146,7 @@ namespace einsum::internal {
 				sub_results.emplace_back(std::move(sub_result));
 			}
 			calculated_operands = FullCartesianResult(std::move(sub_results), subscript->getCartesianSubscript());
-			if(_debugeinsum_) fmt::print("Cartesian main start {}\n", subscript);
+			if constexpr(_debugeinsum_) fmt::print("Cartesian main start {}\n", subscript);
 
 			// init iterator for the subscript part that is iterated as results are written out.
 			Operator_t &iterated_sub_operator = sub_operators[iterated_pos];
@@ -193,6 +193,7 @@ namespace einsum::internal {
 				result_mapping = {original_result_poss.begin() + 1, // TODO: we need to change that when we do better
 				                  original_result_poss.end()};
 				current_entry.key.resize(cartSubSubscript.getSubscript()->resultLabelCount(), {});
+				current_entry.value = key_part_type(1);
 				for (auto i: range(this->sub_results.size())) {
 					const auto &sub_result = this->sub_results[i];
 					iters[i] = sub_result.cbegin();
@@ -226,7 +227,6 @@ namespace einsum::internal {
 			}
 
 			void restart() {
-				current_entry.value = key_part_type(1);
 				ended_ = false;
 				for (auto i: range(sub_results.size())) {
 					const auto &sub_result = sub_results[i];

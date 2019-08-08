@@ -79,7 +79,7 @@ namespace einsum::internal {
 
 	private:
 		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
-			if(_debugeinsum_) fmt::print("Join {}\n", subscript);
+			if constexpr (_debugeinsum_) fmt::print("Join {}\n", subscript);
 			ended_ = false;
 			Label last_label = label;
 			label = CardinalityEstimation_t::getMinCardLabel(operands, subscript);

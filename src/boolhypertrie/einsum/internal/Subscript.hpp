@@ -12,6 +12,7 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "einsum/internal/util/UndirectedGraph.hpp"
 #include "einsum/internal/RawSubscript.hpp"
@@ -422,6 +423,11 @@ namespace einsum::internal {
 }
 
 std::ostream &operator<<(std::ostream &stream, const std::shared_ptr<einsum::internal::Subscript> &sub_script) {
+	stream << sub_script->to_string();
+	return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream, std::shared_ptr<einsum::internal::Subscript> sub_script) {
 	stream << sub_script->to_string();
 	return stream;
 }

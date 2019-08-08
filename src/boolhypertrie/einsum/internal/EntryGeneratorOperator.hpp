@@ -40,7 +40,7 @@ namespace einsum::internal {
 
 	private:
 		inline void load_impl([[maybe_unused]]std::vector<const_BoolHypertrie_t> operands) {
-			if(_debugeinsum_) fmt::print("EntryGen {}\n", subscript);
+			if constexpr(_debugeinsum_) fmt::print("EntryGen {}\n", subscript);
 			assert(operands.size() == 0); // no operand must be left
 			_ended = false;
 		}
