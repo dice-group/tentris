@@ -29,7 +29,7 @@ namespace tentris::http {
 	}; // namespace
 
 	template<typename RESULT_TYPE>
-	inline Status runQuery(restinio::request_handle_t &req, const std::shared_ptr<QueryExecutionPackage> &query_package,
+	inline Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
 	                       TripleStore &store,
 	                       const QueryExecutionPackage::TimeoutType timeout, const std::vector<Variable> &vars) {
 		logTrace("Running select query.");
@@ -54,7 +54,7 @@ namespace tentris::http {
 	 * @param store a instance of a triple store
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
-	Status runQuery(restinio::request_handle_t &req, const std::shared_ptr<QueryExecutionPackage> &query_package,
+	Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
 	                TripleStore &store) {
 
 		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();

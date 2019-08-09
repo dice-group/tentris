@@ -24,12 +24,13 @@ namespace tentris::http {
 	}; // namespace
 
 	template<typename RESULT_TYPE>
-	Status streamJSON(const std::vector<Variable> &vars,const std::shared_ptr<QueryExecutionPackage> &query_package,
-	                  restinio::response_builder_t<restinio::chunked_output_t> &stream,
-	                  const TripleStore &store, const system_clock::time_point &timeout) {
+	Status streamJSON(const std::vector<Variable> &vars, std::shared_ptr<QueryExecutionPackage> &query_package,
+					  restinio::response_builder_t<restinio::chunked_output_t> &stream,
+					  const TripleStore &store, const system_clock::time_point &timeout) {
 		using namespace std::string_literals;
 
 		ulong result_count = 0;
+		ulong result_count_multiplyer = 0;
 		const ulong flush_result_count = 500;
 
 		stream.append_chunk(R"({"head":{"vars":[)");
@@ -102,11 +103,16 @@ namespace tentris::http {
 						// flush the content from time to time.
 						if (result_count > flush_result_count) {
 							if (system_clock::now() > timeout) {
+								auto bindings_count = (result_count + result_count_multiplyer * flush_result_count);
+								log(" ## wrote {} results with {} vars, total of {} entries"_format(
+										bindings_count / vars.size(), vars.size(), bindings_count)
+								);
 								stream.append_chunk("]}}\n");
 								stream.done();
 								return Status::SERIALIZATION_TIMEOUT;
 							} else {
 								result_count = 0;
+								++result_count_multiplyer;
 								stream.flush();
 							}
 						}
@@ -114,6 +120,13 @@ namespace tentris::http {
 				}
 			}
 		}
+		auto bindings_count = (result_count + result_count_multiplyer * flush_result_count);
+		log(" ## wrote {} results with {} vars, total of {} entries"_format(
+				bindings_count / vars.size(), vars.size(), bindings_count)
+		);
+		if (bindings_count == 0)
+			query_package->is_trivial_empty = true;
+
 		stream.append_chunk("]}}\n");
 		stream.done();
 		return Status::OK;
