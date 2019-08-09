@@ -28,6 +28,7 @@ namespace einsum::internal {
 
 		Operator_t sub_operator;
 		typename Operator_t::iterator sub_operator_iter;
+		Entry<key_part_type, value_type> *entry;
 
 		bool ended_ = true;
 
@@ -35,19 +36,18 @@ namespace einsum::internal {
 		JoinOperator(std::shared_ptr<Subscript> subscript) : subscript(std::move(subscript)) {}
 
 
-		static Entry<key_part_type, value_type> next(void *self_raw) {
+		static void next(void *self_raw) {
 			JoinOperator &self = *static_cast<JoinOperator *>(self_raw);
 			if constexpr (bool_value_type) {
 				if (self.subscript->all_result_done) {
 					self.ended_ = true;
-					return *self.sub_operator_iter;
+					self.sub_operator_iter.value();
+					return;
 				}
 			}
-			Entry<key_part_type, value_type> entry = *self.sub_operator_iter;
+			self.sub_operator_iter.value();
 			if (self.is_result_label)
-				entry.key[self.label_pos_in_result] = self.current_key_part;
-
-			++self.sub_operator_iter;
+				self.entry->key[self.label_pos_in_result] = self.current_key_part;
 
 			while (self.sub_operator_iter.ended()) {
 				++self.join_iter;
@@ -61,8 +61,7 @@ namespace einsum::internal {
 					self.sub_operator_iter = self.sub_operator.begin();
 				}
 			}
-			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(entry.key, ","), entry.value, self.subscript);
-			return entry;
+			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(self.entry->key, ","), self.entry->value, self.subscript);
 		}
 
 		static bool ended(void *self_raw) {
@@ -78,7 +77,8 @@ namespace einsum::internal {
 		}
 
 	private:
-		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
+		inline void load_impl(std::vector<const_BoolHypertrie_t> operands, Entry<key_part_type, value_type> &entry) {
+			this->entry = &entry;
 			if constexpr (_debugeinsum_) fmt::print("Join {}\n", subscript);
 			ended_ = false;
 			Label last_label = label;

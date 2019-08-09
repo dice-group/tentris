@@ -11,6 +11,7 @@ namespace einsum::internal {
 
 		std::shared_ptr<Subscript> subscript;
 		LabelPossInOperand label_pos_in_result;
+		Entry <key_part_type, value_type> *entry;
 		bool ended_;
 
 		typename const_BoolHypertrie_t::const_iterator operand_iter;
@@ -23,24 +24,22 @@ namespace einsum::internal {
 		}
 
 
-		static Entry <key_part_type, value_type> next(void *self_raw) {
+		static void next(void *self_raw) {
 			auto &self = *static_cast<ResolveOperator *>(self_raw);
-			auto entry = Entry<key_part_type, value_type>{key_part_type(1),
-			                                              Key<key_part_type>(self.subscript->resultLabelCount(),
-			                                                                 std::numeric_limits<key_part_type>::max())};
+			self.entry->value = key_part_type(1);
 			const auto operand_key = *self.operand_iter;
 			for (auto i : range(operand_key.size()))
-				entry.key[self.label_pos_in_result[i]] = operand_key[i];
+				self->entry.key[self.label_pos_in_result[i]] = operand_key[i];
 			if constexpr (bool_value_type) {
 				if (self.subscript->all_result_done) {
 					self.ended_ = true;
-					return entry;
+					return;
 				}
 			}
 			++self.operand_iter;
 			self.ended_ = not self.operand_iter;
-			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(entry.key, ","), entry.value, self.subscript);
-			return entry;
+			if constexpr (_debugeinsum_)
+				fmt::print("[{}]->{} {}\n", fmt::join(self.entry->key, ","), self->entry.value, self.subscript);
 		}
 
 		static bool ended(void *self_raw) {
@@ -59,8 +58,9 @@ namespace einsum::internal {
 		}
 
 	private:
-		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
+		inline void load_impl(std::vector<const_BoolHypertrie_t> operands, Entry <key_part_type, value_type> &entry) {
 			if constexpr(_debugeinsum_) fmt::print("Resolve {}\n", subscript);
+			this->entry = &entry;
 			assert(operands.size() == 1); // only one operand must be left to be resolved
 			operand_iter = operands[0].cbegin();
 			assert(operand_iter);

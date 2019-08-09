@@ -160,7 +160,7 @@ namespace einsum::internal {
 			 * Returns the next entry and forwards the iterator. equal to operator*
 			 * @return
 			 */
-			inline Entry<key_part_type, value_type> operator*() const {
+			inline Entry<key_part_type, value_type> &operator*() const {
 				return op->next_fp(op->operator_instance.get());
 			}
 
@@ -168,7 +168,7 @@ namespace einsum::internal {
 			 * Returns the next entry and forwards the iterator. equal to operator*
 			 * @return
 			 */
-			inline Entry<key_part_type, value_type> value() const {
+			inline Entry<key_part_type, value_type> &value() const {
 				return op->next_fp(op->operator_instance.get());
 			}
 
@@ -193,8 +193,8 @@ namespace einsum::internal {
 
 		bool end() { return false; }
 
-		void load(std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands) {
-			load_fp(operator_instance.get(), std::move(operands));
+		void load(std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands, Entry<key_part_type, value_type> &entry) {
+			load_fp(operator_instance.get(), std::move(operands), entry);
 		}
 
 		std::size_t hash() const {

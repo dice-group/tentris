@@ -8,6 +8,7 @@ namespace einsum::internal {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 
 		std::shared_ptr<Subscript> subscript;
+		Entry<key_part_type, value_type> *entry;
 		value_type count;
 		bool _ended;
 
@@ -17,14 +18,11 @@ namespace einsum::internal {
 				: subscript(std::move(subscript)) {}
 
 
-		static Entry <key_part_type, value_type> next(void *self_raw) {
+		static void next(void *self_raw) {
 			auto &self = *static_cast<CountOperator *>(self_raw);
 			self._ended = true;
-			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(Key<key_part_type>(self.subscript->resultLabelCount(),
-			                                                                                      std::numeric_limits<key_part_type>::max()), ","), self.count, self.subscript);
-			return Entry<key_part_type, value_type>{self.count,
-			                                        Key<key_part_type>(self.subscript->resultLabelCount(),
-			                                                           std::numeric_limits<key_part_type>::max())};
+			self.entry->key = self.count;
+			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(self.entry);
 		}
 
 		static bool ended(void *self_raw) {
@@ -40,7 +38,8 @@ namespace einsum::internal {
 		}
 
 	private:
-		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
+		inline void load_impl(std::vector<const_BoolHypertrie_t> operands, Entry<key_part_type, value_type> &entry) {
+			this->entry = &entry;
 			assert(operands.size() == 1); // only one operand must be left to be resolved
 			count = operands[0].size();
 			_ended = not count;
