@@ -349,18 +349,20 @@ namespace hypertrie::internal {
 			std::size_t min_i = 0;
 			auto min_size = std::numeric_limits<std::size_t>::max();
 			std::size_t delta = 0;
+			std::size_t delta_i = 0;
 			for (auto i : range(positions.size()))
 				if (not done[i]) {
-					if (auto current_size = edges[positions[i]].size(); current_size < min_size) {
+					if (auto current_size = edges[positions[i]-delta].size(); current_size < min_size) {
 						min_i = i;
 						min_size = current_size;
+						delta_i = delta;
 					}
 				} else {
 					delta += 1;
 					continue;
 				}
 
-			auto min_pos = positions[min_i] - delta;
+			auto min_pos = positions[min_i] - delta_i;
 			done[min_i] = true;
 			auto found = edges[min_pos].find(key_part);
 			if (found != edges[min_pos].end()) {
