@@ -82,7 +82,7 @@ namespace hypertrie::internal {
 			return *this;
 		}
 
-		const_BoolHypertrie &operator=(const_BoolHypertrie &&other) = default;
+		const_BoolHypertrie &operator=(const_BoolHypertrie &&other) noexcept = default;
 
 		const_BoolHypertrie &operator=(BoolHypertrie<key_part_type, map_type, set_type> &&other) {
 			this->depth_ = std::move(other.depth_);
@@ -331,9 +331,12 @@ namespace hypertrie::internal {
 		class iterator {
 		protected:
 			struct RawMethods {
-				std::shared_ptr<void> (*begin)(const const_BoolHypertrie &boolHypertrie);
 
-				Key (*value)(void const *);
+				void (*destruct)(const void *);
+
+				void *(*begin)(const const_BoolHypertrie &boolHypertrie);
+
+				const Key &(*value)(void const *);
 
 				void (*inc)(void *);
 
@@ -344,8 +347,13 @@ namespace hypertrie::internal {
 			template<pos_type depth>
 			inline static RawMethods generateRawMethods() {
 				return RawMethods{
-						[](const const_BoolHypertrie &boolHypertrie) -> std::shared_ptr<void> {
-							return std::make_shared<typename RawBoolHypertrie<depth>::iterator>(
+						[](const void *rawboolhypertrie_iterator) {
+							using T = const typename RawBoolHypertrie<depth>::iterator;
+							if (rawboolhypertrie_iterator != nullptr)
+								static_cast<T *>(rawboolhypertrie_iterator)->~T();
+						},
+						[](const const_BoolHypertrie &boolHypertrie) -> void * {
+							return new typename RawBoolHypertrie<depth>::iterator(
 									*static_cast<RawBoolHypertrie<depth> const *>(boolHypertrie.hypertrie.get()));
 						},
 						&RawBoolHypertrie<depth>::iterator::value,
@@ -367,8 +375,8 @@ namespace hypertrie::internal {
 
 
 		protected:
-			RawMethods const *raw_methods;
-			std::shared_ptr<void> raw_iterator;
+			RawMethods const *raw_methods = nullptr;
+			void *raw_iterator = nullptr;
 
 		public:
 			using self_type =  iterator;
@@ -376,20 +384,37 @@ namespace hypertrie::internal {
 
 			iterator() = default;
 
+			iterator(iterator &) = delete;
+
+			iterator &operator=(iterator &&other) noexcept {
+				this->raw_methods = other.raw_methods;
+				this->raw_iterator = other.raw_iterator;
+				other.raw_iterator = nullptr;
+				return *this;
+			}
+
+			iterator &operator=(iterator &) = delete;
+
+			iterator &operator=(const iterator &) = delete;
+
 			iterator(const_BoolHypertrie const *const boolHypertrie) :
 					raw_methods(&getRawMethods(boolHypertrie->depth())),
 					raw_iterator(raw_methods->begin(*boolHypertrie)) {}
 
 			iterator(const_BoolHypertrie &boolHypertrie) : iterator(&boolHypertrie) {}
 
+			~iterator() {
+				raw_methods->destruct(raw_iterator);
+			}
+
 			self_type &operator++() {
-				raw_methods->inc(raw_iterator.get());
+				raw_methods->inc(raw_iterator);
 				return *this;
 			}
 
-			value_type operator*() const { return raw_methods->value(raw_iterator.get()); }
+			value_type operator*() const { return raw_methods->value(raw_iterator); }
 
-			operator bool() const { return not raw_methods->ended(raw_iterator.get()); }
+			operator bool() const { return not raw_methods->ended(raw_iterator); }
 
 		};
 

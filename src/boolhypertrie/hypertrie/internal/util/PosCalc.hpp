@@ -44,10 +44,10 @@ namespace hypertrie::internal::util {
 
 		PosCalc(std::vector<key_pos_t> &&keyToSubkey,
 		        std::vector<key_pos_t> &&subkeyToKey,
-		        const subkey_mask_t &removedPositions) :
+		        subkey_mask_t removedPositions) :
 				key_to_subkey{keyToSubkey},
 				subkey_to_key{subkeyToKey},
-				removed_positions{removedPositions},
+				removed_positions{std::move(removedPositions)},
 				next_pos_calcs(this->keyLength()) {}
 
 	public:

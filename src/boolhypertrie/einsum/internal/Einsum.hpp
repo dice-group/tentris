@@ -19,18 +19,24 @@ namespace einsum::internal {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		using Join_t = Join<key_part_type, map_type, set_type>;
 		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
+		using Entry_t = Entry<key_part_type, value_type>;
+		using Key_t = typename Entry_t::key_type;
+
 
 		std::shared_ptr<Subscript> subscript{};
 		std::vector<const_BoolHypertrie_t> operands{};
 		Operator_t op{};
+		Entry_t entry{};
+
 
 	public:
 		Einsum() = default;
 
 		Einsum(std::shared_ptr<Subscript> subscript, const std::vector<const_BoolHypertrie_t> &operands)
-				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)} {}
+				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)},
+				  entry{0, Key_t(this->subscript->resultLabelCount(), 0)} {}
 
-		const std::shared_ptr<Subscript> &getSubscript() const {
+		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
 		}
 
@@ -42,14 +48,46 @@ namespace einsum::internal {
 			return op;
 		}
 
-		using iterator = typename Operator_t::iterator;
+		struct iterator {
+		private:
+
+
+			Operator_t *op;
+			Entry_t *current_entry;
+			bool ended_ = false;
+		public:
+			iterator() = default;
+
+			explicit iterator(Einsum &einsum, Entry_t &entry) : op(&einsum.op), current_entry{&entry} {}
+
+			iterator &operator++() {
+				op->next();
+				return *this;
+			}
+
+			inline const Entry<key_part_type, value_type> &operator*() {
+				return *current_entry;
+			}
+
+			inline const Entry<key_part_type, value_type> &value() {
+				return *current_entry;
+			}
+
+			operator bool() const {
+				return not op->ended();
+
+			}
+
+			[[nodiscard]] inline bool ended() const { return op->ended(); }
+
+		};
 
 		iterator begin() {
-			op.load(operands);
-			return op.begin();
+			op.load(operands, entry);
+			return iterator{*this, entry};
 		}
 
-		bool end() const {
+		[[nodiscard]] bool end() const {
 			return false;
 		}
 
@@ -65,16 +103,20 @@ namespace einsum::internal {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		using Join_t = Join<key_part_type, map_type, set_type>;
 		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
+		using Entry_t = Entry<key_part_type, bool>;
+		using Key_t = typename Entry_t::key_type;
 
 		std::shared_ptr<Subscript> subscript{};
 		std::vector<const_BoolHypertrie_t> operands{};
 		Operator_t op{};
+		Entry_t entry{};
 
 	public:
 		Einsum(std::shared_ptr<Subscript> subscript, const std::vector<const_BoolHypertrie_t> &operands)
-				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)} {}
+				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)},
+				  entry{false, Key_t(this->subscript->resultLabelCount(), 0)} {}
 
-		const std::shared_ptr<Subscript> &getSubscript() const {
+		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
 		}
 
@@ -88,85 +130,60 @@ namespace einsum::internal {
 
 		struct iterator {
 		private:
-			using Entry_t = Entry<key_part_type, bool>;
-			using Key_t = typename Entry_t::key_type;
-			typename Operator_t::iterator op_it;
+
+
+			Operator_t *op;
 			tsl::hopscotch_set<Key_t, ::einsum::internal::KeyHash<key_part_type>> found_entries{};
-			Entry_t current_entry;
+			Entry_t *current_entry;
 			bool ended_ = false;
 		public:
 			iterator() = default;
 
-			explicit iterator(Einsum &einsum) : op_it(einsum.op.begin()) {
-				if (op_it) {
-					current_entry = op_it.value();
-					found_entries.insert(current_entry.key);
-				} else {
-					ended_ = true;
+			explicit iterator(Einsum &einsum, Entry_t &entry) : op(&einsum.op), current_entry{&entry} {
+				if (not op->ended()) {
+					found_entries.insert(current_entry->key);
 				}
 			}
 
-			/**
-			 * The iterator is frowarded by using the operator* or by calling value().
-			 * @return reference to self.
-			 */
-			iterator &operator++() { return *this; }
-
-			/**
-			 * Returns the next entry and forwards the iterator. equal to operator*
-			 * @return
-			 */
-			inline Entry<key_part_type, value_type> operator*() {
-				return value();
-			}
-
-			/**
-			 * Returns the next entry and forwards the iterator. equal to operator*
-			 * @return
-			 */
-			inline Entry<key_part_type, value_type> value() {
-				auto entry_to_return = std::move(current_entry);
-				assert(not ended_);
-				while (op_it) {
-					current_entry = op_it.value();
-					if (found_entries.find(current_entry.key) == found_entries.end()) {
-						found_entries.insert(current_entry.key);
-						break;
+			iterator &operator++() {
+				op->next();
+				while (not op->ended()) {
+					if (found_entries.find(current_entry->key) == found_entries.end()) {
+						found_entries.insert(current_entry->key);
+						return *this;
 					}
 				}
-				ended_ = not op_it;
-
-				return entry_to_return;
+				return *this;
 			}
 
-			/**
-			 * Is true as long as there are more entrys retrievable via operator* or value.
-			 * @return
-			 */
+			inline const Entry<key_part_type, value_type> &operator*() {
+				return *current_entry;
+			}
+
+			inline const Entry<key_part_type, value_type> &value() {
+				return *current_entry;
+			}
+
 			operator bool() const {
-				return not ended_;
+				return not op->ended();
 
 			}
 
-			/**
-			 * Returns true if the iteration is at its end.
-			 * @return
-			 */
-			inline bool ended() const { return not ended_; }
+			[[nodiscard]] inline bool ended() const { return op->ended(); }
 
 		};
 
 		iterator begin() {
-			op.load(operands);
-			return iterator{*this};
+			op.load(operands, entry);
+			return iterator{*this, entry};
 		}
 
-		bool end() const {
+		[[nodiscard]] bool end() const {
 			return false;
 		}
 
 		void clear() {
-			std::logic_error("not yet implemented.");
+			throw std::logic_error("not yet implemented.");
 		}
 	};
 }

@@ -95,7 +95,7 @@ namespace hypertrie::internal {
 
 		RawBoolHypertrie(RawBoolHypertrie &) = delete;
 
-		RawBoolHypertrie(RawBoolHypertrie &&) = default;
+		RawBoolHypertrie(RawBoolHypertrie &&) noexcept = default;
 
 		[[nodiscard]]
 		bool operator[](key_part_type_t key_part) const {
@@ -184,10 +184,15 @@ namespace hypertrie::internal {
 		protected:
 			typename edges_type::const_iterator iter;
 			typename edges_type::const_iterator end;
+			mutable value_type value_;
 		public:
 
 			iterator(boolhypertrie_c<depth> const *const raw_boolhypertrie) : iter(raw_boolhypertrie->edges.cbegin()),
-			                                                                  end(raw_boolhypertrie->edges.cend()) {}
+			                                                                  end(raw_boolhypertrie->edges.cend()),
+			                                                                  value_(1) {
+				if (iter != end)
+					value_[0] = *iter;
+			}
 
 			iterator(boolhypertrie_c<depth> const &raw_boolhypertrie) : iterator(&raw_boolhypertrie) {}
 
@@ -202,10 +207,13 @@ namespace hypertrie::internal {
 			}
 
 			[[nodiscard]]
-			inline value_type operator*() const { return {*iter}; }
+			inline const value_type &operator*() const {
+				value_[0] = *iter;
+				return value_;
+			}
 
 			[[nodiscard]]
-			static value_type value(void const *it_ptr) {
+			static const value_type &value(void const *it_ptr) {
 				auto &it = *static_cast<iterator const *>(it_ptr);
 				return *it;
 			}
@@ -286,7 +294,7 @@ namespace hypertrie::internal {
 
 		RawBoolHypertrie(RawBoolHypertrie &) = delete;
 
-		RawBoolHypertrie(RawBoolHypertrie &&) = default;
+		RawBoolHypertrie(RawBoolHypertrie &&) noexcept = default;
 
 		[[nodiscard]]
 		inline bool operator[](const Key &key) const {
@@ -352,7 +360,7 @@ namespace hypertrie::internal {
 			std::size_t delta_i = 0;
 			for (auto i : range(positions.size()))
 				if (not done[i]) {
-					if (auto current_size = edges[positions[i]-delta].size(); current_size < min_size) {
+					if (auto current_size = edges[positions[i] - delta].size(); current_size < min_size) {
 						min_i = i;
 						min_size = current_size;
 						delta_i = delta;
@@ -831,9 +839,9 @@ namespace hypertrie::internal {
 				++it;
 			}
 
-			inline value_type operator*() const { return key; }
+			inline const value_type &operator*() const { return key; }
 
-			static value_type value(void const *it_ptr) {
+			static const value_type &value(void const *it_ptr) {
 				auto &it = *static_cast<iterator const *>(it_ptr);
 				return *it;
 			}

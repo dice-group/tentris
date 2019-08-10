@@ -26,20 +26,23 @@ namespace einsum::internal {
 
 		static void next(void *self_raw) {
 			auto &self = *static_cast<ResolveOperator *>(self_raw);
+			++self.operand_iter;
+			self.ended_ = not self.operand_iter;
+			if (self.ended_)
+				return;
 			self.entry->value = key_part_type(1);
-			const auto operand_key = *self.operand_iter;
+			const auto &operand_key = *self.operand_iter;
 			for (auto i : range(operand_key.size()))
-				self->entry.key[self.label_pos_in_result[i]] = operand_key[i];
+				self.entry->key[self.label_pos_in_result[i]] = operand_key[i];
 			if constexpr (bool_value_type) {
 				if (self.subscript->all_result_done) {
 					self.ended_ = true;
 					return;
 				}
 			}
-			++self.operand_iter;
-			self.ended_ = not self.operand_iter;
+
 			if constexpr (_debugeinsum_)
-				fmt::print("[{}]->{} {}\n", fmt::join(self.entry->key, ","), self->entry.value, self.subscript);
+				fmt::print("[{}]->{} {}\n", fmt::join(self.entry->key, ","), self.entry->value, self.subscript);
 		}
 
 		static bool ended(void *self_raw) {
@@ -47,9 +50,9 @@ namespace einsum::internal {
 			return self.ended_;
 		}
 
-		static void load(void *self_raw, std::vector<const_BoolHypertrie_t> operands) {
+		static void load(void *self_raw, std::vector<const_BoolHypertrie_t> operands,Entry<key_part_type, value_type> &entry) {
 			auto &self = *static_cast<ResolveOperator *>(self_raw);
-			self.load_impl(std::move(operands));
+			self.load_impl(std::move(operands), entry);
 		}
 
 		static std::size_t hash(void *self_raw) {
@@ -62,9 +65,15 @@ namespace einsum::internal {
 			if constexpr(_debugeinsum_) fmt::print("Resolve {}\n", subscript);
 			this->entry = &entry;
 			assert(operands.size() == 1); // only one operand must be left to be resolved
-			operand_iter = operands[0].cbegin();
+			operand_iter = std::move(operands[0].cbegin());
 			assert(operand_iter);
 			ended_ = not operand_iter;
+			if (not ended_){
+				this->entry->value = key_part_type(1);
+				const auto operand_key = *this->operand_iter;
+				for (auto i : range(operand_key.size()))
+					this->entry->key[this->label_pos_in_result[i]] = operand_key[i];
+			}
 		}
 
 	};

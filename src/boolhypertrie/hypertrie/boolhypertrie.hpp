@@ -47,15 +47,14 @@ namespace hypertrie {
 		using KeyHash = ::einsum::internal::KeyHash<key_part_type>;
 
 		template<typename value_type = std::size_t>
-		static auto einsum2map(std::shared_ptr<Subscript> subscript, std::vector<const_BoolHypertrie> operands) {
+		static auto einsum2map(const std::shared_ptr<Subscript> &subscript, const std::vector<const_BoolHypertrie> &operands) {
 			tsl::hopscotch_map<std::vector<key_part_type>, value_type, KeyHash> results{};
 			for (const auto &operand : operands)
 				if (operand.size() == 0)
 					return results;
 
-			auto op = ::einsum::internal::Operator<value_type, key_part_type, map_type, set_type>::construct(subscript);
-			op.load(operands);
-			for (auto &&entry : op) {
+			Einsum<value_type> einsum{subscript, operands};
+			for (auto &&entry : einsum) {
 				results[entry.key] += entry.value;
 			}
 			return results;

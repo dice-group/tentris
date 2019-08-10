@@ -1,7 +1,7 @@
 #ifndef HYPERTRIE_ENTRY_HPP
 #define HYPERTRIE_ENTRY_HPP
-#define DEBUG
-#ifdef DEBUG
+//#define DEBUGEINSUM
+#ifdef DEBUGEINSUM
 #include <fmt/format.h>
 #include <fmt/core.h>
 #include <fmt/ostream.h>
@@ -30,7 +30,7 @@ namespace einsum::internal {
 		using Join = typename ::hypertrie::internal::interface::join<key_part_type, map_type, set_type>::HashJoin;
 		template<typename key_part_type, template<typename, typename> class map_type,
 				template<typename> class set_type>
-		using Diagonal = typename ::hypertrie::internal::interface::boolhypertrie<key_part_type, map_type, set_type>::Diagonal;
+		using Diagonal = typename ::hypertrie::internal::interface::boolhypertrie<key_part_type, map_type, set_type>::RawDiagonal;
 	}
 
 	template<typename key_part_type>
