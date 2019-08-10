@@ -37,15 +37,15 @@ namespace einsum::internal {
 
 		RawSubscript &operator=(RawSubscript &&) = default;
 
-		explicit RawSubscript(OperandsSc operands, ResultSc result) : operands(operands), result(result),
+		explicit RawSubscript(const OperandsSc &operands, const ResultSc &result) : operands(operands), result(result),
 		                                                              hash(boost::hash_value(operands) +
 		                                                                   boost::hash_value(result)) {
 		}
 
-		RawSubscript(std::tuple<OperandsSc, ResultSc> raw_subscript) : RawSubscript(std::get<0>(raw_subscript),
+		RawSubscript(const std::tuple<OperandsSc, ResultSc> &raw_subscript) : RawSubscript(std::get<0>(raw_subscript),
 		                                                                            std::get<1>(raw_subscript)) {}
 
-		RawSubscript(std::pair<OperandsSc, ResultSc> raw_subscript) : RawSubscript(std::get<0>(raw_subscript),
+		RawSubscript(const std::pair<OperandsSc, ResultSc> &raw_subscript) : RawSubscript(std::get<0>(raw_subscript),
 		                                                                           std::get<1>(raw_subscript)) {}
 
 		[[nodiscard]] auto operandsCount() const noexcept {

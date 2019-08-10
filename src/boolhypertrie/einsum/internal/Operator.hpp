@@ -65,7 +65,7 @@ namespace einsum::internal {
 		 * @param self pointer to the actual operator instance
 		 * @return the next Entry. Afterwards the Iterator is automatically forwarded.
 		 */
-		Entry<key_part_type, value_type> (*next_fp)(void *self);
+		void (*next_fp)(void *self);
 
 		/**
 		 * Pointer to the ended Function of the operator implementation.
@@ -79,7 +79,8 @@ namespace einsum::internal {
 		 * @param self actual operator instance
 		 * @param operands operands to be loaded
 		 */
-		void (*load_fp)(void *self, std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands);
+		void (*load_fp)(void *self, std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands,
+		                Entry<key_part_type, value_type> &entry);
 
 		std::size_t (*hash_fp)(void *self);
 
@@ -120,17 +121,6 @@ namespace einsum::internal {
 
 		Operator(Operator &&) noexcept = default;
 
-		// TODO: remove because implicit
-		Operator &operator=(Operator &op) noexcept {
-			this->type = op.type;
-			this->operator_instance = std::move(op.operator_instance);
-			this->next_fp = op.next_fp;
-			this->ended_fp = op.ended_fp;
-			this->load_fp = op.load_fp;
-			this->hash_fp = op.hash_fp;
-			return *this;
-		}
-
 		Operator &operator=(Operator &&op) noexcept {
 			this->type = op.type;
 			this->operator_instance = std::move(op.operator_instance);
@@ -141,65 +131,45 @@ namespace einsum::internal {
 			return *this;
 		}
 
-		struct iterator {
-		private:
-			Operator *op;
-		public:
-			iterator() = default;
-
-			explicit iterator(Operator &op) : op(&op) {}
-
-			/**
+		/**
 			 * This is only a stub to fulfill the C++ iterator interface.
 			 * The iterator is frowarded by using the operator* or by calling value().
 			 * @return reference to self.
 			 */
-			iterator &operator++() { return *this; }
+		Operator &operator++() {
+			next();
+			return *this;
+		}
 
-			/**
-			 * Returns the next entry and forwards the iterator. equal to operator*
-			 * @return
-			 */
-			inline Entry<key_part_type, value_type> operator*() const {
-				return op->next_fp(op->operator_instance.get());
-			}
+		/**
+		 * Returns the next entry and forwards the iterator. equal to operator*
+		 * @return
+		 */
+		inline void next() const { next_fp(operator_instance.get()); }
 
-			/**
-			 * Returns the next entry and forwards the iterator. equal to operator*
-			 * @return
-			 */
-			inline Entry<key_part_type, value_type> value() const {
-				return op->next_fp(op->operator_instance.get());
-			}
+		/**
+		 * Is true as long as there are more entrys retrievable via operator* or value.
+		 * @return
+		 */
+		operator bool() const { return not ended_fp(operator_instance.get()); }
 
-			/**
-			 * Is true as long as there are more entrys retrievable via operator* or value.
-			 * @return
-			 */
-			operator bool() const {
-				return not op->ended_fp(op->operator_instance.get());
+		/**
+		 * Returns true if the iteration is at its end.
+		 * @return
+		 */
+		inline bool ended() const { return ended_fp(operator_instance.get()); }
 
-			}
 
-			/**
-			 * Returns true if the iteration is at its end.
-			 * @return
-			 */
-			inline bool ended() const { return op->ended_fp(op->operator_instance.get()); }
-
-		};
-
-		iterator begin() { return iterator{*this}; }
+		Operator &begin() { return *this; }
 
 		bool end() { return false; }
 
-		void load(std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands) {
-			load_fp(operator_instance.get(), std::move(operands));
+		void load(std::vector<const_BoolHypertrie<key_part_type, map_type, set_type>> operands,
+		          Entry<key_part_type, value_type> &entry) {
+			load_fp(operator_instance.get(), std::move(operands), entry);
 		}
 
-		std::size_t hash() const {
-			return hash_fp(operator_instance.get());
-		}
+		std::size_t hash() const { return hash_fp(operator_instance.get()); }
 
 		bool operator!=(const Operator &other) const { return hash() != other.hash(); };
 

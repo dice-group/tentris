@@ -27,7 +27,7 @@ namespace einsum::internal {
 		key_part_type current_key_part;
 
 		Operator_t sub_operator;
-		typename Operator_t::iterator sub_operator_iter;
+		Entry<key_part_type, value_type> *entry;
 
 		bool ended_ = true;
 
@@ -35,42 +35,40 @@ namespace einsum::internal {
 		JoinOperator(std::shared_ptr<Subscript> subscript) : subscript(std::move(subscript)) {}
 
 
-		static Entry<key_part_type, value_type> next(void *self_raw) {
+		static void next(void *self_raw) {
 			JoinOperator &self = *static_cast<JoinOperator *>(self_raw);
 			if constexpr (bool_value_type) {
 				if (self.subscript->all_result_done) {
+					assert(self.sub_operator);
 					self.ended_ = true;
-					return *self.sub_operator_iter;
+					return;
 				}
 			}
-			Entry<key_part_type, value_type> entry = *self.sub_operator_iter;
-			if (self.is_result_label)
-				entry.key[self.label_pos_in_result] = self.current_key_part;
-
-			++self.sub_operator_iter;
-
-			while (self.sub_operator_iter.ended()) {
+			++self.sub_operator;
+			while (self.sub_operator.ended()) {
 				++self.join_iter;
-				if (not self.join_iter) {
-					self.ended_ = true;
-					break;
-				} else {
+				if (self.join_iter) {
 					std::vector<const_BoolHypertrie_t> next_operands;
 					std::tie(next_operands, self.current_key_part) = *self.join_iter;
-					self.sub_operator.load(std::move(next_operands));
-					self.sub_operator_iter = self.sub_operator.begin();
+					self.sub_operator.load(std::move(next_operands), *self.entry);
+				} else {
+					self.ended_ = true;
+					break;
 				}
 			}
-			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(entry.key, ","), entry.value, self.subscript);
-			return entry;
+			if (self.is_result_label)
+				self.entry->key[self.label_pos_in_result] = self.current_key_part;
+
+
+			if constexpr (_debugeinsum_) fmt::print("[{}]->{} {}\n", fmt::join(self.entry->key, ","), self.entry->value, self.subscript);
 		}
 
 		static bool ended(void *self_raw) {
 			return static_cast<JoinOperator *>(self_raw)->ended_;
 		}
 
-		static void load(void *self_raw, std::vector<const_BoolHypertrie_t> operands) {
-			static_cast<JoinOperator *>(self_raw)->load_impl(std::move(operands));
+		static void load(void *self_raw, std::vector<const_BoolHypertrie_t> operands, Entry<key_part_type, value_type> &entry) {
+			static_cast<JoinOperator *>(self_raw)->load_impl(std::move(operands),entry);
 		}
 
 		static std::size_t hash(void *self_raw) {
@@ -78,8 +76,10 @@ namespace einsum::internal {
 		}
 
 	private:
-		inline void load_impl(std::vector<const_BoolHypertrie_t> operands) {
+		inline void load_impl(std::vector<const_BoolHypertrie_t> operands, Entry<key_part_type, value_type> &entry) {
 			if constexpr (_debugeinsum_) fmt::print("Join {}\n", subscript);
+
+			this->entry = &entry;
 			ended_ = false;
 			Label last_label = label;
 			label = CardinalityEstimation_t::getMinCardLabel(operands, subscript);
@@ -89,7 +89,7 @@ namespace einsum::internal {
 				if (is_result_label)
 					label_pos_in_result = subscript->getLabelPosInResult(label);
 			}
-			std::shared_ptr<Subscript> next_subscript = subscript->removeLabel(label);
+			const std::shared_ptr<Subscript> &next_subscript = subscript->removeLabel(label);
 			// check if sub_operator was not yet initialized or if the next subscript is different
 			if (sub_operator.type == Subscript::Type::None or sub_operator.hash() != next_subscript->hash()) {
 				sub_operator = Operator_t::construct(next_subscript);
@@ -100,9 +100,10 @@ namespace einsum::internal {
 			while (join_iter != join.end()) {
 				std::vector<const_BoolHypertrie_t> next_operands;
 				std::tie(next_operands, current_key_part) = *join_iter;
-				sub_operator.load(std::move(next_operands));
-				sub_operator_iter = sub_operator.begin();
-				if (not sub_operator_iter.ended()) {
+				sub_operator.load(std::move(next_operands), *this->entry);
+				if (not sub_operator.ended()) {
+					if (is_result_label)
+						this->entry->key[label_pos_in_result] = current_key_part;
 					return;
 				} else {
 					++join_iter;

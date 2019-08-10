@@ -19,7 +19,7 @@ namespace einsum::internal {
 		 * @return
 		 */
 		static Label getMinCardLabel(const std::vector<const_BoolHypertrie_t> &operands,
-		                             std::shared_ptr<Subscript> sc) {
+		                             const std::shared_ptr<Subscript> &sc) {
 			const tsl::hopscotch_set<Label> &operandsLabelSet = sc->getOperandsLabelSet();
 			if (operandsLabelSet.size() == 1) {
 				return *operandsLabelSet.begin();
@@ -49,7 +49,7 @@ namespace einsum::internal {
 		 * @return label's cardinality in current step.
 		 */
 		static double calcCard(const std::vector<const_BoolHypertrie_t> &operands, const Label label,
-		                       std::shared_ptr<Subscript> sc) {
+		                       const std::shared_ptr<Subscript> &sc) {
 			// get operands that have the label
 			const std::vector<LabelPos> &op_poss = sc->getPossOfOperandsWithLabel(label);
 			std::vector<double> op_dim_cardinalities(op_poss.size(), 1.0);

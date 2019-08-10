@@ -66,7 +66,7 @@ namespace einsum::internal::util {
 		 * Get all connected components e.g. all sets of nodes that are reachable form each other.
 		 * @return set of connected components.
 		 */
-		std::vector<std::set<T>> getConnectedComponents() const {
+		[[nodiscard]] std::vector<std::set<T>> getConnectedComponents() const {
 			// this is basically a breadth first search
 			std::set<T> unfinished_nodes{this->nodes};
 

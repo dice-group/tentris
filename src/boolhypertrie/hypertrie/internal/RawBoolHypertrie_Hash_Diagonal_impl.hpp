@@ -109,11 +109,11 @@ namespace hypertrie::internal {
 		RawHashDiagonal(RawBoolHypertrie_t<depth> const *const boolhypertrie, std::vector<pos_type> positions)
 				: rawboolhypertrie{boolhypertrie}, diag_poss{std::move(positions)} {}
 
-		RawHashDiagonal(RawBoolHypertrie_t<depth> const &boolhypertrie, std::vector<pos_type> positions)
+		RawHashDiagonal(RawBoolHypertrie_t<depth> const &boolhypertrie, const std::vector<pos_type> &positions)
 				: RawHashDiagonal(&boolhypertrie, positions) {}
 
 		RawHashDiagonal(std::shared_ptr<RawBoolHypertrie_t<depth>> const &boolhypertrie,
-		                std::vector<pos_type> positions) : RawHashDiagonal(boolhypertrie.get(), positions) {}
+		                const std::vector<pos_type> &positions) : RawHashDiagonal(boolhypertrie.get(), positions) {}
 
 		static void init(void *diag_ptr) {
 			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);

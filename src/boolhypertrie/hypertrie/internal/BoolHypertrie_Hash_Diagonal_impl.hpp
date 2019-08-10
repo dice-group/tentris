@@ -202,7 +202,7 @@ namespace hypertrie::internal {
 
 		HashDiagonal(HashDiagonal &&) noexcept = default;
 
-		HashDiagonal &operator=(HashDiagonal &&) = default;
+		HashDiagonal &operator=(HashDiagonal &&) noexcept = default;
 
 		HashDiagonal &operator=(const HashDiagonal &) = default;
 

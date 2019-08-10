@@ -152,7 +152,7 @@ namespace hypertrie::internal {
 
 		iterator begin() const { return iterator(*this); }
 
-		bool end() const { return false; }
+		[[nodiscard]] bool end() const { return false; }
 
 
 	};
