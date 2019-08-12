@@ -25,14 +25,9 @@ namespace tentris::store::cache {
 		using TimeoutType = std::chrono::system_clock::time_point;
 	private:
 		ParsedSPARQL parsedSPARQL;
-		TimeoutType timeout;
+		std::shared_ptr<Subscript> subscript;
 
 	public:
-		std::timed_mutex processing;
-		std::timed_mutex queuing;
-		TimeoutType keep_result_timeout =
-				std::numeric_limits<std::chrono::system_clock::time_point>::min();
-
 		/**
 		 * Indicates if the QueryExecutionPackage represents an distinct query or not. If it is distinct use only
 		 * the methods with distinct in their names. Otherwise use only the methods with regular in their names
@@ -43,7 +38,8 @@ namespace tentris::store::cache {
 		size_t cache_bucket_size;
 
 	private:
-		std::shared_ptr<void> einsum_operator;
+
+		std::vector<const_BoolHypertrie> operands{};
 
 	public:
 		/**
@@ -54,10 +50,11 @@ namespace tentris::store::cache {
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
 		QueryExecutionPackage(const std::string &sparql_string,
-		                      const const_BoolHypertrie &trie,
-		                      const TermStore &termIndex,
-		                      size_t cache_bucket_size)
+							  const const_BoolHypertrie &trie,
+							  const TermStore &termIndex,
+							  size_t cache_bucket_size)
 				: parsedSPARQL{sparql_string},
+				  subscript{parsedSPARQL.getSubscript()},
 				  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)},
 				  cache_bucket_size{cache_bucket_size} {
 
@@ -66,53 +63,17 @@ namespace tentris::store::cache {
 			is_trivial_empty = slice_keys.empty();
 			if (not is_trivial_empty) {
 
-				const auto subscript = parsedSPARQL.getSubscript();
-
-				std::vector<const_BoolHypertrie> hypertries{};
 				for (const auto &slice_key: slice_keys) {
-					std::optional<const_BoolHypertrie> opt_slice = std::get<std::optional<const_BoolHypertrie>>(
-							trie[slice_key]);
+					auto opt_slice = std::get<std::optional<const_BoolHypertrie>>(trie[slice_key]);
 					if (opt_slice)
-						hypertries.emplace_back(opt_slice.value());
+						operands.emplace_back(opt_slice.value());
 					else {
 						is_trivial_empty = true;
 						return;
 					}
 				}
-				if (not is_distinct)
-					einsum_operator = generateEinsum<COUNTED_t>(subscript, hypertries);
-				else
-					einsum_operator = generateEinsum<DISTINCT_t>(subscript, hypertries);
 			}
 		}
-
-		void done() {
-			if (not is_trivial_empty and std::chrono::system_clock::now() > keep_result_timeout) {
-				if (not is_distinct);// regular_operator_tree->clearCacheDone();
-				else;// distinct_operator_tree->clearCacheDone();
-			}
-			keep_result_timeout = std::numeric_limits<std::chrono::system_clock::time_point>::min();
-
-			processing.unlock();
-		}
-
-		void canceled() {
-			if (not is_trivial_empty) {
-				if (not is_distinct);//	regular_operator_tree->clearCacheCanceled();
-				else;//distinct_operator_tree->clearCacheCanceled();
-			}
-			processing.unlock();
-		}
-
-		void setTimeout(const TimeoutType &timeout) {
-			this->timeout = timeout;
-			if (not is_trivial_empty) {
-				if (not is_distinct);//regular_operator_tree->setTimeout(timeout);
-				else;//distinct_operator_tree->setTimeout(timeout);
-			}
-		}
-
-		TimeoutType getTimeout() const { return timeout; }
 
 	private:
 		/**
@@ -126,8 +87,8 @@ namespace tentris::store::cache {
 		 * @return
 		 */
 		template<typename RESULT_TYPE>
-		std::shared_ptr<void> generateEinsum(const std::shared_ptr<Subscript> &subscript,
-		                                     const std::vector<const_BoolHypertrie> &hypertries) {
+		static std::shared_ptr<void> generateEinsum(const std::shared_ptr<Subscript> &subscript,
+													const std::vector<const_BoolHypertrie> &hypertries) {
 			return std::make_shared<Einsum<RESULT_TYPE>>(subscript, hypertries);
 		}
 
@@ -137,7 +98,10 @@ namespace tentris::store::cache {
 		const std::string &getSparqlStr() const { return parsedSPARQL.getSparqlStr(); }
 
 		std::shared_ptr<void> getEinsum() const {
-			return einsum_operator;
+			if (not is_distinct)
+				return generateEinsum<COUNTED_t>(subscript, operands);
+			else
+				return generateEinsum<DISTINCT_t>(subscript, operands);
 		}
 
 		friend struct ::fmt::formatter<QueryExecutionPackage>;
@@ -153,7 +117,7 @@ namespace tentris::store::cache {
 		 */
 		static std::vector<SliceKey_t>
 		generateSliceKeys(const std::set<TriplePattern> &bgps, const const_BoolHypertrie &trie,
-		                  const TermStore &termIndex) {
+						  const TermStore &termIndex) {
 			std::vector<SliceKey_t> slice_keys{};
 			for (const auto &op_key : bgps) {
 				SliceKey_t slice_key(3, std::nullopt);
@@ -192,10 +156,10 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 	template<typename FormatContext>
 	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
 		return format_to(ctx.begin(),
-		                 " parsedSPARQL:     {}\n"
-		                 " is_distinct:      {}\n"
-		                 " is_trivial_empty: {}\n",
-		                 p.parsedSPARQL, p.is_distinct, p.is_trivial_empty);
+						 " parsedSPARQL:     {}\n"
+						 " is_distinct:      {}\n"
+						 " is_trivial_empty: {}\n",
+						 p.parsedSPARQL, p.is_distinct, p.is_trivial_empty);
 		// TODO: implement print for operator
 	}
 };

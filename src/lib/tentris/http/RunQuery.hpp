@@ -55,11 +55,10 @@ namespace tentris::http {
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
 	Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-	                TripleStore &store) {
+	                TripleStore &store, const QueryExecutionPackage::TimeoutType timeout) {
 
 		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 		const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
-		const QueryExecutionPackage::TimeoutType timeout = query_package->getTimeout();
 		switch (sparqlQuery.getSelectModifier()) {
 			case SelectModifier::NONE: {
 				return runQuery<COUNTED_t>(req, query_package, store, timeout, vars);

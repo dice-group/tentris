@@ -220,7 +220,7 @@ namespace hypertrie::internal {
 		template<pos_type depth, pos_type result_depth>
 		inline static auto
 		executeRawSlice(const std::shared_ptr<void> &hypertrie,
-		                typename RawBoolHypertrie<depth>::SliceKey raw_slice_key)
+						typename RawBoolHypertrie<depth>::SliceKey raw_slice_key)
 		-> std::conditional_t<(result_depth > 0), std::optional<const_BoolHypertrie const>, bool> {
 			auto raw_hypertrie = std::static_pointer_cast<RawBoolHypertrie<depth>>(hypertrie);
 			if constexpr (result_depth > 0) {
@@ -390,6 +390,7 @@ namespace hypertrie::internal {
 				this->raw_methods = other.raw_methods;
 				this->raw_iterator = other.raw_iterator;
 				other.raw_iterator = nullptr;
+				other.raw_methods = nullptr;
 				return *this;
 			}
 
@@ -404,7 +405,8 @@ namespace hypertrie::internal {
 			iterator(const_BoolHypertrie &boolHypertrie) : iterator(&boolHypertrie) {}
 
 			~iterator() {
-				raw_methods->destruct(raw_iterator);
+				if (raw_methods != nullptr)
+					raw_methods->destruct(raw_iterator);
 			}
 
 			self_type &operator++() {

@@ -27,6 +27,8 @@ namespace {
 	using namespace tentris::tensor;
 }
 
+TerminalConfig cfg;
+
 bool onlystdout = false;
 
 using Errors = tentris::http::ResultState;
@@ -119,13 +121,9 @@ inline void runCMDQuery(const std::shared_ptr <QueryExecutionPackage> &query_pac
 	// check if it timed out
 	if (system_clock::now() < timeout) {
 		writeNTriple<RESULT_TYPE>(std::cout, vars, query_package, triple_store);
-		std::thread cleanup_thread([=] { query_package->done(); });
-		cleanup_thread.detach();
 	} else {
 		::error = Errors::PROCESSING_TIMEOUT;
 		actual_timeout = system_clock::now();
-		std::thread cleanup_thread([=] { query_package->canceled(); });
-		cleanup_thread.detach();
 	}
 }
 
@@ -151,7 +149,7 @@ void commandlineInterface(TripleStore &triple_store) {
 			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 			const std::vector <Variable> &vars = sparqlQuery.getQueryVariables();
 
-			timeout = query_package->getTimeout();
+			timeout = system_clock::now() + cfg.timeout;
 
 			parse_end = system_clock::now();
 			execute_start = system_clock::now();
@@ -240,7 +238,7 @@ void commandlineInterface(TripleStore &triple_store) {
 
 int main(int argc, char *argv[]) {
 	tentris::logging::init_logging();
-	TerminalConfig cfg{argc, argv};
+	cfg = {argc, argv};
 
 	TripleStore triplestore{cfg.cache_size, cfg.cache_bucket_capacity, cfg.timeout};
 

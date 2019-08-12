@@ -31,6 +31,7 @@ namespace tentris::store {
 		TermStore termIndex{};
 		BoolHypertrie trie{3};
 		mutable QueryExecutionPackage_cache query_cache;
+		std::size_t load_log = 1'000'000;
 
 	public:
 		explicit TripleStore(size_t cache_capacity = 500, size_t cache_bucket_size = 500,
@@ -88,6 +89,11 @@ namespace tentris::store {
 		size_t size() const {
 			return trie.size();
 		}
+
+		friend auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
+								  const SerdNode *subject,
+								  const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
+								  const SerdNode *object_lang) -> SerdStatus;
 	};
 
 	auto getBNode(const SerdNode *node) -> std::shared_ptr<Term> {
@@ -159,6 +165,11 @@ namespace tentris::store {
 				return SERD_ERR_BAD_SYNTAX;
 		}
 		store->add(std::move(subject_term), std::move(predicate_term), std::move(object_term));
+		if(store->size() % store->load_log == 0){
+			if ((store->size() / store->load_log) % 10 == 0)
+				store->load_log *=10;
+			log("{} mio triples loaded."_format(store->size() / 1'000'000));
+		}
 		return SERD_SUCCESS;
 	}
 
