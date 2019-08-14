@@ -9,6 +9,10 @@
 #include <boost/bind.hpp>
 #include <boost/coroutine2/all.hpp>
 #include <serd-0/serd/serd.h>
+#include <absl/hash/hash.h>
+#include <tsl/hopscotch_map.h>
+
+#include <boost/algorithm/string.hpp>
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
@@ -16,6 +20,7 @@
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
+
 
 namespace {
 	using namespace tentris::store::cache;
@@ -27,15 +32,16 @@ namespace {
 
 namespace tentris::store {
 	class TripleStore {
-
 		TermStore termIndex{};
+
 		BoolHypertrie trie{3};
+		tsl::hopscotch_map<std::string, std::string, absl::Hash<std::string>> prefixes{};
 		mutable QueryExecutionPackage_cache query_cache;
 		std::size_t load_log = 1'000'000;
 
 	public:
 		explicit TripleStore(size_t cache_capacity = 500, size_t cache_bucket_size = 500,
-		                     std::chrono::system_clock::duration timeout = std::chrono::seconds(180)) :
+							 std::chrono::system_clock::duration timeout = std::chrono::seconds(180)) :
 				query_cache{trie, termIndex, cache_capacity, cache_bucket_size, timeout} {}
 
 
@@ -73,7 +79,7 @@ namespace tentris::store {
 			const std::shared_ptr<Term> &subject = parseTerm(std::get<0>(triple));
 			const std::shared_ptr<Term> &predicate = parseTerm(std::get<1>(triple));
 			const std::shared_ptr<Term> &object = parseTerm(std::get<2>(triple));
-			if(termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object)){
+			if (termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object)) {
 				BoolHypertrie::Key key{termIndex.at(subject), termIndex.at(predicate), termIndex.at(object)};
 				return trie[key];
 			}
@@ -90,48 +96,74 @@ namespace tentris::store {
 			return trie.size();
 		}
 
-		friend auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
-								  const SerdNode *subject,
-								  const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
-								  const SerdNode *object_lang) -> SerdStatus;
+		friend auto
+		serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
+					  const SerdNode *subject,
+					  const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
+					  const SerdNode *object_lang) -> SerdStatus;
+
+		friend
+		auto serd_prefix_callback(void *handle, const SerdNode *name, const SerdNode *uri) -> SerdStatus;
+		friend
+		auto serd_base_callback (void *handle, const SerdNode *uri) -> SerdStatus;
 	};
 
 	auto getBNode(const SerdNode *node) -> std::shared_ptr<Term> {
-		std::ostringstream bnode_str;
-		bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)};
-		return std::shared_ptr<Term>{new BNode{bnode_str.str()}};
+		return std::make_shared<BNode>("_:{}"_format(std::string_view{(char *) (node->buf), size_t(node->n_bytes)}));
 	}
 
 	auto getURI(const SerdNode *node) -> std::shared_ptr<Term> {
-		std::ostringstream uri_str;
-		uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)} << ">";
-		return std::shared_ptr<Term>{new URIRef{uri_str.str()}};
+		return std::make_shared<URIRef>("<{}>"_format(std::string_view{(char *) (node->buf), size_t(node->n_bytes)}));
+	}
+
+	auto getURIwithPrefix(const SerdNode *node, const tsl::hopscotch_map<std::string, std::string, absl::Hash<std::string>> &prefixes) -> std::shared_ptr<Term> {
+		std::string_view uri_node_view{(char *) (node->buf), size_t(node->n_bytes)};
+
+		std::vector<std::string> prefix_and_suffix{};
+		boost::split(prefix_and_suffix, uri_node_view, [](char c){return c == ':';});
+
+		assert(prefix_and_suffix.size() == 2);
+		assert(prefixes.count(std::string{prefix_and_suffix[0]}));
+		return std::make_shared<URIRef>("<{}{}>"_format(prefixes.find(prefix_and_suffix[0])->second, prefix_and_suffix[1]));
 	}
 
 	auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
-	                const SerdNode *lang_node) -> std::shared_ptr<Term> {
+					const SerdNode *lang_node) -> std::shared_ptr<Term> {
 		std::optional<std::string> type = (type_node != nullptr)
-		                                  ? std::optional<std::string>{{(char *) (type_node->buf),
-				                                                               size_t(type_node->n_bytes)}}
-		                                  : std::nullopt;
+										  ? std::optional<std::string>{{(char *) (type_node->buf),
+																			   size_t(type_node->n_bytes)}}
+										  : std::nullopt;
 		std::optional<std::string> lang = (lang_node != nullptr)
-		                                  ? std::optional<std::string>{{(char *) (lang_node->buf),
-				                                                               size_t(lang_node->n_bytes)}}
-		                                  : std::nullopt;
-		return std::shared_ptr<Term>{
-				new Literal{std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type}};
+										  ? std::optional<std::string>{{(char *) (lang_node->buf),
+																			   size_t(lang_node->n_bytes)}}
+										  : std::nullopt;
+		return std::make_shared<Literal>(std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type);
 	};
 
+	auto serd_base_callback (void *handle, const SerdNode *uri) -> SerdStatus{
+			auto * store = (tentris::store::TripleStore *) handle;
+			store->prefixes[""] = std::string((char *) (uri->buf), uri->n_bytes);
+	}
+
+	auto serd_prefix_callback(void *handle, const SerdNode *name, const SerdNode *uri) -> SerdStatus {
+		auto *store = (tentris::store::TripleStore *) handle;
+		store->prefixes[std::string((char *) (name->buf), name->n_bytes)] = std::string((char *) (uri->buf),
+																						uri->n_bytes);
+	}
+
 	auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
-	                   const SerdNode *subject,
-	                   const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
-	                   const SerdNode *object_lang) -> SerdStatus {
+					   const SerdNode *subject,
+					   const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
+					   const SerdNode *object_lang) -> SerdStatus {
 		auto *store = (tentris::store::TripleStore *) handle;
 		std::shared_ptr<Term> subject_term;
 		std::shared_ptr<Term> predicate_term;
 		std::shared_ptr<Term> object_term;
 
 		switch (subject->type) {
+			case SERD_CURIE:
+				subject_term = getURIwithPrefix(subject, store->prefixes);
+				break;
 			case SERD_URI:
 				subject_term = getURI(subject);
 				break;
@@ -144,6 +176,9 @@ namespace tentris::store {
 		}
 
 		switch (predicate->type) {
+			case SERD_CURIE:
+				predicate_term = getURIwithPrefix(predicate, store->prefixes);
+				break;
 			case SERD_URI:
 				predicate_term = getURI(predicate);
 				break;
@@ -152,6 +187,9 @@ namespace tentris::store {
 		}
 
 		switch (object->type) {
+			case SERD_CURIE:
+				object_term = getURIwithPrefix(object, store->prefixes);
+				break;
 			case SERD_LITERAL:
 				object_term = getLiteral(object, object_datatype, object_lang);
 				break;
@@ -165,9 +203,9 @@ namespace tentris::store {
 				return SERD_ERR_BAD_SYNTAX;
 		}
 		store->add(std::move(subject_term), std::move(predicate_term), std::move(object_term));
-		if(store->size() % store->load_log == 0){
+		if (store->size() % store->load_log == 0) {
 			if ((store->size() / store->load_log) % 10 == 0)
-				store->load_log *=10;
+				store->load_log *= 10;
 			log("{} mio triples loaded."_format(store->size() / 1'000'000));
 		}
 		return SERD_SUCCESS;
@@ -175,8 +213,9 @@ namespace tentris::store {
 
 
 	void TripleStore::loadRDF(std::string file_path) {
-		SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, nullptr, nullptr, nullptr, &serd_callback,
-		                                 nullptr);
+		SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, nullptr, &serd_base_callback, &serd_prefix_callback,
+										 &serd_callback,
+										 nullptr);
 		serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
 	}
 

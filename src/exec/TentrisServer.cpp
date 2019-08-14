@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
 	router->http_get(
 			R"(/sparql)",
 			tentris::http::sparql_endpoint);
+	restinio::asio_ns::error_code ex;
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
