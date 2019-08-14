@@ -25,7 +25,7 @@ namespace tentris::http {
 
 	auto asio_error_callback = [](const auto &ec) {
 		if (ec)
-			logError("ASIO Error Cathegory {}, Code {}, Message {}"_format(
+			logError("ASIO Error Category {}, Code {}, Message {}"_format(
 					ec.category().name(), ec.value(), ec.message()));
 	};
 
