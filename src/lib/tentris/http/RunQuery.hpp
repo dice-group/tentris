@@ -39,6 +39,7 @@ namespace tentris::http {
 		if (system_clock::now() < timeout) {
 			auto resp = req->create_response<restinio::chunked_output_t>(restinio::status_ok());
 			resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
+			resp.connection_close();
 			resp.flush();
 			return streamJSON<RESULT_TYPE>(vars, query_package, resp, store, timeout);
 		} else {

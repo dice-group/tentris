@@ -23,6 +23,12 @@ namespace tentris::http {
 		using namespace tentris::store::rdf;
 	}; // namespace
 
+	auto asio_error_callback = [](const auto &ec) {
+		if (ec)
+			logError("ASIO Error Cathegory {}, Code {}, Message {}"_format(
+					ec.category().name(), ec.value(), ec.message()));
+	};
+
 	template<typename RESULT_TYPE>
 	Status streamJSON(const std::vector<Variable> &vars, std::shared_ptr<QueryExecutionPackage> &query_package,
 					  restinio::response_builder_t<restinio::chunked_output_t> &stream,
@@ -108,12 +114,12 @@ namespace tentris::http {
 										bindings_count / vars.size(), vars.size(), bindings_count)
 								);
 								stream.append_chunk("]}}\n");
-								stream.done();
+								stream.done(asio_error_callback);
 								return Status::SERIALIZATION_TIMEOUT;
 							} else {
 								result_count = 0;
 								++result_count_multiplyer;
-								stream.flush();
+								stream.flush(asio_error_callback);
 							}
 						}
 					}
@@ -128,7 +134,8 @@ namespace tentris::http {
 			query_package->is_trivial_empty = true;
 
 		stream.append_chunk("]}}\n");
-		stream.done();
+
+		stream.done(asio_error_callback);
 		return Status::OK;
 	}
 } // namespace tentris::http

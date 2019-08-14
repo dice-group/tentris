@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 
 	using traits_t =
 	restinio::traits_t<
-			restinio::asio_timer_manager_t,
+			restinio::null_timer_manager_t,
 #ifdef DEBUG
 			restinio::shared_ostream_logger_t,
 #else
