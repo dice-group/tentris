@@ -2,6 +2,7 @@
 #define HYPERTRIE_TSLSET_HPP
 
 #include <tsl/sparse_set.h>
+#include <absl/hash/hash.h>
 
 namespace hypertrie::internal::container {
 

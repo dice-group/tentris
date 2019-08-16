@@ -390,6 +390,7 @@ namespace hypertrie::internal {
 				this->raw_methods = other.raw_methods;
 				this->raw_iterator = other.raw_iterator;
 				other.raw_iterator = nullptr;
+				other.raw_methods = nullptr;
 				return *this;
 			}
 
@@ -404,7 +405,8 @@ namespace hypertrie::internal {
 			iterator(const_BoolHypertrie &boolHypertrie) : iterator(&boolHypertrie) {}
 
 			~iterator() {
-				raw_methods->destruct(raw_iterator);
+				if (raw_methods != nullptr)
+					raw_methods->destruct(raw_iterator);
 			}
 
 			self_type &operator++() {
