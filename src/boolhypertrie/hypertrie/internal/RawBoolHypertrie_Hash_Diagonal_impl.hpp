@@ -4,8 +4,7 @@
 #include "hypertrie/internal/util/CONSTANTS.hpp"
 
 #include "hypertrie/internal/RawBoolHypertrie_impl.hpp"
-#include "hypertrie/internal/container/TslMap.hpp"
-#include "hypertrie/internal/container/BoostFlatSet.hpp"
+#include "hypertrie/internal/container/AllContainer.hpp"
 #include <numeric>
 
 namespace hypertrie::internal {
@@ -105,6 +104,9 @@ namespace hypertrie::internal {
 		typename children_type::iterator end;
 		value_type *value;
 
+		static constexpr bool is_tsl_map = std::is_same_v<map_type<int, int>, container::tsl_sparse_map<int, int>>;
+		static constexpr bool is_tsl_set = std::is_same_v<set_type<int>, container::tsl_sparse_set<int>>;
+
 	public:
 		RawHashDiagonal(RawBoolHypertrie_t<depth> const *const boolhypertrie, std::vector<pos_type> positions)
 				: rawboolhypertrie{boolhypertrie}, diag_poss{std::move(positions)} {}
@@ -133,8 +135,12 @@ namespace hypertrie::internal {
 					diag.value = diag.iter->second->template diagonal<diag_depth - 1>(diag.diag_poss, diag.iter->first);
 					if (not bool(*diag.value))
 						inc(diag_ptr);
-				} else
-					diag.value = &diag.iter.value();
+				} else {
+					if constexpr (is_tsl_map)
+						diag.value = &diag.iter.value();
+					else
+						diag.value = &diag.iter->second;
+				}
 			}
 		}
 
@@ -145,7 +151,7 @@ namespace hypertrie::internal {
 
 		static value_type *currentValue(void const *diag_ptr) {
 			auto &diag = *static_cast<RawHashDiagonal const *>(diag_ptr);
-				return diag.value;
+			return diag.value;
 		}
 
 		static bool contains(void *diag_ptr, key_part_type key_part) {
@@ -158,7 +164,10 @@ namespace hypertrie::internal {
 			auto &diag = *static_cast<RawHashDiagonal *>(diag_ptr);
 			if constexpr  (diag_depth == 1) {
 				++diag.iter;
-				diag.value = &diag.iter.value();
+				if constexpr (is_tsl_map)
+					diag.value = &diag.iter.value();
+				else
+					diag.value = &diag.iter->second;
 			} else {
 				assert(not empty(diag_ptr));
 				do {

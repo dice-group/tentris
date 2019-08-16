@@ -1,6 +1,6 @@
 #ifndef HYPERTRIE_ENTRY_HPP
 #define HYPERTRIE_ENTRY_HPP
-//#define DEBUGEINSUM
+#define DEBUGEINSUM
 #ifdef DEBUGEINSUM
 #include <fmt/format.h>
 #include <fmt/core.h>

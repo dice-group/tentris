@@ -148,10 +148,12 @@ namespace einsum::internal {
 			iterator &operator++() {
 				op->next();
 				while (not op->ended()) {
+					assert(current_entry->value == true);
 					if (found_entries.find(current_entry->key) == found_entries.end()) {
 						found_entries.insert(current_entry->key);
 						return *this;
 					}
+					op->next();
 				}
 				return *this;
 			}

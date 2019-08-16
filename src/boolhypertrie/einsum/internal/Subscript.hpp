@@ -134,6 +134,8 @@ namespace einsum::internal {
 
 		tsl::hopscotch_set<Label> result_label_set{};
 
+		tsl::hopscotch_set<Label> lonely_non_result_labels{};
+
 		DependencyGraph dependency_graph{};
 
 		ConnectedComponents connected_components{};
@@ -159,6 +161,10 @@ namespace einsum::internal {
 				return sub_subscripts.insert(
 								{label, std::make_shared<Subscript>(raw_subscript.removeLabel(label))})
 						.first->second;
+		}
+
+		const tsl::hopscotch_set<Label> &getLonelyNonResultLabelSet() const {
+			return lonely_non_result_labels;
 		}
 
 		const tsl::hopscotch_set<Label> &getOperandsLabelSet() const {
@@ -274,6 +280,17 @@ namespace einsum::internal {
 					for (const auto[op_pos, labels] : iter::enumerate(raw_subscript.operands))
 						for (const Label label : labels)
 							poss_of_operands_with_labels[label].push_back(op_pos);
+
+					for (auto label : operands_label_set) {
+						if (not result_label_set.count(label)) {
+							const auto &op_poss = poss_of_operands_with_labels[label];
+							if (op_poss.size() == 1) {
+								const auto &op = raw_subscript.operands[op_poss[0]];
+								if (std::count(op.begin(), op.end(), label) == 1)
+									lonely_non_result_labels.insert(label);
+							}
+						}
+					}
 					break;
 				}
 
@@ -443,12 +460,12 @@ std::ostream &operator<<(std::ostream &stream, const einsum::internal::Subscript
 }
 
 namespace fmt {
-	template <>
+	template<>
 	struct formatter<std::shared_ptr<einsum::internal::Subscript>> {
-		template <typename ParseContext>
+		template<typename ParseContext>
 		constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
-		template <typename FormatContext>
+		template<typename FormatContext>
 		auto format(const std::shared_ptr<einsum::internal::Subscript> &sub_script, FormatContext &ctx) {
 			return format_to(ctx.begin(), "{}", sub_script->to_string());
 		}

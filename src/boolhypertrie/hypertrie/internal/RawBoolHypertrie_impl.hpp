@@ -17,6 +17,8 @@
 #include "hypertrie/internal/util/CountDownNTuple.hpp"
 #include "hypertrie/internal/util/FrontSkipIterator.hpp"
 #include "hypertrie/internal/util/PosCalc.hpp"
+#include "hypertrie/internal/container/AllContainer.hpp"
+
 
 // what the DUMMY* template parameters do: https://stackoverflow.com/questions/10178598/specializing-a-templated-member-of-a-template-class
 
@@ -280,6 +282,8 @@ namespace hypertrie::internal {
 		template<typename key>
 		using set_type = set_type_t<key>;
 		constexpr static const pos_type depth = depth_t;
+		static constexpr bool is_tsl_map = std::is_same_v<map_type<int, int>, container::tsl_sparse_map<int, int>>;
+		static constexpr bool is_tsl_set = std::is_same_v<set_type<int>, container::tsl_sparse_set<int>>;
 
 		static auto &const_emtpy_instance() {
 			static thread_local std::shared_ptr<boolhypertrie_c<depth>> inst{};
@@ -374,8 +378,13 @@ namespace hypertrie::internal {
 			done[min_i] = true;
 			auto found = edges[min_pos].find(key_part);
 			if (found != edges[min_pos].end()) {
-				if constexpr (diag_depth == 1)
+				if constexpr (diag_depth == 1){
+					if constexpr (is_tsl_map)
 					return &found.value();
+					else
+						return &found->second;
+
+				}
 				else
 					return found->second->template diagonal_rek<diag_depth - 1>(positions, done, key_part);
 			}

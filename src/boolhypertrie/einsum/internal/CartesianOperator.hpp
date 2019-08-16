@@ -68,7 +68,10 @@ namespace einsum::internal {
 			}
 			const auto &iterated_sub_entry = self.sub_entries[self.iterated_pos];
 			updateEntryKey(self.iterated_sub_operator_result_mapping, *self.entry, iterated_sub_entry.key);
-			self.entry->value *= iterated_sub_entry.value;
+			assert(iterated_sub_entry.value);
+			assert(self.entry->value);
+			if constexpr (not bool_value_type)
+				self.entry->value *= iterated_sub_entry.value;
 			if constexpr (_debugeinsum_)
 				fmt::print("[{}]->{} {}\n", fmt::join(self.entry->key, ","), self.entry->value, self.subscript);
 		}
@@ -136,6 +139,7 @@ namespace einsum::internal {
 							return;
 						}
 						auto &sub_entry = sub_entries[cart_op_pos];
+						assert(sub_entry.value);
 						sub_result[sub_entry.key] = sub_entry.value;
 						sub_results.emplace_back(std::move(sub_result));
 						continue;
@@ -143,6 +147,7 @@ namespace einsum::internal {
 				}
 				auto &sub_entry = sub_entries[cart_op_pos];
 				while (not cart_op.ended()) {
+					assert(sub_entry.value);
 					sub_result[sub_entry.key] += sub_entry.value;
 					++cart_op;
 				}
@@ -203,9 +208,9 @@ namespace einsum::internal {
 					iters[i] = sub_result.cbegin();
 					ends[i] = sub_result.cend();
 					updateEntryKey(result_mapping[i], *this->entry, iters[i]->first);
-					if constexpr (std::is_same_v<key_part_type, bool>)
-						value = value or iters[i]->second;
-					else
+					assert(value);
+					assert(iters[i]->second);
+					if constexpr (not bool_value_type)
 						value *= iters[i]->second;
 				}
 				this->entry->value = value;
@@ -218,21 +223,22 @@ namespace einsum::internal {
 
 			void next() {
 				for (auto i : iter::range(sub_results.size())) {
-					auto last_value = iters[i]->second;
+					[[maybe_unused]] auto last_value = iters[i]->second;
 					++iters[i];
 					if (iters[i] != ends[i]) {
 						updateEntryKey(result_mapping[i], *this->entry, iters[i]->first);
-						if constexpr (not std::is_same_v<key_part_type, bool>) // all entries are true anyways
+						if constexpr (not bool_value_type) // all entries are true anyways
 							value = (value * iters[i]->second) / last_value;
 						this->entry->value = value;
 						return;
 					} else {
 						iters[i] = sub_results[i].cbegin();
 						updateEntryKey(result_mapping[i], *this->entry, iters[i]->first);
-						if constexpr (not std::is_same_v<key_part_type, bool>) // all entries are true anyways
+						if constexpr (not bool_value_type) // all entries are true anyways
 							value = (value * iters[i]->second) / last_value;
 					}
 				}
+				assert(value);
 				this->entry->value = value;
 				ended_ = true;
 			}
