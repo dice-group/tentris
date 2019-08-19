@@ -132,36 +132,11 @@ namespace einsum::internal {
 
 			auto const min_dim_card_d = double(min_dim_card);
 
-			double new_card = 1;
-			if (sizes.size() > 1)
-				for (auto[i, op_pos] : iter::enumerate(op_poss)) {
-					new_card += (double(operands[op_pos].size()) * (1 -  min_dim_card_d / op_dim_cardinalities[i]));
-				}
-
-
 			double card = std::accumulate(op_dim_cardinalities.cbegin(), op_dim_cardinalities.cend(), double(1),
 			                              [&](double a, double b) {
 				                              return a * min_dim_card_d / b;
-			                              });
-			if (card < 1.0)
-				card = card / max_op_size;
-			// / sizes.size();
-			if (first_time)
-				fmt::print(
-						"# label: {}, "
-						"card: {}, "
-						"count: {}, "
-						"distinct_count: {}, "
-						"ops: [{}], "
-						"ops_sizes: [{}], "
-						"max_op_dim_cards: [{}], "
-						"min_card {}\n",
-						label, card, label_count, sizes.size(), fmt::join(op_poss, ","), fmt::join(op_sizes, ","),
-						fmt::join(op_dim_cardinalities, ","),
-						min_dim_card
-				);
-			return 1 / new_card;
-//			return card;
+			                              }) / sizes.size();
+			return card;
 		}
 	};
 
