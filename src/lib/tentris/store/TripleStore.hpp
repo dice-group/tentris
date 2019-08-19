@@ -143,12 +143,14 @@ namespace tentris::store {
 	auto serd_base_callback (void *handle, const SerdNode *uri) -> SerdStatus{
 			auto * store = (tentris::store::TripleStore *) handle;
 			store->prefixes[""] = std::string((char *) (uri->buf), uri->n_bytes);
+		return SERD_SUCCESS;
 	}
 
 	auto serd_prefix_callback(void *handle, const SerdNode *name, const SerdNode *uri) -> SerdStatus {
 		auto *store = (tentris::store::TripleStore *) handle;
 		store->prefixes[std::string((char *) (name->buf), name->n_bytes)] = std::string((char *) (uri->buf),
 																						uri->n_bytes);
+		return SERD_SUCCESS;
 	}
 
 	auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
