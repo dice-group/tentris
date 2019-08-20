@@ -13,6 +13,14 @@ TEST(TestTermStore, double_write) {
     ASSERT_EQ(store.size(), 1);
 }
 
+TEST(TestTermStore, double_write_same_str) {
+	TermStore store{};
+	const key_part_t &id_ = store[std::string{R"("Journal 1 (1940) "^^<http://www.w3.org/2001/XMLSchema#string>)"}];
+	const key_part_t &id2_ = store[std::string{"\"Journal 1 (1940) \""}];
+	ASSERT_EQ(id_, id2_);
+	ASSERT_EQ(store.size(), 1);
+}
+
 TEST(TestTermStore, inverse) {
     TermStore store{};
     const key_part_t &id_ = store[std::string{"\"xx\""}];

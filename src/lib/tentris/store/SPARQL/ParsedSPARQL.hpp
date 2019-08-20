@@ -15,6 +15,8 @@
 #include <SparqlLexer.h>
 #include <SparqlBaseListener.h>
 
+#include <boost/algorithm/string.hpp>
+
 #include <einsum/internal/Subscript.hpp>
 
 #include "tentris/util/All.hpp"
@@ -158,11 +160,6 @@ namespace tentris::store::sparql {
 
 				if (query_variables.empty())
 					throw std::invalid_argument{"Empty query variables is not allowed."};
-				if (std::set<Variable> query_variables_set{query_variables.begin(), query_variables.end()};
-						not std::includes(variables.cbegin(), variables.cend(), query_variables_set.cbegin(),
-						                  query_variables_set.cend())) {
-					throw std::invalid_argument{"query variables must be a subset of BGP variables."};
-				}
 
 
 

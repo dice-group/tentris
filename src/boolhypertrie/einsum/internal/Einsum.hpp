@@ -34,7 +34,7 @@ namespace einsum::internal {
 
 		Einsum(std::shared_ptr<Subscript> subscript, const std::vector<const_BoolHypertrie_t> &operands)
 				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)},
-				  entry{0, Key_t(this->subscript->resultLabelCount(), 0)} {}
+				  entry{0, Key_t(this->subscript->resultLabelCount(), std::numeric_limits<key_part_type>::max())} {}
 
 		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
@@ -114,7 +114,7 @@ namespace einsum::internal {
 	public:
 		Einsum(std::shared_ptr<Subscript> subscript, const std::vector<const_BoolHypertrie_t> &operands)
 				: subscript(std::move(subscript)), operands(operands), op{Operator_t::construct(this->subscript)},
-				  entry{false, Key_t(this->subscript->resultLabelCount(), 0)} {}
+				  entry{false, Key_t(this->subscript->resultLabelCount(), std::numeric_limits<key_part_type>::max())} {}
 
 		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;

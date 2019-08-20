@@ -174,6 +174,16 @@ namespace tentris::store::rdf {
 			return std::unique_ptr<Term>{new BNode{term}};
 		throw std::invalid_argument{"RDF term string was malformed."};
 	}
+
+	Term parseTermR(const std::string &term) {
+		if (std::regex_match(term, is_literal_regex))
+			return Literal{term};
+		else if (std::regex_match(term, is_uri_regex))
+			return URIRef{term};
+		else if (std::regex_match(term, is_bnode_regex))
+			return BNode{term};
+		throw std::invalid_argument{"RDF term string was malformed."};
+	}
 };
 
 
@@ -182,6 +192,14 @@ struct std::hash<tentris::store::rdf::Term> {
 	size_t operator()(const tentris::store::rdf::Term &v) const {
 		std::hash<std::string> hasher;
 		return hasher(v.getIdentifier());
+	}
+};
+
+template<>
+struct std::hash<std::shared_ptr<tentris::store::rdf::Term>> {
+	size_t operator()(const std::shared_ptr<tentris::store::rdf::Term> &v) const {
+		std::hash<std::string> hasher;
+		return hasher(v->getIdentifier());
 	}
 };
 

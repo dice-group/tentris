@@ -50,7 +50,8 @@ namespace einsum::internal {
 			return self.ended_;
 		}
 
-		static void load(void *self_raw, std::vector<const_BoolHypertrie_t> operands,Entry<key_part_type, value_type> &entry) {
+		static void
+		load(void *self_raw, std::vector<const_BoolHypertrie_t> operands, Entry <key_part_type, value_type> &entry) {
 			auto &self = *static_cast<ResolveOperator *>(self_raw);
 			self.load_impl(std::move(operands), entry);
 		}
@@ -68,7 +69,9 @@ namespace einsum::internal {
 			operand_iter = std::move(operands[0].cbegin());
 			assert(operand_iter);
 			ended_ = not operand_iter;
-			if (not ended_){
+			if (not ended_) {
+				for (auto &key_part : entry.key)
+					key_part = std::numeric_limits<key_part_type>::max();
 				this->entry->value = key_part_type(1);
 				const auto operand_key = *this->operand_iter;
 				for (auto i : range(operand_key.size()))

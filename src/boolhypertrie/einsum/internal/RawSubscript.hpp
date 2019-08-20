@@ -5,6 +5,7 @@
 #include <tuple>
 #include <boost/container_hash/hash.hpp>
 #include <tsl/hopscotch_set.h>
+#include <tsl/hopscotch_map.h>
 
 namespace einsum::internal {
 	using Label = char;

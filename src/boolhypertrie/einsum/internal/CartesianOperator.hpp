@@ -38,7 +38,7 @@ namespace einsum::internal {
 			for (const auto &sub_subscript : sub_subscripts) {
 				sub_operators.push_back(Operator_t::construct(sub_subscript));
 				using EntryKey = typename Entry<key_part_type, value_type>::key_type;
-				sub_entries.push_back({value_type(0), EntryKey(sub_subscript->resultLabelCount(), 0)});
+				sub_entries.push_back({value_type(0), EntryKey(sub_subscript->resultLabelCount(), std::numeric_limits<key_part_type>::max())});
 			}
 
 		}

@@ -62,7 +62,9 @@ namespace tentris::http {
 				json_result << "{";
 				bool firstKey = true;
 				for (const auto[binding, var] : zip(result.key, vars)) {
-					Term &term = *store.getTermIndex().inv().at(binding);
+					if(binding == std::numeric_limits<std::size_t>::max())
+						continue;
+
 
 					if (firstKey) {
 						firstKey = false;
@@ -70,6 +72,7 @@ namespace tentris::http {
 						json_result << ",";
 					}
 
+					Term &term = *store.getTermIndex().inv().at(binding);
 					json_result << "\"" << var.name << "\":{";
 
 					const Term::NodeType &termType = term.type();

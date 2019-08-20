@@ -41,6 +41,9 @@ namespace einsum::internal {
 			assert(operands.size() == 1); // only one operand must be left to be resolved
 			this->entry->value = operands[0].size();
 			_ended = not this->entry->value;
+			if(not _ended)
+				for(auto &key_part : entry.key)
+					key_part = std::numeric_limits<key_part_type>::max();
 		}
 
 	};
