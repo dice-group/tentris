@@ -17,7 +17,13 @@ namespace tentris::store::rdf {
 
 	class TermStore {
 	public:
-		using set_type = tsl::hopscotch_set<std::unique_ptr<Term>, TermHash, std::equal_to<>>;
+		using set_type = tsl::hopscotch_set<std::unique_ptr<Term>,
+				TermHash,
+				std::equal_to<>,
+				std::allocator<std::unique_ptr<Term>>,
+				4,
+				true,
+				tsl::hh::power_of_two_growth_policy<2>>;
 		using const_iterator = set_type::const_iterator;
 
 	private:
@@ -57,7 +63,7 @@ namespace tentris::store::rdf {
 		}
 
 		[[nodiscard]] ptr_type find(const Term &term, const std::size_t &term_hash) const {
-			if (auto found = terms.find(term, term_hash); found != terms.end()){
+			if (auto found = terms.find(term, term_hash); found != terms.end()) {
 				return (*found).get();
 			} else {
 				return nullptr;
@@ -82,6 +88,10 @@ namespace tentris::store::rdf {
 		}
 
 		friend class fmt::formatter<TermStore>;
+
+		std::size_t size() const {
+			return terms.size();
+		}
 
 	};
 };

@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include "TestRDFNode.cpp"
-#include "TestRDFParser.cpp"
 #include "TestSPARQLParser.cpp"
 #include "TestTermStore.cpp"
 #include "TestTripleStore.cpp"

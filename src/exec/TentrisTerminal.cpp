@@ -63,33 +63,38 @@ std::chrono::system_clock::time_point actual_timeout;
 
 template<typename RESULT_TYPE>
 void
-writeNTriple(std::ostream &stream, const std::vector <Variable> &vars,
-             const std::shared_ptr <QueryExecutionPackage> &query_package,
-             const TripleStore &store) {
+writeNTriple(std::ostream &stream, const std::vector<Variable> &vars,
+			 const std::shared_ptr<QueryExecutionPackage> &query_package,
+			 const TripleStore &store) {
 	stream << fmt::format("{}\n", fmt::join(vars, ","));
-
-	auto invTermIndex = store.getTermIndex().inv();
 
 	uint timeout_check = 0;
 	size_t result_count = 0;
-
-	std::vector < Term const * > binding(size(vars));
 
 	bool first = true;
 
 	if (not query_package->is_trivial_empty) {
 		std::shared_ptr<void> raw_results = query_package->getEinsum();
-		auto &results = *static_cast<Einsum <RESULT_TYPE> *>(raw_results.get());
+		auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 		for (const auto &result : results) {
 			if (first) {
 				first = false;
 				execute_end = system_clock::now();
 			}
 
+			std::stringstream ss;
+			bool inner_first = true;
+			for (auto binding : result.key) {
+				if (inner_first)
+					inner_first = false;
+				else
+					ss << ",";
+				if (binding != nullptr)
+					ss << binding->getIdentifier();
+			}
+			ss << "\n";
 
-			for (const auto[pos, id] : enumerate(result.key))
-				binding[pos] = invTermIndex.at(id).get();
-			auto binding_string = fmt::format("{}\n", fmt::join(binding.begin(), binding.end(), ","));
+			std::string binding_string = ss.str();
 
 			for ([[maybe_unused]] const auto c : range(result.value)) {
 				stream << binding_string;
@@ -114,9 +119,9 @@ writeNTriple(std::ostream &stream, const std::vector <Variable> &vars,
 }
 
 template<typename RESULT_TYPE>
-inline void runCMDQuery(const std::shared_ptr <QueryExecutionPackage> &query_package,
-                     TripleStore &triple_store, const QueryExecutionPackage::TimeoutType timeout,
-                     const std::vector <Variable> &vars) {
+inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_package,
+						TripleStore &triple_store, const QueryExecutionPackage::TimeoutType timeout,
+						const std::vector<Variable> &vars) {
 	// calculate the result
 	// check if it timed out
 	if (system_clock::now() < timeout) {
@@ -145,9 +150,9 @@ void commandlineInterface(TripleStore &triple_store) {
 
 		try {
 			parse_start = system_clock::now();
-			std::shared_ptr <QueryExecutionPackage> query_package = triple_store.query(sparql_str);
+			std::shared_ptr<QueryExecutionPackage> query_package = triple_store.query(sparql_str);
 			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
-			const std::vector <Variable> &vars = sparqlQuery.getQueryVariables();
+			const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
 
 			timeout = system_clock::now() + cfg.timeout;
 
@@ -215,7 +220,7 @@ void commandlineInterface(TripleStore &triple_store) {
 		logsink() << fmt::format("end:                {}\n", tp2s(query_end));
 
 		if (::error == Errors::OK or ::error == Errors::PROCESSING_TIMEOUT or
-		    ::error == Errors::SERIALIZATION_TIMEOUT) {
+			::error == Errors::SERIALIZATION_TIMEOUT) {
 			logsink() << "number of bindings: " << fmt::format("{:18}", number_of_bindings) << "\n";
 
 			logsink() << "parsing time:       " << fmt::format("{:18}", parsing_time.count()) << " ns\n";
@@ -228,8 +233,8 @@ void commandlineInterface(TripleStore &triple_store) {
 
 		logsink() << "total time:         " << fmt::format("{:18}", total_time.count()) << " ns\n";
 		logsink() << "total time:         "
-		          << fmt::format("{:12}", duration_cast<std::chrono::milliseconds>(total_time).count())
-		          << "       ms\n";
+				  << fmt::format("{:12}", duration_cast<std::chrono::milliseconds>(total_time).count())
+				  << "       ms\n";
 
 		logsink().flush();
 	}

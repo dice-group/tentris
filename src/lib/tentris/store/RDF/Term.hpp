@@ -34,7 +34,7 @@ namespace tentris::store::rdf {
 		std::size_t count = 0;
 
 		[[nodiscard]] std::string_view string_view(const std::string &str) const {
-			return {str.data() + start, count};
+			return {str.c_str() + start, count};
 		}
 	};
 
@@ -65,7 +65,9 @@ namespace tentris::store::rdf {
 		Term() = default;
 
 		Term(Term &) = default;
+
 		Term(const Term &) = default;
+
 		Term(Term &&) = default;
 
 		Term &operator=(const Term &) = default;
@@ -188,10 +190,10 @@ namespace tentris::store::rdf {
 		}
 
 		static Term make_typed_literal(const std::string &value, const std::string &type) {
-			bool is_string_type = (type != "http://www.w3.org/2001/XMLSchema#string");
+			bool is_string_type = (type == "http://www.w3.org/2001/XMLSchema#string");
 
 			Term term{
-					(is_string_type)
+					(not is_string_type)
 					? fmt::format(R"("{}"^^<{}>)", value, type)
 					: fmt::format(R"("{}")", value),
 					Literal};
@@ -266,6 +268,20 @@ namespace tentris::store::rdf {
 		}
 	};
 }
+
+template<>
+struct fmt::formatter<const tentris::store::rdf::Term *> {
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+	template<typename FormatContext>
+	auto format(const tentris::store::rdf::Term *p, FormatContext &ctx) {
+		if (p != nullptr)
+			return format_to(ctx.begin(), p->getIdentifier());
+		else
+			return format_to(ctx.begin(), "");
+	}
+};
 
 template<>
 struct fmt::formatter<tentris::store::rdf::Term> {

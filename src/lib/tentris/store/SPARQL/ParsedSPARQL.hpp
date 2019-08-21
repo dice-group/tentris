@@ -152,6 +152,8 @@ namespace tentris::store::sparql {
 					if (auto *next_block = block->triplesBlock(); next_block)
 						tripleBlocks.push(next_block);
 				}
+				for (const auto &variable : query_variables)
+					variables.insert(variable);
 				if (all_vars)
 					for (const auto &variable : variables)
 						query_variables.push_back(variable);

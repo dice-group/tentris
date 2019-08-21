@@ -89,12 +89,12 @@ TEST(TestSPARQLParser, parse_a_query) {
                               "?article2 swrc:journal ?journal }";
     ParsedSPARQL q{query};
 
-    const URIRef type = URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"};
-    const URIRef creator = URIRef{"<http://purl.org/dc/elements/1.1/creator>"};
-    const URIRef journal = URIRef{"<http://swrc.ontoware.org/ontology#journal>"};
-    const URIRef name = URIRef{"<http://xmlns.com/foaf/0.1/name>"};
+    const Term type = Term::make_term("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>");
+    const Term creator = Term::make_term("<http://purl.org/dc/elements/1.1/creator>");
+    const Term journal = Term::make_term("<http://swrc.ontoware.org/ontology#journal>");
+    const Term name = Term::make_term("<http://xmlns.com/foaf/0.1/name>");
 
-    const URIRef article = URIRef{"<http://localhost/vocabulary/bench/Article>"};
+    const Term article = Term::make_term("<http://localhost/vocabulary/bench/Article>");
 
     const Variable article1 = Variable{"article1"};
     const Variable article2 = Variable{"article2"};

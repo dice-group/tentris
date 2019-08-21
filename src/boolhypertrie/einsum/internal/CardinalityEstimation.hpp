@@ -9,7 +9,6 @@
 
 namespace einsum::internal {
 
-	static bool first_time = true;
 
 	template<typename key_part_type, template<typename, typename> class map_type,
 			template<typename> class set_type>
@@ -42,44 +41,6 @@ namespace einsum::internal {
 						min_label = label;
 					}
 				}
-//				if(operandsLabelSet.size() >=2){
-//					auto l = *(++operandsLabelSet.begin());
-//					fmt::print("# sub_script: {}\n", sc);
-//					fmt::print("# label: {}\n", l);
-//					return l;
-//				}
-//				else{
-//					auto l = *(operandsLabelSet.begin());
-//					fmt::print("# sub_script: {}\n", sc);
-//					fmt::print("# label: {}\n", l);
-//					return *operandsLabelSet.begin();
-//				}
-
-				if (first_time)
-					fmt::print("# sub_script: {}\n", sc);
-				if (first_time)
-					fmt::print("# min_label: {}\n", min_label);
-				first_time = false;
-//				std::string label_order = {"baced"};
-				// "ebacd" -> 0.1
-				// "baced" -> 0.059
-				// "bacde" -> 0.259
-				// "badce" -> 0.27
-				// "bcaed" -> 0.1
-				// "abdc" -> 0.23
-				// "acbd" -> 0.22
-				// "adbc" -> 3.13
-				// "bdac" -> 0.27
-				// "badc" -> 0.25
-				// "cabd" -> 0.25
-				// "dbac" -> 0.9
-				// "dabc" -> 4.13
-
-//				for(char c : label_order)
-//					if (operandsLabelSet.count(c)){
-//						min_label = c;
-//						break;
-//					}
 				return min_label;
 			}
 		}
