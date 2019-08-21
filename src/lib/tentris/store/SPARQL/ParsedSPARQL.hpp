@@ -339,8 +339,9 @@ namespace tentris::store::sparql {
 
 		auto getIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
 			if (antlr4::tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref) {
-				return complete_ref->getText();
-			} else {
+				auto fullIri = complete_ref->getText();
+				return std::string{fullIri,1, fullIri.size() -2};
+ 			} else {
 				auto *prefixedName = iriRef->prefixedName();
 
 				if (auto *pname_both = prefixedName->PNAME_LN();pname_both) {
