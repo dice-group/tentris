@@ -263,7 +263,7 @@ namespace tentris::store::sparql {
 				if (auto *langtag = rdfLiteral->LANGTAG(); langtag) {
 					return Term::make_lang_literal(literal_string, std::string{langtag->getText(), 1});
 				} else if (auto *type = rdfLiteral->iriRef(); rdfLiteral->iriRef()) {
-					return Term::make_typed_literal(literal_string, getFullIriString(type));
+					return Term::make_typed_literal(literal_string, getIriString(type));
 				} else {
 					return Term::make_str_literal(literal_string);
 				}
@@ -273,30 +273,30 @@ namespace tentris::store::sparql {
 				if (auto *decimalNumeric = numericLiteral->decimalNumeric(); decimalNumeric) {
 
 					if (auto *plus = decimalNumeric->DECIMAL(); plus) {
-						return Term::make_typed_literal(plus->getText(), "<http://www.w3.org/2001/XMLSchema#decimal>");
+						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#decimal");
 					} else {
 						return Term::make_typed_literal(decimalNumeric->getText(),
-														"<http://www.w3.org/2001/XMLSchema#decimal>");
+														"http://www.w3.org/2001/XMLSchema#decimal");
 					}
 				} else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
 					if (antlr4::tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
-						return Term::make_typed_literal(plus->getText(), "<http://www.w3.org/2001/XMLSchema#double>");
+						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#double");
 					} else {
 						return Term::make_typed_literal(decimalNumeric->getText(),
-														"<http://www.w3.org/2001/XMLSchema#double>");
+														"http://www.w3.org/2001/XMLSchema#double");
 					}
 				} else {
 					auto *integerNumeric = numericLiteral->integerNumeric();
 					if (auto *plus = integerNumeric->INTEGER(); plus) {
-						return Term::make_typed_literal(plus->getText(), "<http://www.w3.org/2001/XMLSchema#integer>");
+						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#integer");
 					} else {
 						return Term::make_typed_literal(decimalNumeric->getText(),
-														"<http://www.w3.org/2001/XMLSchema#integer>");
+														"http://www.w3.org/2001/XMLSchema#integer");
 					}
 				}
 
 			} else if (termContext->booleanLiteral()) {
-				return Term::make_typed_literal(termContext->getText(), "<http://www.w3.org/2001/XMLSchema#boolean>");
+				return Term::make_typed_literal(termContext->getText(), "http://www.w3.org/2001/XMLSchema#boolean");
 			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
 					return Variable{termContext->getText()};
@@ -337,8 +337,7 @@ namespace tentris::store::sparql {
 			}
 		}
 
-
-		auto getFullIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
+		auto getIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
 			if (antlr4::tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref) {
 				return complete_ref->getText();
 			} else {
@@ -350,7 +349,7 @@ namespace tentris::store::sparql {
 					auto prefix_string = std::string{pname_both_str, 0, i};
 					auto suffix_string = std::string{pname_both_str, i, pname_both_str.size() - i};
 					try {
-						return "<{}{}>"_format(prefixes.at(prefix_string), suffix_string);
+						return "{}{}"_format(prefixes.at(prefix_string), suffix_string);
 					} catch (const std::out_of_range &exc) {
 						throw std::invalid_argument{"Undefined prefix {} used."_format(prefix_string)};
 					}
@@ -358,9 +357,14 @@ namespace tentris::store::sparql {
 					// TODO: this looks wrong
 					auto *default_prefix = prefixedName->PNAME_NS();
 					const std::string &resolvedPrefix = prefixes.at(default_prefix->getText());
-					return {"<" + resolvedPrefix + ">"};
+					return resolvedPrefix;
 				}
 			}
+		}
+
+
+		auto getFullIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
+			return {"<" + getIriString(iriRef) + ">"};
 		}
 
 		auto getSelectModifier(SparqlParser::SelectQueryContext *select) -> SelectModifier {
