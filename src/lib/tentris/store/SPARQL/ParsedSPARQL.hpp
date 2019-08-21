@@ -10,7 +10,6 @@
 #include <memory>
 #include <tuple>
 
-#include <antlr4-runtime.h>
 #include <SparqlParser.h>
 #include <SparqlLexer.h>
 #include <SparqlBaseListener.h>
@@ -28,7 +27,6 @@ namespace tentris::store::sparql {
 
 	namespace {
 		using Subscript =  einsum::internal::Subscript;
-		using namespace tentris::util::types;
 		using namespace tentris::store::rdf;
 		using SparqlParser = tentris::a4grammar::sparql::SparqlParser;
 		using namespace fmt::literals;
@@ -49,8 +47,8 @@ namespace tentris::store::sparql {
 
 		void
 		syntaxError([[maybe_unused]]antlr4::Recognizer *recognizer, [[maybe_unused]]antlr4::Token *offendingSymbol,
-		            [[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
-		            [[maybe_unused]]std::exception_ptr e) override {
+					[[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
+					[[maybe_unused]]std::exception_ptr e) override {
 			throw std::invalid_argument{msg};
 		}
 	};
@@ -61,8 +59,8 @@ namespace tentris::store::sparql {
 
 		void
 		syntaxError([[maybe_unused]]antlr4::Recognizer *recognizer, [[maybe_unused]]antlr4::Token *offendingSymbol,
-		            [[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
-		            [[maybe_unused]]std::exception_ptr e) override {
+					[[maybe_unused]]size_t line, [[maybe_unused]]size_t charPositionInLine, const std::string &msg,
+					[[maybe_unused]]std::exception_ptr e) override {
 			throw std::invalid_argument{msg};
 		}
 	};
@@ -116,7 +114,7 @@ namespace tentris::store::sparql {
 				for (auto &prefix : prefixDecl)
 					// remove < and > from <...>
 					prefixes[prefix->PNAME_NS()->getText()] = std::string(prefix->IRI_REF()->getText(), 1,
-					                                                      prefix->IRI_REF()->getText().size() - 2);
+																		  prefix->IRI_REF()->getText().size() - 2);
 
 
 				SparqlParser::SelectQueryContext *select = _query->selectQuery();
@@ -140,7 +138,7 @@ namespace tentris::store::sparql {
 					registerVariable(subj);
 					SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
 					for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
-					                                      propertyListNotEmpty->objectList())) {
+														  propertyListNotEmpty->objectList())) {
 						VarOrTerm pred = parseVerb(pred_node);
 						registerVariable(pred);
 
@@ -238,7 +236,7 @@ namespace tentris::store::sparql {
 		auto parseGraphTerm(
 				SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
 			if (auto *iriRef = termContext->iriRef(); iriRef) {
-				return URIRef{getFullIriString(iriRef)};
+				return Term::make_uriref(getFullIriString(iriRef));
 
 			} else if (auto *rdfLiteral = termContext->rdfLiteral(); rdfLiteral) {
 				auto string_node = rdfLiteral->string();
@@ -252,10 +250,10 @@ namespace tentris::store::sparql {
 					std::string temp;
 
 					std::regex_replace(std::back_inserter(temp), literal1.begin() + 1, literal1.end() - 1,
-					                   double_quote,
-					                   "\\\"");
+									   double_quote,
+									   "\\\"");
 					std::regex_replace(std::back_inserter(literal_string), temp.begin() + 1, temp.end() - 1,
-					                   single_quote, "'");
+									   single_quote, "'");
 				} else {
 					auto literal2 = string_node->STRING_LITERAL2()->getText();
 					literal_string = std::string{literal2, 1, literal2.size() - 2};
@@ -263,11 +261,11 @@ namespace tentris::store::sparql {
 
 
 				if (auto *langtag = rdfLiteral->LANGTAG(); langtag) {
-					return Literal{literal_string, std::string{langtag->getText(), 1}, std::nullopt};
+					return Term::make_lang_literal(literal_string, std::string{langtag->getText(), 1});
 				} else if (auto *type = rdfLiteral->iriRef(); rdfLiteral->iriRef()) {
-					return Literal{"\"" + literal_string + "\"^^" + getFullIriString(type)};
+					return Term::make_typed_literal(literal_string, getFullIriString(type));
 				} else {
-					return Literal{"\"" + literal_string + "\""};
+					return Term::make_str_literal(literal_string);
 				}
 
 			} else if (auto *numericLiteral = termContext->numericLiteral();numericLiteral) {
@@ -275,36 +273,30 @@ namespace tentris::store::sparql {
 				if (auto *decimalNumeric = numericLiteral->decimalNumeric(); decimalNumeric) {
 
 					if (auto *plus = decimalNumeric->DECIMAL(); plus) {
-						return Literal{
-								"\"" + plus->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#decimal>"};
+						return Term::make_typed_literal(plus->getText(), "<http://www.w3.org/2001/XMLSchema#decimal>");
 					} else {
-						return Literal{
-								"\"" + decimalNumeric->getText() +
-								"\"^^<http://www.w3.org/2001/XMLSchema#decimal>"};
+						return Term::make_typed_literal(decimalNumeric->getText(),
+														"<http://www.w3.org/2001/XMLSchema#decimal>");
 					}
 				} else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
 					if (antlr4::tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
-						return Literal{
-								"\"" + plus->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#double>"
-						};
+						return Term::make_typed_literal(plus->getText(), "<http://www.w3.org/2001/XMLSchema#double>");
 					} else {
-						return Literal{
-								"\"" + decimalNumeric->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#double>"};
+						return Term::make_typed_literal(decimalNumeric->getText(),
+														"<http://www.w3.org/2001/XMLSchema#double>");
 					}
 				} else {
 					auto *integerNumeric = numericLiteral->integerNumeric();
 					if (auto *plus = integerNumeric->INTEGER(); plus) {
-						return Literal{
-								"\"" + plus->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
+						return Term::make_typed_literal(plus->getText(), "<http://www.w3.org/2001/XMLSchema#integer>");
 					} else {
-						return Literal{
-								"\"" + decimalNumeric->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#integer>"};
+						return Term::make_typed_literal(decimalNumeric->getText(),
+														"<http://www.w3.org/2001/XMLSchema#integer>");
 					}
 				}
 
 			} else if (termContext->booleanLiteral()) {
-				return Literal{
-						"\"" + termContext->getText() + "\"^^<http://www.w3.org/2001/XMLSchema#boolean>"};
+				return Term::make_typed_literal(termContext->getText(), "<http://www.w3.org/2001/XMLSchema#boolean>");
 			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
 					return Variable{termContext->getText()};
@@ -337,12 +329,11 @@ namespace tentris::store::sparql {
 				} else {
 					SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
 
-					return VarOrTerm{URIRef{getFullIriString(iriRef)}};
+					return VarOrTerm{Term::make_uriref(getFullIriString(iriRef))};
 
 				}
 			} else { // is 'a'
-				return VarOrTerm{
-						URIRef{"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"}};
+				return VarOrTerm{Term::make_uriref("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")};
 			}
 		}
 
@@ -406,13 +397,13 @@ struct fmt::formatter<tentris::store::sparql::ParsedSPARQL> {
 	template<typename FormatContext>
 	auto format(const tentris::store::sparql::ParsedSPARQL &p, FormatContext &ctx) {
 		return format_to(ctx.begin(),
-		                 " prefixes:         {}\n"
-		                 " select_modifier:  {}\n"
-		                 " query_variables:  {}\n"
-		                 " variables:        {}\n"
-		                 " anonym_variables: {}\n"
-		                 " bgps:             {}\n",
-		                 p.prefixes, p.select_modifier, p.query_variables, p.variables, p.anonym_variables, p.bgps);
+						 " prefixes:         {}\n"
+						 " select_modifier:  {}\n"
+						 " query_variables:  {}\n"
+						 " variables:        {}\n"
+						 " anonym_variables: {}\n"
+						 " bgps:             {}\n",
+						 p.prefixes, p.select_modifier, p.query_variables, p.variables, p.anonym_variables, p.bgps);
 	}
 };
 

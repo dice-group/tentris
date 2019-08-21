@@ -1,3 +1,4 @@
+<http://localhost/publications/journals/Journal1/1940> <http://purl.org/dc/elements/1.1/title> "Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://localhost/vocabulary/bench/Journal> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
 <http://localhost/vocabulary/bench/Proceedings> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
 <http://localhost/vocabulary/bench/Inproceedings> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://xmlns.com/foaf/0.1/Document> .
@@ -12,7 +13,6 @@
 <http://localhost/misc/UnknownDocument> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Document> .
 <http://localhost/publications/journals/Journal1/1940> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Journal> .
 <http://localhost/publications/journals/Journal1/1940> <http://swrc.ontoware.org/ontology#number> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
-<http://localhost/publications/journals/Journal1/1940> <http://purl.org/dc/elements/1.1/title> "Journal 1 (1940)"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://localhost/publications/journals/Journal1/1940> <http://swrc.ontoware.org/ontology#volume> "1"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <http://localhost/publications/journals/Journal1/1940> <http://purl.org/dc/terms/issued> "1940"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <http://localhost/publications/journals/Journal1/1940> <http://swrc.ontoware.org/ontology#editor> _:genid22 .

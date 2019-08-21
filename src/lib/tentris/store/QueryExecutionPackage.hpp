@@ -13,7 +13,6 @@ namespace tentris::store::cache {
 
 	namespace {
 		using namespace tentris::store::sparql;
-		using namespace tentris::util::types;
 		using namespace tentris::tensor;
 	}; // namespace
 
@@ -115,18 +114,18 @@ namespace tentris::store::cache {
 		 * @param termIndex intex for trie
 		 * @return slice keys for the BoolHyperTrie
 		 */
-		static std::vector<SliceKey_t>
+		static std::vector<SliceKey>
 		generateSliceKeys(const std::set<TriplePattern> &bgps, const const_BoolHypertrie &trie,
 						  const TermStore &termIndex) {
-			std::vector<SliceKey_t> slice_keys{};
+			std::vector<SliceKey> slice_keys{};
 			for (const auto &op_key : bgps) {
-				SliceKey_t slice_key(3, std::nullopt);
+				SliceKey slice_key(3, std::nullopt);
 				bool no_slices = true;
 				for (const auto[pos, op_key_part] : enumerate(op_key)) {
 					if (std::holds_alternative<Term>(op_key_part))
 						try {
-							key_part_t ind = termIndex.at(std::get<Term>(op_key_part));
-							slice_key[pos] = {ind};
+							Term const *term = termIndex.get(std::get<Term>(op_key_part));
+							slice_key[pos] = term;
 						} catch ([[maybe_unused]] std::out_of_range &exc) {
 							// a keypart was not in the index so the result is zero anyways.
 							return {};

@@ -8,6 +8,8 @@ namespace einsum::internal {
 		constexpr static const bool bool_value_type = std::is_same_v<value_type, bool>;
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 		using Operator_t = Operator<value_type, key_part_type, map_type, set_type>;
+		static constexpr key_part_type default_key_part = (std::is_pointer_v<key_part_type>) ? nullptr : std::numeric_limits<key_part_type>::max();
+
 
 		std::shared_ptr<Subscript> subscript;
 		LabelPossInOperand label_pos_in_result;
@@ -30,7 +32,7 @@ namespace einsum::internal {
 			self.ended_ = not self.operand_iter;
 			if (self.ended_)
 				return;
-			self.entry->value = key_part_type(1);
+			self.entry->value = value_type(1);
 			const auto &operand_key = *self.operand_iter;
 			for (auto i : range(operand_key.size()))
 				self.entry->key[self.label_pos_in_result[i]] = operand_key[i];
@@ -71,8 +73,8 @@ namespace einsum::internal {
 			ended_ = not operand_iter;
 			if (not ended_) {
 				for (auto &key_part : entry.key)
-					key_part = std::numeric_limits<key_part_type>::max();
-				this->entry->value = key_part_type(1);
+					key_part = default_key_part;
+				this->entry->value = value_type(1);
 				const auto operand_key = *this->operand_iter;
 				for (auto i : range(operand_key.size()))
 					this->entry->key[this->label_pos_in_result[i]] = operand_key[i];

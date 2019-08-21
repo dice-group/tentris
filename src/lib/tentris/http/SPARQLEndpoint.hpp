@@ -23,7 +23,6 @@
 
 namespace tentris::http {
 	namespace {
-		using namespace ::tentris::util::types;
 		using namespace ::tentris::store::sparql;
 		using namespace ::tentris::store::cache;
 		using AtomicTripleStore = ::tentris::store::AtomicTripleStore;

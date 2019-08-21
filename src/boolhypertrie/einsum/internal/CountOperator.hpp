@@ -7,6 +7,8 @@ namespace einsum::internal {
 	class CountOperator {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
 
+		static constexpr key_part_type default_key_part = (std::is_pointer_v<key_part_type>) ? nullptr : std::numeric_limits<key_part_type>::max();
+
 		std::shared_ptr<Subscript> subscript;
 		Entry<key_part_type, value_type> *entry;
 		bool _ended;

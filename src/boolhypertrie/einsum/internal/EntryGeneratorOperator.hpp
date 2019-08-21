@@ -6,6 +6,8 @@ namespace einsum::internal {
 			template<typename> class set_type>
 	class EntryGeneratorOperator {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
+		static constexpr key_part_type default_key_part = (std::is_pointer_v<key_part_type>) ? nullptr : std::numeric_limits<key_part_type>::max();
+
 
 		std::shared_ptr<Subscript> subscript;
 		Entry<key_part_type, value_type> *entry;
@@ -40,12 +42,12 @@ namespace einsum::internal {
 		inline void load_impl([[maybe_unused]]std::vector<const_BoolHypertrie_t> operands, Entry<key_part_type, value_type> &entry) {
 			if constexpr(_debugeinsum_) fmt::print("EntryGen {}\n", subscript);
 			this->entry = &entry;
-			this->entry->value = key_part_type(1);
+			this->entry->value = value_type(1);
 			assert(operands.size() == 0); // no operand must be left
 			_ended = false;
 			if(not _ended)
 				for(auto &key_part : entry.key)
-					key_part = std::numeric_limits<key_part_type>::max();
+					key_part = default_key_part;
 		}
 	};
 }

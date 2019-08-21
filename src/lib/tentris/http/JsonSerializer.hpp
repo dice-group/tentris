@@ -61,8 +61,8 @@ namespace tentris::http {
 				std::stringstream json_result{};
 				json_result << "{";
 				bool firstKey = true;
-				for (const auto[binding, var] : zip(result.key, vars)) {
-					if(binding == std::numeric_limits<std::size_t>::max())
+				for (const auto[term, var] : zip(result.key, vars)) {
+					if (term == nullptr)
 						continue;
 
 
@@ -72,10 +72,11 @@ namespace tentris::http {
 						json_result << ",";
 					}
 
-					Term &term = *store.getTermIndex().inv().at(binding);
+					assert(store.getTermIndex().valid(term));
+
 					json_result << "\"" << var.name << "\":{";
 
-					const Term::NodeType &termType = term.type();
+					const Term::NodeType termType = term->type();
 					switch (termType) {
 						case Term::URI:
 							json_result << R"("type":"uri")";
@@ -86,15 +87,17 @@ namespace tentris::http {
 						case Term::Literal:
 							json_result << R"("type":"literal")";
 							break;
-					} // todo check default
+						case Term::None:
+							log("Uncomplete term with no type (Literal, BNode, URI) detected.");
+							assert(false);
+					}
 
-					json_result << R"(,"value":")" << escapeJsonString(term.get_value());
+					json_result << R"(,"value":")" << escapeJsonString(term->value());
 					if (termType == Term::Literal) {
-						const Literal &literal = static_cast<Literal &>(term);
-						if (literal.hasType())
-							json_result << R"(","datatype":")" << literal.getType();
-						else if (literal.hasLang())
-							json_result << R"(","xml:lang":")" << literal.getLang();
+						if (term->hasDataType())
+							json_result << R"(","datatype":")" << term->dataType();
+						else if (term->hasLang())
+							json_result << R"(","xml:lang":")" << term->lang();
 					}
 					json_result << "\"}";
 				}

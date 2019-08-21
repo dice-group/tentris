@@ -15,6 +15,8 @@ namespace einsum::internal {
 
 		using SubResult = tsl::sparse_map<Key < key_part_type>, size_t, absl::Hash<Key < key_part_type> >>;
 
+		static constexpr key_part_type default_key_part = (std::is_pointer_v<key_part_type>) ? nullptr : std::numeric_limits<key_part_type>::max();
+
 
 		class FullCartesianResult;
 
@@ -38,7 +40,7 @@ namespace einsum::internal {
 			for (const auto &sub_subscript : sub_subscripts) {
 				sub_operators.push_back(Operator_t::construct(sub_subscript));
 				using EntryKey = typename Entry<key_part_type, value_type>::key_type;
-				sub_entries.push_back({value_type(0), EntryKey(sub_subscript->resultLabelCount(), std::numeric_limits<key_part_type>::max())});
+				sub_entries.push_back({value_type(0), EntryKey(sub_subscript->resultLabelCount(), default_key_part)});
 			}
 
 		}
