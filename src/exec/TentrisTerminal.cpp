@@ -8,29 +8,30 @@
 
 #include "config/TerminalConfig.hpp"
 
-#include <tentris/tensor/einsum/operator/GeneratorInterface.hpp>
 #include <tentris/store/QueryExecutionPackage.hpp>
 #include <tentris/store/TripleStore.hpp>
 #include <tentris/util/LogHelper.hpp>
+#include <tentris/tensor/BoolHypertrie.hpp>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <fmt/time.h>
 #include <itertools.hpp>
+#include "tentris/http/QueryResultState.hpp"
 
 namespace {
 	using namespace tentris::store;
 	using namespace std::filesystem;
-	using namespace tentris::tensor::einsum::operators;
 	using namespace iter;
+	using namespace tentris::tensor;
 }
+
+TerminalConfig cfg;
 
 bool onlystdout = false;
 
-enum Errors {
-	OK, UNPARSABLE, PROCESSING_TIMEOUT, SERIALIZATION_TIMEOUT, UNEXPECTED, SEVERE_UNEXPECTED
-};
+using Errors = tentris::http::ResultState;
 
 std::ostream &logsink() {
 	if (onlystdout)
@@ -60,44 +61,53 @@ size_t number_of_bindings;
 std::chrono::system_clock::time_point timeout;
 std::chrono::system_clock::time_point actual_timeout;
 
-template<typename RESULT_TYPE, typename = typename std::enable_if<is_binding<RESULT_TYPE>::value>::type>
+template<typename RESULT_TYPE>
 void
-writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yield_pull<RESULT_TYPE> results,
+writeNTriple(std::ostream &stream, const std::vector<Variable> &vars,
+			 const std::shared_ptr<QueryExecutionPackage> &query_package,
 			 const TripleStore &store) {
 	stream << fmt::format("{}\n", fmt::join(vars, ","));
-
-	auto invTermIndex = store.getTermIndex().inv();
 
 	uint timeout_check = 0;
 	size_t result_count = 0;
 
-	std::vector<Term const *> binding(size(vars));
-
 	bool first = true;
 
-	for (const auto &result : results) {
-		if (first) {
-			first = false;
-			execute_end = system_clock::now();
-		}
+	if (not query_package->is_trivial_empty) {
+		std::shared_ptr<void> raw_results = query_package->getEinsum();
+		auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
+		for (const auto &result : results) {
+			if (first) {
+				first = false;
+				execute_end = system_clock::now();
+			}
 
-		const Key_t &key = RESULT_TYPE::getKey(result);
+			std::stringstream ss;
+			bool inner_first = true;
+			for (auto binding : result.key) {
+				if (inner_first)
+					inner_first = false;
+				else
+					ss << ",";
+				if (binding != nullptr)
+					ss << binding->getIdentifier();
+			}
+			ss << "\n";
 
-		for (const auto[pos, id] : enumerate(key))
-			binding[pos] = invTermIndex.at(id).get();
-		auto binding_string = fmt::format("{}\n", fmt::join(binding.begin(), binding.end(), ","));
+			std::string binding_string = ss.str();
 
-		for ([[maybe_unused]] const auto c : range(RESULT_TYPE::getCount(result))) {
-			stream << binding_string;
-			++result_count;
-			if (++timeout_check == 500) {
-				timeout_check = 0;
-				stream.flush();
-				if (auto current_time = system_clock::now(); current_time > timeout) {
-					::error = Errors::SERIALIZATION_TIMEOUT;
-					actual_timeout = current_time;
-					number_of_bindings = result_count;
-					return;
+			for ([[maybe_unused]] const auto c : range(result.value)) {
+				stream << binding_string;
+				++result_count;
+				if (++timeout_check == 500) {
+					timeout_check = 0;
+					stream.flush();
+					if (auto current_time = system_clock::now(); current_time > timeout) {
+						::error = Errors::SERIALIZATION_TIMEOUT;
+						actual_timeout = current_time;
+						number_of_bindings = result_count;
+						return;
+					}
 				}
 			}
 		}
@@ -106,6 +116,20 @@ writeNTriple(std::ostream &stream, const std::vector<Variable> &vars, yield_pull
 		execute_end = system_clock::now();
 	}
 	number_of_bindings = result_count;
+}
+
+template<typename RESULT_TYPE>
+inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_package,
+						TripleStore &triple_store, const QueryExecutionPackage::TimeoutType timeout,
+						const std::vector<Variable> &vars) {
+	// calculate the result
+	// check if it timed out
+	if (system_clock::now() < timeout) {
+		writeNTriple<RESULT_TYPE>(std::cout, vars, query_package, triple_store);
+	} else {
+		::error = Errors::PROCESSING_TIMEOUT;
+		actual_timeout = system_clock::now();
+	}
 }
 
 [[noreturn]]
@@ -130,48 +154,24 @@ void commandlineInterface(TripleStore &triple_store) {
 			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
 			const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
 
-			timeout = query_package->getTimeout();
+			timeout = system_clock::now() + cfg.timeout;
 
 			parse_end = system_clock::now();
 			execute_start = system_clock::now();
 
 			switch (sparqlQuery.getSelectModifier()) {
 				case SelectModifier::NONE: {
-					// calculate the result
-					auto result_generator = query_package->getRegularGenerator();
-					// check if it timed out
-					if (system_clock::now() < timeout) {
-						writeNTriple<counted_binding>(std::cout, vars, std::move(result_generator), triple_store);
-						std::thread cleanup_thread([=] { query_package->done(); });
-						cleanup_thread.detach();
-					} else {
-						::error = Errors::PROCESSING_TIMEOUT;
-						actual_timeout = system_clock::now();
-						std::thread cleanup_thread([=] { query_package->canceled(); });
-						cleanup_thread.detach();
-					}
+					runCMDQuery<COUNTED_t>(query_package, triple_store, timeout, vars);
 					break;
 				}
 				case SelectModifier::REDUCE:
 					[[fallthrough]];
 				case SelectModifier::DISTINCT: {
-					logDebug("Running select distinct query.");
-					// calculate the result
-					auto result_generator = query_package->getDistinctGenerator();
-					// check if it timed out
-					if (system_clock::now() < timeout) {
-						writeNTriple<distinct_binding>(std::cout, vars, std::move(result_generator), triple_store);
-						std::thread cleanup_thread([=] { query_package->done(); });
-						cleanup_thread.detach();
-						break;
-					} else {
-						::error = Errors::PROCESSING_TIMEOUT;
-						actual_timeout = system_clock::now();
-						std::thread cleanup_thread([=] { query_package->canceled(); });
-						cleanup_thread.detach();
-					}
+					runCMDQuery<DISTINCT_t>(query_package, triple_store, timeout, vars);
 					break;
 				}
+				default:
+					break;
 			}
 		} catch (const std::invalid_argument &e) {
 			::error = Errors::UNPARSABLE;
@@ -190,23 +190,25 @@ void commandlineInterface(TripleStore &triple_store) {
 		auto total_time = duration_cast<std::chrono::nanoseconds>(query_end - query_start);
 		auto serialization_time = total_time - execution_time - parsing_time;
 		switch (::error) {
-			case OK:
+			case Errors::OK:
 				logsink() << "SUCCESSFUL\n";
 				break;
-			case UNPARSABLE:
+			case Errors::UNPARSABLE:
 				logsink() << "ERROR: UNPARSABLE QUERY\n";
 				break;
-			case PROCESSING_TIMEOUT:
+			case Errors::PROCESSING_TIMEOUT:
 				logsink() << "ERROR: TIMEOUT DURING PROCESSING\n";
 				break;
-			case SERIALIZATION_TIMEOUT:
+			case Errors::SERIALIZATION_TIMEOUT:
 				logsink() << "ERROR: TIMEOUT DURING SERIALIZATION\n";
 				break;
-			case UNEXPECTED:
+			case Errors::UNEXPECTED:
 				logsink() << "ERROR: UNEXPECTED\n";
 				break;
-			case SEVERE_UNEXPECTED:
+			case Errors::SEVERE_UNEXPECTED:
 				logsink() << "ERROR: SEVERE UNEXPECTED\n";
+				break;
+			default:
 				break;
 		}
 
@@ -241,7 +243,7 @@ void commandlineInterface(TripleStore &triple_store) {
 
 int main(int argc, char *argv[]) {
 	tentris::logging::init_logging();
-	TerminalConfig cfg{argc, argv};
+	cfg = {argc, argv};
 
 	TripleStore triplestore{cfg.cache_size, cfg.cache_bucket_capacity, cfg.timeout};
 

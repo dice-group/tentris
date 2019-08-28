@@ -2,19 +2,17 @@
 
 [![Build Status](https://travis-ci.com/dice-group/tentris.svg)](https://travis-ci.com/dice-group/tentris)
 
-<span style="font-variant:small-caps;">Tentris</span> is a triple store to query RDF data using SPARQL for the Semantic Web. 
+<span style="font-variant:small-caps;">Tentris</span> is a triple store to query RDF data using SPARQL. 
 It is based on tensors and tensor algebra. 
 Currently, it supports SELECT queries with or without DISTINCT and a WHERE-bock with triple patterns.
 
-Further SPARQL features are to follow.   
+Further SPARQL features will follow.   
 
 ## running tentris 
-Tentris provides two ways of running it. Either as a HTTP endpoint or as a interactive commandline tool. 
-HTTP endpoint.
+Tentris provides two ways of running it. Either as a HTTP endpoint or as a interactive commandline tool. Make sure you build Tentris successfully, before proceeding below.
 ### HTTP endpoint
 #### start
-To start Tentris as a HTTP endpoint start it with
-after building run
+To start Tentris as a HTTP endpoint run
 ```
 tentris_server -p 8090 -f my_nt_file.nt
 ```
@@ -26,6 +24,8 @@ The endpoint may now be queried locally at: `127.0.0.1:8090/sparql?query=*your q
 
 *Notice*: the query string `*your query*` must be URL encoded. 
 You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
+
+An additional endpoint is provided at `127.0.0.1:8090/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results). 
 
 #### usage example
 
@@ -63,44 +63,32 @@ tentris_terminal -f my_nt_file.nt
 
 After the RDF data from `my_nt_file.nt` is loaded, you type your query and hit ENTER. After the result was printed, you can enter your next query. 
 
-For more commandline options see `tentris_terminal`.
+For more commandline options see `tentris_terminal --help`.
 
 ## prerequisites
 
 ### build tools
 
-Tentris is known to build successfully on Ubuntu 18.04 and newer. 
+Tentris is known to build successfully on Ubuntu 18.10 and newer. 
 Building was tested with GCC 8 and clang 7.
 
 The following packages are required to build tetnris:
 ```
-sudo apt install build-essential cmake uuid-dev libserd-dev libboost-all-dev g++ git openjdk-8-jdk
+sudo apt install build-essential cmake uuid-dev libserd-dev g++ git openjdk-8-jdk python3-pip
+```
+
+Additionally, a recent version of conan is required: 
+```
+pip3 install conan
 ```
 
 ### dependencies
-
-Additionally, [pistache](https://github.com/oktal/pistache) needs to be compiled and installed on your system.
-But don't worry. It is really easy. Just follow the steps below.
-
-To download the latest available release, clone the repository from github:
-```
-git clone https://github.com/oktal/pistache.git
-```
-Then, init the submodules:
-```
-cd pistache
-git submodule update --init
-```
-Now, make a build directory, go there, run cmake and compile the sources:
-```
-mkdir build
-cd build
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-make
-sudo make install
+The required dependencies are installed via conan. Therefore, Add the respective remotes:
+```bash
+conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
 ```
 ## build
-After you installed all dependencies, you can complile tentris now. 
+After you installed all dependencies, you are ready to build Tentris. 
 Make sure you are connected to the internet as Tentris downloads things at several points throughout the build processes.
 
 If you did not so far, clone Tentris:
@@ -111,17 +99,29 @@ Make sure you are in the cloned folder:
 ```
 cd tentris
 ```
-Now, make a build directory, go there, run cmake and compile the sources: 
+Now, make a build directory and enter it.
 ```bash
 mkdir build 
 cd build
+```
+Get and build the dependencies with conan:
+```bash
+conan install .. --build=missing --settings compiler.libcxx="libstdc++11"
+```
+Generate the build skripts with CMAKE and run the build:
+```bash
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. 
-make
+make -j tentris_server tentris_terminal
 ```
 Now is the time to get yourself a coffee. In about 
 When you build Tentris for the first time, it will take some time. 
+
+The binaries will be located at `tentris/build/bin`. 
 
 ## debug and tests
 To compile Tentris with debugging symbols, proceed as above but change the cmake command to `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .. `.
 
 To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
+## docker
+Docker support is experimental. A full documentation will follow. 
+
