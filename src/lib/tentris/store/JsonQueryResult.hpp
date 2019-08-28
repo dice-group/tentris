@@ -146,8 +146,6 @@ namespace tentris::store {
 				}
 			}
 			result += json_tail;
-			std::cout << "result.size()" << result.size() << std::endl;
-			std::cout << "jsonSize()" << jsonSize() << std::endl;
 			assert(result.size() == jsonSize());
 			return result;
 		}
