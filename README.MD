@@ -63,7 +63,7 @@ tentris_terminal -f my_nt_file.nt
 
 After the RDF data from `my_nt_file.nt` is loaded, you type your query and hit ENTER. After the result was printed, you can enter your next query. 
 
-For more commandline options see `tentris_terminal`.
+For more commandline options see `tentris_terminal --help`.
 
 ## prerequisites
 
@@ -122,6 +122,6 @@ The binaries will be located at `tentris/build/bin`.
 To compile Tentris with debugging symbols, proceed as above but change the cmake command to `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .. `.
 
 To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
-
 ## docker
 Docker support is experimental. A full documentation will follow. 
+
