@@ -1,5 +1,5 @@
-#ifndef HEALTHCHECK_HPP
-#define HEALTHCHECK_HPP
+#ifndef TENTRIS_CHUNKED_SPARQLENDPOINT_HPP
+#define TENTRIS_CHUNKED_SPARQLENDPOINT_HPP
 
 #include <chrono>
 #include <sstream>
@@ -12,8 +12,8 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/AtomicCleanupTaskGroup.hpp"
-#include "tentris/http/JsonSerializer.hpp"
-#include "tentris/http/RunQuery.hpp"
+#include "tentris/http/chunked/JsonSerializer.hpp"
+#include "tentris/http/chunked/RunQuery.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/TripleStore.hpp"
@@ -48,8 +48,8 @@ namespace tentris::http {
 	/**
 	 * Main SPARQL endpoint. Parses HTTP queries and returns SPARQL JSON Results.
 	 */
-	auto sparql_endpoint = [](restinio::request_handle_t req,
-							  [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
+	auto chunked_sparql_endpoint = [](restinio::request_handle_t req,
+									  [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
 		using namespace std::string_literals;
 		auto timeout = system_clock::now() + AtomicTripleStoreConfig::getInstance().timeout;
 		restinio::request_handling_status_t handled = restinio::request_rejected();
@@ -133,6 +133,7 @@ namespace tentris::http {
 						logError(" ## timeout during writing the result\n"
 								 "request_id: {}\n"_format(request_id)
 						);
+						handled = restinio::request_accepted();
 						break;
 					case UNEXPECTED:
 						logError(" ## unexpected internal error\n"
@@ -192,4 +193,4 @@ namespace tentris::http {
 
 
 } // namespace tentris::http
-#endif // HEALTHCHECK_HPP
+#endif // TENTRIS_CHUNKED_SPARQLENDPOINT_HPP

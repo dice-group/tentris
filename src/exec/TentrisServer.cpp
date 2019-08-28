@@ -5,7 +5,8 @@
 #include "config/ServerConfig.hpp"
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
-#include <tentris/http/SPARQLEndpoint.hpp>
+#include <tentris/http/ChunkedSparqlEndpoint.hpp>
+#include <tentris/http/SparqlEndpoint.hpp>
 #include <restinio/all.hpp>
 
 #include <fmt/format.h>
@@ -61,8 +62,11 @@ int main(int argc, char *argv[]) {
 	using namespace restinio;
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
+			R"(/stream)",
+			tentris::http::chunked_sparql_endpoint);
+	router->http_get(
 			R"(/sparql)",
-			tentris::http::sparql_endpoint);
+			tentris::http::sparql_endpoint::sparql_endpoint);
 	restinio::asio_ns::error_code ex;
 
 	router->non_matched_request_handler(

@@ -9,8 +9,8 @@ namespace tentris::store::sparql {
 
 	class Variable {
 	public:
-		const std::string name;
-		const bool is_anonym;
+		mutable std::string name;
+		mutable bool is_anonym;
 
 		explicit Variable(std::string var_name, bool anonym = false) : name{std::move(var_name)}, is_anonym{anonym} {}
 

@@ -1,7 +1,7 @@
 #ifndef TENTRIS_SPARQLREQUESTTHREAD_HPP
 #define TENTRIS_SPARQLREQUESTTHREAD_HPP
 
-#include "tentris/http/JsonSerializer.hpp"
+#include "tentris/http/chunked/JsonSerializer.hpp"
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/TripleStore.hpp"

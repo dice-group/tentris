@@ -1,7 +1,6 @@
 #ifndef TENTRIS_PARSEDSPARQLCACHES_HPP
 #define TENTRIS_PARSEDSPARQLCACHES_HPP
 
-#include "tentris/http/TimeoutException.hpp"
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/util/SynchronizedCachedFactory.hpp"
 
@@ -9,7 +8,6 @@
 namespace tentris::store::cache {
 
 	namespace {
-		using tentris::http::TimeoutException;
 		using tentris::util::sync::SynchronizedCachedFactory;
 	} // namespace
 

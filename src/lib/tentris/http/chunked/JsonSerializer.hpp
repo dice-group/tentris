@@ -1,13 +1,12 @@
 #ifndef TENTRIS_JSONSERIALIZER_HPP
 #define TENTRIS_JSONSERIALIZER_HPP
 
-#include "tentris/http/TimeoutException.hpp"
 #include "tentris/store/RDF/Term.hpp"
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/store/TripleStore.hpp"
 #include "tentris/util/HTTPUtils.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
-#include "QueryResultState.hpp"
+#include "tentris/http/QueryResultState.hpp"
 
 
 #include <iostream>

@@ -1,5 +1,5 @@
-#ifndef TENTRIS_QUERYRESULT_HPP
-#define TENTRIS_QUERYRESULT_HPP
+#ifndef TENTRIS_JSONQUERYRESULT_HPP
+#define TENTRIS_JSONQUERYRESULT_HPP
 
 #include <itertools.hpp>
 #include <utility>
@@ -7,6 +7,7 @@
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/util/LogHelper.hpp"
+#include "tentris/util/HTTPUtils.hpp"
 
 #include "tentris/tensor/BoolHypertrie.hpp"
 
@@ -14,19 +15,20 @@ namespace tentris::store {
 	namespace {
 		using namespace tentris::tensor;
 		using namespace ::tentris::logging;
+		using namespace tentris::http;
 	}
 
 	thread_local static const std::string json_head = R"({"head":{"vars":[)";
 	thread_local static const std::string json_mid = R"(]},"results":{"bindings":[)";
-	thread_local static const std::string json_tail = R"(]}}\n)";
+	thread_local static const std::string json_tail = "]}}\n";
 
 	template<typename result_type>
-	class QueryResult {
+	class JsonQueryResult {
 		using Term = rdf::Term;
 		using Variable = sparql::Variable;
 		using Entry = EinsumEntry<result_type>;
-		using Key = typename Entry::key_t;
-		using Value = typename Entry::value_t;
+		using Key = typename Entry::key_type;
+		using Value = typename Entry::value_type;
 
 		std::size_t json_size = json_head.size() + json_mid.size() + json_tail.size();
 
@@ -39,19 +41,18 @@ namespace tentris::store {
 			std::string json{};
 		};
 
-		tsl::sparse_map<Key, Value> entries{};
+		tsl::sparse_map<Key, JsonBindings, ::einsum::internal::KeyHash<key_part_type>> entries{};
 
 	public:
-		explicit QueryResult(std::vector<Variable> variables) : variables(std::move(variables)) {
-			if (not this->variables.emtpy())
+		explicit JsonQueryResult(std::vector<Variable> variables) : variables(std::move(variables)) {
+			if (not this->variables.empty())
 				json_size += (this->variables.size() - 1); // for commata
-			json_size += (this->variables.size()) * 2; // for quotation marks
-			for (const Variable &var: variables)
+			json_size += (this->variables.size() * 2); // for quotation marks
+			for (const Variable &var: this->variables)
 				json_size += var.name.size();
 		}
 
-		void add_result(Entry entry) {
-			auto entry_json_size = jsonSize(entry.value);
+		void add(const Entry &entry) {
 			auto calc_size = [](auto count, auto json_binding_size) { return json_binding_size * count; };
 			auto found = entries.find(entry.key);
 			if (found != entries.end()) {
@@ -64,7 +65,8 @@ namespace tentris::store {
 				json_size += new_size - old_size;
 				result_count += new_count - old_count;
 			} else {
-				auto[iter, valid] = entries.emplace({entry.key, {entry.value, key2jsonStr(entry.key)}});
+				auto[iter, valid] = entries.emplace(entry.key,
+													JsonBindings{entry.value, key2jsonStr(entry.key, variables)});
 				JsonBindings &bindings = iter.value();
 				auto size = calc_size(entry.value, bindings.json.size());
 				json_size += size;
@@ -73,7 +75,7 @@ namespace tentris::store {
 		}
 
 		[[nodiscard]] std::size_t jsonSize() const {
-			return json_size + (result_count - 1);
+			return json_size + ((result_count > 0) ? (result_count - 1) : 0);
 		}
 
 	private:
@@ -91,7 +93,7 @@ namespace tentris::store {
 					json += ",";
 				}
 
-				json += fmt::format(R"("{}":{)", var.name);
+				json += '"' +  var.name + R"(":{)";
 
 				const Term::NodeType termType = term->type();
 				switch (termType) {
@@ -105,20 +107,21 @@ namespace tentris::store {
 						json += R"("type":"literal")";
 						break;
 					case Term::None:
-						log("Uncomplete term with no type (Literal, BNode, URI) detected.");
+						log("Incomplete term with no type (Literal, BNode, URI) detected.");
 						assert(false);
 				}
 
-				json += R"(,"value":")" << escapeJsonString(term->value());
+				json += fmt::format(R"(,"value":"{}")", escapeJsonString(term->value()));
 				if (termType == Term::Literal) {
 					if (term->hasDataType())
-						json += fmt::format(R"(","datatype":{}")", term->dataType());
+						json += fmt::format(R"(,"datatype":"{}")", term->dataType());
 					else if (term->hasLang())
-						json += fmt::format(R"(","xml:lang":"{})", term->lang());
+						json += fmt::format(R"(,"xml:lang":"{}")", term->lang());
 				}
-				json += R"("})";
+				json += '}';
 			}
 			json += R"(})";
+			return json;
 		};
 	public:
 		[[nodiscard]] std::string str() const {
@@ -133,23 +136,26 @@ namespace tentris::store {
 			result += json_mid;
 			bool first_bindings = true;
 
-			for (const auto &[key, value] : entries) {
-				std::string binding_str = toJson(key);
-				for (auto _ : iter::range(value)) {
+			for (const auto &[key, json_binding] : entries) {
+				for ([[maybe_unused]] auto _ : iter::range(json_binding.count)) {
 					if (first_bindings)
 						first_bindings = false;
 					else
 						result += ',';
-					result += binding_str;
+					result += json_binding.json;
 				}
 			}
 			result += json_tail;
+			std::cout << "result.size()" << result.size() << std::endl;
+			std::cout << "jsonSize()" << jsonSize() << std::endl;
+			assert(result.size() == jsonSize());
+			return result;
 		}
 
 		[[nodiscard]] std::size_t size() const {
-
+			return result_count;
 		}
 	};
 }
 
-#endif //TENTRIS_QUERYRESULT_HPP
+#endif //TENTRIS_JSONQUERYRESULT_HPP
