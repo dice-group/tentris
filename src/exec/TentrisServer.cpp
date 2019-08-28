@@ -5,7 +5,8 @@
 #include "config/ServerConfig.hpp"
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
-#include <tentris/http/SPARQLEndpoint.hpp>
+#include <tentris/http/ChunkedSparqlEndpoint.hpp>
+#include <tentris/http/SparqlEndpoint.hpp>
 #include <restinio/all.hpp>
 
 #include <fmt/format.h>
@@ -61,8 +62,12 @@ int main(int argc, char *argv[]) {
 	using namespace restinio;
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
+			R"(/stream)",
+			tentris::http::chunked_sparql_endpoint);
+	router->http_get(
 			R"(/sparql)",
-			tentris::http::sparql_endpoint);
+			tentris::http::sparql_endpoint::sparql_endpoint);
+	restinio::asio_ns::error_code ex;
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
@@ -73,7 +78,7 @@ int main(int argc, char *argv[]) {
 
 	using traits_t =
 	restinio::traits_t<
-			restinio::asio_timer_manager_t,
+			restinio::null_timer_manager_t,
 #ifdef DEBUG
 			restinio::shared_ostream_logger_t,
 #else
@@ -82,6 +87,10 @@ int main(int argc, char *argv[]) {
 			restinio::router::express_router_t<>
 	>;
 
+	log("Server \n"
+		"  threads: {}\n"
+		"  IRI:     http://127.0.0.1:{}/sparql?query="_format(cfg.threads, cfg.port));
+
 	restinio::run(
 			restinio::on_thread_pool<traits_t>(cfg.threads)
 					.address("localhost")
@@ -89,30 +98,6 @@ int main(int argc, char *argv[]) {
 					.request_handler(std::move(router))
 					.handle_request_timeout(cfg.timeout)
 					.write_http_response_timelimit(cfg.timeout));
-
-	log("Server \n"
-	    "  threads: {}\n"
-	    "  IRI:     http://127.0.0.1:{}/sparql?query="_format(cfg.threads, cfg.port));
-	// start endpoint
-
-	// wait for keyboard interrupt
-	while (true) {
-		sigset_t wset;
-		sigemptyset(&wset);
-		sigaddset(&wset, SIGINT);
-		int number;
-
-		if (int status = sigwait(&wset, &number); status != 0) {
-			log("Set contains an invalid signal number.");
-			break;
-		}
-		if (number == SIGINT) {
-			logDebug("Exiting by Signal {}."_format(strsignal(number)));
-			break;
-		}
-	}
-
-	log("Shutting down server ...");
 	log("Shutdown successful.");
 	return EXIT_SUCCESS;
 }

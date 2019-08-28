@@ -184,13 +184,13 @@ namespace tentris::logging {
 	}
 
 	inline void logDebug([[maybe_unused]]std::string msg) {
-#if DEBUG
+#ifdef DEBUG
 		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << msg;
 #endif
 	}
 
 	inline void logTrace([[maybe_unused]]std::string msg) {
-#if TRACE
+#ifdef TRACE
 		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::trace) << msg;
 #endif
 	}

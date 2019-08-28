@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 project(tentris CXX)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR brick)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
-# message("${CONAN_LIBS}")
+#set(CMAKE_MODULE_PATH ${CONAN_CMAKE_MODULE_PATH} ${CMAKE_MODULE_PATH})
+message("${CONAN_LIBS}")
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -29,7 +30,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # find boost
 SET(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED COMPONENTS context system log thread log_setup)
+find_package(Boost REQUIRED COMPONENTS system log thread log_setup)
 IF (Boost_FOUND)
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 ENDIF ()
@@ -85,13 +86,35 @@ target_include_directories(datetimelib INTERFACE
         thirdparty/date/include
         )
 
-
 find_package(TBB REQUIRED)
 
 find_package(restinio CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+
 find_package(tsl-hopscotch-map 2.2.1 REQUIRED)
 
+add_subdirectory(thirdparty/sparse-map)
+
+add_library(sparsepp INTERFACE)
+target_include_directories(sparsepp INTERFACE
+        thirdparty/sparsepp/
+        )
+
+add_library(boolhypertrie INTERFACE)
+target_include_directories(boolhypertrie INTERFACE
+        src/boolhypertrie
+        )
+
+target_link_libraries(boolhypertrie
+        INTERFACE
+        cppitertools
+#        Boost::boost # header only boost libraries
+        ${Boost_LIBRARIES}
+        tsl::sparse_map
+        absl_hash
+        sparsepp
+        ${conan_libs}
+        )
 
 set(libraries_to_link
         stdc++fs # for #include <filesystem>
@@ -101,7 +124,8 @@ set(libraries_to_link
         datetimelib
         cxxopts
         antlr4_sparql
-        Boost::boost # header only boost libraries
+        boolhypertrie
+#        Boost::boost # header only boost libraries
         fmt::fmt
         restinio::restinio
         tbb

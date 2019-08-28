@@ -9,30 +9,34 @@
 #include <boost/bind.hpp>
 #include <boost/coroutine2/all.hpp>
 #include <serd-0/serd/serd.h>
+#include <absl/hash/hash.h>
+#include <tsl/hopscotch_map.h>
+
+#include <boost/algorithm/string.hpp>
 
 #include "tentris/store/RDF/TermStore.hpp"
-#include "tentris/tensor/hypertrie/BoolHyperTrie.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/tensor/einsum/operator/Einsum.hpp"
 #include "tentris/store/QueryExecutionPackageCache.hpp"
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/util/LogHelper.hpp"
+#include "tentris/tensor/BoolHypertrie.hpp"
+
 
 namespace {
 	using namespace tentris::store::cache;
-	using namespace tentris::util::types;
-	using namespace tentris::tensor::einsum;
-	using namespace tentris::tensor::einsum::operators;
 	using namespace tentris::store::sparql;
-	using namespace tentris::tensor::hypertrie;
 	using namespace ::tentris::logging;
+	using namespace tentris::tensor;
 }
 
 namespace tentris::store {
-	class TripleStore {
+	class BulkLoad;
 
+	class TripleStore {
 		TermStore termIndex{};
-		BoolHyperTrie trie{3};
+
+		BoolHypertrie trie{3};
+
 		mutable QueryExecutionPackage_cache query_cache;
 
 	public:
@@ -49,22 +53,22 @@ namespace tentris::store {
 			return termIndex;
 		}
 
-		void loadRDF(std::string file_path);
+		friend class BulkLoad;
 
-		void add(std::tuple<std::string, std::string, std::string> triple) {
-			add(parseTerm(std::get<0>(triple)), parseTerm(std::get<1>(triple)), parseTerm(std::get<2>(triple)));
-		}
+		void loadRDF(const std::string &file_path);
 
-		void add(std::tuple<std::shared_ptr<Term>, std::shared_ptr<Term>, std::shared_ptr<Term>> triple) {
-			add(std::move(std::get<0>(triple)), std::move(std::get<1>(triple)), std::move(std::get<2>(triple)));
+		void add(const std::tuple<std::string, std::string, std::string> &triple) {
+			add(Term::make_term(std::get<0>(triple)),
+				Term::make_term(std::get<1>(triple)),
+				Term::make_term(std::get<2>(triple)));
 		}
 
 		inline void
-		add(std::shared_ptr<Term> &&subject, std::shared_ptr<Term> &&predicate, std::shared_ptr<Term> &&object) {
-			if (subject->type() != Term::NodeType::Literal and predicate->type() == Term::NodeType::URI) {
-				const key_part_t subject_id = termIndex[std::move(subject)];
-				const key_part_t predicate_id = termIndex[std::move(predicate)];
-				const key_part_t object_id = termIndex[std::move(object)];
+		add(Term subject, Term predicate, Term object) {
+			if (subject.type() != Term::NodeType::Literal and predicate.type() == Term::NodeType::URI) {
+				auto subject_id = termIndex[std::move(subject)];
+				auto predicate_id = termIndex[std::move(predicate)];
+				auto object_id = termIndex[std::move(object)];
 				trie.set({subject_id, predicate_id, object_id}, true);
 			} else
 				throw std::invalid_argument{
@@ -72,10 +76,14 @@ namespace tentris::store {
 		}
 
 		bool contains(std::tuple<std::string, std::string, std::string> triple) {
-			const std::shared_ptr<Term> &subject = parseTerm(std::get<0>(triple));
-			const std::shared_ptr<Term> &predicate = parseTerm(std::get<1>(triple));
-			const std::shared_ptr<Term> &object = parseTerm(std::get<2>(triple));
-			return termIndex.contains(subject) and termIndex.contains(predicate) and termIndex.contains(object);
+			auto subject = termIndex.find(Term::make_term(std::get<0>(triple)));
+			auto predicate = termIndex.find(Term::make_term(std::get<1>(triple)));
+			auto object = termIndex.find(Term::make_term(std::get<2>(triple)));
+			if (subject and predicate and object) {
+				Key key{subject, predicate, object};
+				return trie[key];
+			}
+			return false;
 		}
 
 		std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
@@ -87,86 +95,144 @@ namespace tentris::store {
 		size_t size() const {
 			return trie.size();
 		}
+
+
 	};
 
-	auto getBNode(const SerdNode *node) -> std::shared_ptr<Term> {
-		std::ostringstream bnode_str;
-		bnode_str << "_:" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)};
-		return std::shared_ptr<Term>{new BNode{bnode_str.str()}};
-	}
+	class BulkLoad {
+		using prefixes_map_type = tsl::hopscotch_map<std::string, std::string, absl::Hash<std::string>>;
+		TripleStore *triple_store;
+		prefixes_map_type prefixes{};
+		std::size_t load_log = 1'000'000;
 
-	auto getURI(const SerdNode *node) -> std::shared_ptr<Term> {
-		std::ostringstream uri_str;
-		uri_str << "<" << std::string_view{(char *) (node->buf), size_t(node->n_bytes)} << ">";
-		return std::shared_ptr<Term>{new URIRef{uri_str.str()}};
-	}
+		BulkLoad(TripleStore &triple_store, const std::string &file_path) : triple_store(&triple_store) {
+			SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, nullptr, &serd_base_callback,
+											 &serd_prefix_callback,
+											 &serd_callback,
+											 nullptr);
+			serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
+			serd_reader_free(sr);
+		}
 
-	auto getLiteral(const SerdNode *literal, const SerdNode *type_node,
-					const SerdNode *lang_node) -> std::shared_ptr<Term> {
-		std::optional<std::string> type = (type_node != nullptr)
-										  ? std::optional<std::string>{{(char *) (type_node->buf),
-																			   size_t(type_node->n_bytes)}}
-										  : std::nullopt;
-		std::optional<std::string> lang = (lang_node != nullptr)
-										  ? std::optional<std::string>{{(char *) (lang_node->buf),
-																			   size_t(lang_node->n_bytes)}}
-										  : std::nullopt;
-		return std::shared_ptr<Term>{
-				new Literal{std::string{(char *) (literal->buf), size_t(literal->n_bytes)}, lang, type}};
-	};
+	public:
+		static void load(TripleStore &triple_store, const std::string &file_path) {
+			BulkLoad{triple_store, file_path};
+		}
 
-	auto serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
-					   const SerdNode *subject,
-					   const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
-					   const SerdNode *object_lang) -> SerdStatus {
-		auto *store = (tentris::store::TripleStore *) handle;
-		std::shared_ptr<Term> subject_term;
-		std::shared_ptr<Term> predicate_term;
-		std::shared_ptr<Term> object_term;
+	private:
 
-		switch (subject->type) {
-			case SERD_URI:
-				subject_term = getURI(subject);
-				break;
-			case SERD_BLANK: {
-				subject_term = getBNode(subject);
+		TripleStore &store() {
+			return *triple_store;
+		}
+
+		auto getBNode(const SerdNode *node) const -> Term {
+			return Term::make_bnode("_:{}"_format(std::string_view{(char *) (node->buf), size_t(node->n_bytes)}));
+		}
+
+		auto getURI(const SerdNode *node) const -> Term {
+			return Term::make_uriref("<{}>"_format(std::string_view{(char *) (node->buf), size_t(node->n_bytes)}));
+		}
+
+		auto getPrefixedUri(const SerdNode *node) const -> Term {
+			std::string_view uri_node_view{(char *) (node->buf), size_t(node->n_bytes)};
+
+			std::vector<std::string> prefix_and_suffix{};
+			boost::split(prefix_and_suffix, uri_node_view, [](char c) { return c == ':'; });
+
+			assert(prefix_and_suffix.size() == 2);
+			assert(prefixes.count(std::string{prefix_and_suffix[0]}));
+			return Term::make_uriref(
+					"<{}{}>"_format(prefixes.find(prefix_and_suffix[0])->second, prefix_and_suffix[1]));
+		}
+
+		auto getLiteral(const SerdNode *literal, const SerdNode *type_node, const SerdNode *lang_node) const -> Term {
+			std::string literal_value = std::string{(char *) (literal->buf), size_t(literal->n_bytes)};
+			if (type_node != nullptr)
+				return Term::make_typed_literal(literal_value, {(char *) (type_node->buf), size_t(type_node->n_bytes)});
+			else if (lang_node != nullptr)
+				return Term::make_lang_literal(literal_value, {(char *) (lang_node->buf), size_t(lang_node->n_bytes)});
+			else
+				return Term::make_str_literal(literal_value);
+		};
+
+		static auto serd_base_callback(void *handle, const SerdNode *uri) -> SerdStatus {
+			auto &load = *((BulkLoad *) handle);
+			load.prefixes[""] = std::string((char *) (uri->buf), uri->n_bytes);
+			return SERD_SUCCESS;
+		}
+
+		static auto serd_prefix_callback(void *handle, const SerdNode *name, const SerdNode *uri) -> SerdStatus {
+			auto &load = *((BulkLoad *) handle);
+			load.prefixes[std::string((char *) (name->buf), name->n_bytes)]
+					= std::string((char *) (uri->buf), uri->n_bytes);
+			return SERD_SUCCESS;
+		}
+
+		static auto
+		serd_callback(void *handle, [[maybe_unused]] SerdStatementFlags flags, [[maybe_unused]] const SerdNode *graph,
+					  const SerdNode *subject,
+					  const SerdNode *predicate, const SerdNode *object, const SerdNode *object_datatype,
+					  const SerdNode *object_lang) -> SerdStatus {
+			auto &load = *((BulkLoad *) handle);
+			Term subject_term;
+			Term predicate_term;
+			Term object_term;
+
+			switch (subject->type) {
+				case SERD_CURIE:
+					subject_term = load.getPrefixedUri(subject);
+					break;
+				case SERD_URI:
+					subject_term = load.getURI(subject);
+					break;
+				case SERD_BLANK: {
+					subject_term = load.getBNode(subject);
+				}
+					break;
+				default:
+					return SERD_ERR_BAD_SYNTAX;
 			}
-				break;
-			default:
-				return SERD_ERR_BAD_SYNTAX;
-		}
 
-		switch (predicate->type) {
-			case SERD_URI:
-				predicate_term = getURI(predicate);
-				break;
-			default:
-				return SERD_ERR_BAD_SYNTAX;
-		}
+			switch (predicate->type) {
+				case SERD_CURIE:
+					predicate_term = load.getPrefixedUri(predicate);
+					break;
+				case SERD_URI:
+					predicate_term = load.getURI(predicate);
+					break;
+				default:
+					return SERD_ERR_BAD_SYNTAX;
+			}
 
-		switch (object->type) {
-			case SERD_LITERAL:
-				object_term = getLiteral(object, object_datatype, object_lang);
-				break;
-			case SERD_BLANK:
-				object_term = getBNode(object);
-				break;
-			case SERD_URI:
-				object_term = getURI(object);
-				break;
-			default:
-				return SERD_ERR_BAD_SYNTAX;
+			switch (object->type) {
+				case SERD_CURIE:
+					object_term = load.getPrefixedUri(object);
+					break;
+				case SERD_LITERAL:
+					object_term = load.getLiteral(object, object_datatype, object_lang);
+					break;
+				case SERD_BLANK:
+					object_term = load.getBNode(object);
+					break;
+				case SERD_URI:
+					object_term = load.getURI(object);
+					break;
+				default:
+					return SERD_ERR_BAD_SYNTAX;
+			}
+			auto &store = load.store();
+			load.store().add(std::move(subject_term), std::move(predicate_term), std::move(object_term));
+			if (store.size() % load.load_log == 0) {
+				if ((store.size() / load.load_log) % 10 == 0)
+					load.load_log *= 10;
+				log("{} mio triples in store."_format(store.size() / 1'000'000));
+			}
+			return SERD_SUCCESS;
 		}
-		store->add(std::move(subject_term), std::move(predicate_term), std::move(object_term));
-		return SERD_SUCCESS;
+	};
+
+	void TripleStore::loadRDF(const std::string &file_path) {
+		BulkLoad::load(*this, file_path);
 	}
-
-
-	void TripleStore::loadRDF(std::string file_path) {
-		SerdReader *sr = serd_reader_new(SERD_TURTLE, (void *) this, nullptr, nullptr, nullptr, &serd_callback,
-										 nullptr);
-		serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
-	}
-
 };
 #endif //TENTRIS_STORE_TRIPLESTORE

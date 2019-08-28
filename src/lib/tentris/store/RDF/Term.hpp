@@ -3,32 +3,45 @@
 
 #include "tentris/util/All.hpp"
 #include <string_view>
+#include <absl/hash/hash.h>
 
 #include <stdexcept>
 #include <string>
 #include <optional>
 #include <exception>
 #include <regex>
+#include <utility>
 
-namespace {
-	const std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
-
-	const std::regex is_uri_regex{"^<(?:.*)>$", std::regex::optimize};
-
-	const std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$", std::regex::optimize};
-
-	/**
-	 * Regex with groups [1]: literal string, [2]: language tag, [3]: type tag. [2] and [3] are exclusive.
-	 */
-	const std::regex literal_regex{"^\"([^]*)\"(?:@(.*)|\\^\\^<(.*)>|)$", std::regex::optimize};
-}
 
 namespace tentris::store::rdf {
 
+	namespace {
+		const static std::regex is_bnode_regex{"^_:(?:.*)$", std::regex::optimize};
+
+		const static std::regex is_uri_regex{"^<(?:.*)>$", std::regex::optimize};
+
+		const static std::regex is_literal_regex{"^\"(?:[^]*)\"(?:@(?:.*)|\\^\\^<(?:.*)>|)$", std::regex::optimize};
+
+		/**
+		 * Regex with groups [1]: literal string, [2]: language tag, [3]: type tag. [2] and [3] are exclusive.
+		 */
+		const static std::regex literal_regex{"^\"([^]*)\"(?:@(.*)|\\^\\^<(.*)>|)$", std::regex::optimize};
+	}
+
+
+	struct unbound_string_view {
+		std::ptrdiff_t start = 0;
+		std::size_t count = 0;
+
+		[[nodiscard]] std::string_view string_view(const std::string &str) const {
+			return {str.c_str() + start, count};
+		}
+	};
 
 	class Term {
 	public:
 		enum NodeType {
+			None = 0,
 			URI,
 			BNode,
 			Literal
@@ -36,33 +49,59 @@ namespace tentris::store::rdf {
 		};
 
 	protected:
-		std::string _identifier;
-		NodeType _node_type;
-		std::string_view _value = nullptr;
-		std::string_view _lang = nullptr;
-		std::string_view _type = nullptr;
+		std::string _identifier{};
+		NodeType _node_type{};
+		unbound_string_view _value{};
+		unbound_string_view _lang{};
+		unbound_string_view _data_type{};
 
-
-		explicit Term(std::string identifier) : _identifier(identifier) {};
-
-		explicit Term(NodeType node_type) : _node_type{node_type} {};
-
-		Term(std::string identifier, NodeType node_type) : _identifier{identifier}, _node_type{node_type} {};
 	public:
-		Term(const Term &term) = default;
+		explicit Term(std::string identifier) : _identifier(std::move(identifier)) {}
 
-		const std::string &getIdentifier() const {
+		Term(std::string identifier, NodeType nodeType) : _identifier(std::move(identifier)),
+														  _node_type(nodeType) {}
+
+	public:
+		Term() = default;
+
+		Term(Term &) = default;
+
+		Term(const Term &) = default;
+
+		Term(Term &&) = default;
+
+		Term &operator=(const Term &) = default;
+
+		Term &operator=(Term &&) = default;
+
+
+		[[nodiscard]] const std::string &getIdentifier() const {
 			return _identifier;
 		}
 
-		inline const NodeType &type() {
+		inline const NodeType &type() const {
 			return _node_type;
 		}
 
-		inline const std::string_view &get_value() const {
-			return _value;
+		[[nodiscard]] inline std::string_view value() const {
+			return _value.string_view(_identifier);
 		}
 
+		[[nodiscard]] inline std::string_view dataType() const {
+			return _data_type.string_view(_identifier);
+		}
+
+		[[nodiscard]] inline std::string_view lang() const {
+			return _lang.string_view(_identifier);
+		}
+
+		[[nodiscard]] inline bool hasDataType() const {
+			return _data_type.count != 0;
+		}
+
+		[[nodiscard]] inline bool hasLang() const {
+			return _lang.count != 0;
+		}
 
 		inline bool operator==(const Term &rhs) const {
 			return _identifier == rhs._identifier;
@@ -79,109 +118,168 @@ namespace tentris::store::rdf {
 		inline bool operator>(const Term &rhs) const {
 			return _identifier > rhs._identifier;
 		}
-	};
 
-	class URIRef : public Term {
+		friend bool operator==(const Term &lhs, const std::unique_ptr<Term> &rhs) {
+			return lhs == *rhs;
+		}
 
-	public:
-		explicit URIRef(std::string identifier) : Term{identifier, NodeType::URI} {
-			_value = std::string_view{_identifier.data() + 1, _identifier.size() - 2};
-		};
-	};
+		friend bool operator==(const std::unique_ptr<Term> &lhs, const Term &rhs) {
+			return *lhs == rhs;
+		}
 
-	class BNode : public Term {
-	public:
-		explicit BNode(std::string identifier) : Term{identifier, NodeType::BNode} {
-			_value = std::string_view{_identifier.data() + 2, _identifier.size() - 2};
-		};
+		friend bool operator==(const std::unique_ptr<Term> &lhs, const std::unique_ptr<Term> &rhs) {
+			return *lhs == *rhs;
+		}
 
-	};
+		friend bool operator==(const Term *lhs, const std::unique_ptr<Term> &rhs) {
+			return *lhs == *rhs;
+		}
 
+		friend bool operator==(const std::unique_ptr<Term> &lhs, const Term *rhs) {
+			return *lhs == *rhs;
+		}
 
-	class Literal : public Term {
+		static Term make_literal(const std::string &identifier) {
 
-	public:
-		explicit Literal(std::string identifier) : Term{identifier, NodeType::Literal} {
+			Term term{identifier, Literal};
 
 			std::match_results<std::string::const_iterator> mr;
 			match_regex:
 			// check if the regex matched
-			if (std::regex_match(_identifier, mr, literal_regex)) {
+			if (std::regex_match(term._identifier, mr, literal_regex)) {
 				// get a iterator to the beginning of the matched string
 				const std::basic_string<char>::const_iterator &identifer_it = mr[0].first;
 				if (const auto &type_group = mr[3]; type_group.matched) {
 					if (type_group.str() == "http://www.w3.org/2001/XMLSchema#string") {
-						_identifier = std::string{_identifier, 0, size_t(type_group.first - identifer_it - 3)};
+						term._identifier = std::string{term._identifier, 0,
+													   size_t(type_group.first - identifer_it - 3)};
 						goto match_regex;
 					} else {
-						char *type_raw = _identifier.data() + (type_group.first - identifer_it);
-						_type = {type_raw, (size_t) type_group.length()};
+						auto type_start = (type_group.first - identifer_it);
+						auto type_count = (std::size_t) type_group.length();
+						term._data_type = {type_start, type_count};
 					}
 				} else if (const auto &lang_group = mr[2]; lang_group.matched) {
-					char *lang_raw = _identifier.data() + (lang_group.first - identifer_it);
-					_lang = {lang_raw, (size_t) lang_group.length()};
+					auto lang_start = (lang_group.first - identifer_it);
+					auto lang_count = (size_t) lang_group.length();
+					term._lang = {lang_start, lang_count};
 					// check if it has a type tag
 				}
 
 				const auto &literal_group = mr[1];
 				assert(literal_group.matched);
-				_value = {_identifier.data() + 1, (size_t) literal_group.length()};
-				return;
+				term._value = {1, (size_t) literal_group.length()};
+				return term;
 			}
 			throw std::invalid_argument{"Literal string was malformed."};
-
 		}
 
-		Literal(std::string identifier, std::optional<std::string> lang, std::optional<std::string> type)
-				: Term{NodeType::Literal} {
+		static Term make_lang_literal(const std::string &value, const std::string &lang) {
 
-			if (lang) {
-				_identifier = "\"" + identifier + "\"@" + *lang;
-				_lang = {_identifier.data() + 1 + identifier.size() + 2, lang->size()};
-			} else if (type and type != "http://www.w3.org/2001/XMLSchema#string") {
-				// string tags shall not be stored as they are implicit
-				_identifier = "\"" + identifier + "\"^^<" + *type + ">";
-				_type = {_identifier.data() + 1 + identifier.size() + 4, type->size()};
-			} else {
-				_identifier = "\"" + identifier + "\"";
+			Term term{fmt::format(R"("{}"@{})", value, lang), Literal};
+			term._value = {1, value.size()};
+			term._lang = {(ptrdiff_t) (1 + value.size() + 2), lang.size()};
+			return term;
+		}
+
+		static Term make_str_literal(const std::string &value) {
+
+			Term term{fmt::format(R"("{}")", value), Literal};
+			term._value = {1, value.size()};
+			return term;
+		}
+
+		static Term make_typed_literal(const std::string &value, const std::string &type) {
+			bool is_string_type = (type == "http://www.w3.org/2001/XMLSchema#string");
+
+			Term term{
+					(not is_string_type)
+					? fmt::format(R"("{}"^^<{}>)", value, type)
+					: fmt::format(R"("{}")", value),
+					Literal};
+			if (not is_string_type) {
+				term._data_type = {(std::ptrdiff_t) (1 + value.size() + 4), type.size()};
 			}
-			_value = {_identifier.data() + 1, identifier.size()};
+			term._value = {1, value.size()};
+			return term;
 		}
 
-		bool hasLang() const {
-			return _lang != nullptr;
+		static Term make_bnode(const std::string &identifier) {
+
+			Term term{identifier, BNode};
+
+			term._value = {2, term._identifier.size() - 2};
+			return term;
 		}
 
-		bool hasType() const {
-			return _type != nullptr;
+		static Term make_uriref(const std::string &identifier) {
+
+			Term term{identifier, URI};
+
+			term._value = {1, term._identifier.size() - 2};
+			return term;
 		}
 
-		const std::string_view &getLang() const {
-			return _lang;
+		static Term make_term(const std::string &identifier) {
+			if (std::regex_match(identifier, is_literal_regex))
+				return make_literal(identifier);
+			else if (std::regex_match(identifier, is_uri_regex))
+				return make_uriref(identifier);
+			else if (std::regex_match(identifier, is_bnode_regex))
+				return make_bnode(identifier);
+			throw std::invalid_argument{"RDF term string was malformed."};
 		}
 
-		const std::string_view &getType() const {
-			return _type;
+		[[nodiscard]] std::size_t hash() const {
+			return absl::Hash<std::string>()(_identifier);
 		}
 	};
 
-	std::unique_ptr<Term> parseTerm(const std::string &term) {
-		if (std::regex_match(term, is_literal_regex))
-			return std::unique_ptr<Term>{new Literal{term}};
-		else if (std::regex_match(term, is_uri_regex))
-			return std::unique_ptr<Term>{new URIRef{term}};
-		else if (std::regex_match(term, is_bnode_regex))
-			return std::unique_ptr<Term>{new BNode{term}};
-		throw std::invalid_argument{"RDF term string was malformed."};
-	}
+
 };
 
 
 template<>
 struct std::hash<tentris::store::rdf::Term> {
 	size_t operator()(const tentris::store::rdf::Term &v) const {
-		std::hash<std::string> hasher;
-		return hasher(v.getIdentifier());
+		return v.hash();
+	}
+};
+
+template<>
+struct std::hash<tentris::store::rdf::Term *> {
+	size_t operator()(const tentris::store::rdf::Term *&v) const {
+		return v->hash();
+	}
+};
+
+namespace tentris::store::rdf {
+	struct TermHash {
+		size_t operator()(const tentris::store::rdf::Term &v) const {
+			return v.hash();
+		}
+
+		size_t operator()(const std::unique_ptr<tentris::store::rdf::Term> &v) const {
+			return v->hash();
+		}
+
+		size_t operator()(const tentris::store::rdf::Term *&v) const {
+			return v->hash();
+		}
+	};
+}
+
+template<>
+struct fmt::formatter<const tentris::store::rdf::Term *> {
+	template<typename ParseContext>
+	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+	template<typename FormatContext>
+	auto format(const tentris::store::rdf::Term *p, FormatContext &ctx) {
+		if (p != nullptr)
+			return format_to(ctx.begin(), p->getIdentifier());
+		else
+			return format_to(ctx.begin(), "");
 	}
 };
 
@@ -192,26 +290,7 @@ struct fmt::formatter<tentris::store::rdf::Term> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::rdf::Term &p, FormatContext &ctx) {
-		return format_to(ctx.begin(), "{}", p.getIdentifier());
-	}
-};
-
-template<>
-struct std::hash<tentris::store::rdf::Term const *> {
-	size_t operator()(const tentris::store::rdf::Term *&v) const {
-		std::hash<std::string> hasher;
-		return hasher(v->getIdentifier());
-	}
-};
-
-template<>
-struct fmt::formatter<tentris::store::rdf::Term const *> {
-	template<typename ParseContext>
-	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-
-	template<typename FormatContext>
-	auto format(const tentris::store::rdf::Term *&p, FormatContext &ctx) {
-		return format_to(ctx.begin(), "{}", p->getIdentifier());
+		return format_to(ctx.begin(), p.getIdentifier());
 	}
 };
 
