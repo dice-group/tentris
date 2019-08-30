@@ -89,11 +89,11 @@ int main(int argc, char *argv[]) {
 
 	log("Server \n"
 		"  threads: {}\n"
-		"  IRI:     http://127.0.0.1:{}/sparql?query="_format(cfg.threads, cfg.port));
+		"  IRI:     http://0.0.0.0:{}/sparql?query="_format(cfg.threads, cfg.port));
 
 	restinio::run(
 			restinio::on_thread_pool<traits_t>(cfg.threads)
-					.address("localhost")
+					.address("0.0.0.0")
 					.port(cfg.port)
 					.request_handler(std::move(router))
 					.handle_request_timeout(cfg.timeout)
