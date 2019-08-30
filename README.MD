@@ -123,5 +123,5 @@ To compile Tentris with debugging symbols, proceed as above but change the cmake
 
 To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
 ## docker
-Docker support is experimental. A full documentation will follow. 
+It is available on docker hub https://hub.docker.com/r/dicegroup/tentris_server. Usage instructions are provided there. 
 
