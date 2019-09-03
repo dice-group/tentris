@@ -16,14 +16,12 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/store/QueryExecutionPackageCache.hpp"
-#include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
+#include "tentris/store/SPARQL/TriplePattern.hpp"
 
 
 namespace {
-	using namespace tentris::store::cache;
 	using namespace tentris::store::sparql;
 	using namespace ::tentris::logging;
 	using namespace tentris::tensor;
@@ -37,13 +35,7 @@ namespace tentris::store {
 
 		BoolHypertrie trie{3};
 
-		mutable QueryExecutionPackage_cache query_cache;
-
 	public:
-		explicit TripleStore(size_t cache_capacity = 500, size_t cache_bucket_size = 500,
-							 std::chrono::system_clock::duration timeout = std::chrono::seconds(180)) :
-				query_cache{trie, termIndex, cache_capacity, cache_bucket_size, timeout} {}
-
 
 		TermStore &getTermIndex() {
 			return termIndex;
@@ -51,6 +43,10 @@ namespace tentris::store {
 
 		const TermStore &getTermIndex() const {
 			return termIndex;
+		}
+
+		const_BoolHypertrie getBoolHypertrie() const {
+			return trie;
 		}
 
 		friend class BulkLoad;
@@ -61,6 +57,29 @@ namespace tentris::store {
 			add(Term::make_term(std::get<0>(triple)),
 				Term::make_term(std::get<1>(triple)),
 				Term::make_term(std::get<2>(triple)));
+		}
+
+		std::variant<std::optional<const_BoolHypertrie>, bool> resolveTriplePattern(TriplePattern tp) {
+			auto slice_count = 0;
+			for (const auto &entry: tp)
+				if (std::holds_alternative<Variable>(entry))
+					++slice_count;
+
+			SliceKey slice_key(3, std::nullopt);
+			for (const auto &[pos, entry] : iter::enumerate(tp)) {
+				if (std::holds_alternative<Term>(entry))
+					try {
+						auto term = termIndex.get(std::get<Term>(entry));
+						slice_key[pos] = term;
+					} catch ([[maybe_unused]] std::out_of_range &exc) {
+						// a keypart was not in the index so the result is zero anyways.
+						return (slice_count > 0)
+							   ? std::variant<std::optional<const_BoolHypertrie>, bool>{
+										std::optional<const_BoolHypertrie>()}
+							   : std::variant<std::optional<const_BoolHypertrie>, bool>{false};
+					}
+			}
+			return trie[slice_key];
 		}
 
 		inline void
@@ -84,12 +103,6 @@ namespace tentris::store {
 				return trie[key];
 			}
 			return false;
-		}
-
-		std::shared_ptr<QueryExecutionPackage> query(const std::string &sparql) const {
-			std::shared_ptr<QueryExecutionPackage> query = query_cache.get(sparql);
-			// logDebug("QueryExecutionPackage: {}"_format(query));
-			return query;
 		}
 
 		size_t size() const {

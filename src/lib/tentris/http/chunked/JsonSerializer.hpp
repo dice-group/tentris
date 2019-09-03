@@ -3,9 +3,8 @@
 
 #include "tentris/store/RDF/Term.hpp"
 #include "tentris/store/SPARQL/Variable.hpp"
-#include "tentris/store/TripleStore.hpp"
+#include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/util/HTTPUtils.hpp"
-#include "tentris/tensor/BoolHypertrie.hpp"
 #include "tentris/http/QueryResultState.hpp"
 
 
@@ -17,7 +16,7 @@ namespace tentris::http {
 		using namespace tentris::tensor;
 		using Variable = tentris::store::sparql::Variable;
 		using namespace std::chrono;
-		using TripleStore = tentris::store::TripleStore;
+		using QueryExecutionPackage = tentris::store::cache::QueryExecutionPackage;
 		using Status = tentris::http::ResultState;
 		using namespace tentris::store::rdf;
 	}; // namespace
@@ -29,14 +28,15 @@ namespace tentris::http {
 	};
 
 	template<typename RESULT_TYPE>
-	Status streamJSON(const std::vector<Variable> &vars, std::shared_ptr<QueryExecutionPackage> &query_package,
-					  restinio::response_builder_t<restinio::chunked_output_t> &stream,
-					  const TripleStore &store, const system_clock::time_point &timeout) {
+	Status streamJSON(std::shared_ptr<QueryExecutionPackage> &query_package,
+					  restinio::response_builder_t<restinio::chunked_output_t> &stream, const system_clock::time_point &timeout) {
 		using namespace std::string_literals;
 
 		ulong result_count = 0;
 		ulong result_count_multiplyer = 0;
 		const ulong flush_result_count = 500;
+
+		const std::vector<Variable> &vars = query_package->getQueryVariables();
 
 		stream.append_chunk(R"({"head":{"vars":[)");
 		bool firstTime = true;
@@ -70,8 +70,6 @@ namespace tentris::http {
 					} else {
 						json_result << ",";
 					}
-
-					assert(store.getTermIndex().valid(term));
 
 					json_result << "\"" << var.name << "\":{";
 

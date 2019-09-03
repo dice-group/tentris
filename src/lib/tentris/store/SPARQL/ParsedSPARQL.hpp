@@ -17,10 +17,12 @@
 #include <boost/algorithm/string.hpp>
 
 #include <einsum/internal/Subscript.hpp>
+#include <utility>
 
 #include "tentris/util/All.hpp"
 #include "tentris/store/RDF/Term.hpp"
 #include "tentris/store/SPARQL/Variable.hpp"
+#include "tentris/store/SPARQL/TriplePattern.hpp"
 
 
 namespace tentris::store::sparql {
@@ -30,8 +32,6 @@ namespace tentris::store::sparql {
 		using namespace tentris::store::rdf;
 		using SparqlParser = tentris::a4grammar::sparql::SparqlParser;
 		using namespace fmt::literals;
-		using VarOrTerm = std::variant<Variable, Term>;
-		using TriplePattern = std::vector<VarOrTerm>;
 	}
 
 
@@ -67,19 +67,15 @@ namespace tentris::store::sparql {
 
 
 	class ParsedSPARQL {
-
-
-		// TODO: don't store all that stuff
+		using SparqlLexer = tentris::a4grammar::sparql::SparqlLexer;
+		using ANTLRInputStream =antlr4::ANTLRInputStream;
+		using CommonTokenStream = antlr4::CommonTokenStream;
+		using QueryContext = SparqlParser::QueryContext;
 		std::string sparql_str;
-		std::istringstream str_stream;
-		antlr4::ANTLRInputStream input;
-		tentris::a4grammar::sparql::SparqlLexer lexer;
-		antlr4::CommonTokenStream tokens;
-		SparqlParser parser;
-		SparqlParser::QueryContext *_query;
+
+		SelectModifier select_modifier = NONE;
 
 		std::map<std::string, std::string> prefixes{};
-		SelectModifier select_modifier;
 		std::vector<Variable> query_variables{};
 		std::set<Variable> variables{};
 		std::set<Variable> anonym_variables{};
@@ -89,13 +85,16 @@ namespace tentris::store::sparql {
 
 	public:
 
-		explicit ParsedSPARQL(const std::string &sparqlstr) :
-				sparql_str{sparqlstr},
-				str_stream{sparql_str},
-				input{str_stream},
-				lexer{&input},
-				tokens{&lexer},
-				parser{&tokens} {
+		ParsedSPARQL() = default;
+
+
+		explicit ParsedSPARQL(std::string sparqlstr) :
+				sparql_str{std::move(sparqlstr)} {
+			std::istringstream str_stream{sparql_str};
+			ANTLRInputStream input{str_stream};
+			SparqlLexer lexer{&input};
+			CommonTokenStream tokens{&lexer};
+			SparqlParser parser{&tokens};
 			// replace the error handler
 			auto lexerErrorListener = LexerErrorListener{};
 			lexer.removeErrorListeners();
@@ -106,10 +105,10 @@ namespace tentris::store::sparql {
 			parser.removeErrorListeners();
 			parser.addErrorListener(&parserErrorListener);
 			// check that _query is present
-			_query = parser.query();
+			QueryContext *_query = parser.query();
 			if (_query == nullptr)
 				throw std::invalid_argument("The query was not parsable");
-			if (_query) {
+			else {
 				const std::vector<SparqlParser::PrefixDeclContext *> &prefixDecl = _query->prologue()->prefixDecl();
 				for (auto &prefix : prefixDecl)
 					// remove < and > from <...>
@@ -189,9 +188,7 @@ namespace tentris::store::sparql {
 				}
 
 				subscript = std::make_shared<Subscript>(ops_labels, result_labels);
-			} else
-				throw std::invalid_argument{"query could not be parsed."};
-
+			}
 		}
 
 		SelectModifier getSelectModifier() const {
@@ -342,8 +339,8 @@ namespace tentris::store::sparql {
 		auto getIriString(SparqlParser::IriRefContext *iriRef) const -> std::string {
 			if (antlr4::tree::TerminalNode *complete_ref = iriRef->IRI_REF(); complete_ref) {
 				auto fullIri = complete_ref->getText();
-				return std::string{fullIri,1, fullIri.size() -2};
- 			} else {
+				return std::string{fullIri, 1, fullIri.size() - 2};
+			} else {
 				auto *prefixedName = iriRef->prefixedName();
 
 				if (auto *pname_both = prefixedName->PNAME_LN();pname_both) {

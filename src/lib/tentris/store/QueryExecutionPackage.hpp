@@ -6,8 +6,13 @@
 #include <ostream>
 
 #include "tentris/store/RDF/TermStore.hpp"
+#include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
+
+namespace tentris::store {
+	class TripleStore;
+};
 
 namespace tentris::store::cache {
 
@@ -23,24 +28,26 @@ namespace tentris::store::cache {
 	struct QueryExecutionPackage {
 		using TimeoutType = std::chrono::system_clock::time_point;
 	private:
-		ParsedSPARQL parsedSPARQL;
+		std::string sparql_string;
 		std::shared_ptr<Subscript> subscript;
+		SelectModifier select_modifier;
+		std::vector<Variable> query_variables;
 
 	public:
 		/**
 		 * Indicates if the QueryExecutionPackage represents an distinct query or not. If it is distinct use only
 		 * the methods with distinct in their names. Otherwise use only the methods with regular in their names
 		 */
-		bool is_distinct;
-		bool is_trivial_empty;
 
-		size_t cache_bucket_size;
+		bool is_trivial_empty = false;
 
 	private:
 
 		std::vector<const_BoolHypertrie> operands{};
 
 	public:
+		QueryExecutionPackage() = delete;
+
 		/**
 		 *
 		 * @param sparql_string sparql query to be parsed
@@ -48,29 +55,28 @@ namespace tentris::store::cache {
 		 * @param termIndex term store attached to the trie
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
-		QueryExecutionPackage(const std::string &sparql_string,
-							  const const_BoolHypertrie &trie,
-							  const TermStore &termIndex,
-							  size_t cache_bucket_size)
-				: parsedSPARQL{sparql_string},
-				  subscript{parsedSPARQL.getSubscript()},
-				  is_distinct{(parsedSPARQL.getSelectModifier() == SelectModifier::DISTINCT)},
-				  cache_bucket_size{cache_bucket_size} {
+		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
+			ParsedSPARQL parsed_sparql{sparql_string};
+			subscript = parsed_sparql.getSubscript();
+			select_modifier = parsed_sparql.getSelectModifier();
+			query_variables = parsed_sparql.getQueryVariables();
 
-			const auto slice_keys = generateSliceKeys(parsedSPARQL.getBgps(), trie, termIndex);
+			auto &triple_store = AtomicTripleStore::getInstance();
 
-			is_trivial_empty = slice_keys.empty();
-			if (not is_trivial_empty) {
-
-				for (const auto &slice_key: slice_keys) {
-					auto opt_slice = std::get<std::optional<const_BoolHypertrie>>(trie[slice_key]);
-					if (opt_slice)
-						operands.emplace_back(opt_slice.value());
-					else {
+			for (const auto &tp: parsed_sparql.getBgps()) {
+				std::variant<std::optional<const_BoolHypertrie>, bool> op = triple_store.resolveTriplePattern(tp);
+				if (std::holds_alternative<bool>(op)) {
+					is_trivial_empty = not std::get<bool>(op);
+				} else {
+					auto opt_bht = std::get<std::optional<const_BoolHypertrie>>(op);
+					if (opt_bht) {
+						operands.emplace_back(*opt_bht);
+					} else {
 						is_trivial_empty = true;
-						return;
+						operands.clear();
 					}
 				}
+				if (is_trivial_empty) break;
 			}
 		}
 
@@ -92,59 +98,31 @@ namespace tentris::store::cache {
 		}
 
 	public:
-		const ParsedSPARQL &getParsedSPARQL() const { return parsedSPARQL; }
-
-		const std::string &getSparqlStr() const { return parsedSPARQL.getSparqlStr(); }
-
 		std::shared_ptr<void> getEinsum() const {
-			if (not is_distinct)
+			if (select_modifier == SelectModifier::NONE)
 				return generateEinsum<COUNTED_t>(subscript, operands);
 			else
 				return generateEinsum<DISTINCT_t>(subscript, operands);
 		}
 
-		friend struct ::fmt::formatter<QueryExecutionPackage>;
-
-	private:
-		/**
-		 * Calculates the slice keys for the BoolHyperTrie from a basic graph pattern. If the result is clearly empty
-		 * an empty list of slice keys is returned.
-		 * @param bgps basic graph pattern of the query
-		 * @param trie BoolHyperTrie
-		 * @param termIndex intex for trie
-		 * @return slice keys for the BoolHyperTrie
-		 */
-		static std::vector<SliceKey>
-		generateSliceKeys(const std::set<TriplePattern> &bgps, const const_BoolHypertrie &trie,
-						  const TermStore &termIndex) {
-			std::vector<SliceKey> slice_keys{};
-			for (const auto &op_key : bgps) {
-				SliceKey slice_key(3, std::nullopt);
-				bool no_slices = true;
-				for (const auto[pos, op_key_part] : enumerate(op_key)) {
-					if (std::holds_alternative<Term>(op_key_part))
-						try {
-							Term const *term = termIndex.get(std::get<Term>(op_key_part));
-							slice_key[pos] = term;
-						} catch ([[maybe_unused]] std::out_of_range &exc) {
-							// a keypart was not in the index so the result is zero anyways.
-							return {};
-						}
-					else
-						no_slices = false;
-				}
-				if (no_slices) {
-					// one triple without variables was not in storeF
-					if (not std::get<bool>(trie[slice_key]))
-						return {};
-				} else
-					slice_keys.push_back(slice_key);
-			}
-
-			return slice_keys;
+		const std::string &getSparqlStr() const {
+			return sparql_string;
 		}
-	};
 
+		const std::shared_ptr<Subscript> &getSubscript() const {
+			return subscript;
+		}
+
+		SelectModifier getSelectModifier() const {
+			return select_modifier;
+		}
+
+		const std::vector<Variable> &getQueryVariables() const {
+			return query_variables;
+		}
+
+		friend struct ::fmt::formatter<QueryExecutionPackage>;
+	};
 } // namespace tentris::store::cache
 
 template<>
@@ -155,12 +133,14 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 	template<typename FormatContext>
 	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
 		return format_to(ctx.begin(),
-						 " parsedSPARQL:     {}\n"
+						 " SPARQL:     {}\n"
+						 " subscript:  {}\n"
 						 " is_distinct:      {}\n"
 						 " is_trivial_empty: {}\n",
-						 p.parsedSPARQL, p.is_distinct, p.is_trivial_empty);
-		// TODO: implement print for operator
+						 p.sparql_string, p.subscript, p.select_modifier == SelectModifier::DISTINCT,
+						 p.is_trivial_empty);
 	}
 };
 
 #endif // TENTRIS_QUERYEXECUTIONPACKAGE_HPP
+

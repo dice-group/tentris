@@ -1,11 +1,9 @@
 #ifndef TENTRIS_SPARQLREQUESTTHREAD_HPP
 #define TENTRIS_SPARQLREQUESTTHREAD_HPP
 
-#include "tentris/http/chunked/JsonSerializer.hpp"
 #include "tentris/store/QueryExecutionPackage.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/TripleStore.hpp"
-#include "tentris/tensor/BoolHypertrie.hpp"
 
 #include <chrono>
 #include <restinio/all.hpp>
@@ -20,7 +18,7 @@ namespace tentris::http {
 		using ParsedSPARQL = tentris::store::sparql::ParsedSPARQL;
 		using Variable = tentris::store::sparql::Variable;
 		using SelectModifier = tentris::store::sparql::SelectModifier;
-		using TripleStore = tentris::store::TripleStore;
+		using QueryExecutionPackage = tentris::store::cache::QueryExecutionPackage;
 		using namespace tentris::store::cache;
 		using namespace std::chrono;
 		using namespace ::tentris::logging;
@@ -30,8 +28,7 @@ namespace tentris::http {
 
 	template<typename RESULT_TYPE>
 	inline Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-	                       TripleStore &store,
-	                       const QueryExecutionPackage::TimeoutType timeout, const std::vector<Variable> &vars) {
+						   const QueryExecutionPackage::TimeoutType timeout) {
 		logTrace("Running select query.");
 		// calculate the result
 
@@ -41,7 +38,7 @@ namespace tentris::http {
 			resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
 			resp.connection_close();
 			resp.flush();
-			return streamJSON<RESULT_TYPE>(vars, query_package, resp, store, timeout);
+			return streamJSON<RESULT_TYPE>(query_package, resp, timeout);
 		} else {
 			return Status::PROCESSING_TIMEOUT;
 		}
@@ -56,16 +53,15 @@ namespace tentris::http {
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
 	Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-	                TripleStore &store, const QueryExecutionPackage::TimeoutType timeout) {
+					TripleStore &store, const QueryExecutionPackage::TimeoutType timeout) {
 
-		const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
-		const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
-		switch (sparqlQuery.getSelectModifier()) {
+
+		switch (query_package->getSelectModifier()) {
 			case SelectModifier::NONE: {
-				return runQuery<COUNTED_t>(req, query_package, store, timeout, vars);
+				return runQuery<COUNTED_t>(req, query_package, timeout);
 			}
 			case SelectModifier::DISTINCT: {
-				return runQuery<DISTINCT_t>(req, query_package, store, timeout, vars);
+				return runQuery<DISTINCT_t>(req, query_package, timeout);
 			}
 			default:
 				break;
