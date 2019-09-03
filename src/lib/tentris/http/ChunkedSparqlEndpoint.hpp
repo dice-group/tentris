@@ -86,7 +86,7 @@ namespace tentris::http {
 							"query_string: {}\n"_format(query_package->getSparqlStr())
 						);
 
-						status = runQuery(req, query_package, AtomicTripleStore::getInstance(), timeout);
+						status = runQuery(req, query_package, timeout);
 					}
 				} else {
 					status = Status::UNPARSABLE;

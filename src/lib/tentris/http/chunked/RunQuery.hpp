@@ -53,7 +53,7 @@ namespace tentris::http {
 	 * @param time_out a time stamp after that the execution must be canceled
 	 */
 	Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-					TripleStore &store, const QueryExecutionPackage::TimeoutType timeout) {
+					const QueryExecutionPackage::TimeoutType timeout) {
 
 
 		switch (query_package->getSelectModifier()) {
