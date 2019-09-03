@@ -349,8 +349,9 @@ namespace hypertrie::internal {
 				return RawMethods{
 						[](const void *rawboolhypertrie_iterator) {
 							using T = const typename RawBoolHypertrie<depth>::iterator;
-							if (rawboolhypertrie_iterator != nullptr)
-								static_cast<T *>(rawboolhypertrie_iterator)->~T();
+							if (rawboolhypertrie_iterator != nullptr){
+								delete static_cast<T *>(rawboolhypertrie_iterator);
+							}
 						},
 						[](const const_BoolHypertrie &boolHypertrie) -> void * {
 							return new typename RawBoolHypertrie<depth>::iterator(
@@ -386,7 +387,13 @@ namespace hypertrie::internal {
 
 			iterator(iterator &) = delete;
 
+			iterator(const iterator &) = delete;
+
+			iterator(iterator &&) = delete;
+
 			iterator &operator=(iterator &&other) noexcept {
+				if (this->raw_methods != nullptr)
+					this->raw_methods->destruct(this->raw_iterator);
 				this->raw_methods = other.raw_methods;
 				this->raw_iterator = other.raw_iterator;
 				other.raw_iterator = nullptr;
@@ -407,6 +414,8 @@ namespace hypertrie::internal {
 			~iterator() {
 				if (raw_methods != nullptr)
 					raw_methods->destruct(raw_iterator);
+				raw_methods = nullptr;
+				raw_iterator = nullptr;
 			}
 
 			self_type &operator++() {
