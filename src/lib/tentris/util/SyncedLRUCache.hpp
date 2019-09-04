@@ -107,7 +107,6 @@ namespace tentris::util::sync {
 				auto &key_value = keys_.emplace_front(key);
 				cache_[key] = keys_.begin();
 				prune();
-				std::cout << "cache_miss, filled: " << cache_.size() << std::endl;
 				return key_value.value;
 			} else {
 				keys_.splice(keys_.begin(), keys_, iter->second);
