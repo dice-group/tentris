@@ -1,9 +1,7 @@
 #ifndef LOGHELPER_HPP
 #define LOGHELPER_HPP
 
-#include <boost/log/trivial.hpp>
 #include <boost/log/core.hpp>
-
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
@@ -12,7 +10,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/support/date_time.hpp>
+
 #include <iostream>
 #include <sstream>
 
@@ -35,14 +33,12 @@
 // #define GET_VARIABLE_NAME(Variable) (#Variable)
 
 namespace {
-	using namespace boost::log::trivial;
 	using namespace std::chrono;
 }
 
 namespace tentris::logging {
 	using namespace fmt::literals;
 	namespace {
-		boost::log::sources::severity_logger<boost::log::trivial::severity_level> lg;
 
 
 		struct processMem_t {
@@ -82,34 +78,29 @@ namespace tentris::logging {
 	}
 
 	void init_logging() {
-		using namespace boost::log;
-		add_file_log(
+//		using namespace boost::log;
+		namespace logging = boost::log;
+		namespace src = boost::log::sources;
+		namespace sinks = boost::log::sinks;
+		namespace keywords = boost::log::keywords;
+		logging::add_common_attributes();
+		boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
+
+		logging::add_file_log(
 				keywords::file_name = "TENTRIS_%N.log",
-				keywords::rotation_size = 10 * 1024 * 1024,
+				keywords::rotation_size = 5 * 1024 * 1024,
 				keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-				keywords::format = (
-						expressions::stream
-								<< std::setw(8) << std::setfill('0')
-								<< expressions::attr<unsigned int>("LineID")
-								<< "\t"
-								<< expressions::format_date_time<boost::posix_time::ptime>("TimeStamp",
-																						   "%Y-%m-%d_%H:%M:%S.%f")
-								<< "\t: <" << trivial::severity
-								<< "> \t"
-								<< expressions::smessage
-				),
-				keywords::auto_flush = true
+				keywords::auto_flush = true,
+				keywords::format = "[%LineID%] [%TimeStamp%] [%ThreadID%] <%Severity%>: %Message%"
 		);
-		core::get()->set_filter(
-				trivial::severity >= trivial::trace
-		);
-		boost::log::add_common_attributes();
-		add_console_log(std::cout, boost::log::keywords::format = "%Message%");
+		auto console_sink = logging::add_console_log(std::cout,
+		                                             keywords::format = "[%LineID%] [%TimeStamp%] [%ThreadID%] <%Severity%>: %Message%");
+
 	}
 
 
 	inline void log(std::string msg) {
-		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::info) << msg;
+		BOOST_LOG_TRIVIAL(info) << msg;
 	}
 
 	inline time_point<system_clock> log_health_data() {
@@ -185,19 +176,19 @@ namespace tentris::logging {
 
 	inline void logDebug([[maybe_unused]]std::string msg) {
 #ifdef DEBUG
-		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::debug) << msg;
+		BOOST_LOG_TRIVIAL( debug) << msg;
 #endif
 	}
 
 	inline void logTrace([[maybe_unused]]std::string msg) {
 #ifdef TRACE
-		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::trace) << msg;
+		BOOST_LOG_TRIVIAL( trace) << msg;
 #endif
 	}
 
 
 	inline void logError(std::string msg) {
-		BOOST_LOG_SEV(lg, boost::log::trivial::severity_level::error) << msg;
+		BOOST_LOG_TRIVIAL(error) << msg;
 	}
 }
 

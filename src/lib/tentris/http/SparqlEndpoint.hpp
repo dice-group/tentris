@@ -46,6 +46,7 @@ namespace tentris::http {
 		auto sparql_endpoint = [](restinio::request_handle_t req,
 								  [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
 			using namespace std::string_literals;
+			log("request started.");
 			auto timeout = system_clock::now() + AtomicTripleStoreConfig::getInstance().timeout;
 			restinio::request_handling_status_t handled = restinio::request_rejected();
 			Status status = Status::OK;
@@ -57,6 +58,7 @@ namespace tentris::http {
 						req->header().query());
 				if (query_params.has("query")) {
 					query_string = std::string(query_params["query"]);
+					log("query: {}"_format(query_string));
 					// check if there is actually an query
 					try {
 						query_package = AtomicQueryExecutionCache::getInstance()[query_string];
@@ -67,6 +69,8 @@ namespace tentris::http {
 					if (status == Status::OK) {
 						status = runQuery(req, query_package, timeout);
 					}
+				} else {
+					status = Status::UNPARSABLE;
 				}
 			} catch (const std::exception &exc) {
 				// if the execution of the query should fail return an internal server error
@@ -90,40 +94,35 @@ namespace tentris::http {
 																				"Could not parse the requested query."s}).connection_close().done();
 					break;
 				case UNKNOWN_REQUEST:
-					logError(" ## unknown HTTP command. Only HTTP GET and POST are supported.\n");
+					logError("unknown HTTP command. Only HTTP GET and POST are supported.");
 					handled = req->create_response(restinio::status_not_implemented()).connection_close().done();
 					break;
 				case PROCESSING_TIMEOUT:
-					logError(" ## timeout during request processing\n"
-							 "    query_string: {}"_format(query_string)
-					);
+					logError("timeout during request processing");
 					handled = req->create_response(restinio::status_request_time_out()).connection_close().done();
 					break;
 				case SERIALIZATION_TIMEOUT:
 					// no REQUEST TIMEOUT response can be sent here because we stream results directly to the client.
 					// Thus, the code was already written to the header.
-					logError(" ## timeout during writing the result\n"
-							 "    query_string: {}"_format(query_string)
-					);
+					logError("timeout during writing the result");
 					handled = restinio::request_accepted();
 					break;
 				case UNEXPECTED:
-					logError(" ## unexpected internal error\n"
-							 "    query_string: {}\n"_format(query_string) +
-							 "    exception_message: {}"_format(error_message)
+					logError(" ## unexpected internal error, exception_message: {}"_format(error_message)
 					);
 					handled = req->create_response(
 							restinio::status_internal_server_error()).connection_close().done();
 					break;
 				case SEVERE_UNEXPECTED:
-					logError(" ## severe internal error\n"
-							 "    query_string: {}\n"_format(query_string) +
-							 "    exception_message: {}"_format(error_message)
+					logError(" ## severe unexpected internal error,  exception_message: {}"_format(error_message)
 					);
 					handled = req->create_response(
 							restinio::status_internal_server_error()).connection_close().done();
 					break;
 			}
+			if (handled == restinio::request_rejected())
+				logError(fmt::format("Handling the request was rejected."));
+			log("request ended.");
 			return handled;
 		};
 
