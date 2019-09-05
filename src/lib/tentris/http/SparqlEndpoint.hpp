@@ -11,7 +11,7 @@
 #include <fmt/ostream.h>
 #include <restinio/all.hpp>
 
-#include "tentris/http/AtomicCleanupTaskGroup.hpp"
+#include "tentris/http/QueryResultState.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/JsonQueryResult.hpp"
@@ -26,6 +26,7 @@ namespace tentris::http {
 		using namespace ::std::chrono;
 		using namespace ::tentris::logging;
 		using namespace std::string_literals;
+		using Status = ResultState;
 	} // namespace
 
 
@@ -46,8 +47,11 @@ namespace tentris::http {
 		auto sparql_endpoint = [](restinio::request_handle_t req,
 								  [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
 			using namespace std::string_literals;
+			auto start_time = system_clock::now();
 			log("request started.");
-			auto timeout = system_clock::now() + AtomicTripleStoreConfig::getInstance().timeout;
+			auto start_memory = get_memory_usage();
+			logDebug("ram: {:d} kB"_format(start_memory));
+			auto timeout = start_time + AtomicTripleStoreConfig::getInstance().timeout;
 			restinio::request_handling_status_t handled = restinio::request_rejected();
 			Status status = Status::OK;
 			std::string error_message{};
@@ -122,6 +126,10 @@ namespace tentris::http {
 			}
 			if (handled == restinio::request_rejected())
 				logError(fmt::format("Handling the request was rejected."));
+			auto end_memory = get_memory_usage();
+			logDebug("ram: {:d} kB"_format(end_memory));
+			logDebug("ram diff: {:+3d} kB"_format(long(end_memory) - long(start_memory)));
+			logDebug("request duration: {}"_format(toDurationStr(start_time, system_clock::now())));
 			log("request ended.");
 			return handled;
 		};

@@ -41,10 +41,7 @@ namespace tentris::logging {
 	namespace {
 
 
-		struct processMem_t {
-			uint32_t virtualMem;
-			uint32_t physicalMem;
-		};
+		using PhysicalMem = uint32_t;
 
 
 		inline int parseLine(char *line) {
@@ -57,23 +54,19 @@ namespace tentris::logging {
 			return i;
 		}
 
-		inline processMem_t get_memory_usage() {
+		inline PhysicalMem get_memory_usage() {
 			FILE *file = fopen("/proc/self/status", "r");
 			char line[128];
-			processMem_t processMem{};
+			PhysicalMem physicalMem{};
 
 			while (fgets(line, 128, file) != NULL) {
-				// std::cout << line << std::endl;
-				if (strncmp(line, "VmSize:", 7) == 0) {
-					processMem.virtualMem = parseLine(line);
-				}
 
 				if (strncmp(line, "VmRSS:", 6) == 0) {
-					processMem.physicalMem = parseLine(line);
+					physicalMem = parseLine(line);
 				}
 			}
 			fclose(file);
-			return processMem;
+			return physicalMem;
 		}
 	}
 
@@ -84,18 +77,18 @@ namespace tentris::logging {
 		namespace sinks = boost::log::sinks;
 		namespace keywords = boost::log::keywords;
 		logging::add_common_attributes();
-		boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
+		boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
 
-		logging::add_file_log(
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+		auto file_log = logging::add_file_log(
 				keywords::file_name = "TENTRIS_%N.log",
-				keywords::rotation_size = 5 * 1024 * 1024,
+				keywords::rotation_size = 5 * 512 * 1024,
 				keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
 				keywords::auto_flush = true,
 				keywords::format = "[%LineID%] [%TimeStamp%] [%ThreadID%] <%Severity%>: %Message%"
 		);
 		auto console_sink = logging::add_console_log(std::cout,
 		                                             keywords::format = "[%LineID%] [%TimeStamp%] [%ThreadID%] <%Severity%>: %Message%");
-
 	}
 
 
@@ -105,12 +98,12 @@ namespace tentris::logging {
 
 	inline time_point<system_clock> log_health_data() {
 		using namespace std::chrono;
-		processMem_t mem = get_memory_usage();
+		auto mem = get_memory_usage();
 		const auto time = std::chrono::system_clock::now();
 		const std::time_t t = std::chrono::system_clock::to_time_t(time);
 		log(fmt::format("time: {:%F_%T}", *std::localtime(&t)));
 		// log("virtMem: ", mem.virtualMem, "kB");
-		log("physMem: {} kB"_format(mem.physicalMem));
+		log("Mem: {} kB"_format(mem));
 		return time;
 	}
 
@@ -175,15 +168,11 @@ namespace tentris::logging {
 	}
 
 	inline void logDebug([[maybe_unused]]std::string msg) {
-#ifdef DEBUG
-		BOOST_LOG_TRIVIAL( debug) << msg;
-#endif
+		BOOST_LOG_TRIVIAL(debug) << msg;
 	}
 
 	inline void logTrace([[maybe_unused]]std::string msg) {
-#ifdef TRACE
-		BOOST_LOG_TRIVIAL( trace) << msg;
-#endif
+		BOOST_LOG_TRIVIAL(trace) << msg;
 	}
 
 
