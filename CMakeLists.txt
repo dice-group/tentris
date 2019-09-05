@@ -135,7 +135,7 @@ set(libraries_to_link
         )
 
 # make a library of the code
-add_library(tentris SHARED
+add_library(tentris STATIC
         src/
         )
 
