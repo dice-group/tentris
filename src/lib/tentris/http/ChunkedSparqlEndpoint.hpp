@@ -14,9 +14,8 @@
 #include "tentris/http/AtomicCleanupTaskGroup.hpp"
 #include "tentris/http/chunked/JsonSerializer.hpp"
 #include "tentris/http/chunked/RunQuery.hpp"
-#include "tentris/store/AtomicTripleStore.hpp"
+#include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/store/TripleStore.hpp"
 #include "tentris/util/HTTPUtils.hpp"
 #include "tentris/util/LogHelper.hpp"
 
@@ -25,7 +24,7 @@ namespace tentris::http {
 	namespace {
 		using namespace ::tentris::store::sparql;
 		using namespace ::tentris::store::cache;
-		using AtomicTripleStore = ::tentris::store::AtomicTripleStore;
+		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
 		using namespace ::std::chrono;
 		using namespace ::tentris::logging;
 		using namespace std::string_literals;
@@ -76,7 +75,7 @@ namespace tentris::http {
 					query_string = std::string(query_params["query"]);
 					// check if there is actually an query
 					try {
-						query_package = AtomicTripleStore::getInstance().query(query_string);
+						query_package = AtomicQueryExecutionCache::getInstance()[query_string];
 					} catch (const std::invalid_argument &exc) {
 						status = Status::UNPARSABLE;
 						error_message = exc.what();
@@ -87,7 +86,7 @@ namespace tentris::http {
 							"query_string: {}\n"_format(query_package->getSparqlStr())
 						);
 
-						status = runQuery(req, query_package, AtomicTripleStore::getInstance(), timeout);
+						status = runQuery(req, query_package, timeout);
 					}
 				} else {
 					status = Status::UNPARSABLE;

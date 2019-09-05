@@ -64,6 +64,12 @@ namespace hypertrie::internal {
 		friend
 		class RawBoolHypertrie;
 
+#ifdef __clang__
+		template<pos_type depth2, typename key_part_type_t2, template<typename, typename> typename map_type_t2,
+				template<typename> typename set_type_t2, typename enabled2>
+		friend
+		class RawBoolHypertrie<depth2, key_part_type_t2, map_type_t2, set_type_t2, enabled2>::iterator;
+#endif
 	protected:
 		template<pos_type depth_t>
 		using boolhypertrie_c = RawBoolHypertrie<depth_t, key_part_type_t, map_type_t, set_type_t, void>;
@@ -258,7 +264,12 @@ namespace hypertrie::internal {
 				template<typename> typename, typename>
 		friend
 		class RawBoolHypertrie;
-
+#ifdef __clang__
+		template<pos_type depth2, typename key_part_type_t2, template<typename, typename> typename map_type_t2,
+				template<typename> typename set_type_t2, typename enabled2>
+		friend
+		class RawBoolHypertrie<depth2, key_part_type_t2, map_type_t2, set_type_t2, enabled2>::iterator;
+#endif
 
 		template<pos_type depth_>
 		using boolhypertrie_c = RawBoolHypertrie<depth_, key_part_type_t, map_type_t, set_type_t>;
