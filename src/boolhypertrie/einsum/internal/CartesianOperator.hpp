@@ -15,7 +15,7 @@ namespace einsum::internal {
 
 		using SubResult = tsl::sparse_map<Key < key_part_type>, size_t, absl::Hash<Key < key_part_type> >>;
 
-		static constexpr key_part_type default_key_part = (std::is_pointer_v<key_part_type>) ? nullptr : std::numeric_limits<key_part_type>::max();
+		static constexpr key_part_type default_key_part = []() { if constexpr (std::is_pointer_v<key_part_type>) return nullptr; else return std::numeric_limits<key_part_type>::max(); }();
 
 
 		class FullCartesianResult;

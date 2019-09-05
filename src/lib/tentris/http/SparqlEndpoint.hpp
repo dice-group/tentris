@@ -12,9 +12,8 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/AtomicCleanupTaskGroup.hpp"
-#include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
-#include "tentris/store/TripleStore.hpp"
+#include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/JsonQueryResult.hpp"
 #include "tentris/util/LogHelper.hpp"
 
@@ -23,7 +22,7 @@ namespace tentris::http {
 	namespace {
 		using namespace ::tentris::store::sparql;
 		using namespace ::tentris::store::cache;
-		using AtomicTripleStore = ::tentris::store::AtomicTripleStore;
+		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
 		using namespace ::std::chrono;
 		using namespace ::tentris::logging;
 		using namespace std::string_literals;
@@ -38,7 +37,7 @@ namespace tentris::http {
 
 		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const QueryExecutionPackage::TimeoutType timeout, const std::vector<Variable> &vars);
+						const QueryExecutionPackage::TimeoutType timeout);
 
 
 		/**
@@ -60,7 +59,7 @@ namespace tentris::http {
 					query_string = std::string(query_params["query"]);
 					// check if there is actually an query
 					try {
-						query_package = AtomicTripleStore::getInstance().query(query_string);
+						query_package = AtomicQueryExecutionCache::getInstance()[query_string];
 					} catch (const std::invalid_argument &exc) {
 						status = Status::UNPARSABLE;
 						error_message = exc.what();
@@ -132,14 +131,12 @@ namespace tentris::http {
 		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
 				 const QueryExecutionPackage::TimeoutType timeout) {
 
-			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
-			const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
-			switch (sparqlQuery.getSelectModifier()) {
+			switch (query_package->getSelectModifier()) {
 				case SelectModifier::NONE: {
-					return runQuery<COUNTED_t>(req, query_package, timeout, vars);
+					return runQuery<COUNTED_t>(req, query_package, timeout);
 				}
 				case SelectModifier::DISTINCT: {
-					return runQuery<DISTINCT_t>(req, query_package, timeout, vars);
+					return runQuery<DISTINCT_t>(req, query_package, timeout);
 				}
 				default:
 					break;
@@ -150,11 +147,12 @@ namespace tentris::http {
 
 		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const QueryExecutionPackage::TimeoutType timeout, const std::vector<Variable> &vars) {
+						const QueryExecutionPackage::TimeoutType timeout) {
 			// check if it timed out
 			if (system_clock::now() >= timeout) {
 				return Status::PROCESSING_TIMEOUT;
 			}
+			const std::vector<Variable> &vars = query_package->getQueryVariables();
 			JsonQueryResult <RESULT_TYPE> json_result{vars};
 			if (not query_package->is_trivial_empty) {
 				std::shared_ptr<void> raw_results = query_package->getEinsum();

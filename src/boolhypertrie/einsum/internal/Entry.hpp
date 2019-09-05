@@ -14,6 +14,7 @@ constexpr bool _debugeinsum_ = false;
 #endif
 
 #include <boost/container_hash/hash.hpp>
+#include <type_traits>
 #include "hypertrie/internal/BoolHypertrie.hpp"
 #include "hypertrie/internal/Join.hpp"
 

@@ -6,7 +6,7 @@ namespace einsum::internal {
 			template<typename> class set_type>
 	class EntryGeneratorOperator {
 		using const_BoolHypertrie_t = const_BoolHypertrie<key_part_type, map_type, set_type>;
-		static constexpr key_part_type default_key_part = (std::is_pointer_v<key_part_type>) ? nullptr : std::numeric_limits<key_part_type>::max();
+		static constexpr key_part_type default_key_part = []() { if constexpr (std::is_pointer_v<key_part_type>) return nullptr; else return std::numeric_limits<key_part_type>::max(); }();
 
 
 		std::shared_ptr<Subscript> subscript;

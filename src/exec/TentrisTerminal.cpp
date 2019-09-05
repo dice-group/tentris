@@ -9,6 +9,7 @@
 #include "config/TerminalConfig.hpp"
 
 #include <tentris/store/QueryExecutionPackage.hpp>
+#include <tentris/store/QueryExecutionPackageCache.hpp>
 #include <tentris/store/TripleStore.hpp>
 #include <tentris/util/LogHelper.hpp>
 #include <tentris/tensor/BoolHypertrie.hpp>
@@ -22,6 +23,7 @@
 
 namespace {
 	using namespace tentris::store;
+	using namespace tentris::store::cache;
 	using namespace std::filesystem;
 	using namespace iter;
 	using namespace tentris::tensor;
@@ -63,9 +65,8 @@ std::chrono::system_clock::time_point actual_timeout;
 
 template<typename RESULT_TYPE>
 void
-writeNTriple(std::ostream &stream, const std::vector<Variable> &vars,
-			 const std::shared_ptr<QueryExecutionPackage> &query_package,
-			 const TripleStore &store) {
+writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> &query_package) {
+	const std::vector<Variable> &vars = query_package->getQueryVariables();
 	stream << fmt::format("{}\n", fmt::join(vars, ","));
 
 	uint timeout_check = 0;
@@ -120,12 +121,11 @@ writeNTriple(std::ostream &stream, const std::vector<Variable> &vars,
 
 template<typename RESULT_TYPE>
 inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_package,
-						TripleStore &triple_store, const QueryExecutionPackage::TimeoutType timeout,
-						const std::vector<Variable> &vars) {
+						const QueryExecutionPackage::TimeoutType timeout) {
 	// calculate the result
 	// check if it timed out
 	if (system_clock::now() < timeout) {
-		writeNTriple<RESULT_TYPE>(std::cout, vars, query_package, triple_store);
+		writeNTriple<RESULT_TYPE>(std::cout, query_package);
 	} else {
 		::error = Errors::PROCESSING_TIMEOUT;
 		actual_timeout = system_clock::now();
@@ -133,7 +133,7 @@ inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_pack
 }
 
 [[noreturn]]
-void commandlineInterface(TripleStore &triple_store) {
+void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 	while (true) {
 
 
@@ -150,24 +150,22 @@ void commandlineInterface(TripleStore &triple_store) {
 
 		try {
 			parse_start = system_clock::now();
-			std::shared_ptr<QueryExecutionPackage> query_package = triple_store.query(sparql_str);
-			const ParsedSPARQL &sparqlQuery = query_package->getParsedSPARQL();
-			const std::vector<Variable> &vars = sparqlQuery.getQueryVariables();
+			std::shared_ptr<QueryExecutionPackage> query_package = querypackage_cache[sparql_str];
 
 			timeout = system_clock::now() + cfg.timeout;
 
 			parse_end = system_clock::now();
 			execute_start = system_clock::now();
 
-			switch (sparqlQuery.getSelectModifier()) {
+			switch (query_package->getSelectModifier()) {
 				case SelectModifier::NONE: {
-					runCMDQuery<COUNTED_t>(query_package, triple_store, timeout, vars);
+					runCMDQuery<COUNTED_t>(query_package, timeout);
 					break;
 				}
 				case SelectModifier::REDUCE:
 					[[fallthrough]];
 				case SelectModifier::DISTINCT: {
-					runCMDQuery<DISTINCT_t>(query_package, triple_store, timeout, vars);
+					runCMDQuery<DISTINCT_t>(query_package, timeout);
 					break;
 				}
 				default:
@@ -245,16 +243,20 @@ int main(int argc, char *argv[]) {
 	tentris::logging::init_logging();
 	cfg = {argc, argv};
 
-	TripleStore triplestore{cfg.cache_size, cfg.cache_bucket_capacity, cfg.timeout};
+	TripleStore triplestore{};
+
+	QueryExecutionPackage_cache executionpackage_cache{cfg.cache_size};
+
 
 	onlystdout = cfg.onlystdout;
 
 	if (not cfg.rdf_file.empty()) {
 		logsink() << "Loading file " << cfg.rdf_file << " ..." << std::endl;
 		auto start_time = system_clock::now();
-		triplestore.loadRDF(cfg.rdf_file);
+		AtomicTripleStore::getInstance().loadRDF(cfg.rdf_file);
 		auto duration = system_clock::now() - start_time;
-		logsink() << fmt::format("... loading finished. {} triples loaded.", triplestore.size()) << std::endl;
+		logsink() << fmt::format("... loading finished. {} triples loaded.", AtomicTripleStore::getInstance().size())
+				  << std::endl;
 		logsink() << "duration: {} h {} min {} s"_format(
 				(duration_cast<hours>(duration) % 24).count(),
 				(duration_cast<minutes>(duration) % 60).count(),
@@ -262,7 +264,7 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	std::thread commandline_client{commandlineInterface, std::ref(triplestore)};
+	std::thread commandline_client{commandlineInterface, std::ref(executionpackage_cache)};
 	// wait for keyboard interrupt
 	while (true) {
 		sigset_t wset;
