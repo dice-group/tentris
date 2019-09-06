@@ -130,6 +130,7 @@ namespace tentris::http {
 			logDebug("ram: {:d} kB"_format(end_memory));
 			logDebug("ram diff: {:+3d} kB"_format(long(end_memory) - long(start_memory)));
 			logDebug("request duration: {}"_format(toDurationStr(start_time, system_clock::now())));
+			logTrace("subscripts: {}"_format(subscript_count));
 			log("request ended.");
 			return handled;
 		};

@@ -79,16 +79,17 @@ namespace tentris::logging {
 		logging::add_common_attributes();
 		boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
 
-		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+//		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+		static const auto log_format = "%LineID% | %TimeStamp% | %ThreadID% | %Severity% | %Message%";
 		auto file_log = logging::add_file_log(
-				keywords::file_name = "TENTRIS_%N.log",
+				keywords::file_name = "tentris_%N.log",
 				keywords::rotation_size = 5 * 512 * 1024,
 				keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
 				keywords::auto_flush = true,
-				keywords::format = "[%LineID%] [%TimeStamp%] [%ThreadID%] <%Severity%>: %Message%"
+				keywords::format = log_format
 		);
 		auto console_sink = logging::add_console_log(std::cout,
-		                                             keywords::format = "[%LineID%] [%TimeStamp%] [%ThreadID%] <%Severity%>: %Message%");
+		                                             keywords::format = log_format);
 	}
 
 
