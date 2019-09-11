@@ -242,16 +242,18 @@ namespace hypertrie::internal {
 						return std::static_pointer_cast<RawBoolHypertrie<1>>(hypertrie)->operator[](
 								*(slice_key[0]));
 					} else {
-						return {*this};
+						if (this->size()) return {*this};
+						else return {std::optional<const_BoolHypertrie>{}};
 					}
-					[[fallthrough]];
 				}
 
 				case 2: {
 					auto[raw_slice_key, count] = extractRawSliceKey<2>(slice_key);
 					switch (count) {
-						case 2:
-							return {*this};
+						case 2: {
+							if (this->size()) return {*this};
+							else return {std::optional<const_BoolHypertrie>{}};
+						}
 						case 1:
 							return executeRawSlice<2, 1>(hypertrie, std::move(raw_slice_key));
 						case 0:
@@ -263,8 +265,11 @@ namespace hypertrie::internal {
 				case 3: {
 					auto[raw_slice_key, count] = extractRawSliceKey<3>(slice_key);
 					switch (count) {
-						case 3:
-							return {*this};
+						case 3: {
+							if (this->size()) return {*this};
+							else return {std::optional<const_BoolHypertrie>{}};
+						}
+
 						case 2:
 							return executeRawSlice<3, 2>(hypertrie, std::move(raw_slice_key));
 						case 1:
@@ -278,8 +283,10 @@ namespace hypertrie::internal {
 				case 4: {
 					auto[raw_slice_key, count] = extractRawSliceKey<4>(slice_key);
 					switch (count) {
-						case 4:
-							return {*this};
+						case 4: {
+							if (this->size()) return {*this};
+							else return {std::optional<const_BoolHypertrie>{}};
+						}
 						case 3:
 							return executeRawSlice<4, 3>(hypertrie, std::move(raw_slice_key));
 						case 2:
@@ -295,8 +302,10 @@ namespace hypertrie::internal {
 				case 5: {
 					auto[raw_slice_key, count] = extractRawSliceKey<5>(slice_key);
 					switch (count) {
-						case 5:
-							return {*this};
+						case 5: {
+							if (this->size()) return {*this};
+							else return {std::optional<const_BoolHypertrie>{}};
+						}
 						case 4:
 							return executeRawSlice<5, 4>(hypertrie, std::move(raw_slice_key));
 						case 3:
