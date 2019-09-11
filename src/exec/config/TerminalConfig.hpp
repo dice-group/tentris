@@ -5,13 +5,9 @@
 
 
 struct TerminalConfig : public ExecutableConfig {
-protected:
 
 	mutable bool onlystdout;
 
-	/**
-	 * Initialization of command argument parser.
-	 */
 	TerminalConfig() {
 		options = {"tentris_terminal", "Tentris SPARQL endpoint with terminal interface. "
 									   "Just type your query and get the result."};
@@ -23,7 +19,7 @@ protected:
 	}
 
 
-	TerminalConfig(int argc, char **argv) : ExecutableConfig{} {
+	TerminalConfig(int argc, char **argv) : TerminalConfig{} {
 		initConfig(argc, argv);
 	}
 

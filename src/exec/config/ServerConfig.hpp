@@ -9,13 +9,13 @@
 struct ServerConfig : public ExecutableConfig {
 
 	/**
-	 * The where TENTRIS runs.
+	 * The network port where Tentris is available.
 	 */
 	mutable uint16_t port;
 
 	/**
-		 * Number of threads used to serve http results. Each thread may use multiple others while calculating the result.
-		 */
+	 * Number of threads used to serve http results. Each thread may use multiple others while calculating the result.
+	 */
 	mutable uint threads;
 
 	ServerConfig() {
