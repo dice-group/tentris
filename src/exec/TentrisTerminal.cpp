@@ -27,6 +27,7 @@ namespace {
 	using namespace std::filesystem;
 	using namespace iter;
 	using namespace tentris::tensor;
+	using namespace std::chrono;
 }
 
 TerminalConfig cfg;
@@ -240,8 +241,8 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 
 int main(int argc, char *argv[]) {
-	tentris::logging::init_logging();
 	cfg = {argc, argv};
+	tentris::logging::init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
 
 	TripleStore triplestore{};
 

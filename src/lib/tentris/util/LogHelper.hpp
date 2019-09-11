@@ -20,26 +20,19 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 
 #include <date/tz.h>
 
 #include "tentris/util/FmtHelper.hpp"
 
 
-
-// #define DEBUG 1 // todo: Find an appropriate place for enabling DEBUG
-// #define TRACE 1 // todo: Find an appropriate place for enabling DEBUG
-
-// #define GET_VARIABLE_NAME(Variable) (#Variable)
-
-namespace {
-	using namespace std::chrono;
-}
-
 namespace tentris::logging {
-	using namespace fmt::literals;
-	namespace {
 
+	namespace {
+		using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
+
+		using namespace fmt::literals;
 
 		using PhysicalMem = uint32_t;
 
@@ -70,26 +63,30 @@ namespace tentris::logging {
 		}
 	}
 
-	void init_logging() {
-//		using namespace boost::log;
+	void init_logging(bool logstdout, bool logfile, std::string logfiledir,
+					  boost::log::trivial::severity_level severity = boost::log::trivial::info) {
 		namespace logging = boost::log;
 		namespace src = boost::log::sources;
 		namespace sinks = boost::log::sinks;
 		namespace keywords = boost::log::keywords;
+		namespace fs = std::filesystem;
 		logging::add_common_attributes();
 		boost::log::register_simple_formatter_factory<boost::log::trivial::severity_level, char>("Severity");
 
-//		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+		logging::core::get()->set_filter(logging::trivial::severity >= severity);
 		static const auto log_format = "%LineID% | %TimeStamp% | %ThreadID% | %Severity% | %Message%";
-		auto file_log = logging::add_file_log(
-				keywords::file_name = "tentris_%N.log",
-				keywords::rotation_size = 5 * 512 * 1024,
-				keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
-				keywords::auto_flush = true,
-				keywords::format = log_format
-		);
-		auto console_sink = logging::add_console_log(std::cout,
-		                                             keywords::format = log_format);
+		if (not logfile and not logstdout)
+			logging::core::get()->set_logging_enabled(false);
+		if (logfile)
+			auto file_log = logging::add_file_log(
+					keywords::file_name = fs::path(logfiledir).append("tentris_%N.log"),
+					keywords::rotation_size = 5 * 512 * 1024,
+					keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
+					keywords::auto_flush = true,
+					keywords::format = log_format
+			);
+		if (logstdout)
+			auto stdout_sink = logging::add_console_log(std::cout, keywords::format = log_format);
 	}
 
 
@@ -97,18 +94,18 @@ namespace tentris::logging {
 		BOOST_LOG_TRIVIAL(info) << msg;
 	}
 
-	inline time_point<system_clock> log_health_data() {
+	inline time_point_t log_health_data() {
 		using namespace std::chrono;
 		auto mem = get_memory_usage();
 		const auto time = std::chrono::system_clock::now();
 		const std::time_t t = std::chrono::system_clock::to_time_t(time);
 		log(fmt::format("time: {:%F_%T}", *std::localtime(&t)));
-		// log("virtMem: ", mem.virtualMem, "kB");
 		log("Mem: {} kB"_format(mem));
 		return time;
 	}
 
-	inline void log_duration(time_point<system_clock> start_time, time_point<system_clock> end_time) {
+	inline void log_duration(std::chrono::time_point<std::chrono::system_clock> start_time,
+							 std::chrono::time_point<std::chrono::system_clock> end_time) {
 		using namespace std::chrono;
 		auto duration = end_time - start_time;
 
@@ -126,14 +123,14 @@ namespace tentris::logging {
 	 * @return a string
 	 */
 	template<typename clock>
-	inline std::string toTimestampStr(time_point<clock> time_point) {
+	inline std::string toTimestampStr(time_point_t time_point) {
 		using namespace std::chrono;
 		auto const time_point_t = system_clock::to_time_t(time_point);
 		auto tse = time_point.time_since_epoch();
 		return fmt::format("{:%H:%M:%S}.{:03d}'{:03d}'{:03d}", *std::localtime(&time_point_t),
-		                   duration_cast<milliseconds>(tse).count() % 1000,
-		                   duration_cast<microseconds>(tse).count() % 1000,
-		                   duration_cast<nanoseconds>(tse).count() % 1000);
+						   duration_cast<milliseconds>(tse).count() % 1000,
+						   duration_cast<microseconds>(tse).count() % 1000,
+						   duration_cast<nanoseconds>(tse).count() % 1000);
 	}
 
 	/**
@@ -143,7 +140,7 @@ namespace tentris::logging {
 	 * @return a string
 	 */
 	template<typename clock>
-	inline std::string toDateStr(time_point<clock> time_point) {
+	inline std::string toDateStr(std::chrono::time_point<clock> time_point) {
 		auto const time_point_t = std::chrono::system_clock::to_time_t(time_point);
 		return fmt::format("{:%Y-%m-%d}", *std::localtime(&time_point_t));
 	}
@@ -156,7 +153,8 @@ namespace tentris::logging {
 	 * @return a string
 	 */
 	template<typename clock>
-	inline std::string toDurationStr(time_point<clock> start_time, time_point<clock> end_time) {
+	inline std::string
+	toDurationStr(std::chrono::time_point<clock> start_time, std::chrono::time_point<clock> end_time) {
 		using namespace std::chrono;
 		auto duration = end_time - start_time;
 		return "{:02d}h{:02d}m{:02d}s.{:03d}'{:03d}'{:03d}"_format(
@@ -168,11 +166,11 @@ namespace tentris::logging {
 				duration_cast<nanoseconds>(duration).count() % 1000);
 	}
 
-	inline void logDebug([[maybe_unused]]std::string msg) {
+	inline void logDebug(std::string msg) {
 		BOOST_LOG_TRIVIAL(debug) << msg;
 	}
 
-	inline void logTrace([[maybe_unused]]std::string msg) {
+	inline void logTrace(std::string msg) {
 		BOOST_LOG_TRIVIAL(trace) << msg;
 	}
 
