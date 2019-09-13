@@ -161,14 +161,20 @@ namespace tentris::http {
 				return Status::PROCESSING_TIMEOUT;
 			}
 			const std::vector<Variable> &vars = query_package->getQueryVariables();
-			JsonQueryResult <RESULT_TYPE> json_result{vars};
+			JsonQueryResult<RESULT_TYPE> json_result{vars};
 			if (not query_package->is_trivial_empty) {
 				std::shared_ptr<void> raw_results = query_package->getEinsum();
 				auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 
 
+				auto timout_check = 0;
 				for (const EinsumEntry<RESULT_TYPE> &result : results) {
 					json_result.add(result);
+					if (++timout_check == 100) {
+						if (system_clock::now() >= timeout)
+							return Status::PROCESSING_TIMEOUT;
+						timout_check = 0;
+					}
 				}
 			}
 
