@@ -1,39 +1,31 @@
 #ifndef TENTRIS_SERVERCONFIG_HPP
 #define TENTRIS_SERVERCONFIG_HPP
 
-#include <string>
+#include "ExecutableConfig.hpp"
 
-#include <cxxopts.hpp>
-#include <chrono>
-
-#include "TerminalConfig.hpp"
+#include <thread>
 
 
-namespace {
-	using namespace ::tentris::logging;
-}
-
-struct ServerConfig : public TerminalConfig {
+struct ServerConfig : public ExecutableConfig {
 
 	/**
-	 * The where TENTRIS runs.
+	 * The network port where Tentris is available.
 	 */
-	mutable uint16_t port = 9080;
+	mutable uint16_t port;
 
 	/**
-		 * Number of threads used to serve http results. Each thread may use multiple others while calculating the result.
-		 */
-	mutable uint threads = std::thread::hardware_concurrency();
+	 * Number of threads used to serve http results. Each thread may use multiple others while calculating the result.
+	 */
+	mutable uint threads;
 
 	ServerConfig() {
-		options = {"tentris_server", "Tentris SPARQL endpoint with terminal interface. "
-									   "Just type your query and get the result."};
+		options = {"tentris_server", "Tentris SPARQL endpoint queryable via HTTP. "};
 		addOptions();
 
 		options.add_options()
 				("p,port", "port to run server", cxxopts::value<uint16_t>()->default_value("9080"))
 				("c,threads", "How many threads are used for handling http requests",
-				 cxxopts::value<uint8_t>()->default_value("0"));
+				 cxxopts::value<uint>()->default_value("{}"_format(std::thread::hardware_concurrency())));
 	}
 
 	ServerConfig(int argc, char **argv) : ServerConfig{} {
@@ -42,17 +34,16 @@ struct ServerConfig : public TerminalConfig {
 
 protected:
 	void parseArguments(const cxxopts::ParseResult &arguments) override {
-		TerminalConfig::parseArguments(arguments);
-		if (arguments.count("port") == 1) {
-			port = arguments["port"].as<uint16_t>();
-		}
+		ExecutableConfig::parseArguments(arguments);
 
-		if (arguments.count("threads") == 1) {
-			auto threads_ = arguments["threads"].as<uint>();
 
-			if (threads_ != 0)
-				threads = threads_;
-		}
+		port = arguments["port"].as<uint16_t>();
+
+
+		auto threads_ = arguments["threads"].as<uint>();
+
+		if (threads_ != 0)
+			threads = threads_;
 
 	}
 

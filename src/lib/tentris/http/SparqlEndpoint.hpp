@@ -11,7 +11,7 @@
 #include <fmt/ostream.h>
 #include <restinio/all.hpp>
 
-#include "tentris/http/AtomicCleanupTaskGroup.hpp"
+#include "tentris/http/QueryResultState.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/JsonQueryResult.hpp"
@@ -26,6 +26,7 @@ namespace tentris::http {
 		using namespace ::std::chrono;
 		using namespace ::tentris::logging;
 		using namespace std::string_literals;
+		using Status = ResultState;
 	} // namespace
 
 
@@ -46,7 +47,11 @@ namespace tentris::http {
 		auto sparql_endpoint = [](restinio::request_handle_t req,
 								  [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
 			using namespace std::string_literals;
-			auto timeout = system_clock::now() + AtomicTripleStoreConfig::getInstance().timeout;
+			auto start_time = system_clock::now();
+			log("request started.");
+			auto start_memory = get_memory_usage();
+			logDebug("ram: {:d} kB"_format(start_memory));
+			auto timeout = start_time + AtomicTripleStoreConfig::getInstance().timeout;
 			restinio::request_handling_status_t handled = restinio::request_rejected();
 			Status status = Status::OK;
 			std::string error_message{};
@@ -57,6 +62,7 @@ namespace tentris::http {
 						req->header().query());
 				if (query_params.has("query")) {
 					query_string = std::string(query_params["query"]);
+					log("query: {}"_format(query_string));
 					// check if there is actually an query
 					try {
 						query_package = AtomicQueryExecutionCache::getInstance()[query_string];
@@ -67,6 +73,8 @@ namespace tentris::http {
 					if (status == Status::OK) {
 						status = runQuery(req, query_package, timeout);
 					}
+				} else {
+					status = Status::UNPARSABLE;
 				}
 			} catch (const std::exception &exc) {
 				// if the execution of the query should fail return an internal server error
@@ -90,40 +98,40 @@ namespace tentris::http {
 																				"Could not parse the requested query."s}).connection_close().done();
 					break;
 				case UNKNOWN_REQUEST:
-					logError(" ## unknown HTTP command. Only HTTP GET and POST are supported.\n");
+					logError("unknown HTTP command. Only HTTP GET and POST are supported.");
 					handled = req->create_response(restinio::status_not_implemented()).connection_close().done();
 					break;
 				case PROCESSING_TIMEOUT:
-					logError(" ## timeout during request processing\n"
-							 "    query_string: {}"_format(query_string)
-					);
+					logError("timeout during request processing");
 					handled = req->create_response(restinio::status_request_time_out()).connection_close().done();
 					break;
 				case SERIALIZATION_TIMEOUT:
 					// no REQUEST TIMEOUT response can be sent here because we stream results directly to the client.
 					// Thus, the code was already written to the header.
-					logError(" ## timeout during writing the result\n"
-							 "    query_string: {}"_format(query_string)
-					);
+					logError("timeout during writing the result");
 					handled = restinio::request_accepted();
 					break;
 				case UNEXPECTED:
-					logError(" ## unexpected internal error\n"
-							 "    query_string: {}\n"_format(query_string) +
-							 "    exception_message: {}"_format(error_message)
+					logError(" ## unexpected internal error, exception_message: {}"_format(error_message)
 					);
 					handled = req->create_response(
 							restinio::status_internal_server_error()).connection_close().done();
 					break;
 				case SEVERE_UNEXPECTED:
-					logError(" ## severe internal error\n"
-							 "    query_string: {}\n"_format(query_string) +
-							 "    exception_message: {}"_format(error_message)
+					logError(" ## severe unexpected internal error,  exception_message: {}"_format(error_message)
 					);
 					handled = req->create_response(
 							restinio::status_internal_server_error()).connection_close().done();
 					break;
 			}
+			if (handled == restinio::request_rejected())
+				logError(fmt::format("Handling the request was rejected."));
+			auto end_memory = get_memory_usage();
+			logDebug("ram: {:d} kB"_format(end_memory));
+			logDebug("ram diff: {:+3d} kB"_format(long(end_memory) - long(start_memory)));
+			logDebug("request duration: {}"_format(toDurationStr(start_time, system_clock::now())));
+			logTrace("subscripts: {}"_format(subscript_count));
+			log("request ended.");
 			return handled;
 		};
 
@@ -153,14 +161,20 @@ namespace tentris::http {
 				return Status::PROCESSING_TIMEOUT;
 			}
 			const std::vector<Variable> &vars = query_package->getQueryVariables();
-			JsonQueryResult <RESULT_TYPE> json_result{vars};
+			JsonQueryResult<RESULT_TYPE> json_result{vars};
 			if (not query_package->is_trivial_empty) {
 				std::shared_ptr<void> raw_results = query_package->getEinsum();
 				auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 
 
+				auto timout_check = 0;
 				for (const EinsumEntry<RESULT_TYPE> &result : results) {
 					json_result.add(result);
+					if (++timout_check == 100) {
+						if (system_clock::now() >= timeout)
+							return Status::PROCESSING_TIMEOUT;
+						timout_check = 0;
+					}
 				}
 			}
 

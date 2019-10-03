@@ -5,7 +5,6 @@
 #include "config/ServerConfig.hpp"
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
-#include <tentris/http/ChunkedSparqlEndpoint.hpp>
 #include <tentris/http/SparqlEndpoint.hpp>
 #include <restinio/all.hpp>
 
@@ -41,33 +40,28 @@ void bulkload(std::string triple_file) {
 }
 
 int main(int argc, char *argv[]) {
-	init_logging();
-
 	ServerConfig cfg{argc, argv};
+
+	init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
 
 	auto &store_cfg = AtomicTripleStoreConfig::getInstance();
 	store_cfg.rdf_file = cfg.rdf_file;
 	store_cfg.timeout = cfg.timeout;
 	store_cfg.cache_size = cfg.cache_size;
-	store_cfg.cache_bucket_capacity = cfg.cache_bucket_capacity;
 
 	// bulkload file
 	if (not cfg.rdf_file.empty()) {
 		bulkload(cfg.rdf_file);
 	} else {
-		log("No file loaded. Use '-f yourfile.nt' to bulkload a file.");
+		log("No file loaded.");
 	}
 
 	// create endpoint
 	using namespace restinio;
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
-			R"(/stream)",
-			tentris::http::chunked_sparql_endpoint);
-	router->http_get(
 			R"(/sparql)",
 			tentris::http::sparql_endpoint::sparql_endpoint);
-	restinio::asio_ns::error_code ex;
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
@@ -87,9 +81,7 @@ int main(int argc, char *argv[]) {
 			restinio::router::express_router_t<>
 	>;
 
-	log("Server \n"
-		"  threads: {}\n"
-		"  IRI:     http://0.0.0.0:{}/sparql?query="_format(cfg.threads, cfg.port));
+	log("SPARQL endpoint serving sparkling linked data treasures on {} threads at http://0.0.0.0:{}/sparql?query="_format(cfg.threads, cfg.port));
 
 	restinio::run(
 			restinio::on_thread_pool<traits_t>(cfg.threads)
