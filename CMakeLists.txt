@@ -81,11 +81,6 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
-add_library(datetimelib INTERFACE)
-target_include_directories(datetimelib INTERFACE
-        thirdparty/date/include
-        )
-
 find_package(TBB REQUIRED)
 
 find_package(restinio CONFIG REQUIRED)
@@ -121,7 +116,6 @@ set(libraries_to_link
         serd-0 # for parsing ntriples
         cppitertools
         Threads::Threads
-        datetimelib
         cxxopts
         antlr4_sparql
         boolhypertrie
