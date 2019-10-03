@@ -1,0 +1,30 @@
+FROM ubuntu:19.04
+RUN apt-get update && apt-get install -y build-essential cmake uuid-dev libserd-dev clang-8 git openjdk-8-jdk python3-pip
+
+RUN pip3 install conan
+RUN mkdir /conan_cache
+COPY conanfile.txt /conan_cache/conanfile.txt
+COPY clang /conan-clang-profile
+RUN conan remote add tsl https://api.bintray.com/conan/tessil/tsl \
+&& conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan \
+&& conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
+RUN cd /conan_cache \
+&& conan install . --build=missing --settings compiler.libcxx="libstdc++11" build_type=Release --profile /conan-clang-profile
+
+COPY cmake /tentris/cmake/
+COPY thirdparty /tentris/thirdparty/
+COPY Sparql.g4 /tentris/Sparql.g4
+COPY src /tentris/src/
+COPY CMakeLists.txt /tentris/CMakeLists.txt
+COPY conanfile.txt /tentris/conanfile.txt
+COPY clang /tentris/clang
+
+
+RUN export CC=/usr/bin/clang \
+&& export CXX=/usr/bin/clang++ \
+&& mkdir /tentris/build \
+&&cd /tentris/build \
+&& conan install .. --build=missing --settings compiler.libcxx="libstdc++11" build_type=Release --profile /conan-clang-profile \
+&& cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. \
+&& make -j tentris_server
+ENTRYPOINT ["/tentris/build/bin/tentris_server"]
