@@ -3,16 +3,10 @@
 
 #include <string>
 
-#include <cxxopts.hpp>
 #include <chrono>
 
-#include <tentris/util/LogHelper.hpp>
 #include <tentris/util/SingletonFactory.hpp>
 
-
-namespace {
-	using namespace ::tentris::logging;
-}
 
 namespace tentris::store::config {
 	/**
@@ -41,11 +35,6 @@ namespace tentris::store::config {
 		 * Max number queries that may be cached.
 		 */
 		size_t cache_size = 500;
-		/**
-		 * Max number of bindings per query result that is cached.
-		 */
-		size_t cache_bucket_capacity = 500;
-
 	};
 
 

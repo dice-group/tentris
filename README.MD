@@ -25,7 +25,8 @@ The endpoint may now be queried locally at: `127.0.0.1:8090/sparql?query=*your q
 *Notice*: the query string `*your query*` must be URL encoded. 
 You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
 
-An additional endpoint is provided at `127.0.0.1:8090/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results). 
+*currently deactivated*: ~~An additional endpoint is provided at `127.0.0.1:8090/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).~~ 
+
 
 #### usage example
 
@@ -122,6 +123,6 @@ The binaries will be located at `tentris/build/bin`.
 To compile Tentris with debugging symbols, proceed as above but change the cmake command to `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .. `.
 
 To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
-## docker
-Docker support is experimental. A full documentation will follow. 
+# docker
+A docker image is available on docker hub https://hub.docker.com/r/dicegroup/tentris_server. Usage instructions are provided there. 
 

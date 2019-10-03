@@ -24,6 +24,8 @@
 #include <tsl/hopscotch_set.h>
 #include <tsl/hopscotch_map.h>
 
+std::atomic_long subscript_count = 0;
+
 namespace einsum::internal {
 
 	using DependencyGraph = util::UndirectedGraph<Label>;
@@ -240,9 +242,26 @@ namespace einsum::internal {
 
 		Subscript() = default;
 
-		Subscript(const Subscript &) = default;
-
-		Subscript(Subscript &) = default;
+		Subscript(const Subscript &sc) : sub_subscripts(sc.
+				sub_subscripts), raw_subscript(sc.raw_subscript), operands_label_set(sc.operands_label_set),
+		                                 result_label_set(sc.result_label_set),
+		                                 lonely_non_result_labels(sc.lonely_non_result_labels),
+		                                 dependency_graph(sc.dependency_graph),
+		                                 connected_components(sc.
+				                                 connected_components),
+		                                 label_poss_in_operands(sc.
+				                                 label_poss_in_operands),
+		                                 label_poss_in_result(sc.
+				                                 label_poss_in_result),
+		                                 operand2result_mapping_resolveType(sc.
+				                                 operand2result_mapping_resolveType),
+		                                 poss_of_operands_with_labels(sc.
+				                                 poss_of_operands_with_labels),
+		                                 cartesian_sub_subscripts(sc.
+				                                 cartesian_sub_subscripts),
+		                                 type(sc.type),
+		                                 all_result_done(sc.
+				                                 all_result_done) { ++subscript_count;}
 
 		Subscript(Subscript &&) = default;
 
@@ -251,6 +270,11 @@ namespace einsum::internal {
 		Subscript &operator=(Subscript &) = default;
 
 		Subscript(const std::string &subscript_str) : Subscript(from_string(subscript_str)) {}
+
+		~Subscript() {
+			--subscript_count;
+		}
+
 
 		bool calcAllResultDone(const tsl::hopscotch_set<Label> &operand_labels,
 		                       const tsl::hopscotch_set<Label> &result_labels) {
@@ -272,6 +296,7 @@ namespace einsum::internal {
 				                                                                               result_label_set,
 				                                                                               connected_components)),
 				  all_result_done(calcAllResultDone(operands_label_set, result_label_set)) {
+			++subscript_count;
 			switch (this->type) {
 
 				case Type::Join: {
