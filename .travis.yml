@@ -12,6 +12,7 @@ addons:
     packages:
       - gcc-9
       - g++-9
+      - cmake-data
       - cmake
       - openjdk-8-jdk
       - build-essential 
