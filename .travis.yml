@@ -17,22 +17,15 @@ addons:
       - python3-setuptools # required for installing conan
       - python3-wheel
 
-install:
- - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
-
- - echo ${CC}
- - echo ${CXX}
- - export PATH=/usr/local/bin/cmake:$PATH
- - ${CXX} --version
- -
 cache:
   directories:
      - $HOME/.conan/data
 
 before_script:
+ - ${CXX} --version
  - mkdir -p build
  - pip3 install --user conan
- - pip install --user cmake
+ - pip3 install --user cmake
  - cmake --version
  - conan user
  - conan profile new --detect default
