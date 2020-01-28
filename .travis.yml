@@ -6,12 +6,9 @@ addons:
   apt:
     sources:
       - sourceline: "ppa:ubuntu-toolchain-r/test"
-#      - sourceline: "deb https://apt.kitware.com/ubuntu/ bionic main" # recent cmake
-        #key_url: "https://apt.kitware.com/keys/kitware-archive-latest.asc"
     packages:
       - gcc-9
       - g++-9
-#      - cmake
       - openjdk-8-jdk # required for ANTLR4
       - build-essential 
       - uuid-dev
@@ -27,7 +24,6 @@ install:
  - echo ${CXX}
  - export PATH=/usr/local/bin/cmake:$PATH
  - ${CXX} --version
-# - cmake --version
  cache:
    directories:
      - $HOME/.conan/data
