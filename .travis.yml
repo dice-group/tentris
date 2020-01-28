@@ -9,9 +9,9 @@ addons:
     packages:
       - gcc-9
       - g++-9
-      - libstdc++9-dev
+      - libstdc++-9-dev
+      - make
       - openjdk-8-jdk # required for ANTLR4
-      - build-essential
       - uuid-dev
       - libserd-dev
       - python3-pip # used for installing conan
