@@ -9,6 +9,7 @@ addons:
     packages:
       - gcc-9
       - g++-9
+      - libstdc++9-dev
       - openjdk-8-jdk # required for ANTLR4
       - build-essential
       - uuid-dev
@@ -21,8 +22,6 @@ install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
   - pip3 install --user conan
   - pip3 install --user cmake
-  - c++ --version
-  - cc --version
   - cmake --version
   - conan --version
 
