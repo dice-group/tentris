@@ -5,6 +5,7 @@ boost/1.71.0@conan/stable
 tsl-hopscotch-map/2.2.1@tessil/stable
 fmt/6.0.0@bincrafters/stable
 abseil/20180600@bincrafters/stable
+hypertrie/0.5@dice-group/stable
 
 [options]
 # restinio:boost_libs=static

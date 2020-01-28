@@ -48,13 +48,6 @@ target_include_directories(antlr4_sparql
 target_link_libraries(antlr4_sparql antlr4_static)
 add_dependencies(antlr4_sparql antlr4_static)
 
-
-#include cppitertools, see https://github.com/ryanhaining/cppitertools
-add_library(cppitertools INTERFACE)
-target_include_directories(cppitertools INTERFACE
-        thirdparty/cppitertools
-        )
-
 # Lightweight C++ command line option parser   https://github.com/jarro2783/cxxopts
 add_library(cxxopts INTERFACE)
 target_include_directories(cxxopts INTERFACE
