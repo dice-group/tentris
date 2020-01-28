@@ -25,7 +25,7 @@ install:
 
  - echo ${CC}
  - echo ${CXX}
-# - export PATH=/usr/local/bin:$PATH
+ - export PATH=/usr/local/bin/cmake:$PATH
  - ${CXX} --version
  - cmake --version
 
