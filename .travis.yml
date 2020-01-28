@@ -5,8 +5,7 @@ language: cpp
 addons:
   apt:
     packages:
-      - gcc
-      - g++
+      - g++-8
       - make
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
