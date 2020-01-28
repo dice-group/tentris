@@ -18,6 +18,7 @@ addons:
       - libserd-dev
       - python3-pip # used for installing conan
       - python3-setuptools # required for installing conan
+      - python3-wheel
 
 install:
  - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
