@@ -24,8 +24,9 @@ install:
  - echo ${CXX}
  - export PATH=/usr/local/bin/cmake:$PATH
  - ${CXX} --version
- cache:
-   directories:
+ -
+cache:
+  directories:
      - $HOME/.conan/data
 
 before_script:
