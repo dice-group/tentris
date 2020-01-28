@@ -4,12 +4,9 @@ language: cpp
 
 addons:
   apt:
-    sources:
-      - sourceline: "ppa:ubuntu-toolchain-r/test"
     packages:
-      - gcc-9
-      - g++-9
-      - libstdc++-9-dev
+      - gcc
+      - g++
       - make
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
@@ -19,7 +16,6 @@ addons:
       - python3-wheel
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
   - pip3 install --user conan
   - pip3 install --user cmake
   - cmake --version
