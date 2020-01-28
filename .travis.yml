@@ -1,5 +1,5 @@
 os: linux
-dist: xenial
+dist: bionic
 sudo: true
 language: c++
 
@@ -8,17 +8,17 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - gcc-8
-      - g++-8
+      - gcc-9
+      - g++-9
       - cmake
       - openjdk-8-jdk
       - build-essential 
       - uuid-dev
       - libserd-dev
-      - python-pip
+      - python3-pip
       
 install:
- - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
+ - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
 
  - echo ${CC}
  - echo ${CXX}
@@ -28,8 +28,8 @@ install:
 before_script:
  - mkdir -p build
  - sudo apt-get remove --auto-remove python-enum34
- - sudo pip install conan
- - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
+ - sudo pip3 install conan
+ - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-research https://api.bintray.com/conan/dice-group/tentris
 
 script:
  - cd build && conan install .. --build=missing --settings compiler.libcxx="libstdc++11" && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal
