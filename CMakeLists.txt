@@ -78,10 +78,6 @@ target_link_libraries(tentris_server
         tentris
         )
 
-if (CMAKE_BUILD_TYPE MATCHES "Release")
-    set_property(TARGET tentris_server PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
-    set_property(TARGET tentris_terminal PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
-endif ()
 
 add_dependencies(tentris_server tentris)
 
@@ -92,6 +88,11 @@ target_link_libraries(tentris_terminal
         )
 
 add_dependencies(tentris_terminal tentris)
+
+if (CMAKE_BUILD_TYPE MATCHES "Release")
+    set_property(TARGET tentris_server PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
+    set_property(TARGET tentris_terminal PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
+endif ()
 
 option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
 if (TENTRIS_BUILD_TESTS)
