@@ -1,7 +1,6 @@
 os: linux
 dist: bionic
-sudo: true
-language: c++
+language: cpp
 
 addons:
   apt:
@@ -12,29 +11,28 @@ addons:
     packages:
       - gcc-9
       - g++-9
-      - cmake-data
       - cmake
-      - openjdk-8-jdk
+      - openjdk-8-jdk # required for ANTLR4
       - build-essential 
       - uuid-dev
       - libserd-dev
-      - python3-pip
-      - python3-setuptools
-      
+      - python3-pip # used for installing conan
+      - python3-setuptools # required for installing conan
+
 install:
  - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
 
  - echo ${CC}
  - echo ${CXX}
- - export PATH=/usr/local/bin:$PATH
+# - export PATH=/usr/local/bin:$PATH
  - ${CXX} --version
  - cmake --version
 
 before_script:
  - mkdir -p build
- - sudo apt-get remove --auto-remove python-enum34
- - sudo pip3 install conan
+ - pip3 install --user conan
+ - conan profile update settings.compiler.libcxx=libstdc++11 default # use "new" C++ ABI
  - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-research https://api.bintray.com/conan/dice-group/tentris
 
 script:
- - cd build && conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s compiler.version=9 -s build_type=Release && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal
+ - cd build && conan install .. --build=missing && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal
