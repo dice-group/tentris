@@ -7,6 +7,8 @@ addons:
   apt:
     sources:
       - sourceline: "ppa:ubuntu-toolchain-r/test"
+      - sourceline: "deb https://apt.kitware.com/ubuntu/ bionic main" # recent cmake
+        key_url: "https://apt.kitware.com/keys/kitware-archive-latest.asc"
     packages:
       - gcc-9
       - g++-9
@@ -33,4 +35,4 @@ before_script:
  - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-research https://api.bintray.com/conan/dice-group/tentris
 
 script:
- - cd build && conan install .. --build=missing --settings compiler.libcxx="libstdc++11" && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal
+ - cd build && conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s compiler.version=9 -s build_type=Release && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal
