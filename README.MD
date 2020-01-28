@@ -86,7 +86,7 @@ pip3 install conan
 ### dependencies
 The required dependencies are installed via conan. Therefore, Add the respective remotes:
 ```bash
-conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
+conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-research https://api.bintray.com/conan/dice-group/tentris
 ```
 ## build
 After you installed all dependencies, you are ready to build Tentris. 

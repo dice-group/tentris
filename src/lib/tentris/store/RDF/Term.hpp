@@ -290,7 +290,7 @@ struct fmt::formatter<tentris::store::rdf::Term> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::rdf::Term &p, FormatContext &ctx) {
-		return format_to(ctx.begin(), p.getIdentifier());
+		return format_to(ctx.out(), p.getIdentifier());
 	}
 };
 

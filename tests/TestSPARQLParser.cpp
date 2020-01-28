@@ -33,7 +33,7 @@ bool parse_queries(const std::string &file) {
     bool no_errors = true;
     fmt::print(" ### {}\n", file);
     std::set<int> lines_with_errors{};
-    for (const auto&[line_number, query] : enumerate(queries, 1)) {
+    for (const auto&[line_number, query] : iter::enumerate(queries, 1)) {
         fmt::print(" # {:3d} {}\n", line_number, query);
         try {
             ParsedSPARQL{query};

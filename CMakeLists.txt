@@ -60,54 +60,24 @@ add_library(cxxopts INTERFACE)
 target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
-find_package(fmt CONFIG REQUIRED)
-add_subdirectory(thirdparty/sparse-map)
-
-add_library(sparsepp INTERFACE)
-target_include_directories(sparsepp INTERFACE
-        thirdparty/sparsepp/
-        )
-
-add_library(boolhypertrie INTERFACE)
-target_include_directories(boolhypertrie INTERFACE
-        src/boolhypertrie
-        )
-
-
-find_package(Boost COMPONENTS system log thread log_setup REQUIRED)
-
-target_link_libraries(boolhypertrie
-        INTERFACE
-        tsl::sparse_map
-        cppitertools
-        fmt::fmt
-        absl_hash
-        http_parser
-        ${conan_libs}
-        ${Boost_LIBRARIES}
-        )
-
-set(libraries_to_link
-        stdc++fs # for #include <filesystem>
-        serd-0 # for parsing ntriples
-        cxxopts
-        antlr4_sparql
-        boolhypertrie
-        )
 
 # make a library of the code
 add_library(tentris INTERFACE)
 
 target_link_libraries(tentris
         INTERFACE
-        ${libraries_to_link}
+        stdc++fs # for #include <filesystem>
+        serd-0 # for parsing ntriples
+        cxxopts
+        antlr4_sparql
+        ${CONAN_LIBS}
         )
 
 target_include_directories(tentris INTERFACE
         src/lib/
         )
 
-# main executable target
+# main executable targets
 add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 
 target_link_libraries(tentris_server
@@ -115,9 +85,9 @@ target_link_libraries(tentris_server
         tentris
         )
 
-if(CMAKE_BUILD_TYPE MATCHES "Release")
+if (CMAKE_BUILD_TYPE MATCHES "Release")
     set_property(TARGET tentris_server PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
-endif()
+endif ()
 
 add_dependencies(tentris_server tentris)
 
@@ -126,6 +96,8 @@ target_link_libraries(tentris_terminal
         PRIVATE
         tentris
         )
+
+add_dependencies(tentris_terminal tentris)
 
 option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
 if (TENTRIS_BUILD_TESTS)

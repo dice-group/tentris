@@ -84,7 +84,7 @@ namespace tentris::store {
 			json.reserve(variables.size() * 50);
 			json += "{";
 			bool firstKey = true;
-			for (const auto[term, var] : zip(key, variables)) {
+			for (const auto[term, var] : iter::zip(key, variables)) {
 				if (term == nullptr)
 					continue;
 				if (firstKey) {

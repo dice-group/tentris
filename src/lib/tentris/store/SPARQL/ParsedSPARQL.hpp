@@ -16,7 +16,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <einsum/internal/Subscript.hpp>
+#include <Dice/einsum/internal/Subscript.hpp>
 #include <utility>
 
 #include "tentris/util/All.hpp"
@@ -136,7 +136,7 @@ namespace tentris::store::sparql {
 					VarOrTerm subj = parseVarOrTerm(triplesSameSubject->varOrTerm());
 					registerVariable(subj);
 					SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
-					for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
+					for (auto[pred_node, obj_nodes] : iter::zip(propertyListNotEmpty->verb(),
 														  propertyListNotEmpty->objectList())) {
 						VarOrTerm pred = parseVerb(pred_node);
 						registerVariable(pred);
@@ -400,7 +400,7 @@ struct fmt::formatter<tentris::store::sparql::ParsedSPARQL> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::sparql::ParsedSPARQL &p, FormatContext &ctx) {
-		return format_to(ctx.begin(),
+		return format_to(ctx.out(),
 						 " prefixes:         {}\n"
 						 " select_modifier:  {}\n"
 						 " query_variables:  {}\n"

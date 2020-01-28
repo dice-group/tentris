@@ -7,7 +7,6 @@
 #include <itertools.hpp>
 
 
-using namespace iter;
 
 
 #endif //SPARSETENSOR_UTIL_ALL_HPP

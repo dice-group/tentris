@@ -61,9 +61,9 @@ struct fmt::formatter<std::variant<X,Y>> {
     template<typename FormatContext>
     auto format(const std::variant<X,Y> &p, FormatContext &ctx) {
         if (std::holds_alternative<X>(p))
-            return format_to(ctx.begin(), "<{}>_var", std::get<X>(p));
+            return format_to(ctx.out(), "<{}>_var", std::get<X>(p));
         else
-            return format_to(ctx.begin(), "<{}>_var", std::get<Y>(p));
+            return format_to(ctx.out(), "<{}>_var", std::get<Y>(p));
     }
 };
 
