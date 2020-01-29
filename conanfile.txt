@@ -4,7 +4,7 @@ restinio/0.6.2@stiffstream/stable
 boost/1.71.0@conan/stable
 tsl-hopscotch-map/2.2.1@tessil/stable
 fmt/6.0.0@bincrafters/stable
-abseil/20180600@bincrafters/stable
+abseil/20181200@bincrafters/stable
 hypertrie/0.5@dice-group/stable
 rdf-parser/0.9@dice-group/stable
 gtest/1.8.1@bincrafters/stable
