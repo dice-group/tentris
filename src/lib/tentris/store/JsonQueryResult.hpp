@@ -24,7 +24,7 @@ namespace tentris::store {
 
 	template<typename result_type>
 	class JsonQueryResult {
-		using Term = rdf::Term;
+        using Term = rdf_parser::store::rdf::Term;
 		using Variable = sparql::Variable;
 		using Entry = EinsumEntry<result_type>;
 		using Key = typename Entry::key_type;
@@ -97,26 +97,27 @@ namespace tentris::store {
 
 				const Term::NodeType termType = term->type();
 				switch (termType) {
-					case Term::URI:
+					case Term::NodeType::URIRef_:
 						json += R"("type":"uri")";
 						break;
-					case Term::BNode:
+					case Term::NodeType::BNode_:
 						json += R"("type":"bnode")";
 						break;
-					case Term::Literal:
+					case Term::NodeType::Literal_:
 						json += R"("type":"literal")";
 						break;
-					case Term::None:
+					case Term::NodeType::None:
 						log("Incomplete term with no type (Literal, BNode, URI) detected.");
 						assert(false);
 				}
 
 				json += fmt::format(R"(,"value":"{}")", escapeJsonString(term->value()));
-				if (termType == Term::Literal) {
-					if (term->hasDataType())
-						json += fmt::format(R"(,"datatype":"{}")", term->dataType());
-					else if (term->hasLang())
-						json += fmt::format(R"(,"xml:lang":"{}")", term->lang());
+				if (termType == Term::NodeType::Literal_) {
+                    const Literal & literal_term = term->castLiteral();
+					if (literal_term.hasDataType())
+						json += fmt::format(R"(,"datatype":"{}")", literal_term.dataType());
+					else if (literal_term.hasLang())
+						json += fmt::format(R"(,"xml:lang":"{}")", literal_term.lang());
 				}
 				json += '}';
 			}

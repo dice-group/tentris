@@ -6,6 +6,7 @@ tsl-hopscotch-map/2.2.1@tessil/stable
 fmt/6.0.0@bincrafters/stable
 abseil/20180600@bincrafters/stable
 hypertrie/0.5@dice-group/stable
+rdf-parser/0.9@dice-group/stable
 
 [options]
 # restinio:boost_libs=static

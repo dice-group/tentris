@@ -9,13 +9,16 @@
 #include <ostream>
 
 #include "tentris/util/All.hpp"
-#include "tentris/store/RDF/Term.hpp"
-
+#include <Dice/rdf_parser/RDF/Term.hpp>
 
 namespace tentris::store::rdf {
 
 
 	class TermStore {
+	    using Term = rdf_parser::store::rdf::Term;
+        using BNode = rdf_parser::store::rdf::BNode;
+        using Literal = rdf_parser::store::rdf::Literal;
+        using URIRef = rdf_parser::store::rdf::URIRef;
 	public:
 		using set_type = tsl::hopscotch_set<std::unique_ptr<Term>,
 				TermHash,

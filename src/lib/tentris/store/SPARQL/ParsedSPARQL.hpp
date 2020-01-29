@@ -20,7 +20,7 @@
 #include <utility>
 
 #include "tentris/util/All.hpp"
-#include "tentris/store/RDF/Term.hpp"
+#include <Dice/rdf_parser/RDF/Term.hpp>
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/store/SPARQL/TriplePattern.hpp"
 
@@ -42,6 +42,10 @@ namespace tentris::store::sparql {
 	};
 
 	class LexerErrorListener : public antlr4::BaseErrorListener {
+		using Term = rdf_parser::store::rdf::Term;
+		using BNode = rdf_parser::store::rdf::BNode;
+		using Literal = rdf_parser::store::rdf::Literal;
+		using URIRef = rdf_parser::store::rdf::URIRef;
 	public:
 		LexerErrorListener() = default;
 
@@ -232,75 +236,14 @@ namespace tentris::store::sparql {
 		}
 
 
-		auto parseGraphTerm(
-				SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
-			if (auto *iriRef = termContext->iriRef(); iriRef) {
-				return Term::make_uriref(getFullIriString(iriRef));
-
-			} else if (auto *rdfLiteral = termContext->rdfLiteral(); rdfLiteral) {
-				auto string_node = rdfLiteral->string();
-				std::string literal_string;
-				if (auto *stringLiteral1 = string_node->STRING_LITERAL1(); stringLiteral1) {
-					auto literal1 = stringLiteral1->getText();
-
-					static std::regex double_quote{"\"", std::regex::optimize};
-					static std::regex single_quote("\\'", std::regex::optimize);
-
-					std::string temp;
-
-					std::regex_replace(std::back_inserter(temp), literal1.begin() + 1, literal1.end() - 1,
-									   double_quote,
-									   "\\\"");
-					std::regex_replace(std::back_inserter(literal_string), temp.begin() + 1, temp.end() - 1,
-									   single_quote, "'");
-				} else {
-					auto literal2 = string_node->STRING_LITERAL2()->getText();
-					literal_string = std::string{literal2, 1, literal2.size() - 2};
-				}
-
-
-				if (auto *langtag = rdfLiteral->LANGTAG(); langtag) {
-					return Term::make_lang_literal(literal_string, std::string{langtag->getText(), 1});
-				} else if (auto *type = rdfLiteral->iriRef(); rdfLiteral->iriRef()) {
-					return Term::make_typed_literal(literal_string, getIriString(type));
-				} else {
-					return Term::make_str_literal(literal_string);
-				}
-
-			} else if (auto *numericLiteral = termContext->numericLiteral();numericLiteral) {
-
-				if (auto *decimalNumeric = numericLiteral->decimalNumeric(); decimalNumeric) {
-
-					if (auto *plus = decimalNumeric->DECIMAL(); plus) {
-						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#decimal");
-					} else {
-						return Term::make_typed_literal(decimalNumeric->getText(),
-														"http://www.w3.org/2001/XMLSchema#decimal");
-					}
-				} else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
-					if (antlr4::tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
-						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#double");
-					} else {
-						return Term::make_typed_literal(decimalNumeric->getText(),
-														"http://www.w3.org/2001/XMLSchema#double");
-					}
-				} else {
-					auto *integerNumeric = numericLiteral->integerNumeric();
-					if (auto *plus = integerNumeric->INTEGER(); plus) {
-						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#integer");
-					} else {
-						return Term::make_typed_literal(decimalNumeric->getText(),
-														"http://www.w3.org/2001/XMLSchema#integer");
-					}
-				}
-
-			} else if (termContext->booleanLiteral()) {
-				return Term::make_typed_literal(termContext->getText(), "http://www.w3.org/2001/XMLSchema#boolean");
-			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
+		auto parseGraphTerm(SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
+			if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
 					return Variable{termContext->getText()};
 				else
 					return Variable{"__:" + std::to_string(next_anon_var_id++)};
+			} else if (not termContext->NIL()) {
+				return Literal::make_term(termContext->getText());
 			} else {
 				throw std::logic_error{"Handling NIL not yet implemented."};
 				// TODO: handle NIL value "( )"
@@ -328,11 +271,11 @@ namespace tentris::store::sparql {
 				} else {
 					SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
 
-					return VarOrTerm{Term::make_uriref(getFullIriString(iriRef))};
+					return VarOrTerm{Term::make_term(getFullIriString(iriRef))};
 
 				}
 			} else { // is 'a'
-				return VarOrTerm{Term::make_uriref("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")};
+				return VarOrTerm{Term::make_term("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")};
 			}
 		}
 
