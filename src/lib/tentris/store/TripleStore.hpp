@@ -6,12 +6,7 @@
 #include <optional>
 #include <vector>
 
-#include <boost/bind.hpp>
-#include <boost/coroutine2/all.hpp>
-#include <absl/hash/hash.h>
 #include <tsl/hopscotch_map.h>
-
-#include <boost/algorithm/string.hpp>
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
@@ -28,9 +23,9 @@ namespace {
 }
 
 namespace tentris::store {
-	class BulkLoad;
 
 	class TripleStore {
+		using TermStore = tentris::store::rdf::TermStore;
 		TermStore termIndex{};
 
 		BoolHypertrie trie{3};

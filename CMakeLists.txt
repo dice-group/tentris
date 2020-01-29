@@ -5,8 +5,7 @@ set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 0)
 set(tentris_VERSION_PATCH 1)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
@@ -52,6 +51,17 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
+find_package(abseil REQUIRED)
+find_package(tsl-hopscotch-map REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(hypertrie REQUIRED)
+find_package(rdf-parser REQUIRED)
+SET(Boost_USE_STATIC_LIBS ON)
+find_package(Boost REQUIRED COMPONENTS system log_setup log thread)
+SET(RESTINIO_USE_BOOST_ASIO=static)
+find_package(restinio CONFIG REQUIRED)
+find_package(http-parser REQUIRED)
+
 # make a library of the code
 add_library(tentris INTERFACE)
 
@@ -60,13 +70,25 @@ target_link_libraries(tentris
         stdc++fs # for #include <filesystem>
         cxxopts
         antlr4_sparql
-        ${CONAN_LIBS}
+
+        abseil::abseil
+        tsl-hopscotch-map::tsl-hopscotch-map
+        fmt::fmt
+        hypertrie::hypertrie
+        rdf-parser::rdf-parser
+        Boost::boost
+        Boost::system
+        Boost::log_setup
+        Boost::log
+        Boost::thread
         )
 
 target_include_directories(tentris INTERFACE
         # todo: move code to include/Dice/tentris
         src/lib/
+        ${Boost_INCLUDE_DIRS}
         )
+
 
 # main executable targets
 add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
@@ -74,6 +96,8 @@ add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerC
 target_link_libraries(tentris_server
         PRIVATE
         tentris
+        restinio::restinio
+        http-parser::http-parser
         )
 
 

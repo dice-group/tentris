@@ -1,5 +1,4 @@
 [requires]
-TBB/2019_U9@conan/stable
 restinio/0.6.2@stiffstream/stable
 boost/1.71.0@conan/stable
 tsl-hopscotch-map/2.2.1@tessil/stable
@@ -10,14 +9,14 @@ rdf-parser/0.9@dice-group/stable
 gtest/1.8.1@bincrafters/stable
 
 [options]
-# restinio:boost_libs=static
+restinio:boost_libs=static
+boost:shared=False
 *:shared=False
 
 
 [generators]
 cmake_find_package
 cmake_paths
-cmake
 
 [imports]
 bin, *.dll -> ./bin # Copies all dll files from packages bin folder to my "bin" folder
