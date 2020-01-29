@@ -75,7 +75,7 @@ Building was tested with GCC 8 and clang 7.
 
 The following packages are required to build tetnris:
 ```
-sudo apt install build-essential cmake uuid-dev libserd-dev g++ git openjdk-8-jdk python3-pip
+sudo apt install build-essential cmake uuid-dev g++ git openjdk-8-jdk python3-pip
 ```
 
 Additionally, a recent version of conan is required: 

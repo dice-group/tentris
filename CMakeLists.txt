@@ -58,7 +58,6 @@ add_library(tentris INTERFACE)
 target_link_libraries(tentris
         INTERFACE
         stdc++fs # for #include <filesystem>
-        serd-0 # for parsing ntriples
         cxxopts
         antlr4_sparql
         ${CONAN_LIBS}

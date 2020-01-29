@@ -9,7 +9,6 @@ addons:
       - make
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
-      - libserd-dev
       - python3-pip # used for installing conan
       - python3-setuptools # required for installing conan
       - python3-wheel

@@ -1,5 +1,5 @@
 FROM ubuntu:19.04
-RUN apt-get update && apt-get install -y build-essential cmake uuid-dev libserd-dev clang-8 git openjdk-8-jdk python3-pip
+RUN apt-get update && apt-get install -y build-essential cmake uuid-dev clang-8 git openjdk-8-jdk python3-pip
 
 RUN pip3 install conan
 RUN mkdir /conan_cache

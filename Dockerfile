@@ -1,5 +1,5 @@
 FROM ubuntu:18.10
-RUN apt-get update && apt-get install -y build-essential cmake uuid-dev libserd-dev g++ git openjdk-8-jdk python3-pip
+RUN apt-get update && apt-get install -y build-essential cmake uuid-dev g++ git openjdk-8-jdk python3-pip
 
 RUN pip3 install conan
 RUN mkdir /conan_cache
