@@ -5,8 +5,6 @@ set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 0)
 set(tentris_VERSION_PATCH 1)
 
-
-SET(Boost_USE_STATIC_LIBS ON)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
@@ -67,6 +65,7 @@ target_link_libraries(tentris
         )
 
 target_include_directories(tentris INTERFACE
+        # todo: move code to include/Dice/tentris
         src/lib/
         )
 
