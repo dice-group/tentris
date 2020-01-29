@@ -29,7 +29,6 @@ namespace tentris::store::sparql {
 
 	namespace {
 		using Subscript =  einsum::internal::Subscript;
-		using namespace tentris::store::rdf;
 		using SparqlParser = tentris::a4grammar::sparql::SparqlParser;
 		using namespace fmt::literals;
 	}

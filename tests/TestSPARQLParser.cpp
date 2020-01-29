@@ -11,7 +11,10 @@
 namespace {
     namespace fs = std::filesystem;
     using namespace tentris::store::sparql;
-    using namespace tentris::store::rdf;
+	using Term = rdf_parser::store::rdf::Term;
+	using BNode = rdf_parser::store::rdf::BNode;
+	using Literal = rdf_parser::store::rdf::Literal;
+	using URIRef = rdf_parser::store::rdf::URIRef;
 }
 
 std::vector<std::string> load_queries(const std::string &query_file_path) {
