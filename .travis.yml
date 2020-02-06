@@ -24,12 +24,7 @@ addons:
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
   - cmake --version
-  - /usr/bin/cmake --version
-  - /usr/local/cmake --version
-  - /usr/share/cmake --version
-  - /usr/share/cmake-3.16/completions/cmake
-  - export PATH = "/usr/share/cmake-3.16/completions:$PATH"
-  - find / -name "cmake"
+  - export PATH = "/usr/bin/cmake:$PATH"
   - pip3 install --user conan
   - cmake --version
   - conan --version
