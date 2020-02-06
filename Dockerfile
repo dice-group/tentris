@@ -1,7 +1,7 @@
 FROM ubuntu:eoan AS builder
 
 RUN apt-get update && \
-    apt-get install -y make cmake uuid-dev git openjdk-8-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev g++-9 gcc-9 pkg-config
+    apt-get install -y make cmake uuid-dev git openjdk-8-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev g++-9 gcc-9 pkg-config libserd-dev
 RUN pip3 install conan
 
 ARG CXX=g++-9

@@ -9,15 +9,13 @@ addons:
       - make
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
+      - libserd-dev
       - python3-pip # used for installing conan
       - python3-setuptools # required for installing conan
       - python3-wheel
 
-env:
-  - CXX=g++-8
-  - CC=gcc-8
-
 install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-9" CC="gcc-9"; fi
   - pip3 install --user conan
   - pip3 install --user cmake
   - cmake --version

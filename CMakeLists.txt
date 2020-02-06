@@ -81,6 +81,7 @@ target_link_libraries(tentris
         Boost::log_setup
         Boost::log
         Boost::thread
+        serd-0
         )
 
 target_include_directories(tentris INTERFACE

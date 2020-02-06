@@ -9,6 +9,7 @@
 #include <tsl/hopscotch_map.h>
 
 #include "tentris/store/RDF/TermStore.hpp"
+#include "tentris/store/RDF/SerdParser.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
@@ -48,12 +49,20 @@ namespace tentris::store {
 			using namespace rdf_parser::Turtle;
 
 			try {
-				TurtleParser<> parser{file_path};
-				for (const Triple &triple : parser) {
+				// TurtleParser<FileParser> parser{file_path};
+				unsigned int count = 0;
+				unsigned int _1mios = 0;
+				for (const Triple &triple : rdf::SerdParser{file_path}) {
 					add(triple.subject(), triple.predicate(), triple.object());
+					++count;
+					if (count == 1000000) {
+						count = 0;
+						++_1mios;
+						logDebug("{:d} mio triples loaded."_format(_1mios));
+					}
 				}
 			} catch (...) {
-				throw std::invalid_argument{"A parsing error occured while parsing {}"_format(file_path)};
+				throw std::invalid_argument{"A parsing error occurred while parsing {}"_format(file_path)};
 			}
 		}
 
