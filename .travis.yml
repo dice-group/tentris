@@ -18,7 +18,7 @@ install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
 #  - export PATH=/usr/bin:$PATH
   - pip3 install --user conan
-  - pip3 install --user cmake==3.15.3
+  - pip3 install --user cmake==3.13.3
   - cmake --version
   - conan --version
 
