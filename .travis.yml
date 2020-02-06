@@ -24,7 +24,7 @@ addons:
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
   - sudo apt install -y cmake cmake-data
-#  - pip3 install --user conan
+  - pip3 install --user conan
 #  # first we create a directory for the CMake binaries
 #  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
 #  - mkdir ${DEPS_DIR} && cd ${DEPS_DIR}
