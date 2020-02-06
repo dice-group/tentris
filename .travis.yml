@@ -8,6 +8,7 @@ addons:
       - sourceline: "deb https://apt.kitware.com/ubuntu/ bionic main"
         key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
+    update: true
     packages:
       - g++-8
       - make
@@ -22,7 +23,11 @@ addons:
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
-  - sudo apt install -y cmake cmake-data
+  - /usr/bin/cmake --version
+  - /usr/local/cmake --version
+  - /usr/share/cmake --version
+  - /usr/share/cmake-3.16/completions/cmake
+  - export PATH = "/usr/share/cmake-3.16/completions:$PATH"
   - find / -name "cmake"
   - pip3 install --user conan
   - cmake --version
