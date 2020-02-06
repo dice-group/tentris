@@ -2,18 +2,16 @@ os: linux
 dist: bionic
 language: cpp
 
-before_install:
-  - sudo apt install -y apt-transport-https ca-certificates gnupg software-properties-common wget
-  - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
-  - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-  - sudo apt -y update
-
-
 addons:
   apt:
+    sources:
+      - sourceline: "ppa:hnakamur/cmake"
+      - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
       - g++-8
       - make
+      - cmake
+      - cmake-data
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
       - libserd-dev
@@ -25,27 +23,13 @@ install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
   - sudo apt install -y cmake cmake-data
   - pip3 install --user conan
-#  # first we create a directory for the CMake binaries
-#  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
-#  - mkdir ${DEPS_DIR} && cd ${DEPS_DIR}
-#  # we use wget to fetch the cmake binaries
-#  - travis_retry wget --no-check-certificate https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Linux-x86_64.tar.gz
-#  # extract the binaries; the output here is quite lengthy,
-#  # so we swallow it to not clutter up the travis console
-#  - tar -xvf cmake-3.16.4-Linux-x86_64.tar.gz > /dev/null
-#  - mv cmake-3.16.4-Linux-x86_64 cmake-install
-#  # add both the top-level directory and the bin directory from the archive
-#  # to the system PATH. By adding it to the front of the path we hide the
-#  # preinstalled CMake with our own.
-#  - PATH=${DEPS_DIR}/cmake-install:${DEPS_DIR}/cmake-install/bin:$PATH
-#  # don't forget to switch back to the main build directory once you are done
-#  - cd ${TRAVIS_BUILD_DIR}
   - cmake --version
   - conan --version
 
 cache:
   directories:
     - $HOME/.conan/data
+    - $HOME/.pip
 
 before_script:
   - mkdir -p build #build dir
