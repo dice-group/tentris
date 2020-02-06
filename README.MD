@@ -73,14 +73,19 @@ For more commandline options see `tentris_terminal --help`.
 Tentris is known to build successfully on Ubuntu 18.10 and newer. 
 Building was tested with GCC 8 and clang 7.
 
-The following packages are required to build tetnris:
+The following packages are required to build tentris:
 ```
-sudo apt install build-essential cmake uuid-dev g++ git openjdk-8-jdk python3-pip
+sudo apt install build-essential uuid-dev g++ git openjdk-8-jdk python3-pip python3-setuptools python3-wheel
+```
+
+Since ANTLR4 has problems with recent cmake releases, we suggest using this specific version:
+```
+pip3 install --user cmake==3.13.3
 ```
 
 Additionally, a recent version of conan is required: 
 ```
-pip3 install conan
+pip3 install --user conan
 ```
 
 ### dependencies
