@@ -3,11 +3,10 @@ dist: bionic
 language: cpp
 
 before_install:
-  - apt update
-  - apt-get install apt-transport-https ca-certificates gnupg software-properties-common wget
-  - apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+  - sudo apt install -y apt-transport-https ca-certificates gnupg software-properties-common wget
+  - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
   - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
-  - apt update
+  - sudo apt -y update
 
 
 addons:
@@ -23,8 +22,8 @@ addons:
       - python3-wheel
 
 install:
-  - apt install cmake cmake-data
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
+  - sudo apt install -y cmake cmake-data
 #  - pip3 install --user conan
 #  # first we create a directory for the CMake binaries
 #  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
