@@ -26,7 +26,7 @@ install:
   - cmake --version
 #  - export PATH=/usr/bin:$PATH
   - pip3 install --user conan
-  - pip3 install --user cmake=3.13.3
+  - pip3 install --user cmake==3.13.3
   - cmake --version
   - conan --version
 
