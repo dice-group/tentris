@@ -4,16 +4,9 @@ language: cpp
 
 addons:
   apt:
-#    sources:
-#      - sourceline: "deb https://apt.kitware.com/ubuntu/ bionic main"
-#        key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
-#      - sourceline: 'ppa:ubuntu-toolchain-r/test'
-#    update: true
     packages:
       - g++-8
       - make
-#      - cmake
-#      - cmake-data
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
       - libserd-dev
@@ -23,17 +16,15 @@ addons:
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
-  - cmake --version
 #  - export PATH=/usr/bin:$PATH
   - pip3 install --user conan
-  - pip3 install --user cmake==3.13.3
+  - pip3 install --user cmake==3.15.3
   - cmake --version
   - conan --version
 
 cache:
   directories:
     - $HOME/.conan/data
-    - $HOME/.pip
 
 before_script:
   - mkdir -p build #build dir
