@@ -41,7 +41,7 @@ struct fmt::formatter<tentris::store::sparql::Variable> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::sparql::Variable &p, FormatContext &ctx) {
-		return format_to(ctx.begin(), "{}", p.name);
+		return format_to(ctx.out(), "{}", p.name);
 	}
 };
 

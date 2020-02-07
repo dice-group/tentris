@@ -1,35 +1,37 @@
 os: linux
-dist: xenial
-sudo: true
-language: c++
+dist: bionic
+language: cpp
 
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
-      - gcc-8
       - g++-8
-      - cmake
-      - openjdk-8-jdk
-      - build-essential 
+      - make
+      - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
       - libserd-dev
-      - python-pip
-      
-install:
- - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
+      - python3-pip # used for installing conan
+      - python3-setuptools # required for installing conan
+      - python3-wheel
 
- - echo ${CC}
- - echo ${CXX}
- - ${CXX} --version
- - cmake --version
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-8" CC="gcc-8"; fi
+#  - export PATH=/usr/bin:$PATH
+  - pip3 install --user conan
+  - pip3 install --user cmake==3.13.3
+  - cmake --version
+  - conan --version
+
+cache:
+  directories:
+    - $HOME/.conan/data
 
 before_script:
- - mkdir -p build
- - sudo apt-get remove --auto-remove python-enum34
- - sudo pip install conan
- - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
+  - mkdir -p build #build dir
+  - conan user #conan setup
+  - conan profile new --detect default
+  - conan profile update settings.compiler.libcxx=libstdc++11 default # use "new" C++ ABI
+  - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-research https://api.bintray.com/conan/dice-group/tentris
 
 script:
- - cd build && conan install .. --build=missing --settings compiler.libcxx="libstdc++11" && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal
+  - cd build && conan install .. --build=missing && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make tentris_server tentris_terminal

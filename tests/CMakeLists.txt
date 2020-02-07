@@ -1,20 +1,20 @@
-cmake_minimum_required(VERSION 3.10) # since 3.10 gtest_discover_tests is included
+cmake_minimum_required(VERSION 3.13) # since 3.10 gtest_discover_tests is included
+set(CMAKE_CXX_STANDARD 17)
 
-# clone gtest
-execute_process(COMMAND "bash" "clone_googletest.sh"
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests)
-add_subdirectory(googletest)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
 
-# include for gtest_discover_tests
 include(GoogleTest)
 
 # add the exectutable for all tests
 add_executable(tests Tests.cpp)
-target_link_libraries(tests gmock
-        gtest
+target_link_libraries(tests
+        ${CONAN_LIBS}
         tentris
         )
-target_include_directories(tests PUBLIC googlemock/include googletest/include)
+
+set_property(TARGET tests PROPERTY CXX_STANDARD 17)
+
 # detect the tests
 gtest_discover_tests(tests)
 

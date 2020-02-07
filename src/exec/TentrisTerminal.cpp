@@ -17,7 +17,6 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-#include <fmt/time.h>
 #include <itertools.hpp>
 #include "tentris/http/QueryResultState.hpp"
 
@@ -98,7 +97,7 @@ writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> 
 
 			std::string binding_string = ss.str();
 
-			for ([[maybe_unused]] const auto c : range(result.value)) {
+			for ([[maybe_unused]] const auto c : iter::range(result.value)) {
 				stream << binding_string;
 				++result_count;
 				if (++timeout_check == 500) {

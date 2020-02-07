@@ -3,11 +3,11 @@
 
 #include <array>
 #include <variant>
-#include "tentris/store/RDF/Term.hpp"
+#include <Dice/rdf_parser/RDF/Term.hpp>
 #include "tentris/store/SPARQL/Variable.hpp"
 
 namespace tentris::store::sparql {
-	using VarOrTerm = std::variant<Variable, rdf::Term>;
+	using VarOrTerm = std::variant<Variable, rdf_parser::store::rdf::Term>;
 	using TriplePattern = std::array<VarOrTerm, 3>;
 }
 

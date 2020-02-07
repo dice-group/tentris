@@ -2,12 +2,10 @@
 
 #include <iostream>
 
-#include <tentris/store/RDF/Term.hpp>
-
+#include <Dice/rdf_parser/RDF/Term.hpp>
 // TODO: make it a real testcase
 
 namespace {
-    using namespace tentris::store::rdf;
 }
 
 

@@ -4,9 +4,7 @@
 #include <optional>
 #include <variant>
 #include <memory>
-#include <fmt/core.h>
 #include <fmt/format.h>
-#include <fmt/time.h>
 #include <fmt/chrono.h>
 #include <fmt/ranges.h>
 
@@ -63,9 +61,9 @@ struct fmt::formatter<std::variant<X,Y>> {
     template<typename FormatContext>
     auto format(const std::variant<X,Y> &p, FormatContext &ctx) {
         if (std::holds_alternative<X>(p))
-            return format_to(ctx.begin(), "<{}>_var", std::get<X>(p));
+            return format_to(ctx.out(), "<{}>_var", std::get<X>(p));
         else
-            return format_to(ctx.begin(), "<{}>_var", std::get<Y>(p));
+            return format_to(ctx.out(), "<{}>_var", std::get<Y>(p));
     }
 };
 
