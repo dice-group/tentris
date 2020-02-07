@@ -9,6 +9,7 @@
 #include <exception>
 #include <memory>
 #include <tuple>
+#include <regex>
 
 #include <SparqlParser.h>
 #include <SparqlLexer.h>
@@ -140,7 +141,7 @@ namespace tentris::store::sparql {
 					registerVariable(subj);
 					SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
 					for (auto[pred_node, obj_nodes] : iter::zip(propertyListNotEmpty->verb(),
-														  propertyListNotEmpty->objectList())) {
+																propertyListNotEmpty->objectList())) {
 						VarOrTerm pred = parseVerb(pred_node);
 						registerVariable(pred);
 
@@ -235,8 +236,71 @@ namespace tentris::store::sparql {
 		}
 
 
-		auto parseGraphTerm(SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
-			if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
+		auto parseGraphTerm(
+				SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
+			if (auto *iriRef = termContext->iriRef(); iriRef) {
+				return URIRef(getIriString(iriRef));
+
+			} else if (auto *rdfLiteral = termContext->rdfLiteral(); rdfLiteral) {
+				auto string_node = rdfLiteral->string();
+				std::string literal_string;
+				if (auto *stringLiteral1 = string_node->STRING_LITERAL1(); stringLiteral1) {
+					auto literal1 = stringLiteral1->getText();
+
+					static std::regex double_quote{"\"", std::regex::optimize};
+					static std::regex single_quote("\\'", std::regex::optimize);
+
+					std::string temp;
+
+					std::regex_replace(std::back_inserter(temp), literal1.begin() + 1, literal1.end() - 1,
+									   double_quote,
+									   "\\\"");
+					std::regex_replace(std::back_inserter(literal_string), temp.begin() + 1, temp.end() - 1,
+									   single_quote, "'");
+				} else {
+					auto literal2 = string_node->STRING_LITERAL2()->getText();
+					literal_string = std::string{literal2, 1, literal2.size() - 2};
+				}
+
+
+				if (auto *langtag = rdfLiteral->LANGTAG(); langtag) {
+					return Literal{literal_string, std::string{langtag->getText(), 1}, std::nullopt};
+				} else if (auto *type = rdfLiteral->iriRef(); rdfLiteral->iriRef()) {
+					return Literal{literal_string, std::nullopt, getIriString(type)};
+				} else {
+					return Literal{literal_string, std::nullopt, std::nullopt};
+				}
+
+			} else if (auto *numericLiteral = termContext->numericLiteral();numericLiteral) {
+
+				if (auto *decimalNumeric = numericLiteral->decimalNumeric(); decimalNumeric) {
+
+					if (auto *plus = decimalNumeric->DECIMAL(); plus) {
+						return Literal{plus->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#decimal"};
+					} else {
+						return Literal{decimalNumeric->getText(), std::nullopt,
+									   "http://www.w3.org/2001/XMLSchema#decimal"};
+					}
+				} else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
+					if (antlr4::tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
+						return Literal{plus->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#double"};
+					} else {
+						return Literal{doubleNumberic->getText(), std::nullopt,
+									   "http://www.w3.org/2001/XMLSchema#double"};
+					}
+				} else {
+					auto *integerNumeric = numericLiteral->integerNumeric();
+					if (auto *plus = integerNumeric->INTEGER(); plus) {
+						return Literal{plus->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#integer"};
+					} else {
+						return Literal{integerNumeric->getText(), std::nullopt,
+									   "http://www.w3.org/2001/XMLSchema#integer"};
+					}
+				}
+
+			} else if (termContext->booleanLiteral()) {
+				return Literal{termContext->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#boolean"};
+			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
 					return Variable{termContext->getText()};
 				else
@@ -270,11 +334,11 @@ namespace tentris::store::sparql {
 				} else {
 					SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
 
-					return VarOrTerm{Term::make_term(getFullIriString(iriRef))};
+					return VarOrTerm{URIRef{getIriString(iriRef)}};
 
 				}
 			} else { // is 'a'
-				return VarOrTerm{Term::make_term("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")};
+				return VarOrTerm{URIRef{"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}};
 			}
 		}
 
