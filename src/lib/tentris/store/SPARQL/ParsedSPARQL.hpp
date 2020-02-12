@@ -9,6 +9,7 @@
 #include <exception>
 #include <memory>
 #include <tuple>
+#include <regex>
 
 #include <SparqlParser.h>
 #include <SparqlLexer.h>
@@ -16,11 +17,11 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <einsum/internal/Subscript.hpp>
+#include <Dice/einsum/internal/Subscript.hpp>
 #include <utility>
 
 #include "tentris/util/All.hpp"
-#include "tentris/store/RDF/Term.hpp"
+#include <Dice/rdf_parser/RDF/Term.hpp>
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/store/SPARQL/TriplePattern.hpp"
 
@@ -29,7 +30,6 @@ namespace tentris::store::sparql {
 
 	namespace {
 		using Subscript =  einsum::internal::Subscript;
-		using namespace tentris::store::rdf;
 		using SparqlParser = tentris::a4grammar::sparql::SparqlParser;
 		using namespace fmt::literals;
 	}
@@ -42,6 +42,10 @@ namespace tentris::store::sparql {
 	};
 
 	class LexerErrorListener : public antlr4::BaseErrorListener {
+		using Term = rdf_parser::store::rdf::Term;
+		using BNode = rdf_parser::store::rdf::BNode;
+		using Literal = rdf_parser::store::rdf::Literal;
+		using URIRef = rdf_parser::store::rdf::URIRef;
 	public:
 		LexerErrorListener() = default;
 
@@ -136,8 +140,8 @@ namespace tentris::store::sparql {
 					VarOrTerm subj = parseVarOrTerm(triplesSameSubject->varOrTerm());
 					registerVariable(subj);
 					SparqlParser::PropertyListNotEmptyContext *propertyListNotEmpty = triplesSameSubject->propertyListNotEmpty();
-					for (auto[pred_node, obj_nodes] : zip(propertyListNotEmpty->verb(),
-														  propertyListNotEmpty->objectList())) {
+					for (auto[pred_node, obj_nodes] : iter::zip(propertyListNotEmpty->verb(),
+																propertyListNotEmpty->objectList())) {
 						VarOrTerm pred = parseVerb(pred_node);
 						registerVariable(pred);
 
@@ -235,7 +239,7 @@ namespace tentris::store::sparql {
 		auto parseGraphTerm(
 				SparqlParser::GraphTermContext *termContext) -> VarOrTerm {
 			if (auto *iriRef = termContext->iriRef(); iriRef) {
-				return Term::make_uriref(getFullIriString(iriRef));
+				return URIRef(getIriString(iriRef));
 
 			} else if (auto *rdfLiteral = termContext->rdfLiteral(); rdfLiteral) {
 				auto string_node = rdfLiteral->string();
@@ -260,11 +264,11 @@ namespace tentris::store::sparql {
 
 
 				if (auto *langtag = rdfLiteral->LANGTAG(); langtag) {
-					return Term::make_lang_literal(literal_string, std::string{langtag->getText(), 1});
+					return Literal{literal_string, std::string{langtag->getText(), 1}, std::nullopt};
 				} else if (auto *type = rdfLiteral->iriRef(); rdfLiteral->iriRef()) {
-					return Term::make_typed_literal(literal_string, getIriString(type));
+					return Literal{literal_string, std::nullopt, getIriString(type)};
 				} else {
-					return Term::make_str_literal(literal_string);
+					return Literal{literal_string, std::nullopt, std::nullopt};
 				}
 
 			} else if (auto *numericLiteral = termContext->numericLiteral();numericLiteral) {
@@ -272,35 +276,37 @@ namespace tentris::store::sparql {
 				if (auto *decimalNumeric = numericLiteral->decimalNumeric(); decimalNumeric) {
 
 					if (auto *plus = decimalNumeric->DECIMAL(); plus) {
-						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#decimal");
+						return Literal{plus->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#decimal"};
 					} else {
-						return Term::make_typed_literal(decimalNumeric->getText(),
-														"http://www.w3.org/2001/XMLSchema#decimal");
+						return Literal{decimalNumeric->getText(), std::nullopt,
+									   "http://www.w3.org/2001/XMLSchema#decimal"};
 					}
 				} else if (auto *doubleNumberic = numericLiteral->doubleNumberic();doubleNumberic) {
 					if (antlr4::tree::TerminalNode *plus = doubleNumberic->DOUBLE(); plus) {
-						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#double");
+						return Literal{plus->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#double"};
 					} else {
-						return Term::make_typed_literal(decimalNumeric->getText(),
-														"http://www.w3.org/2001/XMLSchema#double");
+						return Literal{doubleNumberic->getText(), std::nullopt,
+									   "http://www.w3.org/2001/XMLSchema#double"};
 					}
 				} else {
 					auto *integerNumeric = numericLiteral->integerNumeric();
 					if (auto *plus = integerNumeric->INTEGER(); plus) {
-						return Term::make_typed_literal(plus->getText(), "http://www.w3.org/2001/XMLSchema#integer");
+						return Literal{plus->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#integer"};
 					} else {
-						return Term::make_typed_literal(decimalNumeric->getText(),
-														"http://www.w3.org/2001/XMLSchema#integer");
+						return Literal{integerNumeric->getText(), std::nullopt,
+									   "http://www.w3.org/2001/XMLSchema#integer"};
 					}
 				}
 
 			} else if (termContext->booleanLiteral()) {
-				return Term::make_typed_literal(termContext->getText(), "http://www.w3.org/2001/XMLSchema#boolean");
+				return Literal{termContext->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#boolean"};
 			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
 					return Variable{termContext->getText()};
 				else
 					return Variable{"__:" + std::to_string(next_anon_var_id++)};
+			} else if (not termContext->NIL()) {
+				return Literal::make_term(termContext->getText());
 			} else {
 				throw std::logic_error{"Handling NIL not yet implemented."};
 				// TODO: handle NIL value "( )"
@@ -328,11 +334,11 @@ namespace tentris::store::sparql {
 				} else {
 					SparqlParser::IriRefContext *iriRef = varOrIRIref->iriRef();
 
-					return VarOrTerm{Term::make_uriref(getFullIriString(iriRef))};
+					return VarOrTerm{URIRef{getIriString(iriRef)}};
 
 				}
 			} else { // is 'a'
-				return VarOrTerm{Term::make_uriref("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")};
+				return VarOrTerm{URIRef{"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"}};
 			}
 		}
 
@@ -400,7 +406,7 @@ struct fmt::formatter<tentris::store::sparql::ParsedSPARQL> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::sparql::ParsedSPARQL &p, FormatContext &ctx) {
-		return format_to(ctx.begin(),
+		return format_to(ctx.out(),
 						 " prefixes:         {}\n"
 						 " select_modifier:  {}\n"
 						 " query_variables:  {}\n"

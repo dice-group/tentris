@@ -1,7 +1,7 @@
 #ifndef TENTRIS_BOOLHYPERTRIE_HPP
 #define TENTRIS_BOOLHYPERTRIE_HPP
 
-#include <hypertrie/boolhypertrie.hpp>
+#include <Dice/hypertrie/boolhypertrie.hpp>
 #include "tentris/store/RDF/TermStore.hpp"
 
 namespace tentris::tensor {

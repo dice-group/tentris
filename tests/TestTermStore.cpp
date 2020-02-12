@@ -2,7 +2,7 @@
 #include <tentris/store/RDF/TermStore.hpp>
 
 namespace {
-    using namespace tentris::store;
+    using namespace tentris::store::rdf;
 }
 TEST(TestTermStore, double_write) {
     TermStore store{};

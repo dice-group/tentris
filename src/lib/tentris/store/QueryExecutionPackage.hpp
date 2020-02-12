@@ -26,7 +26,6 @@ namespace tentris::store::cache {
 	 * RDF graph.
 	 */
 	struct QueryExecutionPackage {
-		using TimeoutType = std::chrono::system_clock::time_point;
 	private:
 		std::string sparql_string;
 		std::shared_ptr<Subscript> subscript;
@@ -93,16 +92,17 @@ namespace tentris::store::cache {
 		 */
 		template<typename RESULT_TYPE>
 		static std::shared_ptr<void> generateEinsum(const std::shared_ptr<Subscript> &subscript,
-													const std::vector<const_BoolHypertrie> &hypertries) {
-			return std::make_shared<Einsum<RESULT_TYPE>>(subscript, hypertries);
+													const std::vector<const_BoolHypertrie> &hypertries,
+													const time_point_t &timeout) {
+			return std::make_shared<Einsum<RESULT_TYPE>>(subscript, hypertries, timeout);
 		}
 
 	public:
-		std::shared_ptr<void> getEinsum() const {
+		std::shared_ptr<void> getEinsum(const time_point_t &timeout = time_point_t::max()) const {
 			if (select_modifier == SelectModifier::NONE)
-				return generateEinsum<COUNTED_t>(subscript, operands);
+				return generateEinsum<COUNTED_t>(subscript, operands, timeout);
 			else
-				return generateEinsum<DISTINCT_t>(subscript, operands);
+				return generateEinsum<DISTINCT_t>(subscript, operands, timeout);
 		}
 
 		const std::string &getSparqlStr() const {
