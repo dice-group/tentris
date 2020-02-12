@@ -26,7 +26,7 @@ namespace tentris::store::cache {
 	 * RDF graph.
 	 */
 	struct QueryExecutionPackage {
-		using TimeoutType = std::chrono::system_clock::time_point;
+		using TimeoutType = std::chrono::steady_clock::time_point;
 	private:
 		std::string sparql_string;
 		std::shared_ptr<Subscript> subscript;

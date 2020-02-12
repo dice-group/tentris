@@ -28,7 +28,7 @@
 namespace tentris::logging {
 
 	namespace {
-		using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
+		using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 
 		using namespace fmt::literals;
 
@@ -95,15 +95,15 @@ namespace tentris::logging {
 	inline time_point_t log_health_data() {
 		using namespace std::chrono;
 		auto mem = get_memory_usage();
-		const auto time = std::chrono::system_clock::now();
-		const std::time_t t = std::chrono::system_clock::to_time_t(time);
+		const auto time = steady_clock::now();
+		const std::time_t t = system_clock::to_time_t(system_clock::now());
 		log(fmt::format("time: {:%F_%T}", *std::localtime(&t)));
 		log("Mem: {} kB"_format(mem));
 		return time;
 	}
 
-	inline void log_duration(std::chrono::time_point<std::chrono::system_clock> start_time,
-							 std::chrono::time_point<std::chrono::system_clock> end_time) {
+	inline void log_duration(std::chrono::time_point<std::chrono::steady_clock> start_time,
+							 std::chrono::time_point<std::chrono::steady_clock> end_time) {
 		using namespace std::chrono;
 		auto duration = end_time - start_time;
 
@@ -112,35 +112,6 @@ namespace tentris::logging {
 				(duration_cast<hours>(duration) % 24).count(),
 				(duration_cast<minutes>(duration) % 60).count(),
 				(duration_cast<seconds>(duration) % 60).count()));
-	}
-
-	/**
-	 * Make a Timestamp string without the date out of a time_point
-	 * @tparam clock the clock used by the time_point. Should be inferred automatically in most cases.
-	 * @param time_point the time_point of interest
-	 * @return a string
-	 */
-	template<typename clock>
-	inline std::string toTimestampStr(time_point_t time_point) {
-		using namespace std::chrono;
-		auto const time_point_t = system_clock::to_time_t(time_point);
-		auto tse = time_point.time_since_epoch();
-		return fmt::format("{:%H:%M:%S}.{:03d}'{:03d}'{:03d}", *std::localtime(&time_point_t),
-						   duration_cast<milliseconds>(tse).count() % 1000,
-						   duration_cast<microseconds>(tse).count() % 1000,
-						   duration_cast<nanoseconds>(tse).count() % 1000);
-	}
-
-	/**
-	 * Make a date string out of a time_point
-	 * @tparam clock the clock used by the time_point. Should be inferred automatically in most cases.
-	 * @param time_point the time_point of interest
-	 * @return a string
-	 */
-	template<typename clock>
-	inline std::string toDateStr(std::chrono::time_point<clock> time_point) {
-		auto const time_point_t = std::chrono::system_clock::to_time_t(time_point);
-		return fmt::format("{:%Y-%m-%d}", *std::localtime(&time_point_t));
 	}
 
 	/**

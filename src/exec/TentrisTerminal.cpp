@@ -42,26 +42,27 @@ std::ostream &logsink() {
 		return std::cerr;
 }
 
-inline std::string tp2s(system_clock::time_point timepoint) {
-	auto in_time_t = system_clock::to_time_t(timepoint);
+inline std::string tp2s(time_point_t timepoint) {
+	auto in_time_t = system_clock::to_time_t(
+			system_clock::now() + duration_cast<system_clock::duration>(timepoint - steady_clock::now()));
 
 	std::stringstream ss;
 	ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
 	return ss.str();
 };
 
-system_clock::time_point query_start;
-system_clock::time_point query_end;
-system_clock::time_point parse_start;
-system_clock::time_point parse_end;
-system_clock::time_point execute_start;
-system_clock::time_point execute_end;
+time_point_t query_start;
+time_point_t query_end;
+time_point_t parse_start;
+time_point_t parse_end;
+time_point_t execute_start;
+time_point_t execute_end;
 
 Errors error;
 size_t number_of_bindings;
 
-std::chrono::system_clock::time_point timeout;
-std::chrono::system_clock::time_point actual_timeout;
+time_point_t timeout;
+time_point_t actual_timeout;
 
 template<typename RESULT_TYPE>
 void
@@ -80,7 +81,7 @@ writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> 
 		for (const auto &result : results) {
 			if (first) {
 				first = false;
-				execute_end = system_clock::now();
+				execute_end = steady_clock::now();
 			}
 
 			std::stringstream ss;
@@ -103,7 +104,7 @@ writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> 
 				if (++timeout_check == 500) {
 					timeout_check = 0;
 					stream.flush();
-					if (auto current_time = system_clock::now(); current_time > timeout) {
+					if (auto current_time = steady_clock::now(); current_time > timeout) {
 						::error = Errors::SERIALIZATION_TIMEOUT;
 						actual_timeout = current_time;
 						number_of_bindings = result_count;
@@ -114,7 +115,7 @@ writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> 
 		}
 	}
 	if (first) { // if no bindings are returned
-		execute_end = system_clock::now();
+		execute_end = steady_clock::now();
 	}
 	number_of_bindings = result_count;
 }
@@ -124,11 +125,11 @@ inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_pack
 						const QueryExecutionPackage::TimeoutType timeout) {
 	// calculate the result
 	// check if it timed out
-	if (system_clock::now() < timeout) {
+	if (steady_clock::now() < timeout) {
 		writeNTriple<RESULT_TYPE>(std::cout, query_package);
 	} else {
 		::error = Errors::PROCESSING_TIMEOUT;
-		actual_timeout = system_clock::now();
+		actual_timeout = steady_clock::now();
 	}
 }
 
@@ -141,7 +142,7 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 		std::getline(std::cin, sparql_str);
 
-		query_start = system_clock::now();
+		query_start = steady_clock::now();
 
 
 		number_of_bindings = 0;
@@ -149,13 +150,13 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 
 		try {
-			parse_start = system_clock::now();
+			parse_start = steady_clock::now();
 			std::shared_ptr<QueryExecutionPackage> query_package = querypackage_cache[sparql_str];
 
-			timeout = system_clock::now() + cfg.timeout;
+			timeout = steady_clock::now() + cfg.timeout;
 
-			parse_end = system_clock::now();
-			execute_start = system_clock::now();
+			parse_end = steady_clock::now();
+			execute_start = steady_clock::now();
 
 			switch (query_package->getSelectModifier()) {
 				case SelectModifier::NONE: {
@@ -180,7 +181,7 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 		} catch (...) {
 			::error = Errors::SEVERE_UNEXPECTED;
 		}
-		query_end = system_clock::now();
+		query_end = steady_clock::now();
 
 
 		auto parsing_time = duration_cast<std::chrono::nanoseconds>(parse_end - parse_start);
@@ -252,9 +253,9 @@ int main(int argc, char *argv[]) {
 
 	if (not cfg.rdf_file.empty()) {
 		logsink() << "Loading file " << cfg.rdf_file << " ..." << std::endl;
-		auto start_time = system_clock::now();
+		auto start_time = steady_clock::now();
 		AtomicTripleStore::getInstance().loadRDF(cfg.rdf_file);
-		auto duration = system_clock::now() - start_time;
+		auto duration = steady_clock::now() - start_time;
 		logsink() << fmt::format("... loading finished. {} triples loaded.", AtomicTripleStore::getInstance().size())
 				  << std::endl;
 		logsink() << "duration: {} h {} min {} s"_format(

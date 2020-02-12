@@ -33,7 +33,7 @@ public:
 	/**
 	 * The timeout for query processing of single queries.
 	 */
-	mutable std::chrono::system_clock::duration timeout;
+	mutable std::chrono::steady_clock::duration timeout;
 	/**
 	 * Max number queries that may be cached.
 	 */
