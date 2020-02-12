@@ -154,7 +154,7 @@ namespace tentris::http {
 
 		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const QueryExecutionPackage::TimeoutType timeout) {
+						const time_point_t timeout) {
 			// check if it timed out
 			if (steady_clock::now() >= timeout) {
 				return Status::PROCESSING_TIMEOUT;
@@ -162,7 +162,7 @@ namespace tentris::http {
 			const std::vector<Variable> &vars = query_package->getQueryVariables();
 			JsonQueryResult<RESULT_TYPE> json_result{vars};
 			if (not query_package->is_trivial_empty) {
-				std::shared_ptr<void> raw_results = query_package->getEinsum();
+				std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
 				auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 
 
