@@ -34,11 +34,11 @@ namespace tentris::http {
 
 		Status
 		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-				 const QueryExecutionPackage::TimeoutType timeout);
+				 const time_point_t timeout);
 
 		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const QueryExecutionPackage::TimeoutType timeout);
+						const time_point_t timeout);
 
 
 		/**
@@ -47,7 +47,7 @@ namespace tentris::http {
 		auto sparql_endpoint = [](restinio::request_handle_t req,
 								  [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
 			using namespace std::string_literals;
-			auto start_time = system_clock::now();
+			auto start_time = steady_clock::now();
 			log("request started.");
 			auto start_memory = get_memory_usage();
 			logDebug("ram: {:d} kB"_format(start_memory));
@@ -129,14 +129,14 @@ namespace tentris::http {
 			auto end_memory = get_memory_usage();
 			logDebug("ram: {:d} kB"_format(end_memory));
 			logDebug("ram diff: {:+3d} kB"_format(long(end_memory) - long(start_memory)));
-			logDebug("request duration: {}"_format(toDurationStr(start_time, system_clock::now())));
+			logDebug("request duration: {}"_format(toDurationStr(start_time, steady_clock::now())));
 			log("request ended.");
 			return handled;
 		};
 
 		Status
 		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-				 const QueryExecutionPackage::TimeoutType timeout) {
+				 const time_point_t timeout) {
 
 			switch (query_package->getSelectModifier()) {
 				case SelectModifier::NONE: {
@@ -154,15 +154,15 @@ namespace tentris::http {
 
 		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const QueryExecutionPackage::TimeoutType timeout) {
+						const time_point_t timeout) {
 			// check if it timed out
-			if (system_clock::now() >= timeout) {
+			if (steady_clock::now() >= timeout) {
 				return Status::PROCESSING_TIMEOUT;
 			}
 			const std::vector<Variable> &vars = query_package->getQueryVariables();
 			JsonQueryResult<RESULT_TYPE> json_result{vars};
 			if (not query_package->is_trivial_empty) {
-				std::shared_ptr<void> raw_results = query_package->getEinsum();
+				std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
 				auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 
 
@@ -170,14 +170,14 @@ namespace tentris::http {
 				for (const EinsumEntry<RESULT_TYPE> &result : results) {
 					json_result.add(result);
 					if (++timout_check == 100) {
-						if (system_clock::now() >= timeout)
+						if (steady_clock::now() >= timeout)
 							return Status::PROCESSING_TIMEOUT;
 						timout_check = 0;
 					}
 				}
 			}
 
-			if (system_clock::now() >= timeout) {
+			if (steady_clock::now() >= timeout) {
 				return Status::PROCESSING_TIMEOUT;
 			}
 

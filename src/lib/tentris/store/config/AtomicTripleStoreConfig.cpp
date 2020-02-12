@@ -30,7 +30,7 @@ namespace tentris::store::config {
 		/**
 		 * The timeout for query processing of single queries.
 		 */
-		std::chrono::system_clock::duration timeout = std::chrono::seconds(180);
+		std::chrono::steady_clock::duration timeout = std::chrono::seconds(180);
 		/**
 		 * Max number queries that may be cached.
 		 */
