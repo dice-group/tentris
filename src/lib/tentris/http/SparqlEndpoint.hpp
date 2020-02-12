@@ -34,11 +34,11 @@ namespace tentris::http {
 
 		Status
 		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-				 const QueryExecutionPackage::TimeoutType timeout);
+				 const time_point_t timeout);
 
 		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const QueryExecutionPackage::TimeoutType timeout);
+						const time_point_t timeout);
 
 
 		/**
@@ -136,7 +136,7 @@ namespace tentris::http {
 
 		Status
 		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-				 const QueryExecutionPackage::TimeoutType timeout) {
+				 const time_point_t timeout) {
 
 			switch (query_package->getSelectModifier()) {
 				case SelectModifier::NONE: {
