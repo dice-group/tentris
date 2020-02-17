@@ -135,12 +135,8 @@ inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_pack
 
 [[noreturn]]
 void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
-	while (true) {
-
-
-		std::string sparql_str;
-
-		std::getline(std::cin, sparql_str);
+	std::string sparql_str;
+	while (std::getline(std::cin, sparql_str)) {
 
 		query_start = steady_clock::now();
 
