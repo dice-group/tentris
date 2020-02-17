@@ -133,7 +133,6 @@ inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_pack
 	}
 }
 
-[[noreturn]]
 void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 	std::string sparql_str;
 	while (std::getline(std::cin, sparql_str)) {
@@ -233,6 +232,7 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 		logsink().flush();
 	}
+	std::raise(SIGINT);
 }
 
 
