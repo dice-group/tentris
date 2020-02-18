@@ -112,6 +112,22 @@ target_link_libraries(tentris_terminal
 
 add_dependencies(tentris_terminal tentris)
 
+add_executable(rdf2ids src/exec/tools/rdf2ids.cpp)
+target_link_libraries(rdf2ids
+        PRIVATE
+        tentris
+        )
+
+add_dependencies(rdf2ids tentris)
+
+add_executable(id2hypertrie src/exec/tools/ids2hypertrie.cpp)
+target_link_libraries(id2hypertrie
+        PRIVATE
+        tentris
+        )
+
+add_dependencies(id2hypertrie tentris)
+
 if (CMAKE_BUILD_TYPE MATCHES "Release")
     set_property(TARGET tentris_server PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
     set_property(TARGET tentris_terminal PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
