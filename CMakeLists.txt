@@ -112,7 +112,7 @@ target_link_libraries(tentris_terminal
 
 add_dependencies(tentris_terminal tentris)
 
-add_executable(rdf2ids src/exec/tools/rdf2ids.cpp)
+add_executable(rdf2ids src/exec/tools/RDF2IDs.cpp)
 target_link_libraries(rdf2ids
         PRIVATE
         tentris
@@ -120,17 +120,20 @@ target_link_libraries(rdf2ids
 
 add_dependencies(rdf2ids tentris)
 
-add_executable(id2hypertrie src/exec/tools/ids2hypertrie.cpp)
-target_link_libraries(id2hypertrie
+add_executable(ids2hypertrie src/exec/tools/IDs2Hypertrie.cpp)
+target_link_libraries(ids2hypertrie
         PRIVATE
         tentris
         )
 
-add_dependencies(id2hypertrie tentris)
+add_dependencies(ids2hypertrie tentris)
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
     set_property(TARGET tentris_server PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
     set_property(TARGET tentris_terminal PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
+
+    set_property(TARGET ids2hypertrie PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
+    set_property(TARGET rdf2ids PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
 endif ()
 
 option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)

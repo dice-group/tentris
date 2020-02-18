@@ -1,8 +1,9 @@
 #include <iostream>
+#include <filesystem>
+
 #include <tentris/store/RDF/SerdParser.hpp>
 #include <tentris/store/RDF/TermStore.hpp>
 #include <tentris/util/All.hpp>
-#include <filesystem>
 
 int main(int argc, char *argv[]) {
 	using namespace rdf_parser::Turtle;
