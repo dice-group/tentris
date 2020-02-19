@@ -67,9 +67,8 @@ deploy:
   provider: releases
   file:
     - "benchmarktools_${TRAVIS_TAG}_clang9_libstdcxx9.zip"
-    - "tentris_clang9_${TRAVIS_TAG}_libstdcxx9.zip"
+    - "tentris_${TRAVIS_TAG}_clang9_libstdcxx9.zip"
   token: $github_token
-  draft: true
   cleanup: false
   skip_cleanup: true
   on:
