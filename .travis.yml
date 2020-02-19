@@ -11,6 +11,7 @@ addons:
     packages:
       - g++-9
       - clang-9
+      - llvm-9-dev
       - make
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
