@@ -71,5 +71,6 @@ deploy:
   token: $github_token
   cleanup: false
   skip_cleanup: true
+  overwrite: true
   on:
     tags: true
