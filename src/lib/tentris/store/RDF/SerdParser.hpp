@@ -8,6 +8,7 @@
 #include <tbb/concurrent_queue.h>
 #include <serd-0/serd/serd.h>
 #include <boost/algorithm/string.hpp>
+#include <tsl/hopscotch_map.h>
 #include <atomic>
 #include <memory>
 #include <thread>
