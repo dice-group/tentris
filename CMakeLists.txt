@@ -3,7 +3,7 @@ project(tentris CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 0)
-set(tentris_VERSION_PATCH 1)
+set(tentris_VERSION_PATCH 3)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
