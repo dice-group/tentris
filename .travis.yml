@@ -60,8 +60,8 @@ script:
 
 before_deploy:
   - make rdf2ids ids2hypertrie
-  - zip benchmarktools_${$TRAVIS_TAG}_clang9_libstdcxx9.zip rdf2ids ids2hypertrie
-  - zip tentris_clang9_${$TRAVIS_TAG}_libstdcxx9.zip make tentris_server tentris_terminal
+  - zip benchmarktools_${TRAVIS_TAG}_clang9_libstdcxx9.zip rdf2ids ids2hypertrie
+  - zip tentris_${TRAVIS_TAG}_clang9_libstdcxx9.zip make tentris_server tentris_terminal
 
 deploy:
   provider: releases
