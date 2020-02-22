@@ -15,7 +15,6 @@ addons:
       - make
       - openjdk-8-jdk # required for ANTLR4
       - uuid-dev
-      - libserd-dev
       - python3-pip # used for installing conan
       - python3-setuptools # required for installing conan
       - python3-wheel
@@ -34,6 +33,12 @@ cache:
     - $HOME/.conan/data
 
 before_script:
+  - git clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git
+  - cd serd
+  - git submodule update --init --recursive
+  - ./waf configure --static
+  - sudo ./waf install
+  - cd ..
   - mkdir -p build #build dir
   - conan user #conan setup
   - conan profile new --detect clang9
