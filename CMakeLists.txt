@@ -132,6 +132,7 @@ target_link_libraries(ids2hypertrie
         -static
         )
 
+add_dependencies(ids2hypertrie tentris)
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
     set_property(TARGET tentris_server PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
@@ -141,7 +142,6 @@ if (CMAKE_BUILD_TYPE MATCHES "Release")
     set_property(TARGET rdf2ids PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
 endif ()
 
-add_dependencies(ids2hypertrie tentris)
 option(TENTRIS_BUILD_TESTS "build tests alongside the project" OFF)
 if (TENTRIS_BUILD_TESTS)
     enable_testing() # enable this to enable testing
