@@ -8,6 +8,13 @@ Currently, it supports SELECT queries with or without DISTINCT and a WHERE-bock 
 
 Further SPARQL features will follow.   
 
+## download
+
+Precompiled linux binaries are provided under [Release](https://github.com/dice-group/tentris/releases).
+Newer release binaries are fully statically linked and have no dependencies.   
+
+Docker images of the HTTP endpoint are provided at [Docker Hub](https://hub.docker.com/r/dicegroup/tentris_server). 
+
 ## running tentris 
 Tentris provides two ways of running it. Either as a HTTP endpoint or as a interactive commandline tool. Make sure you build Tentris successfully, before proceeding below.
 ### HTTP endpoint
@@ -66,7 +73,7 @@ After the RDF data from `my_nt_file.nt` is loaded, you type your query and hit E
 
 For more commandline options see `tentris_terminal --help`.
 
-## prerequisites
+## prerequisites for compiling
 
 ### build tools
 
@@ -89,9 +96,21 @@ pip3 install --user conan
 ```
 
 ### dependencies
-The required dependencies are installed via conan. Therefore, Add the respective remotes:
+Most required dependencies are installed via conan. Therefore, Add the respective remotes:
 ```bash
-conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
+conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan
+conan remote add tsl https://api.bintray.com/conan/tessil/tsl
+conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public 
+conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
+```
+Additionally, a statically linked version of the [Serd](https://drobilla.net/software/serd) library is required. As the packages in the deb/rpm repositories include only a dynamic library, we need to compile it manually:
+```bash
+clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git
+cd serd
+git submodule update --init --recursive
+./waf configure --static
+sudo ./waf install
+cd -
 ```
 ## build
 After you installed all dependencies, you are ready to build Tentris. 

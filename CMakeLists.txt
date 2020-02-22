@@ -99,31 +99,37 @@ target_link_libraries(tentris_server
         tentris
         restinio::restinio
         http-parser::http-parser
+        -static
         )
 
+set_target_properties(tentris_server PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_dependencies(tentris_server tentris)
 
 add_executable(tentris_terminal src/exec/TentrisTerminal.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 target_link_libraries(tentris_terminal
-        PRIVATE
         tentris
+        -static
         )
+
+set_target_properties(tentris_terminal PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_dependencies(tentris_terminal tentris)
 
 add_executable(rdf2ids src/exec/tools/RDF2IDs.cpp)
 target_link_libraries(rdf2ids
-        PRIVATE
         tentris
+        -static
         )
+
+set_target_properties(rdf2ids PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_dependencies(rdf2ids tentris)
 
 add_executable(ids2hypertrie src/exec/tools/IDs2Hypertrie.cpp)
 target_link_libraries(ids2hypertrie
-        PRIVATE
         tentris
+        -static
         )
 
 add_dependencies(ids2hypertrie tentris)

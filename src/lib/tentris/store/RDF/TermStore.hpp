@@ -1,12 +1,9 @@
 #ifndef TENTRIS_STORE_RDFTERMINDEX
 #define TENTRIS_STORE_RDFTERMINDEX
 
-#include <map>
-#include <unordered_map>
-#include <tsl/hopscotch_set.h>
+#include <tsl/sparse_set.h>
 #include <memory>
 #include <tuple>
-#include <ostream>
 
 #include "tentris/util/All.hpp"
 #include <Dice/rdf_parser/RDF/Term.hpp>
@@ -20,13 +17,12 @@ namespace tentris::store::rdf {
         using Literal = rdf_parser::store::rdf::Literal;
         using URIRef = rdf_parser::store::rdf::URIRef;
 	public:
-		using set_type = tsl::hopscotch_set<std::unique_ptr<Term>,
+		using set_type = tsl::sparse_set<std::unique_ptr<Term>,
 				TermHash,
 				std::equal_to<>,
 				std::allocator<std::unique_ptr<Term>>,
-				4,
-				true,
-				tsl::hh::power_of_two_growth_policy<2>>;
+				tsl::sh::power_of_two_growth_policy<2>,
+				tsl::sh::exception_safety::basic>;
 		using const_iterator = set_type::const_iterator;
 
 	private:

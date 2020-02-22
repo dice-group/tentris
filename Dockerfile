@@ -1,7 +1,13 @@
 FROM ubuntu:eoan AS builder
 
 RUN apt-get update && \
-    apt-get install -y make cmake uuid-dev git openjdk-8-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev clang-9 pkg-config libserd-dev
+    apt-get install -y make cmake uuid-dev git openjdk-8-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev clang-9 pkg-config
+
+RUN git clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git && \
+    cd serd && \
+    git submodule update --init --recursive && \
+    ./waf configure --static && \
+    ./waf install
 
 # install and configure conan
 RUN pip3 install conan && \
@@ -47,9 +53,7 @@ RUN cd /tentris/build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make -j $(nproc) tentris_server
 
-FROM ubuntu:eoan
-RUN apt-get update && \
-    apt-get install -y uuid
+FROM ubuntu:focal
 WORKDIR /tentris
 COPY --from=builder /tentris/build/tentris_server /tentris_server
 ENTRYPOINT ["/tentris_server"]
