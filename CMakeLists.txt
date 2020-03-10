@@ -20,7 +20,6 @@ else ()
 endif ()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 
 # Lightweight C++ command line option parser   https://github.com/jarro2783/cxxopts
