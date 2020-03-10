@@ -7,6 +7,7 @@ abseil/20181200@bincrafters/stable
 hypertrie/0.5.2@dice-group/stable
 rdf-parser/0.9@dice-group/stable
 gtest/1.8.1@bincrafters/stable
+sparql-parser-base/0.1.0@dice-group/stable
 
 [options]
 restinio:boost_libs=static

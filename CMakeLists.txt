@@ -22,28 +22,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-# build antlr4
-add_definitions(-DANTLR4CPP_STATIC)
-set(ANTLR_EXECUTABLE ${PROJECT_SOURCE_DIR}/thirdparty/antlr/antlr-4.7.2-complete.jar)
-include(ExternalAntlr4Cpp)
-
-find_package(ANTLR REQUIRED)
-
-antlr_target(SPARQLGrammar
-        Sparql.g4
-        LEXER PARSER LISTENER VISITOR
-        PACKAGE tentris::a4grammar::sparql)
-
-#make an interface library from the SPARQL grammar
-add_library(antlr4_sparql STATIC
-        ${ANTLR_SPARQLGrammar_CXX_OUTPUTS}
-        )
-target_include_directories(antlr4_sparql
-        PUBLIC ${ANTLR_SPARQLGrammar_OUTPUT_DIR}
-        ${ANTLR4_INCLUDE_DIRS}
-        )
-target_link_libraries(antlr4_sparql antlr4_static)
-add_dependencies(antlr4_sparql antlr4_static)
 
 # Lightweight C++ command line option parser   https://github.com/jarro2783/cxxopts
 add_library(cxxopts INTERFACE)
@@ -55,6 +33,7 @@ find_package(abseil REQUIRED)
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(hypertrie REQUIRED)
+find_package(sparql-parser-base REQUIRED)
 find_package(rdf-parser REQUIRED)
 SET(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS system log_setup log thread)
@@ -69,8 +48,8 @@ target_link_libraries(tentris
         INTERFACE
         stdc++fs # for #include <filesystem>
         cxxopts
-        antlr4_sparql
 
+        sparql-parser-base::sparql-parser-base
         abseil::abseil
         tsl-hopscotch-map::tsl-hopscotch-map
         fmt::fmt
