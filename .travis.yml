@@ -56,7 +56,7 @@ before_script:
 
 script:
   - cd build
-  - conan install .. --build=missing -p clang9
+  - conan install .. --build=missing --profile clang9
   - export CXX="clang++-9"; export CC="clang-9"; cmake -DCMAKE_BUILD_TYPE=Release .. ; make tentris_server tentris_terminal
 
 before_deploy:
