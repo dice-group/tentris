@@ -7,6 +7,7 @@ abseil/20181200@bincrafters/stable
 hypertrie/0.5.2@dice-group/stable
 rdf-parser/0.10@dice-group/stable
 gtest/1.8.1@bincrafters/stable
+sparql-parser-base/0.1.0@dice-group/stable
 
 [options]
 restinio:boost_libs=static
@@ -18,7 +19,4 @@ boost:shared=False
 cmake_find_package
 cmake_paths
 
-[imports]
-bin, *.dll -> ./bin # Copies all dll files from packages bin folder to my "bin" folder
-lib, *.dylib* -> ./bin # Copies all dylib files from packages lib folder to my "bin" folder
-bin, *.so* -> ./bin # Copies all shared object files from packages lib folder to my "bin" folder
+

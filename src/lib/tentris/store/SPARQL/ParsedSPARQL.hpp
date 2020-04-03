@@ -11,9 +11,9 @@
 #include <tuple>
 #include <regex>
 
-#include <SparqlParser.h>
-#include <SparqlLexer.h>
-#include <SparqlBaseListener.h>
+#include <Sparql/SparqlParser.h>
+#include <Sparql/SparqlLexer.h>
+#include <Sparql/SparqlBaseListener.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -30,7 +30,7 @@ namespace tentris::store::sparql {
 
 	namespace {
 		using Subscript =  einsum::internal::Subscript;
-		using SparqlParser = tentris::a4grammar::sparql::SparqlParser;
+		using SparqlParser =Dice::tentris::sparql::parser::SparqlParser;
 		using namespace fmt::literals;
 	}
 
@@ -71,7 +71,7 @@ namespace tentris::store::sparql {
 
 
 	class ParsedSPARQL {
-		using SparqlLexer = tentris::a4grammar::sparql::SparqlLexer;
+		using SparqlLexer = Dice::tentris::sparql::parser::SparqlLexer;
 		using ANTLRInputStream =antlr4::ANTLRInputStream;
 		using CommonTokenStream = antlr4::CommonTokenStream;
 		using QueryContext = SparqlParser::QueryContext;

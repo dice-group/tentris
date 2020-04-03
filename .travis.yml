@@ -47,20 +47,16 @@ before_script:
   - conan profile update settings.compiler.libcxx=libstdc++11 clang9 # use "new" C++ ABI
   - conan profile update env.CXX=/usr/bin/clang++-9 clang9
   - conan profile update env.CC=/usr/bin/clang-9 clang9
-  - conan profile new --detect gcc9
-  - conan profile update settings.compiler=gcc gcc9
-  - conan profile update settings.compiler.version=9 gcc9
-  - conan profile update settings.compiler.libcxx=libstdc++11 gcc9 # use "new" C++ ABI
-  - conan profile update env.CXX=/usr/bin/g++-9 gcc9
-  - conan profile update env.CC=/usr/bin/gcc-9 gcc9
+  - conan profile update settings.sparql-parser-base:compiler.version=9 clang9
+  - conan profile update settings.sparql-parser-base:compiler.libcxx=libstdc++11  clang9
+  - conan profile update settings.sparql-parser-base:compiler=gcc clang9
+  - conan profile update env.sparql-parser-base:CXX=/usr/bin/g++ clang9
+  - conan profile update env.sparql-parser-base:CC=/usr/bin/gcc clang9
   - conan remote add tsl https://api.bintray.com/conan/tessil/tsl && conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan && conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public && conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
 
 script:
   - cd build
   - conan install .. --build=missing --profile clang9
-  - export CXX="g++-9"; export CC="gcc-9"; cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-  - make -j $(nproc) antlr4_sparql
-  - rm CMakeCache.txt
   - export CXX="clang++-9"; export CC="clang-9"; cmake -DCMAKE_BUILD_TYPE=Release .. ; make tentris_server tentris_terminal
 
 before_deploy:
