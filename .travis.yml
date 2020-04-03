@@ -57,7 +57,7 @@ before_script:
 
 script:
   - cd build
-  - conan install .. --build=missing -p clang9
+  - conan install .. --build=missing --profile clang9
   - export CXX="g++-9"; export CC="gcc-9"; cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
   - make -j $(nproc) antlr4_sparql
   - rm CMakeCache.txt
