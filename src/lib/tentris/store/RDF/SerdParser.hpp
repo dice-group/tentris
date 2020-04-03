@@ -144,11 +144,11 @@ namespace tentris::store::rdf {
 				default:
 					return SERD_ERR_BAD_SYNTAX;
 			}
-//			while (bulk_load.result_queue.read_available() > 100000) {
-//				using namespace std::this_thread; // sleep_for, sleep_until
-//				using namespace std::chrono; // nanoseconds, steady_clock, seconds
-//				sleep_for(milliseconds(5));
-//			}
+			while (bulk_load.result_queue.write_available() == 0) {
+				using namespace std::this_thread; // sleep_for, sleep_until
+				using namespace std::chrono; // nanoseconds, steady_clock, seconds
+				sleep_for(milliseconds(5));
+			}
 			bulk_load.result_queue.push({std::move(subject_term), std::move(predicate_term), std::move(object_term)});
 			return SERD_SUCCESS;
 		}
