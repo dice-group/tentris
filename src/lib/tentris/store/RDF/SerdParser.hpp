@@ -5,7 +5,7 @@
 #include <fmt/core.h>
 #include <Dice/rdf_parser/RDF/Triple.hpp>
 #include <Dice/rdf_parser/RDF/Term.hpp>
-#include <tbb/concurrent_queue.h>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <serd-0/serd/serd.h>
 #include <boost/algorithm/string.hpp>
 #include <tsl/hopscotch_map.h>
@@ -17,12 +17,11 @@ namespace tentris::store::rdf {
 
 	class BulkLoad {
 		using Triple = rdf_parser::store::rdf::Triple;
-		using ResultQueue = std::shared_ptr<tbb::concurrent_queue<Triple>>;
 		using prefixes_map_type = tsl::hopscotch_map<std::string, std::string, absl::Hash<std::string>>;
 		prefixes_map_type prefixes{};
 
 	public:
-		tbb::concurrent_queue<Triple> result_queue;
+        boost::lockfree::spsc_queue<Triple> result_queue{100000};
 		bool parsing_done;
 
 	public:
@@ -145,11 +144,11 @@ namespace tentris::store::rdf {
 				default:
 					return SERD_ERR_BAD_SYNTAX;
 			}
-			while (bulk_load.result_queue.unsafe_size() > 100000) {
-				using namespace std::this_thread; // sleep_for, sleep_until
-				using namespace std::chrono; // nanoseconds, steady_clock, seconds
-				sleep_for(milliseconds(5));
-			}
+//			while (bulk_load.result_queue.read_available() > 100000) {
+//				using namespace std::this_thread; // sleep_for, sleep_until
+//				using namespace std::chrono; // nanoseconds, steady_clock, seconds
+//				sleep_for(milliseconds(5));
+//			}
 			bulk_load.result_queue.push({std::move(subject_term), std::move(predicate_term), std::move(object_term)});
 			return SERD_SUCCESS;
 		}
@@ -173,9 +172,9 @@ namespace tentris::store::rdf {
 
 		public:
 			explicit Iterator(const std::string &file_name) : done_(false), bulk_load(BulkLoad::parse(file_name)) {
-				while (not bulk_load->result_queue.try_pop(result)) {
+				while (not bulk_load->result_queue.pop(result)) {
 					if (bulk_load->parsing_done) {
-						if (not bulk_load->result_queue.try_pop(result)) {
+						if (not bulk_load->result_queue.pop(result)) {
 							done_ = true;
 							return;
 						}
@@ -184,9 +183,9 @@ namespace tentris::store::rdf {
 			};
 
 			void operator++() {
-				while (not bulk_load->result_queue.try_pop(result)) {
+				while (not bulk_load->result_queue.pop(result)) {
 					if (bulk_load->parsing_done) {
-						if (not bulk_load->result_queue.try_pop(result)) {
+						if (not bulk_load->result_queue.pop(result)) {
 							done_ = true;
 						}
 						return;
