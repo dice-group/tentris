@@ -28,9 +28,9 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
-find_package(abseil REQUIRED)
+find_package(absl REQUIRED)
 find_package(tsl-hopscotch-map REQUIRED)
-find_package(fmt CONFIG REQUIRED)
+find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
 find_package(sparql-parser-base REQUIRED)
 find_package(rdf-parser REQUIRED)
@@ -47,18 +47,13 @@ target_link_libraries(tentris
         INTERFACE
         stdc++fs # for #include <filesystem>
         cxxopts
-
         sparql-parser-base::sparql-parser-base
-        abseil::abseil
+        absl::absl
         tsl-hopscotch-map::tsl-hopscotch-map
         fmt::fmt
         hypertrie::hypertrie
         rdf-parser::rdf-parser
-        Boost::boost
-        Boost::system
-        Boost::log_setup
-        Boost::log
-        Boost::thread
+        Boost::Boost
         serd-0
         )
 
