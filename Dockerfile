@@ -1,13 +1,13 @@
 FROM ubuntu:focal AS builder
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev clang-9 gcc-9 pkg-config
+RUN apt-get -qq update && \
+    apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev clang-9 gcc-9 pkg-config
 # we need serd as static library. Not available from ubuntu repos
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    git clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git && \
+    git clone --quiet --branch v0.30.2 https://gitlab.com/drobilla/serd.git && \
     cd serd && \
-    git submodule update --init --recursive && \
+    git submodule update --quiet --init --recursive && \
     ./waf configure --static && \
     ./waf install &&\
     rm /usr/bin/python
@@ -34,7 +34,7 @@ RUN conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
 
 # build and cache dependencies via conan
 COPY conanfile.txt /conan_cache/conanfile.txt
-RUN cd /conan_cache && conan install . --build=missing --profile default
+RUN cd /conan_cache && conan install . --build=missing --profile default > conan_build.log
 
 # import project files
 COPY thirdparty /tentris/thirdparty/
