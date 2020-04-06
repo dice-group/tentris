@@ -78,18 +78,12 @@ For more commandline options see `tentris_terminal --help`.
 ### build tools
 
 Tentris is known to build successfully on Ubuntu 18.10 and newer. 
-Building was tested with GCC 8 and clang 7.
+Building was tested with GCC 9 and clang 9.
 
-The following packages are required to build tentris:
+The following packages are required to build Tentris:
 ```
 sudo apt install build-essential uuid-dev g++ git openjdk-8-jdk python3-pip python3-setuptools python3-wheel
 ```
-
-Since ANTLR4 has problems with recent cmake releases, we suggest using this specific version:
-```
-pip3 install --user cmake==3.13.3
-```
-
 Additionally, a recent version of conan is required: 
 ```
 pip3 install --user conan
@@ -97,14 +91,14 @@ pip3 install --user conan
 
 ### dependencies
 Most required dependencies are installed via conan. Therefore, Add the respective remotes:
-```bash
-conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan
+```shell script
+conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add tsl https://api.bintray.com/conan/tessil/tsl
 conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public 
 conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
 ```
 Additionally, a statically linked version of the [Serd](https://drobilla.net/software/serd) library is required. As the packages in the deb/rpm repositories include only a dynamic library, we need to compile it manually:
-```bash
+```shell script
 clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git
 cd serd
 git submodule update --init --recursive
@@ -125,16 +119,16 @@ Make sure you are in the cloned folder:
 cd tentris
 ```
 Now, make a build directory and enter it.
-```bash
+```shell script
 mkdir build 
 cd build
 ```
 Get and build the dependencies with conan:
-```bash
+```shell script
 conan install .. --build=missing --settings compiler.libcxx="libstdc++11"
 ```
 Generate the build skripts with CMAKE and run the build:
-```bash
+```shell script
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. 
 make -j tentris_server tentris_terminal
 ```
@@ -148,5 +142,28 @@ To compile Tentris with debugging symbols, proceed as above but change the cmake
 
 To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
 # docker
-A docker image is available on docker hub https://hub.docker.com/r/dicegroup/tentris_server. Usage instructions are provided there. 
+* A docker image is available on [docker hub](https://hub.docker.com/r/dicegroup/tentris_server). Get it with 
+    ```shell script
+    docker pull dicegroup/tentris_server
+    ```
+* To show the available commandline options, run
+    ```shell script
+    docker run --rm dicegroup/tentris_server --help
+    ```
+* Tentris uses by default the port 8090, so make sure you forward it, e.g. 
+    ```shell script
+    docker run --publish=9080:9080 dicegroup/tentris_server
+    ```
+* To load data, mount its enclosing directory to the container and tell Tentris, to load it:
+    ```shell script
+    docker run -v /localfolder:/datasets --publish=9080:9080 dicegroup/tentris_server -f /datasets/yourRDFfile.nt
+    ```
+* By default, Tentris writes logs to the `/tentris` in the container. To make logs available outside the container, you can mount them as well:
+    ```shell script
+    docker run -v /local-log-dir:/tentris --publish=9080:9080 dicegroup/tentris_server
+    ```
+* The other command-line tools `tentris_terminal`, `ids2hypertrie` and `ids2hypertrie` are also available in the container. Run them like:
+    ```shell script
+    docker run -it  dicegroup/tentris_server tentris_terminal
+    ``` 
 

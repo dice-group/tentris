@@ -1,12 +1,13 @@
 [requires]
-restinio/0.6.2@stiffstream/stable
-boost/1.71.0@conan/stable
+boost/1.72.0
+fmt/6.1.2
+gtest/1.8.1
+abseil/20200205
+http-parser/2.8.1@bincrafters/stable  # for restinio
+restinio/0.6.5@stiffstream/stable
 tsl-hopscotch-map/2.2.1@tessil/stable
-fmt/6.0.0@bincrafters/stable
-abseil/20181200@bincrafters/stable
 hypertrie/0.5.2@dice-group/stable
 rdf-parser/0.10@dice-group/stable
-gtest/1.8.1@bincrafters/stable
 sparql-parser-base/0.1.0@dice-group/stable
 
 [options]
@@ -18,5 +19,3 @@ boost:shared=False
 [generators]
 cmake_find_package
 cmake_paths
-
-

@@ -1,0 +1,4 @@
+# log files
+tentris_*
+# cmake build folders
+./cmake*
