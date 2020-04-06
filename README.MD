@@ -78,18 +78,12 @@ For more commandline options see `tentris_terminal --help`.
 ### build tools
 
 Tentris is known to build successfully on Ubuntu 18.10 and newer. 
-Building was tested with GCC 8 and clang 7.
+Building was tested with GCC 9 and clang 9.
 
-The following packages are required to build tentris:
+The following packages are required to build Tentris:
 ```
 sudo apt install build-essential uuid-dev g++ git openjdk-8-jdk python3-pip python3-setuptools python3-wheel
 ```
-
-Since ANTLR4 has problems with recent cmake releases, we suggest using this specific version:
-```
-pip3 install --user cmake==3.13.3
-```
-
 Additionally, a recent version of conan is required: 
 ```
 pip3 install --user conan
@@ -98,7 +92,7 @@ pip3 install --user conan
 ### dependencies
 Most required dependencies are installed via conan. Therefore, Add the respective remotes:
 ```shell script
-conan remote add public-conan https://api.bintray.com/conan/bincrafters/public-conan
+conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add tsl https://api.bintray.com/conan/tessil/tsl
 conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public 
 conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
