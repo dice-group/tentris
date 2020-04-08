@@ -3,7 +3,7 @@ project(tentris CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 0)
-set(tentris_VERSION_PATCH 3)
+set(tentris_VERSION_PATCH 5)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
@@ -69,10 +69,11 @@ add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerC
 
 target_link_libraries(tentris_server
         PRIVATE
+        -static
+        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         tentris
         restinio::restinio
         http-parser::http-parser
-        -static
         )
 
 set_target_properties(tentris_server PROPERTIES LINK_FLAGS_RELEASE -s)
@@ -81,8 +82,9 @@ add_dependencies(tentris_server tentris)
 
 add_executable(tentris_terminal src/exec/TentrisTerminal.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 target_link_libraries(tentris_terminal
-        tentris
         -static
+        tentris
+        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         )
 
 set_target_properties(tentris_terminal PROPERTIES LINK_FLAGS_RELEASE -s)
@@ -91,18 +93,23 @@ add_dependencies(tentris_terminal tentris)
 
 add_executable(rdf2ids src/exec/tools/RDF2IDs.cpp)
 target_link_libraries(rdf2ids
-        tentris
         -static
+        tentris
+        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         )
 
 set_target_properties(rdf2ids PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_dependencies(rdf2ids tentris)
 
+# for rt and pthread linkage see:
+# * https://stackoverflow.com/questions/58848694/gcc-whole-archive-recipe-for-static-linking-to-pthread-stopped-working-in-rec
+# * https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why
 add_executable(ids2hypertrie src/exec/tools/IDs2Hypertrie.cpp)
 target_link_libraries(ids2hypertrie
-        tentris
         -static
+        tentris
+        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         )
 
 add_dependencies(ids2hypertrie tentris)
