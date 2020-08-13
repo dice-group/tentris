@@ -184,7 +184,7 @@ namespace tentris::http {
 			auto resp = req->create_response();
 			resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
 			resp.connection_close();
-			resp.set_body(json_result.str()).done();
+			resp.set_body(json_result.string()).done();
 			return Status::OK;
 		}
 
