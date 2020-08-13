@@ -16,7 +16,7 @@ before_cache:
   - docker save -o docker_images/images.tar $(docker images -a -q)
 
 script:
-  - docker build -t tentris_docker_image .
+  - travis_wait 30 docker build -t tentris_docker_image .
 
 before_deploy:
   - container_id=$(docker create tentris_docker_image)
