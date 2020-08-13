@@ -57,6 +57,8 @@ namespace tentris::store {
 			rapidjson::Value entry_obj(rapidjson::kObjectType);
 			entry_obj.SetObject();
 			for(const auto &[term, var]: iter::zip(entry.key, variables)){
+				if (term == nullptr)
+					continue;
 				rapidjson::Value term_obj(rapidjson::kObjectType);
 				term_obj.SetObject();
 
