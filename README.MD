@@ -4,7 +4,7 @@
 
 <span style="font-variant:small-caps;">Tentris</span> is a triple store to query RDF data using SPARQL. 
 It is based on tensors and tensor algebra. 
-Currently, it supports SELECT queries with or without DISTINCT and a WHERE-bock with triple patterns.
+Currently, it supports SELECT queries with or without DISTINCT and a WHERE-block with triple patterns.
 
 Further SPARQL features will follow.   
 
