@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(tentris CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 0)
 set(tentris_VERSION_PATCH 5)
@@ -42,8 +42,9 @@ find_package(rdf-parser REQUIRED)
 SET(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS system log_setup log thread)
 SET(RESTINIO_USE_BOOST_ASIO=static)
-find_package(restinio CONFIG REQUIRED)
+find_package(restinio REQUIRED)
 find_package(http-parser REQUIRED)
+find_package(string-view-lite REQUIRED)
 
 # make a library of the code
 add_library(tentris INTERFACE)
@@ -80,6 +81,7 @@ target_link_libraries(tentris_server
         tentris
         restinio::restinio
         http-parser::http-parser
+        nonstd::string-view-lite
         )
 
 set_target_properties(tentris_server PROPERTIES LINK_FLAGS_RELEASE -s)

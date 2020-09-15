@@ -3,16 +3,31 @@
 This is the changelog for `cxxopts`, a C++11 library for parsing command line
 options. The project adheres to semantic versioning.
 
+## Next version
+
+### Changed
+
+* Only search for a C++ compiler in CMakeLists.txt.
+* Allow for exceptions to be disabled.
+* Fix duplicate default options when there is a short and long option.
+* Add `CXXOPTS_NO_EXCEPTIONS` to disable exceptions.
+* Fix char parsing for space and check for length.
+* Change argument type in `Options::parse` from `char**` to `const char**`.
+
 ## 2.2
 
 ### Changed
 
 * Allow integers to have leading zeroes.
 * Build the tests by default.
+* Don't check for container when showing positional help.
 
 ### Added
 
 * Iterator inputs to `parse_positional`.
+* Throw an exception if the option in `parse_positional` doesn't exist.
+* Parse a delimited list in a single argument for vector options.
+* Add an option to disable implicit value on booleans.
 
 ### Bug Fixes
 
@@ -22,6 +37,7 @@ options. The project adheres to semantic versioning.
 * Throw on invalid option syntax when beginning with a `-`.
 * Throw in `as` when option wasn't present.
 * Fix catching exceptions by reference.
+* Fix out of bounds errors parsing integers.
 
 ## 2.1.1
 

@@ -1,12 +1,11 @@
 [requires]
-boost/1.72.0
-fmt/6.1.2
+boost/1.74.0
+fmt/7.0.3
 gtest/1.8.1
-abseil/20200205
+abseil/20200225.2
 http-parser/2.8.1@bincrafters/stable  # for restinio
-restinio/0.6.5@stiffstream/stable
-tsl-hopscotch-map/2.2.1@tessil/stable
-hypertrie/0.5.2@dice-group/stable
+restinio/0.6.10@stiffstream/stable
+hypertrie/0.6.0-rc2@dice-group/stable
 rdf-parser/0.10@dice-group/stable
 sparql-parser-base/0.1.0@dice-group/stable
 

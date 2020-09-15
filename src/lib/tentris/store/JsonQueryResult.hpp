@@ -29,7 +29,7 @@ namespace tentris::store {
         using Term = rdf_parser::store::rdf::Term;
 		using Variable = sparql::Variable;
 		using Entry = EinsumEntry<result_type>;
-		using Key = typename Entry::key_type;
+		using Key = typename Entry::Key;
 		using Value = typename Entry::value_type;
 
 		std::size_t result_count = 0;
