@@ -3,7 +3,7 @@ project(tentris CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 0)
-set(tentris_VERSION_PATCH 5)
+set(tentris_VERSION_PATCH 6)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
@@ -18,6 +18,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 else ()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 endif ()
+if (TENTRIS_BUILD_WITH_TCMALLOC)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ltcmalloc -Wl,--eh-frame-hdr")
+endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
 
