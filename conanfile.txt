@@ -5,7 +5,7 @@ gtest/1.8.1
 abseil/20200225.2
 http-parser/2.8.1@bincrafters/stable  # for restinio
 restinio/0.6.10@stiffstream/stable
-hypertrie/0.6.0-rc2@dice-group/stable
+hypertrie/0.6.0-rc4@dice-group/stable
 rdf-parser/0.10@dice-group/stable
 sparql-parser-base/0.1.0@dice-group/stable
 
