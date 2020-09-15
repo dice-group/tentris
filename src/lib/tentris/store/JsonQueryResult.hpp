@@ -8,6 +8,12 @@
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/util/HTTPUtils.hpp"
+#define RAPIDJSON_HAS_STDSTRING 1
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/pointer.h>
+#include <rapidjson/ostreamwrapper.h>
 
 #include "tentris/tensor/BoolHypertrie.hpp"
 
@@ -18,10 +24,6 @@ namespace tentris::store {
 		using namespace tentris::http;
 	}
 
-	thread_local static const std::string json_head = R"({"head":{"vars":[)";
-	thread_local static const std::string json_mid = R"(]},"results":{"bindings":[)";
-	thread_local static const std::string json_tail = "]}}\n";
-
 	template<typename result_type>
 	class JsonQueryResult {
         using Term = rdf_parser::store::rdf::Term;
@@ -30,125 +32,81 @@ namespace tentris::store {
 		using Key = typename Entry::key_type;
 		using Value = typename Entry::value_type;
 
-		std::size_t json_size = json_head.size() + json_mid.size() + json_tail.size();
-
 		std::size_t result_count = 0;
 
 		std::vector<Variable> variables{};
 
-		struct JsonBindings {
-			Value count{};
-			std::string json{};
-		};
-
-		tsl::sparse_map<Key, JsonBindings, ::einsum::internal::KeyHash<key_part_type>> entries{};
+		rapidjson::Document json_doc;
+		rapidjson::Value * bindings;
 
 	public:
 		explicit JsonQueryResult(std::vector<Variable> variables) : variables(std::move(variables)) {
-			if (not this->variables.empty())
-				json_size += (this->variables.size() - 1); // for commata
-			json_size += (this->variables.size() * 2); // for quotation marks
-			for (const Variable &var: this->variables)
-				json_size += var.name.size();
+			json_doc.SetObject();
+			rapidjson::Value &vars = rapidjson::Pointer("/head/vars").Create(json_doc);
+			vars.SetArray();
+			for (const auto &var : this->variables)
+				vars.PushBack(rapidjson::StringRef(var.name), json_doc.GetAllocator());
+			rapidjson::Value &bindings = rapidjson::Pointer("/results/bindings").Create(json_doc);
+			bindings.SetArray();
+			this->bindings = &bindings;
 		}
 
 		void add(const Entry &entry) {
-			auto calc_size = [](auto count, auto json_binding_size) { return json_binding_size * count; };
-			auto found = entries.find(entry.key);
-			if (found != entries.end()) {
-				JsonBindings &bindings = found.value();
-				auto old_count = bindings.count;
-				auto old_size = calc_size(old_count, bindings.json.size());
-				auto new_count = old_count + entry.value;
-				auto new_size = calc_size(new_count, bindings.json.size());
-				bindings.count = new_count;
-				json_size += new_size - old_size;
-				result_count += new_count - old_count;
-			} else {
-				auto[iter, valid] = entries.emplace(entry.key,
-													JsonBindings{entry.value, key2jsonStr(entry.key, variables)});
-				JsonBindings &bindings = iter.value();
-				auto size = calc_size(entry.value, bindings.json.size());
-				json_size += size;
-				result_count += entry.value;
-			}
-		}
+			rapidjson::Document::AllocatorType& allocator = json_doc.GetAllocator();
 
-		[[nodiscard]] std::size_t jsonSize() const {
-			return json_size + ((result_count > 0) ? (result_count - 1) : 0);
-		}
-
-	private:
-		[[nodiscard]] static std::string key2jsonStr(const Key &key, const std::vector<Variable> &variables) {
-			std::string json{};
-			json.reserve(variables.size() * 50);
-			json += "{";
-			bool firstKey = true;
-			for (const auto[term, var] : iter::zip(key, variables)) {
+			rapidjson::Value entry_obj(rapidjson::kObjectType);
+			entry_obj.SetObject();
+			for(const auto &[term, var]: iter::zip(entry.key, variables)){
 				if (term == nullptr)
 					continue;
-				if (firstKey) {
-					firstKey = false;
-				} else {
-					json += ",";
-				}
+				rapidjson::Value term_obj(rapidjson::kObjectType);
+				term_obj.SetObject();
 
-				json += '"' +  var.name + R"(":{)";
-
-				const Term::NodeType termType = term->type();
-				switch (termType) {
+				switch (term->type()) {
 					case Term::NodeType::URIRef_:
-						json += R"("type":"uri")";
+						term_obj.AddMember("type", "uri", allocator);
 						break;
 					case Term::NodeType::BNode_:
-						json += R"("type":"bnode")";
+						term_obj.AddMember("type", "bnode", allocator);
 						break;
 					case Term::NodeType::Literal_:
-						json += R"("type":"literal")";
+						term_obj.AddMember("type", "literal", allocator);
 						break;
-					case Term::NodeType::None:
+					default:
 						log("Incomplete term with no type (Literal, BNode, URI) detected.");
 						assert(false);
 				}
+				auto value = term->value();
+				term_obj.AddMember("value", rapidjson::StringRef(value.data(), value.size()), allocator);
 
-				json += fmt::format(R"(,"value":"{}")", escapeJsonString(term->value()));
-				if (termType == Term::NodeType::Literal_) {
-                    const Literal & literal_term = term->castLiteral();
-					if (literal_term.hasDataType())
-						json += fmt::format(R"(,"datatype":"{}")", literal_term.dataType());
-					else if (literal_term.hasLang())
-						json += fmt::format(R"(,"xml:lang":"{}")", literal_term.lang());
+				if (term->isLiteral()) {
+					const Literal & literal_term = term->castLiteral();
+					if (literal_term.hasDataType()){
+						auto data_type = literal_term.dataType();
+						term_obj.AddMember("datatype", rapidjson::StringRef(data_type.data(), data_type.size()), allocator);
+					}
+					else if (literal_term.hasLang()){
+						auto lang = literal_term.lang();
+						term_obj.AddMember("datatype", rapidjson::StringRef(lang.data(), lang.size()), allocator);
+					}
 				}
-				json += '}';
+				entry_obj.AddMember(rapidjson::StringRef(var.name.data(), var.name.size()), term_obj, allocator);
 			}
-			json += R"(})";
-			return json;
-		};
-	public:
-		[[nodiscard]] std::string str() const {
-
-			std::string result{};
-			result.reserve(jsonSize());
 
 
-			result += json_head;
-			if (not variables.empty())
-				result += fmt::format(R"("{}")", fmt::join(variables, R"(",")"));
-			result += json_mid;
-			bool first_bindings = true;
-
-			for (const auto &[key, json_binding] : entries) {
-				for ([[maybe_unused]] auto _ : iter::range(json_binding.count)) {
-					if (first_bindings)
-						first_bindings = false;
-					else
-						result += ',';
-					result += json_binding.json;
-				}
+			for (auto i = 0; i < entry.value - 1; ++i) {
+				rapidjson::Value entry_obj_copy(entry_obj, allocator);
+				bindings->PushBack(entry_obj_copy,allocator);
 			}
-			result += json_tail;
-			assert(result.size() == jsonSize());
-			return result;
+			bindings->PushBack(entry_obj,allocator);
+			result_count+=entry.value;
+		}
+
+		[[nodiscard]] std::string string() const {
+			rapidjson::StringBuffer buffer;
+			rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+			json_doc.Accept(writer);
+			return std::string(buffer.GetString(), buffer.GetLength());
 		}
 
 		[[nodiscard]] std::size_t size() const {

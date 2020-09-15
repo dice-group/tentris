@@ -99,7 +99,7 @@ conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
 ```
 Additionally, a statically linked version of the [Serd](https://drobilla.net/software/serd) library is required. As the packages in the deb/rpm repositories include only a dynamic library, we need to compile it manually:
 ```shell script
-clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git
+git clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git
 cd serd
 git submodule update --init --recursive
 ./waf configure --static

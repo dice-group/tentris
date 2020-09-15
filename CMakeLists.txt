@@ -28,6 +28,11 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
+add_library(rapidjson INTERFACE)
+target_include_directories(rapidjson INTERFACE
+        thirdparty/RapidJSON/include
+        )
+
 find_package(absl REQUIRED)
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
@@ -47,6 +52,7 @@ target_link_libraries(tentris
         INTERFACE
         stdc++fs # for #include <filesystem>
         cxxopts
+        rapidjson
         sparql-parser-base::sparql-parser-base
         absl::absl
         tsl-hopscotch-map::tsl-hopscotch-map
