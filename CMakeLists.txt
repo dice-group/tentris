@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 project(tentris CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(tentris_VERSION_MAJOR 1)
-set(tentris_VERSION_MINOR 0)
-set(tentris_VERSION_PATCH 6)
+set(tentris_VERSION_MINOR 1)
+set(tentris_VERSION_PATCH 0)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
