@@ -12,6 +12,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <utility>
 
 namespace tentris::store::rdf {
 
@@ -22,7 +23,7 @@ namespace tentris::store::rdf {
 
 	public:
         boost::lockfree::spsc_queue<Triple> result_queue{100000};
-		bool parsing_done;
+		bool parsing_done = false;
 
 	public:
 		static std::shared_ptr<BulkLoad> parse(const std::string &file_path) {
@@ -48,11 +49,11 @@ namespace tentris::store::rdf {
 
 	private:
 
-		auto getBNode(const SerdNode *node) const -> Term {
+		static auto getBNode(const SerdNode *node) -> Term {
 			return BNode(std::string(std::string_view{(char *) (node->buf), size_t(node->n_bytes)}));
 		}
 
-		auto getURI(const SerdNode *node) const -> Term {
+		static auto getURI(const SerdNode *node) -> Term {
 			return URIRef(std::string(std::string_view{(char *) (node->buf), size_t(node->n_bytes)}));
 		}
 
@@ -67,7 +68,7 @@ namespace tentris::store::rdf {
 			return URIRef(fmt::format("{}{}", prefixes.find(prefix_and_suffix[0])->second, prefix_and_suffix[1]));
 		}
 
-		auto getLiteral(const SerdNode *literal, const SerdNode *type_node, const SerdNode *lang_node) const -> Term {
+		static auto getLiteral(const SerdNode *literal, const SerdNode *type_node, const SerdNode *lang_node) -> Term {
 			std::string literal_value = std::string{(char *) (literal->buf), size_t(literal->n_bytes)};
 			if (type_node != nullptr)
 				return Literal(literal_value, std::nullopt,
@@ -107,10 +108,10 @@ namespace tentris::store::rdf {
 					subject_term = bulk_load.getPrefixedUri(subject);
 					break;
 				case SERD_URI:
-					subject_term = bulk_load.getURI(subject);
+					subject_term = getURI(subject);
 					break;
 				case SERD_BLANK: {
-					subject_term = bulk_load.getBNode(subject);
+					subject_term = getBNode(subject);
 				}
 					break;
 				default:
@@ -122,7 +123,7 @@ namespace tentris::store::rdf {
 					predicate_term = bulk_load.getPrefixedUri(predicate);
 					break;
 				case SERD_URI:
-					predicate_term = bulk_load.getURI(predicate);
+					predicate_term = getURI(predicate);
 					break;
 				default:
 					return SERD_ERR_BAD_SYNTAX;
@@ -133,13 +134,13 @@ namespace tentris::store::rdf {
 					object_term = bulk_load.getPrefixedUri(object);
 					break;
 				case SERD_LITERAL:
-					object_term = bulk_load.getLiteral(object, object_datatype, object_lang);
+					object_term = getLiteral(object, object_datatype, object_lang);
 					break;
 				case SERD_BLANK:
-					object_term = bulk_load.getBNode(object);
+					object_term = getBNode(object);
 					break;
 				case SERD_URI:
-					object_term = bulk_load.getURI(object);
+					object_term = getURI(object);
 					break;
 				default:
 					return SERD_ERR_BAD_SYNTAX;
@@ -160,7 +161,7 @@ namespace tentris::store::rdf {
 		std::string file_name_;
 
 	public:
-		SerdParser(const std::string &file_name) : file_name_(file_name) {}
+		explicit SerdParser(std::string file_name) : file_name_(std::move(file_name)) {}
 
 
 	public:
@@ -195,7 +196,7 @@ namespace tentris::store::rdf {
 
 			void operator++(int) { operator++(); }
 
-			operator bool() { return not done_; }
+			operator bool() const { return not done_; }
 
 			const Triple &operator*() { return result; }
 		};
