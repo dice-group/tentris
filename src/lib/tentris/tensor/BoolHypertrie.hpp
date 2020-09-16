@@ -1,24 +1,27 @@
 #ifndef TENTRIS_BOOLHYPERTRIE_HPP
 #define TENTRIS_BOOLHYPERTRIE_HPP
 
-#include <Dice/hypertrie/boolhypertrie.hpp>
+#include <Dice/hypertrie/hypertrie.hpp>
 #include "tentris/store/RDF/TermStore.hpp"
 
 namespace tentris::tensor {
 	using key_part_type = store::rdf::TermStore::ptr_type;
-	using ht = typename hypertrie::template boolhypertrie<key_part_type, hypertrie::internal::container::tsl_sparse_map,
-			hypertrie::internal::container::tsl_sparse_set>;
+	using tr = hypertrie::Hypertrie_t<key_part_type,
+			bool,
+			hypertrie::internal::container::tsl_sparse_map,
+			hypertrie::internal::container::tsl_sparse_set,
+			true>;
 
-	using SliceKey = ht::const_BoolHypertrie::SliceKey;
-	using Key = ht::const_BoolHypertrie::Key;
+	using SliceKey = typename tr::SliceKey;
+	using Key = typename tr::Key ;
 
-	using BoolHypertrie = ht::BoolHypertrie;
-	using const_BoolHypertrie = ht::const_BoolHypertrie;
+	using BoolHypertrie = hypertrie::Hypertrie<tr>;
+	using const_BoolHypertrie = hypertrie::const_Hypertrie<tr>;
 	template<typename result_type>
-	using Einsum = ht::Einsum<result_type>;
+	using Einsum = hypertrie::Einsum<result_type, tr>;
 
 	template<typename result_type>
-	using EinsumEntry = ht::EinsumEntry<result_type>;
+	using EinsumEntry = hypertrie::EinsumEntry<result_type, tr>;
 	using DISTINCT_t = bool;
 	using COUNTED_t = std::size_t;
 }

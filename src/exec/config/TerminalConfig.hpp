@@ -9,7 +9,7 @@ struct TerminalConfig : public ExecutableConfig {
 	mutable bool onlystdout;
 
 	TerminalConfig() {
-		options = {"tentris_terminal", "Tentris SPARQL endpoint with terminal interface. "
+		options = cxxopts::Options{"tentris_terminal", "Tentris SPARQL endpoint with terminal interface. "
 									   "Just type your query and get the result."};
 		addOptions();
 
@@ -19,7 +19,7 @@ struct TerminalConfig : public ExecutableConfig {
 	}
 
 
-	TerminalConfig(int argc, char **argv) : TerminalConfig{} {
+	TerminalConfig(int argc, const char **&argv) : TerminalConfig{} {
 		initConfig(argc, argv);
 	}
 

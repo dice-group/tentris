@@ -237,7 +237,8 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 
 int main(int argc, char *argv[]) {
-	cfg = {argc, argv};
+	auto const_argv = const_cast<const char **>(argv);
+	cfg = TerminalConfig{argc, const_argv};
 	tentris::logging::init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
 
 	TripleStore triplestore{};
@@ -250,7 +251,7 @@ int main(int argc, char *argv[]) {
 	if (not cfg.rdf_file.empty()) {
 		logsink() << "Loading file " << cfg.rdf_file << " ..." << std::endl;
 		auto start_time = steady_clock::now();
-		AtomicTripleStore::getInstance().loadRDF(cfg.rdf_file);
+		AtomicTripleStore::getInstance().bulkloadRDF(cfg.rdf_file, cfg.bulksize);
 		auto duration = steady_clock::now() - start_time;
 		logsink() << fmt::format("... loading finished. {} triples loaded.", AtomicTripleStore::getInstance().size())
 				  << std::endl;
