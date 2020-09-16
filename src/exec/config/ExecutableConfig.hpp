@@ -42,6 +42,9 @@ public:
 	mutable logging::trivial::severity_level loglevel;
 
 	mutable bool logfile;
+
+	mutable size_t bulksize;
+
 	mutable bool logstdout;
 
 	mutable std::string logfiledir;
@@ -66,6 +69,9 @@ protected:
 				("logfile",
 				 "If log is written to file.",
 				 cxxopts::value<bool>()->default_value("true"))
+				("b,bulksize",
+				 "Number of triples that are inserted at once. A larger value results in a higher memory consumption during loading RDF data but may result in shorter loading times.",
+				 cxxopts::value<size_t>()->default_value("1000000"))
 				("logstdout",
 				 "If log is written to stdout.",
 				 cxxopts::value<bool>()->default_value("false"))
@@ -141,6 +147,8 @@ protected:
 
 
 		logstdout = arguments["logstdout"].as<bool>();
+
+		bulksize = arguments["bulksize"].as<size_t>();
 
 
 		logfiledir = arguments["logfiledir"].as<std::string>();

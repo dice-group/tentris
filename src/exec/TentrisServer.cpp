@@ -18,21 +18,19 @@ namespace {
 	using namespace fmt::literals;
 }
 
-void bulkload(std::string triple_file) {
+void bulkload(std::string triple_file, size_t bulksize) {
 
 	// log the starting time and print resource usage information
 	auto loading_start_time = log_health_data();
 
 	if (fs::is_regular_file(triple_file)) {
 		log("nt-file: {} loading ..."_format(triple_file));
-		AtomicTripleStore::getInstance().loadRDF(triple_file);
+		AtomicTripleStore::getInstance().bulkloadRDF(triple_file, bulksize);
 	} else {
 		log("nt-file {} was not found."_format(triple_file));
 		log("Exiting ...");
 		std::exit(EXIT_FAILURE);
 	}
-	log("Loaded {} triples.\n"_format(AtomicTripleStore::getInstance().size()));
-
 	// log the end time and print resource usage information
 	auto loading_end_time = log_health_data();
 	// log the time it tool to load the file
@@ -52,7 +50,7 @@ int main(int argc, char *argv[]) {
 
 	// bulkload file
 	if (not cfg.rdf_file.empty()) {
-		bulkload(cfg.rdf_file);
+		bulkload(cfg.rdf_file, cfg.bulksize);
 	} else {
 		log("No file loaded.");
 	}
