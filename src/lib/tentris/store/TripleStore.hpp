@@ -66,6 +66,38 @@ namespace tentris::store {
 			}
 		}
 
+		void bulkloadRDF(const std::string &file_path, size_t bulk_size = 1'000'000) {
+			using namespace rdf_parser::Turtle;
+
+			try {
+				hypertrie::BulkInserter<tr> bulk_inserter{trie, 0};
+				// TurtleParser<FileParser> parser{file_path};
+				unsigned int count = 0;
+				for (const Triple &triple : rdf::SerdParser{file_path}) {
+					if (not triple.subject().isLiteral() and triple.predicate().isURIRef()) {
+						auto subject_id = termIndex[triple.subject()];
+						auto predicate_id = termIndex[triple.predicate()];
+						auto object_id = termIndex[triple.object()];
+						bulk_inserter.add({subject_id, predicate_id, object_id});
+					} else
+						throw std::invalid_argument{
+								"Subject or predicate of the triple have a term type that is not allowed there."};
+					++count;
+
+					if (bulk_inserter.size() == bulk_size) {
+						bulk_inserter.flush();
+						logDebug("{:>10.3} mio triples processed."_format(double(count)/1'000'000));
+						logDebug("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
+					}
+				}
+				bulk_inserter.flush();
+				log("{:>10.3} mio triples processed."_format(double(count)/1'000'000));
+				log("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
+			} catch (...) {
+				throw std::invalid_argument{"A parsing error occurred while parsing {}"_format(file_path)};
+			}
+		}
+
 		void add(const std::tuple<std::string, std::string, std::string> &triple) {
 			add(Term::make_term(std::get<0>(triple)),
 				Term::make_term(std::get<1>(triple)),
