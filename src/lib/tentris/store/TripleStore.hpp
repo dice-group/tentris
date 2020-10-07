@@ -104,7 +104,7 @@ namespace tentris::store {
 				Term::make_term(std::get<2>(triple)));
 		}
 
-		std::variant<std::optional<const_BoolHypertrie>, bool> resolveTriplePattern(TriplePattern tp) {
+		std::variant<const_BoolHypertrie, bool> resolveTriplePattern(TriplePattern tp) {
 			auto slice_count = 0;
 			for (const auto &entry: tp)
 				if (std::holds_alternative<Variable>(entry))
@@ -119,9 +119,9 @@ namespace tentris::store {
 					} catch ([[maybe_unused]] std::out_of_range &exc) {
 						// a keypart was not in the index so the result is zero anyways.
 						return (slice_count > 0)
-							   ? std::variant<std::optional<const_BoolHypertrie>, bool>{
-										std::optional<const_BoolHypertrie>()}
-							   : std::variant<std::optional<const_BoolHypertrie>, bool>{false};
+							   ? std::variant<const_BoolHypertrie, bool>{
+										const_BoolHypertrie()}
+							   : std::variant<const_BoolHypertrie, bool>{false};
 					}
 			}
 			return trie[slice_key];

@@ -48,6 +48,7 @@ SET(RESTINIO_USE_BOOST_ASIO=static)
 find_package(restinio REQUIRED)
 find_package(http-parser REQUIRED)
 find_package(string-view-lite REQUIRED)
+find_package(optional-lite REQUIRED)
 
 # make a library of the code
 add_library(tentris INTERFACE)
@@ -85,6 +86,8 @@ target_link_libraries(tentris_server
         restinio::restinio
         http-parser::http-parser
         nonstd::string-view-lite
+        nonstd::optional-lite
+        nonstd::variant-lite
         )
 
 set_target_properties(tentris_server PROPERTIES LINK_FLAGS_RELEASE -s)
