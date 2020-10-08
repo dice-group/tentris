@@ -90,7 +90,7 @@ namespace tentris::store {
 						logDebug("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
 					}
 				}
-				bulk_inserter.flush();
+				bulk_inserter.flush(true);
 				log("{:>10.3} mio triples processed."_format(double(count)/1'000'000));
 				log("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
 			} catch (...) {
