@@ -1,6 +1,7 @@
 FROM ubuntu:focal AS builder
 ARG DEBIAN_FRONTEND=noninteractive
 ARG CXXFLAGS="${CXXFLAGS} -march=x86-64"
+ARG CMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld-10"
 ARG TENTRIS_MARCH="x86-64"
 
 RUN apt-get -qq update && \
@@ -52,7 +53,7 @@ RUN mkdir /tentris/build && cd /tentris/build && \
 # build tentris_server with clang++-10 again
 RUN export CXX="clang++-10" && export CC="clang-10" && \
     cd /tentris/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_WITH_TCMALLOC=true .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_WITH_TCMALLOC=true -DTENTRIS_STATIC=true .. && \
     make -j $(nproc)
 
 FROM scratch
