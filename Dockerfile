@@ -1,5 +1,7 @@
 FROM ubuntu:focal AS builder
 ARG DEBIAN_FRONTEND=noninteractive
+ARG CXXFLAGS="${CXXFLAGS} -march=x86-64"
+ARG TENTRIS_MARCH="x86-64"
 
 RUN apt-get -qq update && \
     apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-10-dev clang-10 g++-10 pkg-config google-perftools libgoogle-perftools-dev
@@ -45,8 +47,7 @@ COPY conanfile.txt /tentris/conanfile.txt
 
 ##build
 # import and build depenedencies via conan
-RUN export CXX="g++-10" && export CC="gcc-10" && \
-    mkdir /tentris/build && cd /tentris/build && \
+RUN mkdir /tentris/build && cd /tentris/build && \
     conan install .. --build=missing
 # build tentris_server with clang++-10 again
 RUN export CXX="clang++-10" && export CC="clang-10" && \
