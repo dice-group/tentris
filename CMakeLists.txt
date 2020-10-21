@@ -13,13 +13,22 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     endif ()
 endif ()
 
+if(NOT DEFINED ${TENTRIS_MARCH})
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=x86-64")
+else()
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=${TENTRIS_MARCH}")
+endif()
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer -momit-leaf-frame-pointer")
 else ()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 endif ()
 if (TENTRIS_BUILD_WITH_TCMALLOC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -ltcmalloc -Wl,--eh-frame-hdr")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Ltcmalloc-minimal")
+    if(TENTRIS_STATIC)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--eh-frame-hdr")
+    endif()
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
@@ -42,9 +51,14 @@ find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
 find_package(sparql-parser-base REQUIRED)
 find_package(rdf-parser REQUIRED)
-SET(Boost_USE_STATIC_LIBS ON)
+if (TENTRIS_STATIC)
+    SET(Boost_USE_STATIC_LIBS ON)
+endif ()
+
 find_package(Boost REQUIRED COMPONENTS system log_setup log thread)
-SET(RESTINIO_USE_BOOST_ASIO=static)
+if (TENTRIS_STATIC)
+    SET(RESTINIO_USE_BOOST_ASIO=static)
+endif ()
 find_package(restinio REQUIRED)
 find_package(http-parser REQUIRED)
 find_package(string-view-lite REQUIRED)
@@ -74,14 +88,24 @@ target_include_directories(tentris INTERFACE
         ${Boost_INCLUDE_DIRS}
         )
 
+# for rt and pthread linkage see:
+# * https://stackoverflow.com/questions/58848694/gcc-whole-archive-recipe-for-static-linking-to-pthread-stopped-working-in-rec
+# * https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why
+if (TENTRIS_STATIC)
+    set(TENTRIS_STATIC_DEF -static)
+    set(TENTRIS_PTHREAD_DEF -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive)
+else()
+    set(TENTRIS_PTHREAD_DEF -lpthread)
+endif ()
+
 
 # main executable targets
 add_executable(tentris_server src/exec/TentrisServer.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 
 target_link_libraries(tentris_server
         PRIVATE
-        -static
-        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
+        ${TENTRIS_STATIC_DEF}
+        ${TENTRIS_PTHREAD_DEF}
         tentris
         restinio::restinio
         http-parser::http-parser
@@ -96,9 +120,9 @@ add_dependencies(tentris_server tentris)
 
 add_executable(tentris_terminal src/exec/TentrisTerminal.cpp src/exec/config/ServerConfig.hpp src/exec/config/TerminalConfig.hpp)
 target_link_libraries(tentris_terminal
-        -static
+        ${TENTRIS_STATIC_DEF}
+        ${TENTRIS_PTHREAD_DEF}
         tentris
-        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         )
 
 set_target_properties(tentris_terminal PROPERTIES LINK_FLAGS_RELEASE -s)
@@ -107,23 +131,21 @@ add_dependencies(tentris_terminal tentris)
 
 add_executable(rdf2ids src/exec/tools/RDF2IDs.cpp)
 target_link_libraries(rdf2ids
-        -static
+        ${TENTRIS_STATIC_DEF}
+        ${TENTRIS_PTHREAD_DEF}
         tentris
-        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         )
 
 set_target_properties(rdf2ids PROPERTIES LINK_FLAGS_RELEASE -s)
 
 add_dependencies(rdf2ids tentris)
 
-# for rt and pthread linkage see:
-# * https://stackoverflow.com/questions/58848694/gcc-whole-archive-recipe-for-static-linking-to-pthread-stopped-working-in-rec
-# * https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why
+
 add_executable(ids2hypertrie src/exec/tools/IDs2Hypertrie.cpp)
 target_link_libraries(ids2hypertrie
-        -static
+        ${TENTRIS_STATIC_DEF}
+        ${TENTRIS_PTHREAD_DEF}
         tentris
-        -Wl,--whole-archive -lrt -lpthread -Wl,--no-whole-archive
         )
 
 add_dependencies(ids2hypertrie tentris)

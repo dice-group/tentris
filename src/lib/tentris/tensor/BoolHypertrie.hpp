@@ -10,7 +10,7 @@ namespace tentris::tensor {
 			bool,
 			hypertrie::internal::container::tsl_sparse_map,
 			hypertrie::internal::container::tsl_sparse_set,
-			false>;
+			true>;
 
 	using SliceKey = typename tr::SliceKey;
 	using Key = typename tr::Key ;
