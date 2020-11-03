@@ -1,7 +1,7 @@
 #ifndef TENTRIS_JSONQUERYRESULT_HPP
 #define TENTRIS_JSONQUERYRESULT_HPP
 
-#include <itertools.hpp>
+#include <cppitertools/itertools.hpp>
 #include <utility>
 
 #include "tentris/store/RDF/TermStore.hpp"

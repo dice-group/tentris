@@ -5,8 +5,6 @@ set(tentris_VERSION_MAJOR 1)
 set(tentris_VERSION_MINOR 1)
 set(tentris_VERSION_PATCH 0)
 
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
@@ -32,6 +30,28 @@ if (TENTRIS_BUILD_WITH_TCMALLOC)
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
+include(FetchContent)
+FetchContent_Declare(hypertrie
+        GIT_REPOSITORY https://github.com/dice-group/hypertrie.git
+        GIT_TAG origin/vcpkg
+        )
+
+FetchContent_MakeAvailable(hypertrie)
+
+FetchContent_Declare(sparql-parser-basex
+        GIT_REPOSITORY https://github.com/dice-group/sparql-parser-base.git
+        GIT_TAG origin/vcpkg
+        )
+
+FetchContent_MakeAvailable(sparql-parser-basex)
+
+FetchContent_Declare(rdf-parser
+        GIT_REPOSITORY https://github.com/dice-group/rdf-parser.git
+        GIT_TAG origin/vcpkg
+        )
+
+FetchContent_MakeAvailable(rdf-parser)
+
 
 
 # Lightweight C++ command line option parser   https://github.com/jarro2783/cxxopts
@@ -45,12 +65,14 @@ target_include_directories(rapidjson INTERFACE
         thirdparty/RapidJSON/include
         )
 
-find_package(absl REQUIRED)
-find_package(tsl-hopscotch-map REQUIRED)
+find_package(absl CONFIG REQUIRED)
+find_package(tsl-hopscotch-map CONFIG REQUIRED)
 find_package(fmt REQUIRED)
-find_package(hypertrie REQUIRED)
-find_package(sparql-parser-base REQUIRED)
-find_package(rdf-parser REQUIRED)
+find_package(cppitertools CONFIG REQUIRED)
+
+# find_package(hypertrie REQUIRED)
+# find_package(sparql-parser-base REQUIRED)
+#  find_package(rdf_parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
 endif ()
@@ -58,11 +80,14 @@ endif ()
 find_package(Boost REQUIRED COMPONENTS system log_setup log thread)
 if (TENTRIS_STATIC)
     SET(RESTINIO_USE_BOOST_ASIO=static)
+else()
+    SET(RESTINIO_USE_BOOST_ASIO=shared)
 endif ()
 find_package(restinio REQUIRED)
-find_package(http-parser REQUIRED)
-find_package(string-view-lite REQUIRED)
-find_package(optional-lite REQUIRED)
+find_package(unofficial-http-parser CONFIG REQUIRED)
+#find_package(http-parser REQUIRED)
+#find_package(string-view-lite REQUIRED)
+#find_package(optional-lite REQUIRED)
 
 # make a library of the code
 add_library(tentris INTERFACE)
@@ -72,20 +97,21 @@ target_link_libraries(tentris
         stdc++fs # for #include <filesystem>
         cxxopts
         rapidjson
-        sparql-parser-base::sparql-parser-base
-        absl::absl
-        tsl-hopscotch-map::tsl-hopscotch-map
+        sparql-parser-base
+        absl::hash
+        tsl::hopscotch_map
         fmt::fmt
         hypertrie::hypertrie
-        rdf-parser::rdf-parser
-        Boost::Boost
+        rdf_parser
+        Boost::headers
+        Boost::log_setup
+        Boost::log
         serd-0
         )
 
 target_include_directories(tentris INTERFACE
         # todo: move code to include/Dice/tentris
         src/lib/
-        ${Boost_INCLUDE_DIRS}
         )
 
 # for rt and pthread linkage see:
@@ -108,10 +134,6 @@ target_link_libraries(tentris_server
         ${TENTRIS_PTHREAD_DEF}
         tentris
         restinio::restinio
-        http-parser::http-parser
-        nonstd::string-view-lite
-        nonstd::optional-lite
-        nonstd::variant-lite
         )
 
 set_target_properties(tentris_server PROPERTIES LINK_FLAGS_RELEASE -s)

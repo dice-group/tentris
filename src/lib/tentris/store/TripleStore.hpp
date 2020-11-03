@@ -14,7 +14,7 @@
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 #include "tentris/store/SPARQL/TriplePattern.hpp"
-#include <Dice/rdf_parser/TurtleParser.hpp>
+#include <Dice/rdf_parser/Parser/Turtle/Parsers/ConcurrentStreamParser.hpp>
 
 
 namespace {
