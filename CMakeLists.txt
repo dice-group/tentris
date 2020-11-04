@@ -1,4 +1,24 @@
 cmake_minimum_required(VERSION 3.13)
+
+# load CMake Modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+# Bootstrap Vcpkg and download dependencies
+include(AutoVcpkg)
+vcpkg_install(
+        boost-core boost-system boost-log boost-thread boost-lockfree
+        cppitertools
+        restinio http-parser
+        tsl-hopscotch-map tsl-sparse-map robin-hood-hashing
+        abseil
+        fmt
+        catch2
+        pegtl
+        )
+
+message(STATUS "CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}\n-----\n## Please add this to your CMake invocation `-D${CMAKE_TOOLCHAIN_FILE}` ## \n-----")
+
+###
 project(tentris CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(tentris_VERSION_MAJOR 1)
@@ -70,9 +90,6 @@ find_package(tsl-hopscotch-map CONFIG REQUIRED)
 find_package(fmt REQUIRED)
 find_package(cppitertools CONFIG REQUIRED)
 
-# find_package(hypertrie REQUIRED)
-# find_package(sparql-parser-base REQUIRED)
-#  find_package(rdf_parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
 endif ()
@@ -85,9 +102,6 @@ else()
 endif ()
 find_package(restinio REQUIRED)
 find_package(unofficial-http-parser CONFIG REQUIRED)
-#find_package(http-parser REQUIRED)
-#find_package(string-view-lite REQUIRED)
-#find_package(optional-lite REQUIRED)
 
 # make a library of the code
 add_library(tentris INTERFACE)
@@ -106,6 +120,7 @@ target_link_libraries(tentris
         Boost::headers
         Boost::log_setup
         Boost::log
+        Boost::thread
         serd-0
         )
 
