@@ -17,7 +17,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-#include <itertools.hpp>
+#include <cppitertools/itertools.hpp>
 #include "tentris/http/QueryResultState.hpp"
 
 namespace {
@@ -237,8 +237,7 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 
 int main(int argc, char *argv[]) {
-	auto const_argv = const_cast<const char **>(argv);
-	cfg = TerminalConfig{argc, const_argv};
+	cfg = TerminalConfig{argc, argv};
 	tentris::logging::init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
 
 	TripleStore triplestore{};

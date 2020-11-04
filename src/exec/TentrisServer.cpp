@@ -38,8 +38,7 @@ void bulkload(std::string triple_file, size_t bulksize) {
 }
 
 int main(int argc, char *argv[]) {
-	auto const_argv = const_cast<const char **>(argv);
-	ServerConfig cfg{argc, const_argv};
+	ServerConfig cfg{argc, argv};
 
 	init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
 

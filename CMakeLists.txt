@@ -14,6 +14,8 @@ vcpkg_install(
         fmt
         catch2
         pegtl
+        rapidjson
+        cxxopts
         )
 
 message(STATUS "CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}\n-----\n## Please add this to your CMake invocation `-D${CMAKE_TOOLCHAIN_FILE}` ## \n-----")
@@ -80,11 +82,8 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
-add_library(rapidjson INTERFACE)
-target_include_directories(rapidjson INTERFACE
-        thirdparty/RapidJSON/include
-        )
-
+find_package(cxxopts CONFIG REQUIRED)
+find_package(RapidJSON CONFIG REQUIRED)
 find_package(absl CONFIG REQUIRED)
 find_package(tsl-hopscotch-map CONFIG REQUIRED)
 find_package(fmt REQUIRED)
@@ -109,7 +108,7 @@ add_library(tentris INTERFACE)
 target_link_libraries(tentris
         INTERFACE
         stdc++fs # for #include <filesystem>
-        cxxopts
+        cxxopts::cxxopts
         rapidjson
         sparql-parser-base
         absl::hash

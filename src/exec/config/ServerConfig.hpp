@@ -28,7 +28,7 @@ struct ServerConfig : public ExecutableConfig {
 				 cxxopts::value<uint>()->default_value("{}"_format(std::thread::hardware_concurrency())));
 	}
 
-	ServerConfig(int argc, const char **&argv) : ServerConfig{} {
+	ServerConfig(int argc, char **&argv) : ServerConfig{} {
 		initConfig(argc, argv);
 	}
 

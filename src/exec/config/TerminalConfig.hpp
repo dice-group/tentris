@@ -19,7 +19,7 @@ struct TerminalConfig : public ExecutableConfig {
 	}
 
 
-	TerminalConfig(int argc, const char **&argv) : TerminalConfig{} {
+	TerminalConfig(int argc, char **&argv) : TerminalConfig{} {
 		initConfig(argc, argv);
 	}
 
