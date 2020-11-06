@@ -1,24 +1,24 @@
 [![Website](https://img.shields.io/website?up_message=tentris&url=https%3A%2F%2Ftentris.dice-research.org%2F)](https://tentris.dice-research.org/) [![Build Status](https://travis-ci.com/dice-group/tentris.svg)](https://travis-ci.com/dice-group/tentris) [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/dicegroup/tentris_server)](https://hub.docker.com/repository/docker/dicegroup/tentris_server) ![GitHub](https://img.shields.io/github/license/dice-group/tentris)  
 
-# Tentris: A Tensor-based Triple Store 
+# Tᴇɴᴛʀɪs: A Tensor-based Triple Store 
 
-<p><img src = "https://tentris.dice-research.org/iswc2020/assets/img/Tentris_logo.svg" alt = "Tentris Logo" width = "30%" align = "center"></p>
+<p><img src = "https://tentris.dice-research.org/iswc2020/assets/img/Tentris_logo.svg" alt = "Tᴇɴᴛʀɪs Logo" width = "30%" align = "center"></p>
 
-Tentris is a tensor-based RDF triple store with SPARQL support. It is introduced and described in:
+Tᴇɴᴛʀɪs is a tensor-based RDF triple store with SPARQL support. It is introduced and described in:
 > Alexander Bigerl, Felix Conrads, Charlotte Behning, Mohamed Sherif, Muhammad Saleem and Axel-Cyrille Ngonga Ngomo (2020) **Tentris – A Tensor-Based Triple Store.** In: The Semantic Web – ISWC 2020
 
 https://tentris.dice-research.org/iswc2020/
 
-<details><summary>Cite as: </summary>
-
-```latex
-@article{bigerl2020tentris,
-  author = {Bigerl, Alexander and Conrads, Felix and Behning, Charlotte and Sherif, Mohamed and Saleem, Muhammad and Ngonga Ngomo, Axel-Cyrille},
+```
+@InProceedings{bigerl2020tentris,
+  author = {Bigerl, Alexander and Conrads, Felix and Behning, Charlotte and Sherif, Mohamed Ahmed and Saleem, Muhammad and Ngonga Ngomo, Axel-Cyrille},
   booktitle = {The Semantic Web -- ISWC 2020},
   publisher = {Springer International Publishing},
   title = { {T}entris -- {A} {T}ensor-{B}ased {T}riple {S}tore},
+  pages = {56--73},
   url = {https://papers.dice-research.org/2020/ISWC_Tentris/iswc2020_tentris_public.pdf},
-  year = 2020
+  year = 2020,
+  isbn = {978-3-030-62419-4}
 }
 ```
 
@@ -43,14 +43,14 @@ https://tentris.dice-research.org/iswc2020/
 * pull a [docker image](https://hub.docker.com/repository/docker/dicegroup/tentris_server) and [try them out](#docker)
 * [build it yourself](#build-it-yourself)
 
-## running tentris 
-Tentris provides two ways of running it. Either as a HTTP endpoint or as a interactive commandline tool. Make sure you build Tentris successfully, before proceeding below.
+## running Tᴇɴᴛʀɪs 
+Tᴇɴᴛʀɪs provides two ways of running it. Either as a HTTP endpoint or as a interactive commandline tool. Make sure you build Tᴇɴᴛʀɪs successfully, before proceeding below.
 ### HTTP endpoint
 <details><summary> </summary>
 
 
 #### Start
-To start Tentris as a HTTP endpoint run
+To start Tᴇɴᴛʀɪs as a HTTP endpoint run
 ```
 tentris_server -p 8090 -f my_nt_file.nt
 ```
@@ -80,13 +80,13 @@ WHERE {
 }
 ```
 
-To run the query start Tentris with: 
+To run the query start Tᴇɴᴛʀɪs with: 
 ```
 tentris_server -p 3030 -f sp2b.nt 
 ```
 You can find a populated sp2b.nt file in [tests/dataset/sp2b.nt](tests/dataset/sp2b.nt).
 
-now, visit the follwing IRI in a browser to send the query to your Tentris endpoint:
+now, visit the follwing IRI in a browser to send the query to your Tᴇɴᴛʀɪs endpoint:
 
 <http://127.0.0.1:3030/sparql?query=PREFIX%20rdf%3A%20%20%20%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23%3E%0APREFIX%20bench%3A%20%3Chttp%3A%2F%2Flocalhost%2Fvocabulary%2Fbench%2F%3E%0A%0ASELECT%20DISTINCT%20%3Farticle%0AWHERE%20%7B%0A%20%20%3Farticle%20rdf%3Atype%20bench%3AArticle%20.%0A%20%20%3Farticle%20%3Fproperty%20%3Fvalue%20%0A%7D>
 </details>
@@ -96,9 +96,9 @@ now, visit the follwing IRI in a browser to send the query to your Tentris endpo
 <details><summary> </summary>
 
 For small experiments it is sometimes more convenient to use a commandline tool for querying an RDF graph. 
-Therefore, Tentris provides a commandline interface.  
+Therefore, Tᴇɴᴛʀɪs provides a commandline interface.  
 
-To start Tentris as a interactive commandline tool, run:
+To start Tᴇɴᴛʀɪs as a interactive commandline tool, run:
 ```
 tentris_terminal -f my_nt_file.nt
 ```
@@ -112,7 +112,7 @@ For more commandline options see `tentris_terminal --help`.
 
 ## Docker
 
-Using the tentris docker image is really easy. Find necessary steps below.
+Using the Tᴇɴᴛʀɪs docker image is really easy. Find necessary steps below.
 
 <details><summary> </summary>
 
@@ -124,15 +124,15 @@ Using the tentris docker image is really easy. Find necessary steps below.
     ```shell script
     docker run --rm dicegroup/tentris_server --help
     ```
-* Tentris uses by default the port 8090, so make sure you forward it, e.g. 
+* Tᴇɴᴛʀɪs uses by default the port 8090, so make sure you forward it, e.g. 
     ```shell script
     docker run --publish=9080:9080 dicegroup/tentris_server
     ```
-* To load data, mount its enclosing directory to the container and tell Tentris, to load it:
+* To load data, mount its enclosing directory to the container and tell Tᴇɴᴛʀɪs, to load it:
     ```shell script
     docker run -v /localfolder:/datasets --publish=9080:9080 dicegroup/tentris_server -f /datasets/yourRDFfile.nt
     ```
-* By default, Tentris writes logs to the `/tentris` in the container. To make logs available outside the container, you can mount them as well:
+* By default, Tᴇɴᴛʀɪs writes logs to the `/tentris` in the container. To make logs available outside the container, you can mount them as well:
     ```shell script
     docker run -v /local-log-dir:/tentris --publish=9080:9080 dicegroup/tentris_server
     ```
@@ -144,17 +144,17 @@ Using the tentris docker image is really easy. Find necessary steps below.
 
 ## Build It Yourself
 
-To build Tentris yourself, you need some experience with building C++ projects.
+To build Tᴇɴᴛʀɪs yourself, you need some experience with building C++ projects.
 
 <details><summary> </summary>
 
 
 ### Build Tools
 
-Tentris is known to build successfully on Ubuntu 20.04 and newer. 
+Tᴇɴᴛʀɪs is known to build successfully on Ubuntu 20.04 and newer. 
 Building was tested with GCC 10 and clang 10. 
 
-The following packages are required to build Tentris:
+The following packages are required to build Tᴇɴᴛʀɪs:
 ```
 sudo apt install build-essential uuid-dev g++-10 git openjdk-8-jdk python3-pip python3-setuptools python3-wheel
 ```
@@ -181,10 +181,10 @@ sudo ./waf install
 cd -
 ```
 ### Pull & Build
-After you installed all dependencies, you are ready to build Tentris. 
-Make sure you are connected to the internet as Tentris downloads things at several points throughout the build processes.
+After you installed all dependencies, you are ready to build Tᴇɴᴛʀɪs. 
+Make sure you are connected to the internet as Tᴇɴᴛʀɪs downloads things at several points throughout the build processes.
 
-If you did not so far, clone Tentris:
+If you did not so far, clone Tᴇɴᴛʀɪs:
 ```
 git clone https://github.com/dice-group/tentris.git
 ```
@@ -207,12 +207,12 @@ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 make -j tentris_server tentris_terminal
 ```
 Now is the time to get yourself a coffee. In about 
-When you build Tentris for the first time, it will take some time. 
+When you build Tᴇɴᴛʀɪs for the first time, it will take some time. 
 
 The binaries will be located at `tentris/build/bin`. 
 
 ### Debug & Test
-To compile Tentris with debugging symbols, proceed as above but change the cmake command to `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .. `.
+To compile Tᴇɴᴛʀɪs with debugging symbols, proceed as above but change the cmake command to `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug .. `.
 
 To compile the tests, run `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DTENTRIS_BUILD_TESTS=True .. ` for debugging or `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTENTRIS_BUILD_TESTS=True .. ` for release.
 
