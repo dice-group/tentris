@@ -22,9 +22,9 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	std::string rdf_file{argv[1]};
-	if (not std::filesystem::is_regular_file(rdf_file)) {
-		std::cerr << "{} is not a file."_format(rdf_file) << std::endl;
+	std::string csv_file_path{argv[1]};
+	if (not std::filesystem::is_regular_file(csv_file_path)) {
+		std::cerr << "{} is not a file."_format(csv_file_path) << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -37,27 +37,23 @@ int main(int argc, char *argv[]) {
 
 	hypertrie::Hypertrie<tr> trie(3);
 
-	std::ifstream file(rdf_file);
+	csv::CSVFormat format;
+	format.delimiter(',').quote(false).no_header();
 
-	std::string line = "";
+	csv::CSVReader csv_reader(csv_file_path, format);
+
 	// Iterate through each line and split the content using delimiter
 	unsigned int count = 0;
 	auto start = steady_clock::now();
 
-	using namespace rdf_parser::Turtle;
-
 	try {
-
 		hypertrie::BulkInserter<tr> bulk_inserter{trie, 0};
 
-		while (getline(file, line)) {
-			using boost::lexical_cast;
-			std::vector<std::string> id_triple;
-			boost::algorithm::split(id_triple, line, boost::algorithm::is_any_of(","));
-
-			bulk_inserter.add({lexical_cast<size_t>(id_triple[0]),
-							   lexical_cast<size_t>(id_triple[1]),
-							   lexical_cast<size_t>(id_triple[2])});
+		for (csv::CSVRow& row: csv_reader) { // Input iterator
+			row[0].get<size_t>();
+			bulk_inserter.add({row[0].get<size_t>(),
+							   row[1].get<size_t>(),
+							   row[2].get<size_t>()});
 			++count;
 
 			if (bulk_inserter.size() == 1'000'000) {
@@ -70,10 +66,9 @@ int main(int argc, char *argv[]) {
 		bulk_inserter.flush(true);
 
 	} catch (...) {
-		throw std::invalid_argument{"A parsing error occurred while parsing {}"_format(rdf_file)};
+		throw std::invalid_argument{"A parsing error occurred while parsing {}"_format(csv_file_path)};
 	}
 	auto end = steady_clock::now();
-	file.close();
 	auto duration = end - start;
 
 	constexpr static auto uncompressed = hypertrie::internal::raw::NodeCompression::uncompressed;
