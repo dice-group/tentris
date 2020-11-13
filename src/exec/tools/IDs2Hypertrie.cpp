@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 	try {
 		hypertrie::BulkInserter<tr> bulk_inserter{trie, 0};
 
-		for (csv::CSVRow& row: csv_reader) { // Input iterator
+		for (csv::CSVRow &row: csv_reader) { // Input iterator
 			row[0].get<size_t>();
 			bulk_inserter.add({row[0].get<size_t>(),
 							   row[1].get<size_t>(),
@@ -87,11 +87,12 @@ int main(int argc, char *argv[]) {
 		std::ofstream tsv_depth_3("depth_3_nodes_stats.tsv"); // Can also use ofstream, etc.
 		auto csv_writer = csv::make_tsv_writer(tsv_depth_3);
 
-		csv_writer << std::make_tuple("hash", "node_size", "dimension_0_size", "dimension_1_size", "dimension_2_size",
-								  "reference_count");
+		csv_writer << std::make_tuple("node_size", "dimension_1_size", "dimension_2_size", "dimension_3_size",
+									  "reference_count");
 		for (auto[hash, node] : storage_3_uncompressed) {
-			csv_writer << std::make_tuple((std::string) hash, node->size(), node->edges(0).size(), node->edges(1).size(), node->edges(2).size(),
-									  node->ref_count());
+			csv_writer << std::make_tuple(node->size(), node->edges(0).size(), node->edges(1).size(),
+										  node->edges(2).size(),
+										  node->ref_count());
 		}
 	}
 
@@ -99,14 +100,15 @@ int main(int argc, char *argv[]) {
 		std::ofstream tsv_depth_2("depth_2_nodes_stats.tsv"); // Can also use ofstream, etc.
 		auto csv_writer = csv::make_tsv_writer(tsv_depth_2);
 
-		csv_writer << std::make_tuple("hash", "node_size", "dimension_0_size", "dimension_1_size", "reference_count");
+		csv_writer << std::make_tuple("node_size", "dimension_1_size", "dimension_2_size", "reference_count");
 
 		for (auto[hash, node] : storage_2_compressed) {
-			csv_writer << std::make_tuple((std::string) hash, node->size(), 1, 1, node->ref_count());
+			csv_writer << std::make_tuple(node->size(), 1, 1, node->ref_count());
 		}
 
 		for (auto[hash, node] : storage_2_uncompressed) {
-			csv_writer << std::make_tuple((std::string) hash, node->size(), node->edges(0).size(), node->edges(1).size(), node->ref_count());
+			csv_writer
+					<< std::make_tuple(node->size(), node->edges(0).size(), node->edges(1).size(), node->ref_count());
 		}
 	}
 
@@ -114,14 +116,14 @@ int main(int argc, char *argv[]) {
 		std::ofstream tsv_depth_1("depth_1_nodes_stats.tsv"); // Can also use ofstream, etc.
 		auto csv_writer = csv::make_tsv_writer(tsv_depth_1);
 
-		csv_writer << std::make_tuple("hash", "node_size", "dimension_0_size", "reference_count");
+		csv_writer << std::make_tuple("node_size", "dimension_1_size", "reference_count");
 
 		for (auto[hash, node] : storage_1_compressed) {
-			csv_writer << std::make_tuple((std::string) hash, node->size(), 1, node->ref_count());
+			csv_writer << std::make_tuple(node->size(), 1, node->ref_count());
 		}
 
 		for (auto[hash, node] : storage_1_uncompressed) {
-			csv_writer << std::make_tuple((std::string) hash, node->size(), node->edges(0).size(), node->ref_count());
+			csv_writer << std::make_tuple(node->size(), node->edges(0).size(), node->ref_count());
 		}
 	}
 
@@ -141,8 +143,7 @@ int main(int argc, char *argv[]) {
 			  << "depth 2 uncompressed nodes: {}\n"_format(storage.getNodeStorage<2UL, uncompressed>().size())
 			  << "depth 2 compressed nodes: {}\n"_format(storage.getNodeStorage<2UL, compressed>().size())
 			  << "depth 1 uncompressed nodes: {}\n"_format(storage.getNodeStorage<1UL, uncompressed>().size())
-		//<< "depth 1 compressed nodes: {}\n"_format(storage.getNodeStorage<1UL, compressed>().size())
-			;
+			  << "depth 1 compressed nodes: {}\n"_format(storage.getNodeStorage<1UL, compressed>().size());
 
 }
 
