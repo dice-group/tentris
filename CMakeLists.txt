@@ -40,6 +40,14 @@ target_include_directories(cxxopts INTERFACE
         thirdparty/cxxopts/include
         )
 
+
+
+add_library(csv-parser INTERFACE)
+target_include_directories(csv-parser INTERFACE
+        thirdparty/csv-parser
+        )
+
+
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE
         thirdparty/RapidJSON/include
@@ -146,6 +154,7 @@ target_link_libraries(ids2hypertrie
         ${TENTRIS_STATIC_DEF}
         ${TENTRIS_PTHREAD_DEF}
         tentris
+        csv-parser
         )
 
 add_dependencies(ids2hypertrie tentris)

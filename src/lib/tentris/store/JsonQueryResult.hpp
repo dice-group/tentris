@@ -94,7 +94,7 @@ namespace tentris::store {
 			}
 
 
-			for (auto i = 0; i < entry.value - 1; ++i) {
+			for (long i = 0; i < long(entry.value) - 1L; ++i) {
 				rapidjson::Value entry_obj_copy(entry_obj, allocator);
 				bindings->PushBack(entry_obj_copy,allocator);
 			}
