@@ -159,7 +159,8 @@ namespace tentris::store::sparql {
 					variables.insert(variable);
 				if (all_vars)
 					for (const auto &variable : variables)
-						query_variables.push_back(variable);
+						if (not anonym_variables.contains(variable))
+							query_variables.push_back(variable);
 
 				if (query_variables.empty())
 					throw std::invalid_argument{"Empty query variables is not allowed."};
@@ -228,9 +229,8 @@ namespace tentris::store::sparql {
 		void registerVariable(VarOrTerm &variant) {
 			if (std::holds_alternative<Variable>(variant)) {
 				auto &var = std::get<Variable>(variant);
-				if (not var.is_anonym)
-					variables.insert(var);
-				else
+				variables.insert(var);
+				if (var.is_anonym)
 					anonym_variables.insert(var);
 			}
 		}
@@ -302,9 +302,9 @@ namespace tentris::store::sparql {
 				return Literal{termContext->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#boolean"};
 			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
-					return Variable{termContext->getText()};
+					return Variable{termContext->getText(), true};
 				else
-					return Variable{"__:" + std::to_string(next_anon_var_id++)};
+					return Variable{"__:" + std::to_string(next_anon_var_id++), true};
 			} else if (not termContext->NIL()) {
 				return Literal::make_term(termContext->getText());
 			} else {
