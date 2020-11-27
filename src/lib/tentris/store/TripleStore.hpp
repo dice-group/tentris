@@ -72,7 +72,7 @@ namespace tentris::store {
 			try {
 				hypertrie::BulkInserter<tr> bulk_inserter{trie, 0};
 				// TurtleParser<FileParser> parser{file_path};
-				unsigned int count = 0;
+				unsigned long count = 0;
 				for (const Triple &triple : rdf::SerdParser{file_path}) {
 					if (not triple.subject().isLiteral() and triple.predicate().isURIRef()) {
 						auto subject_id = termIndex[triple.subject()];

@@ -36,7 +36,7 @@ namespace tentris::store::rdf {
 											 nullptr);
 
 			std::thread t([=]() {
-				SerdStatus status = serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
+				[[maybe_unused]] SerdStatus status = serd_reader_read_file(sr, (uint8_t *) (file_path.data()));
 				bulk_load->parsing_done = true;
 				serd_reader_free(sr);
 			});
