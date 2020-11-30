@@ -6,16 +6,11 @@
 #include "tentris/store/TripleStore.hpp"
 #include "tentris/store/config/AtomicTripleStoreConfig.cpp"
 
-namespace {
-	using namespace tentris::store;
-	using namespace tentris::util::sync;
-	using namespace tentris::store::config;
-}
 
 namespace tentris::util::sync {
 	template<>
-	inline TripleStore *SingletonFactory<TripleStore>::make_instance() {
-		return new TripleStore{};
+	inline ::tentris::store::TripleStore *SingletonFactory<::tentris::store::TripleStore>::make_instance() {
+		return new ::tentris::store::TripleStore{};
 	}
 };
 
@@ -24,8 +19,6 @@ namespace tentris::store {
 	/**
 	 * A SingletonFactory that allows to share a single TripleStore instance between multiple threads.
 	 */
-
-
-	using AtomicTripleStore = SingletonFactory<TripleStore>;
+	using AtomicTripleStore = ::tentris::util::sync::SingletonFactory<TripleStore>;
 };
 #endif //TENTRIS_ATOMIC_TRIPLE_STORE

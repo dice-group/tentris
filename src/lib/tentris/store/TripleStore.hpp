@@ -17,15 +17,15 @@
 #include <Dice/rdf_parser/TurtleParser.hpp>
 
 
-namespace {
-	using namespace tentris::store::sparql;
-	using namespace ::tentris::logging;
-	using namespace tentris::tensor;
-}
 
 namespace tentris::store {
 
 	class TripleStore {
+		using BoolHypertrie = ::tentris::tensor::BoolHypertrie;
+		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
+		using TriplePattern = ::tentris::store::sparql::TriplePattern;
+		using Variable = ::tentris::store::sparql::Variable;
+
 		using TermStore = tentris::store::rdf::TermStore;
 		TermStore termIndex{};
 
@@ -45,29 +45,11 @@ namespace tentris::store {
 			return trie;
 		}
 
-		void loadRDF(const std::string &file_path) {
-			using namespace rdf_parser::Turtle;
-
-			try {
-				// TurtleParser<FileParser> parser{file_path};
-				unsigned int count = 0;
-				unsigned int _1mios = 0;
-				for (const Triple &triple : rdf::SerdParser{file_path}) {
-					add(triple.subject(), triple.predicate(), triple.object());
-					++count;
-					if (count == 1000000) {
-						count = 0;
-						++_1mios;
-						logDebug("{:d} mio triples loaded."_format(_1mios));
-					}
-				}
-			} catch (...) {
-				throw std::invalid_argument{"A parsing error occurred while parsing {}"_format(file_path)};
-			}
-		}
-
 		void bulkloadRDF(const std::string &file_path, size_t bulk_size = 1'000'000) {
+			using namespace ::fmt::literals;
+			using namespace ::tentris::tensor;
 			using namespace rdf_parser::Turtle;
+			using namespace ::tentris::logging;
 
 			try {
 				hypertrie::BulkInserter<tr> bulk_inserter{trie, 0};
@@ -105,6 +87,8 @@ namespace tentris::store {
 		}
 
 		std::variant<const_BoolHypertrie, bool> resolveTriplePattern(TriplePattern tp) {
+			using namespace ::tentris::tensor;
+
 			auto slice_count = 0;
 			for (const auto &entry: tp)
 				if (std::holds_alternative<Variable>(entry))
@@ -140,6 +124,7 @@ namespace tentris::store {
 		}
 
 		bool contains(std::tuple<std::string, std::string, std::string> triple) {
+			using namespace ::tentris::tensor;
 			auto subject = termIndex.find(Term::make_term(std::get<0>(triple)));
 			auto predicate = termIndex.find(Term::make_term(std::get<1>(triple)));
 			auto object = termIndex.find(Term::make_term(std::get<2>(triple)));

@@ -11,21 +11,18 @@
 #include <fmt/format.h>
 
 
-namespace {
-	using namespace tentris::http;
-	using namespace tentris::store::config;
-	namespace fs = std::filesystem;
-	using namespace fmt::literals;
-}
 
 void bulkload(std::string triple_file, size_t bulksize) {
+	namespace fs = std::filesystem;
+	using namespace fmt::literals;
+	using namespace tentris::logging;
 
 	// log the starting time and print resource usage information
 	auto loading_start_time = log_health_data();
 
 	if (fs::is_regular_file(triple_file)) {
 		log("nt-file: {} loading ..."_format(triple_file));
-		AtomicTripleStore::getInstance().bulkloadRDF(triple_file, bulksize);
+		::tentris::store::AtomicTripleStore::getInstance().bulkloadRDF(triple_file, bulksize);
 	} else {
 		log("nt-file {} was not found."_format(triple_file));
 		log("Exiting ...");
@@ -38,6 +35,11 @@ void bulkload(std::string triple_file, size_t bulksize) {
 }
 
 int main(int argc, char *argv[]) {
+	using namespace tentris::http;
+	using namespace tentris::store::config;
+	using namespace fmt::literals;
+	using namespace tentris::logging;
+
 	auto const_argv = const_cast<const char **>(argv);
 	ServerConfig cfg{argc, const_argv};
 

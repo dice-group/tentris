@@ -15,12 +15,13 @@
 #include <Sparql/SparqlLexer.h>
 #include <Sparql/SparqlBaseListener.h>
 
+#include <robin_hood.h>
+
 #include <boost/algorithm/string.hpp>
 
 #include <Dice/einsum/internal/Subscript.hpp>
 #include <utility>
 
-#include "tentris/util/All.hpp"
 #include <Dice/rdf_parser/RDF/Term.hpp>
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/store/SPARQL/TriplePattern.hpp"
@@ -79,10 +80,10 @@ namespace tentris::store::sparql {
 
 		SelectModifier select_modifier = NONE;
 
-		std::map<std::string, std::string> prefixes{};
+		robin_hood::unordered_map<std::string, std::string> prefixes{};
 		std::vector<Variable> query_variables{};
-		std::set<Variable> variables{};
-		std::set<Variable> anonym_variables{};
+		robin_hood::unordered_set<Variable> variables{};
+		robin_hood::unordered_set<Variable> anonym_variables{};
 		std::vector<TriplePattern> bgps;
 		uint next_anon_var_id = 0;
 		std::shared_ptr<Subscript> subscript;
@@ -168,7 +169,7 @@ namespace tentris::store::sparql {
 
 				using Label = Subscript::Label;
 				// generate subscript
-				std::map<Variable, Label> var_to_label{};
+				robin_hood::unordered_map<Variable, Label> var_to_label{};
 				Label next_label = 'a';
 				for (const auto &var : variables) {
 					var_to_label[var] = next_label++;
@@ -195,31 +196,31 @@ namespace tentris::store::sparql {
 			}
 		}
 
-		SelectModifier getSelectModifier() const {
+		[[nodiscard]] SelectModifier getSelectModifier() const {
 			return select_modifier;
 		}
 
-		const std::vector<Variable> &getQueryVariables() const {
+		[[nodiscard]] const std::vector<Variable> &getQueryVariables() const {
 			return query_variables;
 		}
 
-		const std::set<Variable> &getVariables() const {
+		[[nodiscard]] const robin_hood::unordered_set<Variable> &getVariables() const {
 			return variables;
 		}
 
-		const std::set<Variable> &getAnonymVariables() const {
+		[[nodiscard]] const robin_hood::unordered_set<Variable> &getAnonymVariables() const {
 			return anonym_variables;
 		}
 
-		const std::string &getSparqlStr() const {
+		[[nodiscard]] const std::string &getSparqlStr() const {
 			return sparql_str;
 		}
 
-		const std::shared_ptr<Subscript> &getSubscript() const {
+		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
 		}
 
-		const std::vector<TriplePattern> &getBgps() const {
+		[[nodiscard]] const std::vector<TriplePattern> &getBgps() const {
 			return bgps;
 		}
 

@@ -5,7 +5,6 @@
 #include <memory>
 #include <tuple>
 
-#include "tentris/util/All.hpp"
 #include <Dice/rdf_parser/RDF/Term.hpp>
 
 namespace tentris::store::rdf {
