@@ -102,7 +102,7 @@ namespace tentris::util::sync {
 		[[nodiscard]] value_ptr &operator[](const Key &key) {
 			Guard g(lock_);
 			const auto iter = cache_.find(key);
-			logTrace("cache size: {} lru size: {}"_format(cache_.size(), keys_.size()));
+			logging::logTrace("cache size: {} lru size: {}"_format(cache_.size(), keys_.size()));
 			if (iter == cache_.end()) {
 				auto &key_value = keys_.emplace_front(key);
 				cache_[key] = keys_.begin();

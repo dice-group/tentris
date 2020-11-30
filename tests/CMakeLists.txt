@@ -17,7 +17,5 @@ set_property(TARGET tests PROPERTY CXX_STANDARD 20)
 gtest_discover_tests(tests)
 
 # copy files for testing to the binary folder
-file(COPY query DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY queries DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY dataset DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

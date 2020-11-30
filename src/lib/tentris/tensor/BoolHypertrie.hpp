@@ -24,6 +24,7 @@ namespace tentris::tensor {
 	using EinsumEntry = hypertrie::EinsumEntry<result_type, tr>;
 	using DISTINCT_t = bool;
 	using COUNTED_t = std::size_t;
+	using Subscript = hypertrie::Subscript ;
 }
 
 #endif //TENTRIS_BOOLHYPERTRIE_HPP

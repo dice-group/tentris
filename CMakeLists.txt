@@ -118,8 +118,8 @@ target_link_libraries(tentris_server
         restinio::restinio
         http-parser::http-parser
         nonstd::string-view-lite
-#        nonstd::optional-lite
-#        nonstd::variant-lite
+        nonstd::optional-lite
+        nonstd::variant-lite
         )
 
 set_target_properties(tentris_server PROPERTIES LINK_FLAGS_RELEASE -s)

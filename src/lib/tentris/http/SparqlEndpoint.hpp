@@ -15,22 +15,36 @@
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/JsonQueryResult.hpp"
+#include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/util/LogHelper.hpp"
 
 
 namespace tentris::http {
 	namespace {
-		using namespace ::tentris::store::sparql;
-		using namespace ::tentris::store::cache;
-		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
-		using namespace ::std::chrono;
-		using namespace ::tentris::logging;
-		using namespace std::string_literals;
-		using Status = ResultState;
+//		using namespace ::tentris::store::sparql;
+//		using namespace ::tentris::store::cache;
+//		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
+//		using namespace ::std::chrono;
+//		using namespace ::tentris::logging;
+//		using namespace std::string_literals;
+//		using Status = ResultState;
 	} // namespace
 
 
 	namespace sparql_endpoint {
+
+		using AtomicTripleStoreConfig = ::tentris::store::config::AtomicTripleStoreConfig;
+		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
+		using QueryExecutionPackage = ::tentris::store::cache::QueryExecutionPackage;
+		using Status = ResultState;
+
+		using namespace ::tentris::logging;
+		using namespace ::tentris::store;
+		using namespace ::tentris::store::sparql;
+		using namespace ::tentris::tensor;
+
+		using namespace std::string_literals;
+		using namespace ::std::chrono;
 
 		Status
 		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,

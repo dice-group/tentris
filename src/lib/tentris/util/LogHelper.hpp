@@ -76,7 +76,7 @@ namespace tentris::logging {
 		if (not logfile and not logstdout)
 			logging::core::get()->set_logging_enabled(false);
 		if (logfile)
-			auto file_log = logging::add_file_log(
+			logging::add_file_log(
 					keywords::file_name = fs::path(logfiledir).append("tentris_%N.log"),
 					keywords::rotation_size = 5 * 512 * 1024,
 					keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),

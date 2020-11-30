@@ -16,16 +16,18 @@ namespace tentris::store {
 
 namespace tentris::store::cache {
 
-	namespace {
-		using namespace tentris::store::sparql;
-		using namespace tentris::tensor;
-	}; // namespace
-
 	/**
 	 * A QueryExecutionPackage contains everything that is necessary to execute a given sparql query for a state of the
 	 * RDF graph.
 	 */
 	struct QueryExecutionPackage {
+		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
+		using time_point_t = logging::time_point_t;
+		using SelectModifier = sparql::SelectModifier;
+		using Variable = sparql::Variable;
+		using ParsedSPARQL = sparql::ParsedSPARQL;
+		using Subscript = ::tentris::tensor::Subscript;
+
 	private:
 		std::string sparql_string;
 		std::shared_ptr<Subscript> subscript;
@@ -55,6 +57,7 @@ namespace tentris::store::cache {
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
 		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
+			using namespace logging;
 			logDebug(fmt::format("Parsing query: {}", sparql_string));
 			ParsedSPARQL parsed_sparql{sparql_string};
 			subscript = parsed_sparql.getSubscript();
@@ -105,11 +108,13 @@ namespace tentris::store::cache {
 		static std::shared_ptr<void> generateEinsum(const std::shared_ptr<Subscript> &subscript,
 													const std::vector<const_BoolHypertrie> &hypertries,
 													const time_point_t &timeout) {
+			using namespace tensor;
 			return std::make_shared<Einsum<RESULT_TYPE>>(subscript, hypertries, timeout);
 		}
 
 	public:
 		std::shared_ptr<void> getEinsum(const time_point_t &timeout = time_point_t::max()) const {
+			using namespace tensor;
 			if (select_modifier == SelectModifier::NONE)
 				return generateEinsum<COUNTED_t>(subscript, operands, timeout);
 			else
@@ -143,6 +148,7 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
+		using SelectModifier = tentris::store::sparql::SelectModifier;
 		return format_to(ctx.begin(),
 						 " SPARQL:     {}\n"
 						 " subscript:  {}\n"

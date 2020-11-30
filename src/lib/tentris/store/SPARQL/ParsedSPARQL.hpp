@@ -196,31 +196,31 @@ namespace tentris::store::sparql {
 			}
 		}
 
-		SelectModifier getSelectModifier() const {
+		[[nodiscard]] SelectModifier getSelectModifier() const {
 			return select_modifier;
 		}
 
-		const std::vector<Variable> &getQueryVariables() const {
+		[[nodiscard]] const std::vector<Variable> &getQueryVariables() const {
 			return query_variables;
 		}
 
-		const robin_hood::unordered_set<Variable> &getVariables() const {
+		[[nodiscard]] const robin_hood::unordered_set<Variable> &getVariables() const {
 			return variables;
 		}
 
-		const robin_hood::unordered_set<Variable> &getAnonymVariables() const {
+		[[nodiscard]] const robin_hood::unordered_set<Variable> &getAnonymVariables() const {
 			return anonym_variables;
 		}
 
-		const std::string &getSparqlStr() const {
+		[[nodiscard]] const std::string &getSparqlStr() const {
 			return sparql_str;
 		}
 
-		const std::shared_ptr<Subscript> &getSubscript() const {
+		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
 		}
 
-		const std::vector<TriplePattern> &getBgps() const {
+		[[nodiscard]] const std::vector<TriplePattern> &getBgps() const {
 			return bgps;
 		}
 

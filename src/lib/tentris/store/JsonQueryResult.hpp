@@ -17,17 +17,12 @@
 #include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store {
-	namespace {
-		using namespace tentris::tensor;
-		using namespace ::tentris::logging;
-		using namespace tentris::http;
-	}
 
 	template<typename result_type>
 	class JsonQueryResult {
         using Term = rdf_parser::store::rdf::Term;
 		using Variable = sparql::Variable;
-		using Entry = EinsumEntry<result_type>;
+		using Entry = ::tentris::tensor::EinsumEntry<result_type>;
 		using Key = typename Entry::Key;
 		using Value = typename Entry::value_type;
 
@@ -72,7 +67,7 @@ namespace tentris::store {
 						term_obj.AddMember("type", "literal", allocator);
 						break;
 					default:
-						log("Incomplete term with no type (Literal, BNode, URI) detected.");
+						logging::log("Incomplete term with no type (Literal, BNode, URI) detected.");
 						assert(false);
 				}
 				auto value = term->value();
