@@ -83,7 +83,7 @@ namespace tentris::store::sparql {
 		std::vector<Variable> query_variables{};
 		std::set<Variable> variables{};
 		std::set<Variable> anonym_variables{};
-		std::set<TriplePattern> bgps;
+		std::vector<TriplePattern> bgps;
 		uint next_anon_var_id = 0;
 		std::shared_ptr<Subscript> subscript;
 
@@ -94,6 +94,8 @@ namespace tentris::store::sparql {
 
 		explicit ParsedSPARQL(std::string sparqlstr) :
 				sparql_str{std::move(sparqlstr)} {
+			namespace ranges = std::ranges;
+
 			std::istringstream str_stream{sparql_str};
 			ANTLRInputStream input{str_stream};
 			SparqlLexer lexer{&input};
@@ -148,8 +150,8 @@ namespace tentris::store::sparql {
 						for (auto &obj_node : obj_nodes->object()) {
 							VarOrTerm obj = parseObject(obj_node);
 							registerVariable(obj);
-
-							bgps.insert(TriplePattern{subj, pred, obj});
+							if(ranges::find(bgps, TriplePattern{subj, pred, obj}) == bgps.end())
+								bgps.push_back(TriplePattern{subj, pred, obj});
 						}
 					}
 					if (auto *next_block = block->triplesBlock(); next_block)
@@ -159,10 +161,8 @@ namespace tentris::store::sparql {
 					variables.insert(variable);
 				if (all_vars)
 					for (const auto &variable : variables)
-						query_variables.push_back(variable);
-
-				if (query_variables.empty())
-					throw std::invalid_argument{"Empty query variables is not allowed."};
+						if (not anonym_variables.contains(variable))
+							query_variables.push_back(variable);
 
 
 
@@ -219,7 +219,7 @@ namespace tentris::store::sparql {
 			return subscript;
 		}
 
-		const std::set<TriplePattern> &getBgps() const {
+		const std::vector<TriplePattern> &getBgps() const {
 			return bgps;
 		}
 
@@ -228,9 +228,8 @@ namespace tentris::store::sparql {
 		void registerVariable(VarOrTerm &variant) {
 			if (std::holds_alternative<Variable>(variant)) {
 				auto &var = std::get<Variable>(variant);
-				if (not var.is_anonym)
-					variables.insert(var);
-				else
+				variables.insert(var);
+				if (var.is_anonym)
 					anonym_variables.insert(var);
 			}
 		}
@@ -302,9 +301,9 @@ namespace tentris::store::sparql {
 				return Literal{termContext->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#boolean"};
 			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
-					return Variable{termContext->getText()};
+					return Variable{termContext->getText(), true};
 				else
-					return Variable{"__:" + std::to_string(next_anon_var_id++)};
+					return Variable{"__:" + std::to_string(next_anon_var_id++), true};
 			} else if (not termContext->NIL()) {
 				return Literal::make_term(termContext->getText());
 			} else {
@@ -413,7 +412,13 @@ struct fmt::formatter<tentris::store::sparql::ParsedSPARQL> {
 						 " variables:        {}\n"
 						 " anonym_variables: {}\n"
 						 " bgps:             {}\n",
-						 p.prefixes, p.select_modifier, p.query_variables, p.variables, p.anonym_variables, p.bgps);
+						 fmt::join(p.prefixes, ","),
+						 p.select_modifier,
+						 fmt::join(p.query_variables, ","),
+						 fmt::join(p.variables, ","),
+						 fmt::join(p.anonym_variables, ","),
+						 fmt::join(p.bgps, ",")
+						 );
 	}
 };
 
