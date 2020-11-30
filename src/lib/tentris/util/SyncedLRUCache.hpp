@@ -37,7 +37,6 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <unordered_map>
 
 namespace tentris::util::sync {
 
@@ -59,7 +58,7 @@ namespace tentris::util::sync {
 		using Guard = std::lock_guard<Lock>;
 		using value_ptr = std::shared_ptr<Value>;
 
-		// Dissallow copying.
+		// Disallow copying.
 		SyncedLRUCache(const SyncedLRUCache &) = delete;
 
 		SyncedLRUCache &operator=(const SyncedLRUCache &) = delete;

@@ -6,7 +6,6 @@
 #include <csv.hpp>
 
 #include <tentris/store/RDF/TermStore.hpp>
-#include <tentris/util/All.hpp>
 #include <tentris/store/RDF/SerdParser.hpp>
 #include <tentris/tensor/BoolHypertrie.hpp>
 #include <boost/lexical_cast.hpp>

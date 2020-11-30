@@ -1,4 +1,4 @@
 build/
-cmake-build-debug/
+cmake-*
 .idea/
 tests/googletest

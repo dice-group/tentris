@@ -7,7 +7,6 @@
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/util/LogHelper.hpp"
-#include "tentris/util/HTTPUtils.hpp"
 #define RAPIDJSON_HAS_STDSTRING 1
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
