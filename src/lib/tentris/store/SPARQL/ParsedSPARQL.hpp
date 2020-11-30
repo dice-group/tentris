@@ -164,9 +164,6 @@ namespace tentris::store::sparql {
 						if (not anonym_variables.contains(variable))
 							query_variables.push_back(variable);
 
-				if (query_variables.empty())
-					throw std::invalid_argument{"Empty query variables is not allowed."};
-
 
 
 				using Label = Subscript::Label;
