@@ -18,18 +18,7 @@
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/util/LogHelper.hpp"
 
-
 namespace tentris::http {
-	namespace {
-//		using namespace ::tentris::store::sparql;
-//		using namespace ::tentris::store::cache;
-//		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
-//		using namespace ::std::chrono;
-//		using namespace ::tentris::logging;
-//		using namespace std::string_literals;
-//		using Status = ResultState;
-	} // namespace
-
 
 	namespace sparql_endpoint {
 
@@ -167,6 +156,14 @@ namespace tentris::http {
 		};
 
 		template<typename RESULT_TYPE>
+		void async_cleanup(std::shared_ptr<void> raw_results) {
+			std::thread([ raw_results{move(raw_results)} ](){
+				auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
+				results.clear();
+				}).detach();
+		}
+
+		template<typename RESULT_TYPE>
 		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
 						const time_point_t timeout) {
 			// check if it timed out
@@ -184,11 +181,14 @@ namespace tentris::http {
 				for (const EinsumEntry<RESULT_TYPE> &result : results) {
 					json_result.add(result);
 					if (++timout_check == 100) {
-						if (steady_clock::now() >= timeout)
+						if (steady_clock::now() >= timeout) {
+							async_cleanup<RESULT_TYPE>(std::move(raw_results));
 							return Status::PROCESSING_TIMEOUT;
+						}
 						timout_check = 0;
 					}
 				}
+				async_cleanup<RESULT_TYPE>(std::move(raw_results));
 			}
 
 			if (steady_clock::now() >= timeout) {

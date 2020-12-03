@@ -1,16 +1,16 @@
 [requires]
 boost/1.74.0
-fmt/7.0.3
+fmt/7.1.2
 gtest/1.8.1
 abseil/20200225.2
-http-parser/2.8.1@bincrafters/stable  # for restinio
-restinio/0.6.10@stiffstream/stable
-hypertrie/0.6.0-rc9@dice-group/stable
+restinio/0.6.12
+hypertrie/0.6.0-rc10@dice-group/stable
 rdf-parser/0.10@dice-group/stable
 sparql-parser-base/0.1.0@dice-group/stable
 
 [options]
-restinio:boost_libs=static
+restinio:asio=boost
+restinio:with_zlib=True
 boost:shared=False
 *:shared=False
 

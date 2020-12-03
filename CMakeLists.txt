@@ -68,7 +68,6 @@ if (TENTRIS_STATIC)
     SET(RESTINIO_USE_BOOST_ASIO=static)
 endif ()
 find_package(restinio REQUIRED)
-find_package(http-parser REQUIRED)
 find_package(string-view-lite REQUIRED)
 find_package(optional-lite REQUIRED)
 
@@ -116,7 +115,6 @@ target_link_libraries(tentris_server
         ${TENTRIS_PTHREAD_DEF}
         tentris
         restinio::restinio
-        http-parser::http-parser
         nonstd::string-view-lite
         nonstd::optional-lite
         nonstd::variant-lite

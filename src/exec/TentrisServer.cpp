@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
 	store_cfg.rdf_file = cfg.rdf_file;
 	store_cfg.timeout = cfg.timeout;
 	store_cfg.cache_size = cfg.cache_size;
+	store_cfg.threads = cfg.threads;
 
 	// bulkload file
 	if (not cfg.rdf_file.empty()) {
