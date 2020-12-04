@@ -63,7 +63,10 @@ int main(int argc, char *argv[]) {
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
 			R"(/sparql)",
-			tentris::http::sparql_endpoint::sparql_endpoint);
+			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::restinio_controlled_output_t>{});
+	router->http_get(
+			R"(/stream)",
+			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::chunked_output_t>{});
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {

@@ -81,7 +81,7 @@ namespace tentris::store {
 					}
 					else if (literal_term.hasLang()){
 						auto lang = literal_term.lang();
-						term_obj.AddMember("datatype", rapidjson::StringRef(lang.data(), lang.size()), allocator);
+						term_obj.AddMember("xml:lang", rapidjson::StringRef(lang.data(), lang.size()), allocator);
 					}
 				}
 				entry_obj.AddMember(rapidjson::StringRef(var.name.data(), var.name.size()), term_obj, allocator);
