@@ -36,14 +36,6 @@ namespace tentris::http {
 		using namespace std::string_literals;
 		using namespace ::std::chrono;
 
-		Status
-		runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-				 const time_point_t timeout);
-
-		template<typename RESULT_TYPE>
-		Status runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
-						const time_point_t timeout);
-
 		/**
 		 * Main SPARQL endpoint. Parses HTTP queries and returns SPARQL JSON Results.
 		 */
