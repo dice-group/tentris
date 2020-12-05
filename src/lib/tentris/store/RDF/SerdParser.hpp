@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 #include <Dice/rdf_parser/RDF/Triple.hpp>
 #include <Dice/rdf_parser/RDF/Term.hpp>
+#include <Dice/hash/DiceHash.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <serd-0/serd/serd.h>
 #include <boost/algorithm/string.hpp>
@@ -18,7 +19,7 @@ namespace tentris::store::rdf {
 
 	class BulkLoad {
 		using Triple = rdf_parser::store::rdf::Triple;
-		using prefixes_map_type = tsl::hopscotch_map<std::string, std::string, absl::Hash<std::string>>;
+		using prefixes_map_type = tsl::hopscotch_map<std::string, std::string, Dice::hash::DiceHash<std::string>>;
 		prefixes_map_type prefixes{};
 
 	public:

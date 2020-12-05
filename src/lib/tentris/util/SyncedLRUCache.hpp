@@ -38,6 +38,8 @@
 #include <stdexcept>
 #include <thread>
 
+#include <Dice/hash/DiceHash.hpp>
+
 namespace tentris::util::sync {
 
 	template<typename K, typename V>
@@ -51,7 +53,7 @@ namespace tentris::util::sync {
 	template<class Key, class Value>
 	class SyncedLRUCache {
 	public:
-		using map_type = tsl::hopscotch_map<Key, typename std::list<KeyValuePair<Key, Value>>::iterator, absl::Hash<Key>>;
+		using map_type = tsl::hopscotch_map<Key, typename std::list<KeyValuePair<Key, Value>>::iterator, Dice::hash::DiceHash<Key>>;
 		using node_type =  KeyValuePair<Key, Value>;
 		using list_type = std::list<KeyValuePair<Key, Value>>;
 		using Lock  = std::mutex;

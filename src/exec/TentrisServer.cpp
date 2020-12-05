@@ -12,7 +12,7 @@
 
 
 
-void bulkload(std::string triple_file, size_t bulksize) {
+void bulkload(const std::string &triple_file, size_t bulksize) {
 	namespace fs = std::filesystem;
 	using namespace fmt::literals;
 	using namespace tentris::logging;
@@ -34,6 +34,19 @@ void bulkload(std::string triple_file, size_t bulksize) {
 	log_duration(loading_start_time, loading_end_time);
 }
 
+struct tentris_restinio_traits : public	restinio::traits_t<
+		restinio::null_timer_manager_t,
+#ifdef DEBUG
+		restinio::shared_ostream_logger_t,
+#else
+		restinio::null_logger_t,
+#endif
+		restinio::router::express_router_t<>
+>{
+	static constexpr bool use_connection_count_limiter = true;
+};
+
+
 int main(int argc, char *argv[]) {
 	using namespace tentris::http;
 	using namespace tentris::store::config;
@@ -49,6 +62,7 @@ int main(int argc, char *argv[]) {
 	store_cfg.rdf_file = cfg.rdf_file;
 	store_cfg.timeout = cfg.timeout;
 	store_cfg.cache_size = cfg.cache_size;
+	store_cfg.threads = cfg.threads;
 
 	// bulkload file
 	if (not cfg.rdf_file.empty()) {
@@ -62,7 +76,10 @@ int main(int argc, char *argv[]) {
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
 			R"(/sparql)",
-			tentris::http::sparql_endpoint::sparql_endpoint);
+			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::restinio_controlled_output_t>{});
+	router->http_get(
+			R"(/stream)",
+			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::chunked_output_t>{});
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
@@ -71,21 +88,11 @@ int main(int argc, char *argv[]) {
 
 	// Launching a server with custom traits.
 
-	using traits_t =
-	restinio::traits_t<
-			restinio::null_timer_manager_t,
-#ifdef DEBUG
-			restinio::shared_ostream_logger_t,
-#else
-			null_logger_t,
-#endif
-			restinio::router::express_router_t<>
-	>;
-
 	log("SPARQL endpoint serving sparkling linked data treasures on {} threads at http://0.0.0.0:{}/sparql?query="_format(cfg.threads, cfg.port));
 
 	restinio::run(
-			restinio::on_thread_pool<traits_t>(cfg.threads)
+			restinio::on_thread_pool<tentris_restinio_traits>(cfg.threads)
+			        .max_parallel_connections(cfg.threads)
 					.address("0.0.0.0")
 					.port(cfg.port)
 					.request_handler(std::move(router))

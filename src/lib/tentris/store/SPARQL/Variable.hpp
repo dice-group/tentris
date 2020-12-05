@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <utility>
+#include <Dice/hash/DiceHash.hpp>
 
 namespace tentris::store::sparql {
 
@@ -37,7 +38,7 @@ namespace std {
 	template<>
 	struct hash<tentris::store::sparql::Variable> {
 		size_t operator()(const tentris::store::sparql::Variable &v) const noexcept {
-			return robin_hood::hash_bytes(v.name.data(), v.name.size());
+			return Dice::hash::dice_hash(v.name);
 		}
 	};
 }

@@ -7,14 +7,39 @@
 
 #include <Dice/rdf_parser/RDF/Term.hpp>
 
+#include <Dice/hash/DiceHash.hpp>
+
+template<>
+std::size_t Dice::hash::dice_hash(rdf_parser::store::rdf::Term const &term) noexcept {
+	return ::Dice::hash::dice_hash(term.getIdentifier());
+}
+
 namespace tentris::store::rdf {
 
 
+	/**
+	 * Replacement for std::hash based TermHash defined alongside with Term.
+	 */
+	struct TermHash {
+		size_t operator()(const rdf_parser::store::rdf::Term &term) const {
+			return ::Dice::hash::dice_hash(term);
+		}
+
+		size_t operator()(const std::unique_ptr<rdf_parser::store::rdf::Term> &term_ptr) const {
+			return ::Dice::hash::dice_hash(*term_ptr);
+		}
+
+		size_t operator()(const rdf_parser::store::rdf::Term *&term_ptr) const {
+			return ::Dice::hash::dice_hash(*term_ptr);
+		}
+	};
+
+
 	class TermStore {
-	    using Term = rdf_parser::store::rdf::Term;
-        using BNode = rdf_parser::store::rdf::BNode;
-        using Literal = rdf_parser::store::rdf::Literal;
-        using URIRef = rdf_parser::store::rdf::URIRef;
+		using Term = rdf_parser::store::rdf::Term;
+		using BNode = rdf_parser::store::rdf::BNode;
+		using Literal = rdf_parser::store::rdf::Literal;
+		using URIRef = rdf_parser::store::rdf::URIRef;
 	public:
 		using set_type = tsl::sparse_set<std::unique_ptr<Term>,
 				TermHash,
@@ -30,8 +55,8 @@ namespace tentris::store::rdf {
 	public:
 		using ptr_type = Term const *;
 
-		bool contains(const Term &term) const {
-			auto term_hash = std::hash<Term>()(term);
+		[[nodiscard]] bool contains(const Term &term) const {
+			auto term_hash = TermHash()(term);
 			return contains(term, term_hash);
 		}
 
@@ -40,14 +65,14 @@ namespace tentris::store::rdf {
 			return found != terms.end();
 		}
 
-		[[nodiscard]] bool valid(ptr_type term) const {
-			auto term_hash = std::hash<Term *>()(term);
-			auto found = terms.find(term, term_hash);
+		[[nodiscard]] bool valid(ptr_type term_ptr) const {
+			auto term_hash = TermHash()(term_ptr);
+			auto found = terms.find(*term_ptr, term_hash);
 			return found != terms.end();
 		}
 
 		[[nodiscard]] ptr_type get(const Term &term) const {
-			auto term_hash = std::hash<Term>()(term);
+			auto term_hash = TermHash()(term);
 			return get(term, term_hash);
 		}
 
@@ -69,12 +94,12 @@ namespace tentris::store::rdf {
 		}
 
 		[[nodiscard]] ptr_type find(const Term &term) const {
-			auto term_hash = std::hash<Term>()(term);
+			auto term_hash = TermHash()(term);
 			return find(term, term_hash);
 		}
 
 		ptr_type operator[](const Term &term) {
-			auto term_hash = std::hash<Term>()(term);
+			auto term_hash = TermHash()(term);
 			auto found = terms.find(term, term_hash);
 			if (found != terms.end())
 				return (*found).get();
@@ -87,7 +112,7 @@ namespace tentris::store::rdf {
 
 		friend class fmt::formatter<TermStore>;
 
-		std::size_t size() const {
+		[[nodiscard]] std::size_t size() const {
 			return terms.size();
 		}
 
