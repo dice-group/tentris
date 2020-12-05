@@ -14,14 +14,14 @@ before_deploy:
   - docker cp ${container_id}:/tentris_terminal ./tentris_terminal
   - docker cp ${container_id}:/rdf2ids ./rdf2ids
   - docker cp ${container_id}:/ids2hypertrie ./ids2hypertrie
-  - zip benchmarktools_${TRAVIS_TAG}_clang10_libstdcxx10.zip rdf2ids ids2hypertrie
-  - zip tentris_${TRAVIS_TAG}_clang10_libstdcxx10.zip tentris_server tentris_terminal
+  - zip benchmarktools_${TRAVIS_TAG}_clang11_libstdcxx10.zip rdf2ids ids2hypertrie
+  - zip tentris_${TRAVIS_TAG}_clang11_libstdcxx10.zip tentris_server tentris_terminal
 
 deploy:
   provider: releases
   file:
-    - "benchmarktools_${TRAVIS_TAG}_clang10_libstdcxx10.zip"
-    - "tentris_${TRAVIS_TAG}_clang10_libstdcxx10.zip"
+    - "benchmarktools_${TRAVIS_TAG}_clang11_libstdcxx10.zip"
+    - "tentris_${TRAVIS_TAG}_clang11_libstdcxx10.zip"
   token: $github_token
   cleanup: false
   skip_cleanup: true
