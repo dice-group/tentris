@@ -1,44 +1,18 @@
 #ifndef TENTRIS_VARIABLE_HPP
 #define TENTRIS_VARIABLE_HPP
 
-#include <string>
-#include <iostream>
-#include <utility>
-#include <Dice/hash/DiceHash.hpp>
+#include<Dice/Sparql-Query/TripleVariable.hpp>
 
 namespace tentris::store::sparql {
 
-	class Variable {
-	public:
-		mutable std::string name;
-		mutable bool is_anonym;
-
-		explicit Variable(std::string var_name, bool anonym = false) : name{std::move(var_name)}, is_anonym{anonym} {}
-
-		inline bool operator==(const Variable &rhs) const {
-			return name == rhs.name;
-		}
-
-		inline bool operator!=(const Variable &rhs) const {
-			return name != rhs.name;
-		}
-
-		inline bool operator<(const Variable &rhs) const {
-			return name < rhs.name;
-		}
-
-		inline bool operator>(const Variable &rhs) const {
-			return name > rhs.name;
-		}
-
-	};
+	using Variable=TripleVariable;
 
 }
 namespace std {
 	template<>
 	struct hash<tentris::store::sparql::Variable> {
 		size_t operator()(const tentris::store::sparql::Variable &v) const noexcept {
-			return Dice::hash::dice_hash(v.name);
+			return Dice::hash::dice_hash(v.getName());
 		}
 	};
 }
@@ -51,7 +25,7 @@ struct fmt::formatter<tentris::store::sparql::Variable> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::sparql::Variable &p, FormatContext &ctx) {
-		return format_to(ctx.out(), "{}", p.name);
+		return format_to(ctx.out(), "{}", p.getName());
 	}
 };
 

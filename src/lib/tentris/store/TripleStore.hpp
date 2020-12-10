@@ -10,11 +10,11 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/RDF/SerdParser.hpp"
-#include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 #include "tentris/store/SPARQL/TriplePattern.hpp"
-#include <Dice/rdf_parser/TurtleParser.hpp>
+//#include <Dice/rdf_parser/TurtleParser.hpp>
+#include "tentris/store/SPARQL/Variable.hpp"
 
 
 
@@ -90,12 +90,12 @@ namespace tentris::store {
 			using namespace ::tentris::tensor;
 
 			auto slice_count = 0;
-			for (const auto &entry: tp)
+			for (const auto &entry: tp.triplePattern)
 				if (std::holds_alternative<Variable>(entry))
 					++slice_count;
 
 			SliceKey slice_key(3, std::nullopt);
-			for (const auto &[pos, entry] : iter::enumerate(tp)) {
+			for (const auto &[pos, entry] : iter::enumerate(tp.triplePattern)) {
 				if (std::holds_alternative<Term>(entry))
 					try {
 						auto term = termIndex.get(std::get<Term>(entry));

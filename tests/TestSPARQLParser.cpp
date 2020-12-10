@@ -4,7 +4,7 @@
 #include <regex>
 #include <filesystem>
 
-#include <tentris/store/SPARQL/ParsedSPARQL.hpp>
+//#include <tentris/store/SPARQL/ParsedSPARQL.hpp>
 #include <tentris/util/FmtHelper.hpp>
 
 namespace tentris::tests::sparql_parser {

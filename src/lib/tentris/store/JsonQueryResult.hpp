@@ -39,7 +39,7 @@ namespace tentris::store {
 			rapidjson::Value &vars = rapidjson::Pointer("/head/vars").Create(json_doc);
 			vars.SetArray();
 			for (const auto &var : this->variables)
-				vars.PushBack(rapidjson::StringRef(var.name), json_doc.GetAllocator());
+				vars.PushBack(rapidjson::StringRef(var.getName()), json_doc.GetAllocator());
 			rapidjson::Value &bindings = rapidjson::Pointer("/results/bindings").Create(json_doc);
 			bindings.SetArray();
 			this->bindings = &bindings;
@@ -84,7 +84,7 @@ namespace tentris::store {
 						term_obj.AddMember("xml:lang", rapidjson::StringRef(lang.data(), lang.size()), allocator);
 					}
 				}
-				entry_obj.AddMember(rapidjson::StringRef(var.name.data(), var.name.size()), term_obj, allocator);
+				entry_obj.AddMember(rapidjson::StringRef(var.getName().data(), var.getName().size()), term_obj, allocator);
 			}
 
 

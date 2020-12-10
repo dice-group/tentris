@@ -12,7 +12,6 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/QueryResultState.hpp"
-#include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/JsonQueryResult.hpp"
 #include "tentris/store/JsonQueryResultSAX.hpp"

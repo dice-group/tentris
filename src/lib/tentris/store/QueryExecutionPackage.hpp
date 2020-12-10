@@ -7,8 +7,11 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
-#include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
+
+#include <Dice/Sparql-Parser/Parser.hpp>
+
+#include "tentris/store/SPARQL/TriplePattern.hpp"
 
 namespace tentris::store {
 	class TripleStore;
@@ -23,9 +26,7 @@ namespace tentris::store::cache {
 	struct QueryExecutionPackage {
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
-		using SelectModifier = sparql::SelectModifier;
 		using Variable = sparql::Variable;
-		using ParsedSPARQL = sparql::ParsedSPARQL;
 		using Subscript = ::tentris::tensor::Subscript;
 
 	private:
@@ -59,19 +60,19 @@ namespace tentris::store::cache {
 		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
 			using namespace logging;
 			logDebug(fmt::format("Parsing query: {}", sparql_string));
-			ParsedSPARQL parsed_sparql{sparql_string};
-			subscript = parsed_sparql.getSubscript();
-			select_modifier = parsed_sparql.getSelectModifier();
+            std::shared_ptr<SelectQuery> query= SparqlParser::Parser::parseSelectQuery(sparql_string);
+            subscript = std::make_shared<Subscript>( query->generateOperands(), query->getSubscriptResult());
+			select_modifier =query->getSelectModifier();
 			logDebug(fmt::format("Parsed subscript: {} [distinct = {}]",
 								 subscript,
 								 select_modifier == SelectModifier::DISTINCT));
-			query_variables = parsed_sparql.getQueryVariables();
+			query_variables = query->getSelectVariables();
 
 			auto &triple_store = AtomicTripleStore::getInstance();
 
 			logDebug(fmt::format("Slicing TPs"));
-			for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(parsed_sparql.getBgps())) {
-				logDebug(fmt::format("Slice key {}: ⟨{}⟩", op_pos, fmt::join(tp, ", ")));
+			for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(query->getBgps())) {
+				logDebug(fmt::format("Slice key {}: ⟨{}⟩", op_pos, fmt::join(tp.triplePattern, ", ")));
 				std::variant<const_BoolHypertrie, bool> op = triple_store.resolveTriplePattern(tp);
 				if (std::holds_alternative<bool>(op)) {
 					is_trivial_empty = not std::get<bool>(op);
@@ -139,7 +140,7 @@ namespace tentris::store::cache {
 
 		friend struct ::fmt::formatter<QueryExecutionPackage>;
 	};
-} // namespace tentris::store::cache
+}; // namespace tentris::store::cache
 
 template<>
 struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
@@ -148,7 +149,6 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
-		using SelectModifier = tentris::store::sparql::SelectModifier;
 		return format_to(ctx.begin(),
 						 " SPARQL:     {}\n"
 						 " subscript:  {}\n"

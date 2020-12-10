@@ -52,7 +52,7 @@ namespace tentris::store {
 				{
 					writer.StartArray();
 					for (const auto &var : this->variables)
-						writer.String(var.name);
+						writer.String(var.getName());
 					writer.EndArray();
 				}
 				writer.EndObject();
@@ -76,7 +76,7 @@ namespace tentris::store {
 				for (const auto &[term, var]: iter::zip(entry.key, variables)) {
 					if (term == nullptr)
 						continue;
-					writer.Key(var.name);
+					writer.Key(var.getName());
 					writer.StartObject();
 					writer.Key("type");
 					switch (term->type()) {
