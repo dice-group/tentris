@@ -60,18 +60,18 @@ namespace tentris::store::cache {
 		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
 			using namespace logging;
 			logDebug(fmt::format("Parsing query: {}", sparql_string));
-            std::shared_ptr<SelectQuery> query= SparqlParser::Parser::parseSelectQuery(sparql_string);
-            subscript = std::make_shared<Subscript>( query->generateOperands(), query->getSubscriptResult());
-			select_modifier =query->getSelectModifier();
+            std::shared_ptr<SparqlQueryGraph::Nodes::SelectNodes::SelectNode> selectNode= SparqlParser::Parser::parseSelectQuery(sparql_string);
+            subscript = std::make_shared<Subscript>( selectNode->getOperands(), selectNode->getSubscriptResult());
+			select_modifier =selectNode->getSelectModifier();
 			logDebug(fmt::format("Parsed subscript: {} [distinct = {}]",
 								 subscript,
 								 select_modifier == SelectModifier::DISTINCT));
-			query_variables = query->getSelectVariables();
+			query_variables = selectNode->getSelectVariables();
 
 			auto &triple_store = AtomicTripleStore::getInstance();
 
 			logDebug(fmt::format("Slicing TPs"));
-			for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(query->getBgps())) {
+			for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(selectNode->getBgps())) {
 				logDebug(fmt::format("Slice key {}: ⟨{}⟩", op_pos, fmt::join(tp.triplePattern, ", ")));
 				std::variant<const_BoolHypertrie, bool> op = triple_store.resolveTriplePattern(tp);
 				if (std::holds_alternative<bool>(op)) {

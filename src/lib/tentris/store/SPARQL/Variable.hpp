@@ -5,7 +5,7 @@
 
 namespace tentris::store::sparql {
 
-	using Variable=TripleVariable;
+	using Variable=SparqlQueryGraph::TripleVariable;
 
 }
 namespace std {

@@ -4,7 +4,7 @@
 #include <Dice/Sparql-Query/TriplePatternElement.hpp>
 
 namespace tentris::store::sparql {
-	using TriplePattern = TriplePatternElement ;
+	using TriplePattern = SparqlQueryGraph::TriplePatternElement ;
 }
 
 #endif //TENTRIS_TRIPLEPATTERN_HPP
