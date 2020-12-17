@@ -96,15 +96,15 @@ namespace tentris::http {
 								 "    query_string: {}"_format(query_string)
 						);
 						handled = req->create_response(restinio::http_status_line_t{restinio::status_code::bad_request,
-																					"Could not parse the requested query."s}).connection_close().done();
+																					"Could not parse the requested query."s}).done();
 						break;
 					case UNKNOWN_REQUEST:
 						logError("unknown HTTP command. Only HTTP GET and POST are supported.");
-						handled = req->create_response(restinio::status_not_implemented()).connection_close().done();
+						handled = req->create_response(restinio::status_not_implemented()).done();
 						break;
 					case PROCESSING_TIMEOUT:
 						logError("timeout during request processing");
-						handled = req->create_response(restinio::status_request_time_out()).connection_close().done();
+						handled = req->create_response(restinio::status_request_time_out()).done();
 						break;
 					case SERIALIZATION_TIMEOUT:
 						// no REQUEST TIMEOUT response can be sent here because we stream results directly to the client.
@@ -179,7 +179,6 @@ namespace tentris::http {
 					// create HTTP response object
 					auto resp = req->create_response();
 					resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
-					resp.connection_close();
 
 					SparqlJsonResultSAXWriter<RESULT_TYPE> json_result(vars, 1'000UL);
 					resp.set_body(std::string{json_result.string_view()});
@@ -188,7 +187,6 @@ namespace tentris::http {
 					// create HTTP response object
 					restinio::response_builder_t<output_type_t> resp = req->create_response<output_type_t>();
 					resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
-					resp.connection_close();
 
 					std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
 					auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
