@@ -1,5 +1,5 @@
-#ifndef TENTRIS_JSONQUERYRESULTSAX_HPP
-#define TENTRIS_JSONQUERYRESULTSAX_HPP
+#ifndef TENTRIS_SPARQLJSONRESULTSAXWRITER_HPP
+#define TENTRIS_SPARQLJSONRESULTSAXWRITER_HPP
 
 #include <itertools.hpp>
 #include <utility>
@@ -21,7 +21,7 @@
 namespace tentris::store {
 
 	template<typename result_type>
-	class JsonQueryResultSAX {
+	class SparqlJsonResultSAXWriter {
 		using Term = rdf_parser::store::rdf::Term;
 		using Variable = sparql::Variable;
 		using Entry = ::tentris::tensor::EinsumEntry<result_type>;
@@ -39,7 +39,7 @@ namespace tentris::store {
 
 
 	public:
-		explicit JsonQueryResultSAX(std::vector<Variable> variables, size_t buffer_size)
+		explicit SparqlJsonResultSAXWriter(std::vector<Variable> variables, size_t buffer_size)
 				: variables(std::move(variables)),
 				  buffer_size(buffer_size),
 				  buffer(nullptr, size_t(buffer_size * 1.3)),
@@ -138,4 +138,4 @@ namespace tentris::store {
 	};
 }
 
-#endif //TENTRIS_JSONQUERYRESULTSAX_HPP
+#endif //TENTRIS_SPARQLJSONRESULTSAXWRITER_HPP
