@@ -14,8 +14,7 @@
 #include "tentris/http/QueryResultState.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
-#include "tentris/store/JsonQueryResult.hpp"
-#include "tentris/store/JsonQueryResultSAX.hpp"
+#include "tentris/store/SparqlJsonResultSAXWriter.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/util/LogHelper.hpp"
 
@@ -43,7 +42,8 @@ namespace tentris::http {
 		template<typename output_type_t> requires std::is_same_v<output_type_t, restinio::chunked_output_t> or
 												  std::is_same_v<output_type_t, restinio::restinio_controlled_output_t>
 		struct SparqlEndpoint {
-			constexpr const static bool chunked_output = std::is_same_v<output_type_t, restinio::chunked_output_t>;
+			constexpr static bool chunked_output = std::is_same_v<output_type_t, restinio::chunked_output_t>;
+			constexpr static size_t chunk_size = 100'000'000UL;
 
 			auto operator()(restinio::request_handle_t req,
 							[[maybe_unused]] auto params) -> restinio::request_handling_status_t {
@@ -172,80 +172,63 @@ namespace tentris::http {
 
 				// check if it timed out
 				const std::vector<Variable> &vars = query_package->getQueryVariables();
-				if (not query_package->is_trivial_empty) {
+
+
+
+				if (query_package->is_trivial_empty) {
+					// create HTTP response object
+					auto resp = req->create_response();
+					resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
+					resp.connection_close();
+
+					SparqlJsonResultSAXWriter<RESULT_TYPE> json_result(vars, 1'000UL);
+					resp.set_body(std::string{json_result.string_view()});
+					return Status::OK;
+				} else {
+					// create HTTP response object
+					restinio::response_builder_t<output_type_t> resp = req->create_response<output_type_t>();
+					resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
+					resp.connection_close();
 
 					std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
 					auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
 
-					if constexpr (not chunked_output) {
+					SparqlJsonResultSAXWriter<RESULT_TYPE> json_result(vars, chunk_size);
 
-						JsonQueryResult<RESULT_TYPE> json_result{vars};
-
-						auto timout_check = 0;
-						for (const EinsumEntry<RESULT_TYPE> &result : results) {
-							json_result.add(result);
-							if (++timout_check == 100) {
-								if (steady_clock::now() >= timeout) {
-									async_cleanup<RESULT_TYPE>(std::move(raw_results));
-									return Status::PROCESSING_TIMEOUT;
-								}
-								timout_check = 0;
+					auto timout_check = 0;
+					for (const EinsumEntry<RESULT_TYPE> &result : results) {
+						json_result.add(result);
+						if (++timout_check == 100) {
+							if (steady_clock::now() >= timeout) {
+								async_cleanup<RESULT_TYPE>(std::move(raw_results));
+								return Status::PROCESSING_TIMEOUT;
 							}
+							timout_check = 0;
 						}
-						async_cleanup<RESULT_TYPE>(std::move(raw_results));
-
-						if (steady_clock::now() >= timeout) {
-							return Status::PROCESSING_TIMEOUT;
-						}
-
-						auto resp = req->create_response();
-						resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
-						resp.connection_close();
-						resp.set_body(json_result.string()).done();
-						return Status::OK;
-					} else {
-						restinio::response_builder_t<output_type_t> resp = req->create_response<output_type_t>();
-						resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
-						resp.connection_close();
-
-						JsonQueryResultSAX<RESULT_TYPE> json_result(vars, 100'000'000UL);
-
-						auto timout_check = 0;
-						for (const EinsumEntry<RESULT_TYPE> &result : results) {
-							json_result.add(result);
-							if (++timout_check == 100) {
-								if (steady_clock::now() >= timeout) {
-									async_cleanup<RESULT_TYPE>(std::move(raw_results));
-									return Status::PROCESSING_TIMEOUT;
-								}
-								timout_check = 0;
-							}
-
+						if constexpr(chunked_output) {
 							if (json_result.full()) {
 								resp.append_chunk(std::string{json_result.string_view()});
 								resp.flush();
 								json_result.clear();
 							}
 						}
-
-						if (steady_clock::now() >= timeout) {
-							async_cleanup<RESULT_TYPE>(std::move(raw_results));
-							return Status::PROCESSING_TIMEOUT;
-						}
-
-						json_result.close();
-						resp.append_chunk(std::string{json_result.string_view()});
-						async_cleanup<RESULT_TYPE>(std::move(raw_results));
-						resp.done();
-
-						return Status::OK;
 					}
-				} else {
-					JsonQueryResultSAX<RESULT_TYPE> json_result(vars, 1'000UL);
-					auto resp = req->create_response();
-					resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
-					resp.connection_close();
-					resp.set_body(json_result.string_view()).done();
+
+					if (steady_clock::now() >= timeout) {
+						async_cleanup<RESULT_TYPE>(std::move(raw_results));
+						return Status::PROCESSING_TIMEOUT;
+					}
+
+					json_result.close();
+
+					if constexpr(chunked_output) {
+						resp.append_chunk(std::string{json_result.string_view()});
+					} else {
+						resp.set_body(std::string{json_result.string_view()});
+					}
+					resp.done();
+
+					async_cleanup<RESULT_TYPE>(std::move(raw_results));
 					return Status::OK;
 				}
 			}
