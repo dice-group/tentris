@@ -28,6 +28,7 @@ namespace tentris::store::cache {
 		using time_point_t = logging::time_point_t;
 		using Variable = sparql::Variable;
 		using Subscript = ::tentris::tensor::Subscript;
+        using SelectModifier =SparqlQueryGraph::Nodes::SelectNodes::SelectModifier;
 
 	private:
 		std::string sparql_string;
@@ -144,6 +145,9 @@ namespace tentris::store::cache {
 
 template<>
 struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
+
+    using SelectModifier =SparqlQueryGraph::Nodes::SelectNodes::SelectModifier;
+
 	template<typename ParseContext>
 	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 

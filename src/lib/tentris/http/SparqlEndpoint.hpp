@@ -26,6 +26,7 @@ namespace tentris::http {
 		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
 		using QueryExecutionPackage = ::tentris::store::cache::QueryExecutionPackage;
 		using Status = ResultState;
+        using SelectModifier =SparqlQueryGraph::Nodes::SelectNodes::SelectModifier;
 
 		using namespace ::tentris::logging;
 		using namespace ::tentris::store;

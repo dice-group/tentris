@@ -36,6 +36,7 @@ TerminalConfig cfg;
 bool onlystdout = false;
 
 using Errors = tentris::http::ResultState;
+using SelectModifier =SparqlQueryGraph::Nodes::SelectNodes::SelectModifier;
 
 std::ostream &logsink() {
 	if (onlystdout)
