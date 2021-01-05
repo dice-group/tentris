@@ -37,17 +37,16 @@ jobs:
         with:
           load: true # We can't load and push at the same time...
           tags: |
-            dicegroup/tentris_server:latest
+            dicegroup/tentris_server:current_build
             dicegroup/tentris_server:${{ steps.get-ref.outputs.tag }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
       - name: Push image
         run: |
           docker push dicegroup/tentris_server:${{ steps.get-ref.outputs.tag }}
-          docker push dicegroup/tentris_server:latest
       - name: Extract binaries
         run: |
-          container_id=$(docker create dicegroup/tentris_server:latest)
+          container_id=$(docker create dicegroup/tentris_server:current_build)
           docker cp ${container_id}:/tentris_server ./tentris_server
           docker cp ${container_id}:/tentris_terminal ./tentris_terminal
           docker cp ${container_id}:/rdf2ids ./rdf2ids
