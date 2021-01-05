@@ -1,0 +1,89 @@
+name: release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Get the Ref
+        id: get-ref
+        uses: ankitvgupta/ref-to-tag-action@master
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+      - name: Echo
+        run: echo ${{ steps.get-ref.outputs.tag }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Login to Docker registry
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build and load image
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          load: true # We can't load and push at the same time...
+          tags: |
+            dicegroup/tentris_server:latest
+            dicegroup/tentris_server:${{ steps.get-ref.outputs.tag }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+      - name: Push image
+        run: |
+          docker push dicegroup/tentris_server:${{ steps.get-ref.outputs.tag }}
+          docker push dicegroup/tentris_server:latest
+      - name: Extract binaries
+        run: |
+          container_id=$(docker create dicegroup/tentris_server:latest)
+          docker cp ${container_id}:/tentris_server ./tentris_server
+          docker cp ${container_id}:/tentris_terminal ./tentris_terminal
+          docker cp ${container_id}:/rdf2ids ./rdf2ids
+          docker cp ${container_id}:/ids2hypertrie ./ids2hypertrie
+          tag=$(echo $GITHUB_REF | rev | cut -d'/' -f1 | rev)
+          zip benchmarktools_clang9_libstdcxx9.zip rdf2ids ids2hypertrie
+          zip tentris_clang9_libstdcxx9.zip tentris_server tentris_terminal
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get-ref.outputs.tag }}
+          release_name: ${{ steps.get-ref.outputs.tag }}
+          draft: true
+          prerelease: false
+      - name: Upload tentris
+        id: upload-tentris-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: tentris_clang9_libstdcxx9.zip
+          asset_name: tentris_${{ steps.get-ref.outputs.tag }}_clang9_libstdcxx9.zip
+          asset_content_type: application/zip
+      - name: Upload benchmarktools
+        id: upload-benchmarktools-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: benchmarktools_clang9_libstdcxx9.zip
+          asset_name: benchmarktools_${{ steps.get-ref.outputs.tag }}_clang9_libstdcxx9.zip
+          asset_content_type: application/zip
