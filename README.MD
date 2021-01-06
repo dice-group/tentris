@@ -32,7 +32,7 @@ The endpoint may now be queried locally at: `127.0.0.1:8090/sparql?query=*your q
 *Notice*: the query string `*your query*` must be URL encoded. 
 You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
 
-*currently deactivated*: ~~An additional endpoint is provided at `127.0.0.1:8090/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).~~ 
+An additional endpoint is provided at `127.0.0.1:8090/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).
 
 
 #### usage example
