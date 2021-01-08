@@ -182,6 +182,7 @@ namespace tentris::http {
 
 					SparqlJsonResultSAXWriter<RESULT_TYPE> json_result(vars, 1'000UL);
 					resp.set_body(std::string{json_result.string_view()});
+					resp.done();
 					return Status::OK;
 				} else {
 					// create HTTP response object
