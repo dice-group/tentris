@@ -19,11 +19,6 @@ RUN ln -s /usr/bin/python3 /usr/bin/python && \
 RUN pip3 install conan && \
     conan user && \
     conan profile new --detect default && \
-    conan profile update settings.sparql-parser-base:compiler.version=10 default && \
-    conan profile update settings.sparql-parser-base:compiler.libcxx=libstdc++11  default  && \
-    conan profile update settings.sparql-parser-base:compiler=gcc default &&\
-    conan profile update env.sparql-parser-base:CXX=/usr/bin/g++-10 default && \
-    conan profile update env.sparql-parser-base:CC=/usr/bin/gcc-10 default && \
     conan profile update settings.compiler=clang default &&\
     conan profile update settings.compiler.version=11 default && \
     conan profile update settings.compiler.libcxx=libstdc++11 default && \
