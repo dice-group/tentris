@@ -82,7 +82,7 @@ protected:
 
 public:
 
-	ExecutableConfig(int argc, const char ** &argv) : ExecutableConfig{} {
+	ExecutableConfig(int argc, char ** &argv) : ExecutableConfig{} {
 		initConfig(argc, argv);
 	}
 
@@ -92,7 +92,7 @@ public:
 	 * @param argv array of char arrays with arguments
 	 */
 
-	void initConfig(int argc, const char **&argv) {
+	void initConfig(int argc, char **&argv) {
 		try {
 			cxxopts::ParseResult arguments = options.parse(argc, argv);
 			parseArguments(arguments);

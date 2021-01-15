@@ -13,9 +13,7 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     endif ()
 endif ()
 
-if(NOT DEFINED ${TENTRIS_MARCH})
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=x86-64")
-else()
+if(DEFINED ${TENTRIS_MARCH})
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=${TENTRIS_MARCH}")
 endif()
 
@@ -32,15 +30,19 @@ if (TENTRIS_BUILD_WITH_TCMALLOC)
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -O0")
 
-
-
 # Lightweight C++ command line option parser   https://github.com/jarro2783/cxxopts
-add_library(cxxopts INTERFACE)
-target_include_directories(cxxopts INTERFACE
-        thirdparty/cxxopts/include
-        )
-
-
+include(FetchContent)
+FetchContent_Declare(
+        cxxopts
+        GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
+        GIT_TAG        v2.2.1
+        GIT_SHALLOW    TRUE
+)
+set(CXXOPTS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(CXXOPTS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+set(CXXOPTS_ENABLE_WARNINGS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(cxxopts)
 
 add_library(csv-parser INTERFACE)
 target_include_directories(csv-parser INTERFACE
@@ -53,7 +55,6 @@ target_include_directories(rapidjson INTERFACE
         thirdparty/RapidJSON/include
         )
 
-find_package(absl REQUIRED)
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
@@ -80,7 +81,6 @@ target_link_libraries(tentris
         cxxopts
         rapidjson
         sparql-parser-base::sparql-parser-base
-        absl::absl
         tsl-hopscotch-map::tsl-hopscotch-map
         fmt::fmt
         hypertrie::hypertrie

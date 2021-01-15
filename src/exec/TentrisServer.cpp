@@ -53,8 +53,7 @@ int main(int argc, char *argv[]) {
 	using namespace fmt::literals;
 	using namespace tentris::logging;
 
-	auto const_argv = const_cast<const char **>(argv);
-	ServerConfig cfg{argc, const_argv};
+	ServerConfig cfg{argc, argv};
 
 	init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
 
