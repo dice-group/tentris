@@ -1,8 +1,7 @@
 [requires]
-boost/1.74.0
-fmt/7.1.2
-gtest/1.8.1
-abseil/20200225.2
+boost/1.75.0
+fmt/7.1.3
+abseil/20200225.2 # remove when rdf-parser is updated
 restinio/0.6.12
 hypertrie/0.6.0-rc13@dice-group/stable
 rdf-parser/0.10@dice-group/stable
