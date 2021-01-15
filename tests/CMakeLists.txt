@@ -1,13 +1,24 @@
 cmake_minimum_required(VERSION 3.13) # since 3.10 gtest_discover_tests is included
 set(CMAKE_CXX_STANDARD 20)
 
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        release-1.8.1
+        GIT_SHALLOW    TRUE
+)
+set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+find_package(GTest REQUIRED)
 
 include(GoogleTest)
-
-# add the exectutable for all tests
+# add the executable for all tests
 add_executable(tests Tests.cpp)
 target_link_libraries(tests
-        ${CONAN_LIBS}
+        GTest::GTest
+        GTest::Main
         tentris
         )
 

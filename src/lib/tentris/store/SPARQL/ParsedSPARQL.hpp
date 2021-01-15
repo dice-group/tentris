@@ -31,7 +31,8 @@ namespace tentris::store::sparql {
 
 	namespace {
 		using Subscript =  einsum::internal::Subscript;
-		using SparqlParser =Dice::tentris::sparql::parser::SparqlParser;
+		namespace parser = Dice::sparql_parser::base;
+		using SparqlParser = parser::SparqlParser;
 		using namespace fmt::literals;
 	}
 
@@ -72,7 +73,7 @@ namespace tentris::store::sparql {
 
 
 	class ParsedSPARQL {
-		using SparqlLexer = Dice::tentris::sparql::parser::SparqlLexer;
+		using SparqlLexer = parser::SparqlLexer;
 		using ANTLRInputStream =antlr4::ANTLRInputStream;
 		using CommonTokenStream = antlr4::CommonTokenStream;
 		using QueryContext = SparqlParser::QueryContext;
