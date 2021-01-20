@@ -8,7 +8,8 @@ FetchContent_Declare(
 set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-find_package(GTest REQUIRED)
+add_library(GTest::GTest ALIAS gtest)
+add_library(GTest::Main ALIAS gtest_main)
 
 include(GoogleTest)
 # add the executable for all tests
