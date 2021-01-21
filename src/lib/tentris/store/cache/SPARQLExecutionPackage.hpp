@@ -1,5 +1,5 @@
-#ifndef TENTRIS_QUERYEXECUTIONPACKAGE_HPP
-#define TENTRIS_QUERYEXECUTIONPACKAGE_HPP
+#ifndef TENTRIS_SPARQLEXECUTIONPACKAGE_HPP
+#define TENTRIS_SPARQLEXECUTIONPACKAGE_HPP
 
 #include <any>
 #include <exception>
@@ -20,7 +20,7 @@ namespace tentris::store::cache {
 	 * A QueryExecutionPackage contains everything that is necessary to execute a given sparql query for a state of the
 	 * RDF graph.
 	 */
-	struct QueryExecutionPackage {
+	struct SPARQLExecutionPackage {
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
 		using SelectModifier = sparql::SelectModifier;
@@ -47,7 +47,7 @@ namespace tentris::store::cache {
 		std::vector<const_BoolHypertrie> operands{};
 
 	public:
-		QueryExecutionPackage() = delete;
+		SPARQLExecutionPackage() = delete;
 
 		/**
 		 *
@@ -56,7 +56,7 @@ namespace tentris::store::cache {
 		 * @param termIndex term store attached to the trie
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
-		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
+		explicit SPARQLExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
 			using namespace logging;
 			logDebug(fmt::format("Parsing query: {}", sparql_string));
 			ParsedSPARQL parsed_sparql{sparql_string};
@@ -137,17 +137,17 @@ namespace tentris::store::cache {
 			return query_variables;
 		}
 
-		friend struct ::fmt::formatter<QueryExecutionPackage>;
+		friend struct ::fmt::formatter<SPARQLExecutionPackage>;
 	};
 } // namespace tentris::store::cache
 
 template<>
-struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
+struct fmt::formatter<tentris::store::cache::SPARQLExecutionPackage> {
 	template<typename ParseContext>
 	constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
 	template<typename FormatContext>
-	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
+	auto format(const tentris::store::cache::SPARQLExecutionPackage &p, FormatContext &ctx) {
 		using SelectModifier = tentris::store::sparql::SelectModifier;
 		return format_to(ctx.begin(),
 						 " SPARQL:     {}\n"
@@ -159,5 +159,4 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 	}
 };
 
-#endif // TENTRIS_QUERYEXECUTIONPACKAGE_HPP
-
+#endif// TENTRIS_SPARQLEXECUTIONPACKAGE_HPP

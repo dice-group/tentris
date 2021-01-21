@@ -8,11 +8,11 @@
 
 #include "config/TerminalConfig.hpp"
 
-#include <tentris/store/QueryExecutionPackage.hpp>
 #include <tentris/store/QueryExecutionPackageCache.hpp>
 #include <tentris/store/TripleStore.hpp>
-#include <tentris/util/LogHelper.hpp>
+#include <tentris/store/execution/SPARQLExecutionPackage.hpp>
 #include <tentris/tensor/BoolHypertrie.hpp>
+#include <tentris/util/LogHelper.hpp>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -68,7 +68,7 @@ time_point_t actual_timeout;
 
 template<typename RESULT_TYPE>
 void
-writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> &query_package) {
+writeNTriple(std::ostream &stream, const std::shared_ptr<SPARQLExecutionPackage> &query_package) {
 	const std::vector<Variable> &vars = query_package->getQueryVariables();
 	stream << fmt::format("{}\n", fmt::join(vars, ","));
 
@@ -123,7 +123,7 @@ writeNTriple(std::ostream &stream, const std::shared_ptr<QueryExecutionPackage> 
 }
 
 template<typename RESULT_TYPE>
-inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_package,
+inline void runCMDQuery(const std::shared_ptr<SPARQLExecutionPackage> &query_package,
 						const time_point_t timeout) {
 	// calculate the result
 	// check if it timed out
@@ -135,7 +135,7 @@ inline void runCMDQuery(const std::shared_ptr<QueryExecutionPackage> &query_pack
 	}
 }
 
-void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
+void commandlineInterface(SPARQLExecutionPackage_cache &querypackage_cache) {
 	std::string sparql_str;
 	while (std::getline(std::cin, sparql_str)) {
 
@@ -148,7 +148,7 @@ void commandlineInterface(QueryExecutionPackage_cache &querypackage_cache) {
 
 		try {
 			parse_start = steady_clock::now();
-			std::shared_ptr<QueryExecutionPackage> query_package = querypackage_cache[sparql_str];
+			std::shared_ptr<SPARQLExecutionPackage> query_package = querypackage_cache[sparql_str];
 
 			timeout = steady_clock::now() + cfg.timeout;
 
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
 
 	TripleStore triplestore{};
 
-	QueryExecutionPackage_cache executionpackage_cache{cfg.cache_size};
+	SPARQLExecutionPackage_cache executionpackage_cache{cfg.cache_size};
 
 
 	onlystdout = cfg.onlystdout;

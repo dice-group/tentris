@@ -23,8 +23,8 @@ namespace tentris::http {
 	namespace sparql_endpoint {
 
 		using AtomicTripleStoreConfig = ::tentris::store::config::AtomicTripleStoreConfig;
-		using AtomicQueryExecutionCache = ::tentris::store::AtomicQueryExecutionCache;
-		using QueryExecutionPackage = ::tentris::store::cache::QueryExecutionPackage;
+		using AtomicQueryExecutionCache = ::tentris::store::AtomicSPARQLExecutionCache;
+		using QueryExecutionPackage = ::tentris::store::cache::SPARQLExecutionPackage;
 		using Status = ResultState;
 
 		using namespace ::tentris::logging;
@@ -41,7 +41,7 @@ namespace tentris::http {
 
 		template<typename output_type_t> requires std::is_same_v<output_type_t, restinio::chunked_output_t> or
 												  std::is_same_v<output_type_t, restinio::restinio_controlled_output_t>
-		struct SparqlEndpoint {
+		struct SPARQLEndpoint {
 			constexpr static bool chunked_output = std::is_same_v<output_type_t, restinio::chunked_output_t>;
 			constexpr static size_t chunk_size = 100'000'000UL;
 

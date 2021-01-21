@@ -2,13 +2,14 @@
 
 #define TENTRIS_PARSEDSPARQLCACHES_HPP
 
-#include "tentris/store/QueryExecutionPackage.hpp"
+#include "tentris/store/cache/GraphqlExecutionPackage.hpp"
+#include "tentris/store/cache/SPARQLExecutionPackage.hpp"
 #include "tentris/util/SyncedLRUCache.hpp"
 #include <memory>
 
 namespace tentris::store::cache {
-	using QueryExecutionPackage_cache = util::sync::SyncedLRUCache<std::string, QueryExecutionPackage>;
-
+    using GraphqlExecutionPackage_cache = util::sync::SyncedLRUCache<std::string, GraphqlExecutionPackage>;
+    using SPARQLExecutionPackage_cache = util::sync::SyncedLRUCache<std::string, SPARQLExecutionPackage>;
 } // namespace tentris::store::cache
 
 #endif // TENTRIS_PARSEDSPARQLCACHES_HPP

@@ -1,12 +1,13 @@
 #include <filesystem>
 #include <csignal>
 
-#include <tentris/store/TripleStore.hpp>
 #include "config/ServerConfig.hpp"
-#include <tentris/store/AtomicTripleStore.hpp>
-#include <tentris/store/config/AtomicTripleStoreConfig.cpp>
-#include <tentris/http/SparqlEndpoint.hpp>
 #include <restinio/all.hpp>
+#include <tentris/http/GraphqlEndpoint.hpp>
+#include <tentris/http/SPARQLEndpoint.hpp>
+#include <tentris/store/AtomicTripleStore.hpp>
+#include <tentris/store/TripleStore.hpp>
+#include <tentris/store/config/AtomicTripleStoreConfig.cpp>
 
 #include <fmt/format.h>
 
@@ -75,10 +76,13 @@ int main(int argc, char *argv[]) {
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
 			R"(/sparql)",
-			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::restinio_controlled_output_t>{});
+			tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::restinio_controlled_output_t>{});
 	router->http_get(
 			R"(/stream)",
-			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::chunked_output_t>{});
+			tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::chunked_output_t>{});
+    router->http_get(
+            R"(/graphql)",
+            tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::restinio_controlled_output_t>{});
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
@@ -91,7 +95,7 @@ int main(int argc, char *argv[]) {
 
 	restinio::run(
 			restinio::on_thread_pool<tentris_restinio_traits>(cfg.threads)
-			        .max_parallel_connections(cfg.threads)
+          .max_parallel_connections(cfg.threads)
 					.address("0.0.0.0")
 					.port(cfg.port)
 					.request_handler(std::move(router))
