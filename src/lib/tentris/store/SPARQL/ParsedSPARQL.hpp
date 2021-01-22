@@ -22,9 +22,10 @@
 #include <Dice/einsum/internal/Subscript.hpp>
 #include <utility>
 
-#include <Dice/rdf_parser/RDF/Term.hpp>
-#include "tentris/store/SPARQL/Variable.hpp"
-#include "tentris/store/SPARQL/TriplePattern.hpp"
+#include <Dice/RDF/Term.hpp>
+#include <Dice/RDF/ParseTerm.hpp>
+#include <Dice/RDF/Triple.hpp>
+#include <Dice/SPARQL/TriplePattern.hpp>
 
 
 namespace tentris::store::sparql {
@@ -44,10 +45,7 @@ namespace tentris::store::sparql {
 	};
 
 	class LexerErrorListener : public antlr4::BaseErrorListener {
-		using Term = rdf_parser::store::rdf::Term;
-		using BNode = rdf_parser::store::rdf::BNode;
-		using Literal = rdf_parser::store::rdf::Literal;
-		using URIRef = rdf_parser::store::rdf::URIRef;
+		using Variable = Dice::sparql::Variable;
 	public:
 		LexerErrorListener() = default;
 
@@ -73,6 +71,14 @@ namespace tentris::store::sparql {
 
 
 	class ParsedSPARQL {
+		using Term = Dice::rdf::Term;
+		using BNode = Dice::rdf::BNode;
+		using Literal = Dice::rdf::Literal;
+		using URIRef = Dice::rdf::URIRef;
+		using TriplePattern = Dice::sparql::TriplePattern;
+		using VarOrTerm = Dice::sparql::VarOrTerm;
+		using Variable = Dice::sparql::Variable;
+
 		using SparqlLexer = parser::SparqlLexer;
 		using ANTLRInputStream =antlr4::ANTLRInputStream;
 		using CommonTokenStream = antlr4::CommonTokenStream;
@@ -231,7 +237,7 @@ namespace tentris::store::sparql {
 			if (std::holds_alternative<Variable>(variant)) {
 				auto &var = std::get<Variable>(variant);
 				variables.insert(var);
-				if (var.is_anonym)
+				if (var.isAnon())
 					anonym_variables.insert(var);
 			}
 		}
@@ -307,7 +313,7 @@ namespace tentris::store::sparql {
 				else
 					return Variable{"__:" + std::to_string(next_anon_var_id++), true};
 			} else if (not termContext->NIL()) {
-				return Literal::make_term(termContext->getText());
+				return Dice::rdf::parse_term(termContext->getText());
 			} else {
 				throw std::logic_error{"Handling NIL not yet implemented."};
 				// TODO: handle NIL value "( )"
