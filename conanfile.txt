@@ -1,11 +1,10 @@
 [requires]
 boost/1.75.0
 fmt/7.1.3
-abseil/20200225.2 # remove when rdf-parser is updated
 restinio/0.6.12
-hypertrie/0.6.0-rc13@dice-group/stable
-rdf-parser/0.10@dice-group/stable
-sparql-parser-base/0.2.1@dice-group/stable
+hypertrie/0.6.0@dice-group/rc14
+rdf-parser/0.13.0@dice-group/stable
+sparql-parser-base/0.2.2@dice-group/stable
 
 [options]
 restinio:asio=boost

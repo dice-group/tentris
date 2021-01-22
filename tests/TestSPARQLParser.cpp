@@ -10,10 +10,13 @@
 namespace tentris::tests::sparql_parser {
 	namespace fs = std::filesystem;
 	using namespace tentris::store::sparql;
-	using Term = rdf_parser::store::rdf::Term;
-	using BNode = rdf_parser::store::rdf::BNode;
-	using Literal = rdf_parser::store::rdf::Literal;
-	using URIRef = rdf_parser::store::rdf::URIRef;
+	using Term = Dice::rdf::Term;
+	using BNode = Dice::rdf::BNode;
+	using Literal = Dice::rdf::Literal;
+	using URIRef = Dice::rdf::URIRef;
+	using Triple = Dice::rdf::Triple;
+	using TriplePattern = Dice::sparql::TriplePattern;
+	using Variable = Dice::sparql::Variable;
 
 	std::vector<std::string> load_queries(const std::string &query_file_path) {
 		std::vector<std::string> queries{};
@@ -113,12 +116,12 @@ TEST(TestSPARQLParser, ParseBenchmarkQueries) {
 								  "?article2 swrc:journal ?journal }";
 		ParsedSPARQL q{query};
 
-		const Term type = Term::make_term("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>");
-		const Term creator = Term::make_term("<http://purl.org/dc/elements/1.1/creator>");
-		const Term journal = Term::make_term("<http://swrc.ontoware.org/ontology#journal>");
-		const Term name = Term::make_term("<http://xmlns.com/foaf/0.1/name>");
+		const Term type = Dice::rdf::parse_term("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>");
+		const Term creator = Dice::rdf::parse_term("<http://purl.org/dc/elements/1.1/creator>");
+		const Term journal = Dice::rdf::parse_term("<http://swrc.ontoware.org/ontology#journal>");
+		const Term name = Dice::rdf::parse_term("<http://xmlns.com/foaf/0.1/name>");
 
-		const Term article = Term::make_term("<http://localhost/vocabulary/bench/Article>");
+		const Term article = Dice::rdf::parse_term("<http://localhost/vocabulary/bench/Article>");
 
 		const Variable article1 = Variable{"article1"};
 		const Variable article2 = Variable{"article2"};

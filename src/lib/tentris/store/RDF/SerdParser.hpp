@@ -3,8 +3,8 @@
 
 #include <fmt/format.h>
 #include <fmt/core.h>
-#include <Dice/rdf_parser/RDF/Triple.hpp>
-#include <Dice/rdf_parser/RDF/Term.hpp>
+#include <Dice/RDF/Triple.hpp>
+#include <Dice/RDF/Term.hpp>
 #include <Dice/hash/DiceHash.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <serd-0/serd/serd.h>
@@ -18,7 +18,11 @@
 namespace tentris::store::rdf {
 
 	class BulkLoad {
-		using Triple = rdf_parser::store::rdf::Triple;
+		using Triple = Dice::rdf::Triple;
+		using Term = Dice::rdf::Term;
+		using BNode = Dice::rdf::BNode;
+		using Literal = Dice::rdf::Literal;
+		using URIRef = Dice::rdf::URIRef;
 		using prefixes_map_type = tsl::hopscotch_map<std::string, std::string, Dice::hash::DiceHash<std::string>>;
 		prefixes_map_type prefixes{};
 
@@ -157,8 +161,12 @@ namespace tentris::store::rdf {
 	};
 
 	class SerdParser {
+		using Triple = Dice::rdf::Triple;
+		using Term = Dice::rdf::Term;
+		using BNode = Dice::rdf::BNode;
+		using Literal = Dice::rdf::Literal;
+		using URIRef = Dice::rdf::URIRef;
 
-	private:
 		std::string file_name_;
 
 	public:
