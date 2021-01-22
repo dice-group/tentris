@@ -6,10 +6,10 @@
 #include <tentris/store/RDF/TermStore.hpp>
 
 int main(int argc, char *argv[]) {
-	using namespace rdf_parser::Turtle;
 	using namespace tentris::store;
 	using namespace fmt::literals;
 	using namespace std::chrono;
+	using Triple = Dice::rdf::Triple;
 
 	if (argc != 2) {
 		std::cerr << "Please provide exactly one triple file as commandline argument." << std::endl;

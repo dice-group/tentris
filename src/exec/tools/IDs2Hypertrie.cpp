@@ -31,7 +31,6 @@ int main(int argc, char *argv[]) {
 }
 
 namespace tentris::IDs2Hypertrie {
-	using namespace rdf_parser::Turtle;
 	using namespace tentris::store;
 	using namespace fmt::literals;
 	using namespace std::chrono;

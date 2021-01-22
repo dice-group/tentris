@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 project(tentris CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(tentris_VERSION_MAJOR 1)
-set(tentris_VERSION_MINOR 1)
-set(tentris_VERSION_PATCH 0)
+set(tentris_VERSION_MINOR 0)
+set(tentris_VERSION_PATCH 7)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
@@ -75,6 +75,15 @@ find_package(optional-lite REQUIRED)
 # make a library of the code
 add_library(tentris INTERFACE)
 
+include(FetchContent)
+FetchContent_Declare(
+        cppitertools
+        GIT_REPOSITORY https://github.com/ryanhaining/cppitertools.git
+        GIT_TAG v2.1
+        GIT_SHALLOW TRUE)
+
+FetchContent_MakeAvailable(cppitertools)
+
 target_link_libraries(tentris
         INTERFACE
         stdc++fs # for #include <filesystem>
@@ -87,6 +96,7 @@ target_link_libraries(tentris
         rdf-parser::rdf-parser
         Boost::Boost
         serd-0
+        cppitertools::cppitertools
         )
 
 target_include_directories(tentris INTERFACE
