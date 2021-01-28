@@ -27,7 +27,7 @@ WORKDIR /
 
 # we need serd as static library. Not available from ubuntu repos
 RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN git clone --quiet --branch v0.30.8 https://gitlab.com/drobilla/serd.git
+RUN git clone --quiet --branch v0.30.2 https://gitlab.com/drobilla/serd.git
 WORKDIR serd
 RUN git submodule update --quiet --init --recursive && \
     ./waf configure --static && \
