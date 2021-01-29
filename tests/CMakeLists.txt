@@ -29,4 +29,5 @@ gtest_discover_tests(tests)
 
 # copy files for testing to the binary folder
 file(COPY queries DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 

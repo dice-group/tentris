@@ -49,6 +49,15 @@ target_include_directories(csv-parser INTERFACE
         thirdparty/csv-parser
         )
 
+add_library(libgraphqlparser
+        thirdparty/libgraphqlparser/GraphQLParser.cpp
+        thirdparty/libgraphqlparser/Ast.cpp
+        thirdparty/libgraphqlparser/lexer.cpp
+        thirdparty/libgraphqlparser/parser.tab.cpp
+        )
+target_include_directories(libgraphqlparser INTERFACE
+        thirdparty/
+        )
 
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE
@@ -87,6 +96,7 @@ target_link_libraries(tentris
         rdf-parser::rdf-parser
         Boost::Boost
         serd-0
+        libgraphqlparser
         )
 
 target_include_directories(tentris INTERFACE

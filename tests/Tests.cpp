@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "TestSPARQLParser.cpp"
-#include "TestTermStore.cpp"
+#include "TestGraphqlParser.cpp"
+#include "TestGraphqlExecutionPackage.cpp"
+//#include "TestSPARQLParser.cpp"
+//#include "TestTermStore.cpp"
 
 
 int main(int argc, char **argv) {

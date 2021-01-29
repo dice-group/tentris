@@ -10,7 +10,7 @@
 
 #include <tentris/store/QueryExecutionPackageCache.hpp>
 #include <tentris/store/TripleStore.hpp>
-#include <tentris/store/execution/SPARQLExecutionPackage.hpp>
+#include <tentris/store/cache/SPARQLExecutionPackage.hpp>
 #include <tentris/tensor/BoolHypertrie.hpp>
 #include <tentris/util/LogHelper.hpp>
 
