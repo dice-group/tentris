@@ -3,7 +3,7 @@
 
 #include <libgraphqlparser/AstVisitor.h>
 
-namespace tentris::graphql::internal {
+namespace tentris::store::graphql::internal {
 
 	using namespace facebook::graphql::ast::visitor;
 
@@ -11,80 +11,89 @@ namespace tentris::graphql::internal {
 
 	private:
 
-        std::string op_type{};
-		const facebook::graphql::ast::OperationDefinition* operation;
-		std::map<std::string, std::string> vars_map{};
-		std::string last_def_value;
+		// the queries of the provided document
+        std::map<std::string, const facebook::graphql::ast::OperationDefinition*> queries{};
+		// the object type definitions of the provided document
+		std::vector<const facebook::graphql::ast::ObjectTypeDefinition*> object_defs{};
+		// the interface type definitions of the provided document
+        std::vector<const facebook::graphql::ast::InterfaceTypeDefinition*> interface_defs{};
+		// the input types definitions of the provided document
+        std::vector<const facebook::graphql::ast::InputObjectTypeDefinition*> input_defs{};
 
 	public:
 
-		bool visitDocument(const facebook::graphql::ast::Document &document) override {
-			return true;
+		// getters
+
+		// returns the requested query operation
+		[[nodiscard]] const facebook::graphql::ast::OperationDefinition* getQuery(const std::string& q_name) {
+			if(not queries.contains(q_name))
+                throw std::runtime_error("Requested query does not exist");
+			return queries[q_name];
 		}
 
-		void endVisitDocument(const facebook::graphql::ast::Document &document) override {
-
-		}
-
-		bool visitOperationDefinition(const facebook::graphql::ast::OperationDefinition &operationDefinition) override {
-			return true;
-		}
-
-		void endVisitOperationDefinition(const facebook::graphql::ast::OperationDefinition &operationDefinition) override {
-			op_type = operationDefinition.getOperation();
-			operation = dynamic_cast<const facebook::graphql::ast::OperationDefinition*>(&operationDefinition);
-		}
-
-        // do not visit names
-		bool visitName(const facebook::graphql::ast::Name &name) override {
-			return false;
-		}
-
-		bool visitVariableDefinition(const facebook::graphql::ast::VariableDefinition &variableDefinition) override {
-			return true;
-		}
-
-        void endVisitVariableDefinition(const facebook::graphql::ast::VariableDefinition &variableDefinition) override {
-			std::string var_name = variableDefinition.getVariable().getName().getValue();
-			if(not last_def_value.empty()) {
-				vars_map[var_name] = last_def_value;
-				last_def_value.clear();
-			}
+		// returns the only parsed query operation
+        [[nodiscard]] const facebook::graphql::ast::OperationDefinition* getQuery() {
+            if(queries.empty())
+				throw std::runtime_error("No query operations were provided");
+			else if(queries.size() > 1)
+				throw std::runtime_error("More than one query operations were provided");
 			else
-				vars_map[variableDefinition.getVariable().getName().getValue()];
+				return queries.begin()->second;
         }
 
-		bool visitVariable(const facebook::graphql::ast::Variable &variable) override {
+        [[nodiscard]] const std::vector<const facebook::graphql::ast::ObjectTypeDefinition *> &getObjectDefs() const {
+			return object_defs;
+		}
+
+        [[nodiscard]] const std::vector<const facebook::graphql::ast::InterfaceTypeDefinition *> &getInterfaceDefs() const {
+			return interface_defs;
+		}
+
+        [[nodiscard]] const std::vector<const facebook::graphql::ast::InputObjectTypeDefinition *> &getInputDefs() const {
+			return input_defs;
+		}
+
+		// visit functions
+
+		bool visitOperationDefinition(const facebook::graphql::ast::OperationDefinition &operationDefinition) override {
+			// we are only interested in query operations
+            if(strcmp(operationDefinition.getOperation(), "query") == 0) {
+                auto op_name = operationDefinition.getName()->getValue();
+                queries[op_name] = &operationDefinition;
+            }
 			return false;
 		}
 
-		bool visitIntValue(const facebook::graphql::ast::IntValue &intValue) override {
-			last_def_value = intValue.getValue();
+		bool visitObjectTypeDefinition(const facebook::graphql::ast::ObjectTypeDefinition &objectTypeDefinition) override {
+			object_defs.push_back(&objectTypeDefinition);
 			return false;
 		}
 
-		bool visitStringValue(const facebook::graphql::ast::StringValue &stringValue) override {
-            last_def_value = stringValue.getValue();
-            return false;
-		}
-
-		// do not visit directives
-		bool visitDirective(const facebook::graphql::ast::Directive &directive) override {
+		bool visitInterfaceTypeDefinition(const facebook::graphql::ast::InterfaceTypeDefinition &interfaceTypeDefinition) override {
+			interface_defs.push_back(&interfaceTypeDefinition);
 			return false;
 		}
 
-        // do not visit selection sets
-		bool visitSelectionSet(const facebook::graphql::ast::SelectionSet &selectionSet) override {
+		bool visitInputObjectTypeDefinition(const facebook::graphql::ast::InputObjectTypeDefinition &inputObjectTypeDefinition) override {
+			input_defs.push_back(&inputObjectTypeDefinition);
 			return false;
 		}
 
-		[[nodiscard]] const std::string &getOpType() const {
-			return op_type;
+		// union types are currently not supported
+		bool visitUnionTypeDefinition(const facebook::graphql::ast::UnionTypeDefinition &unionTypeDefinition) override {
+			return false;
 		}
 
-		[[nodiscard]] const facebook::graphql::ast::OperationDefinition *getOperation() const {
-			return operation;
+		// enum types are currently not supported
+		bool visitEnumTypeDefinition(const facebook::graphql::ast::EnumTypeDefinition &enumTypeDefinition) override {
+			return false;
 		}
+
+		// new scalar type definitions are currently not supported
+		bool visitScalarTypeDefinition(const facebook::graphql::ast::ScalarTypeDefinition &scalarTypeDefinition) override {
+			return false;
+		}
+
 	};
 }
 #endif//TENTRIS_GRAPHQLDOCUMENTVISITOR_HPP
