@@ -12,7 +12,6 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/QueryResultState.hpp"
-#include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/SparqlJsonResultSAXWriter.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
@@ -29,7 +28,7 @@ namespace tentris::http {
 
 		using namespace ::tentris::logging;
 		using namespace ::tentris::store;
-		using namespace ::tentris::store::sparql;
+        using SelectModifier = Dice::sparql::Nodes::QueryNodes::SelectNodes::SelectModifier;
 		using namespace ::tentris::tensor;
 
 		using namespace std::string_literals;
