@@ -31,6 +31,10 @@ public:
 	 */
 	mutable std::string rdf_file{};
 	/**
+	 * The relative or absolute path to the file containing the graphql schema -- optional
+	 */
+    mutable std::string graphql_schema{};
+	/**
 	 * The timeout for query processing of single queries.
 	 */
 	mutable std::chrono::steady_clock::duration timeout;
@@ -60,6 +64,7 @@ protected:
 	void addOptions() {
 		options.add_options()
 				("f,file", "ntriple file to load at startup", cxxopts::value<std::string>())
+                ("s,gql_schema", "graphql schema", cxxopts::value<std::string>())
 				("t,timeout", "time in seconds until processing a request is canceled by the server",
 				 cxxopts::value<uint>()->default_value("180"))
 				("l,cache_size", "Max number queries that may be cached.",

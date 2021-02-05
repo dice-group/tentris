@@ -1,0 +1,45 @@
+query first {
+  people {
+    name
+  }
+}
+
+query second {
+  articles {
+    title
+    pages
+    homepage
+  }
+}
+
+query third {
+  articles {
+    title
+    journal {
+        number
+        volume
+    }
+  }
+}
+
+query fourth {
+  articles {
+    title
+    journal {
+      issued
+    }
+    creator {
+      name
+    }
+  }
+}
+
+query fifth {
+  people {
+    name
+  }
+  articles {
+    title
+    pages
+  }
+}

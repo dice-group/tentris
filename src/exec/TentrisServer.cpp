@@ -63,12 +63,17 @@ int main(int argc, char *argv[]) {
 	store_cfg.timeout = cfg.timeout;
 	store_cfg.cache_size = cfg.cache_size;
 	store_cfg.threads = cfg.threads;
+	store_cfg.graphql_schema = cfg.graphql_schema;
 
 	// bulkload file
 	if (not cfg.rdf_file.empty()) {
 		bulkload(cfg.rdf_file, cfg.bulksize);
 	} else {
 		log("No file loaded.");
+	}
+	// parse graphql schema if provided
+    if (not cfg.graphql_schema.empty()) {
+
 	}
 
 	// create endpoint

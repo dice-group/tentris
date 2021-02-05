@@ -7,6 +7,7 @@
 
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/store/graphql/ParsedGraphql.hpp"
+#include "tentris/store/graphql/GraphqlSchema.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store {
@@ -24,11 +25,14 @@ namespace tentris::store::cache {
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
 		using ParsedGraphql = graphql::ParsedGraphql;
+        using GraphqlSchema = graphql::GraphqlSchema;
 		using Subscript = ::tentris::tensor::Subscript;
+		using EinsumCounted = ::tentris::tensor::Einsum<::tentris::tensor::COUNTED_t>;
+
 
 	private:
 
-		std::string graphql_string;
+		std::string query_name;
 		// a graphql query can generate multiple subscripts (multiple root fields)
 		std::vector<std::shared_ptr<Subscript>> subscripts;
 		// a vector containing the operands of each subscript
@@ -41,10 +45,16 @@ namespace tentris::store::cache {
 		/**
          * @param graphql_string graphql query to be parsed
          */
-		explicit GraphqlExecutionPackage(const std::string &graphql_string) : graphql_string{graphql_string} {
+		explicit GraphqlExecutionPackage(const std::string& request_doc_path,
+										 const GraphqlSchema &schema,
+										 const std::string& query_name = "") : query_name(query_name) {
             using namespace logging;
-            logDebug(fmt::format("Parsing query: {}", graphql_string));
-            ParsedGraphql parsed_graphql{graphql_string};
+            ParsedGraphql parsed_graphql;
+            logDebug(fmt::format("Parsing query: {}", query_name));
+			if(query_name.empty())
+				parsed_graphql = ParsedGraphql{request_doc_path, schema};
+			else
+				parsed_graphql = ParsedGraphql{request_doc_path, query_name, schema};
             subscripts = parsed_graphql.getSubscripts();
             logDebug(fmt::format("Parsed subscripts: {}", subscripts));
             auto &triple_store = AtomicTripleStore::getInstance();
@@ -64,6 +74,14 @@ namespace tentris::store::cache {
                     root_field_operands.push_back(triple_store.resolveGQLField(*iter));
                 operands.emplace_back(std::move(root_field_operands));
             }
+		}
+
+		[[nodiscard]] std::unique_ptr<std::vector<std::shared_ptr<EinsumCounted>>>&& generateEinsums(const time_point_t &timeout) {
+            std::unique_ptr<std::vector<std::shared_ptr<EinsumCounted>>> einsums{};
+			for(auto i : iter::range(subscripts.size())) {
+				einsums->push_back(std::make_shared<EinsumCounted>(subscripts[i], operands[i], timeout));
+			}
+			return std::move(einsums);
 		}
 
 		[[nodiscard]] const std::vector<std::shared_ptr<Subscript>> &getSubscripts() const {
@@ -88,9 +106,9 @@ struct fmt::formatter<tentris::store::cache::GraphqlExecutionPackage> {
     template<typename FormatContext>
     auto format(const tentris::store::cache::GraphqlExecutionPackage &p, FormatContext &ctx) {
         return format_to(ctx.begin(),
-                         " GraphQL:     {}\n"
+                         " GraphQL Query Name:     {}\n"
                          " subscripts:  {}\n",
-                         p.graphql_string, p.subscripts);
+                         p.query_name, p.subscripts);
     }
 };
 #endif//TENTRIS_GRAPHQLEXECUTIONPACKAGE_HPP

@@ -3,113 +3,50 @@
 #include <fstream>
 
 #include <tentris/store/graphql/ParsedGraphql.hpp>
+#include <tentris/store/graphql/GraphqlSchema.hpp>
 
 namespace tentris::tests::graphql_parser {
 
 	using namespace tentris::store::graphql;
 
-    TEST(TestGraphqlParser, ParseSingleQuery) {
+    class ParsedGraphqlTest : public ::testing::Test {
 
-        const std::string query = "query {"
-								  "  person {"
-								  "    age"
-								  "    name"
-								  "  }"
-								  "}";
-        ParsedGraphql q{query};
+    protected:
+
+        GraphqlSchema schema{"data/schema.graphql"};
+        std::string queries_file = "data/queries.graphql";
+
+    };
+
+    TEST_F(ParsedGraphqlTest, ParseQuerySingleField) {
+		ParsedGraphql q{queries_file, "first", schema};
         assert(q.getSubscripts().size() == 1);
-		assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,]->bc");
+		assert(q.getSubscripts()[0]->to_string() == "a,[,ab,]->b");
     }
 
-    TEST(TestGraphqlParser, ParseSingleNestedQuery) {
-
-        const std::string query = "query {"
-                                  "  person {"
-                                  "    age"
-                                  "    name"
-								  "    company {"
-								  "      location"
-								  "      name"
-								  "    }"
-                                  "  }"
-                                  "}";
-        ParsedGraphql q{query};
+    TEST_F(ParsedGraphqlTest, ParseQueryMultipleFields) {
+        ParsedGraphql q{queries_file, "second", schema};
 		assert(q.getSubscripts().size() == 1);
-		assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,],[,ad,[,de,],[,df,],]->bcef");
+		assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,],[,ad,]->bcd");
     }
 
-    TEST(TestGraphqlParser, ParseSingleQueryWithArgument) {
-
-        const std::string query = "query {"
-                                  "  person(age: 24) {"
-                                  "    name"
-                                  "  }"
-                                  "}";
-        ParsedGraphql q{query};
+    TEST_F(ParsedGraphqlTest, ParseQuerySingleNestedSelectionSet) {
+        ParsedGraphql q{queries_file, "third", schema};
         assert(q.getSubscripts().size() == 1);
-        assert(q.getSubscripts()[0]->to_string() == "a,a,[,ab,]->b");
+        assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,[,cd,],[,ce,],]->bde");
     }
 
-    TEST(TestGraphqlParser, ParseSingleNestedQueryWithArguments) {
-
-        const std::string query = "query {"
-                                  "  person(age: 26) {"
-                                  "    name"
-                                  "    company(location: \"germany\") {"
-                                  "      name"
-                                  "    }"
-                                  "  }"
-                                  "}";
-        ParsedGraphql q{query};
-        assert(q.getSubscripts().size() == 1 and q.getSliceKeys().size() == 1);
-        assert(q.getSubscripts()[0]->to_string() == "a,a,[,ab,],[,ac,c,[,cd,],]->bd");
-        std::vector<std::vector<std::string>> expected_results = {
-                {"person"},
-                {"age", "26"},
-                {"name"},
-                {"company"},
-                {"location", "germany"},
-                {"name"}
-        };
-        ASSERT_THAT(q.getSliceKeys(), testing::ElementsAre(expected_results));
+    TEST_F(ParsedGraphqlTest, ParseQueryMultipleNestedSelectionSets) {
+        ParsedGraphql q{queries_file, "fourth", schema};
+        assert(q.getSubscripts().size() == 1);
+        assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,[,cd,],],[,ae,[,ef,],]->bdf");
     }
 
-    TEST(TestGraphqlParser, ParseSingleQueryWithDirectives) {
-
-        const std::string query = "query {"
-								  "  person @rdf(base: \"http://example.com/\" ) {"
-                                  "    age"
-                                  "    name"
-                                  "  }"
-                                  "}";
-        ParsedGraphql q{query};
-        assert(q.getSubscripts().size() == 1 and q.getSliceKeys().size() == 1);
-        assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,]->bc");
-		std::vector<std::vector<std::string>> expected_results = {
-                {"http://example.com/person"},
-                {"age"},
-                {"name"}
-		};
-		ASSERT_THAT(q.getSliceKeys(), testing::ElementsAre(expected_results));
-    }
-
-    TEST(TestGraphqlParser, ParseSingleQueryWithMultipleDirectives) {
-
-        const std::string query = "query {"
-                                  "  person @rdf(base: \"http://example.com/\" ) {"
-                                  "    age @rdf(base: \"http://example.com/\" )"
-                                  "    name @rdf(base: \"http://example.com/\" )"
-                                  "  }"
-                                  "}";
-        ParsedGraphql q{query};
-        assert(q.getSubscripts().size() == 1 and q.getSliceKeys().size() == 1);
-        assert(q.getSubscripts()[0]->to_string() == "a,[,ab,],[,ac,]->bc");
-        std::vector<std::vector<std::string>> expected_results = {
-                {"http://example.com/person"},
-                {"http://example.com/age"},
-                {"http://example.com/name"}
-        };
-        ASSERT_THAT(q.getSliceKeys(), testing::ElementsAre(expected_results));
+    TEST_F(ParsedGraphqlTest, ParseQueryMultipleRootFields) {
+        ParsedGraphql q{queries_file, "fifth", schema};
+        assert(q.getSubscripts().size() == 2);
+        assert(q.getSubscripts()[0]->to_string() == "a,[,ab,]->b");
+        assert(q.getSubscripts()[1]->to_string() == "a,[,ab,],[,ac,]->bc");
     }
 
 }

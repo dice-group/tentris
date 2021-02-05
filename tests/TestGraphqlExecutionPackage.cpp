@@ -2,33 +2,45 @@
 #include <gmock/gmock.h>
 #include <fstream>
 
+#include <tentris/store/graphql/GraphqlSchema.hpp>
 #include <tentris/store/cache/GraphqlExecutionPackage.hpp>
-#include <tentris/store/TripleStore.hpp>
 
 namespace tentris::tests::graphql_execution {
 
-    using namespace tentris::store::cache;
     using namespace tentris::store;
+    using namespace tentris::store::cache;
+    using namespace tentris::store::graphql;
 
-    TEST(TestGraphqlExecutionPackage, SingleQuerySlicing) {
+	class GraphqlExecutionPackageTest : public ::testing::Test {
 
-        const std::string query = "query {"
-                                  "  Article @rdf(base: \"http://localhost/vocabulary/bench/\") {"
-                                  "    title @rdf(base: \"http://purl.org/dc/elements/1.1/\")"
-                                  "    pages @rdf(base: \"http://swrc.ontoware.org/ontology#\")"
-                                  "  }"
-                                  "}";
+	protected:
 
-		TripleStore trie{};
+        void SetUp() override {
+            AtomicTripleStore::getInstance().bulkloadRDF("data/test.nt");
+        }
 
-        AtomicTripleStore::getInstance().bulkloadRDF("data/test.nt");
+        TripleStore trie{};
+        GraphqlSchema schema{"data/schema.graphql"};
+        std::string queries_file = "data/queries.graphql";
 
-        GraphqlExecutionPackage gep{query};
-		assert(gep.getSubscripts().size() == 1);
-		assert(gep.getOperands().size() == 1);
-		assert(gep.getOperands()[0][0].size() == 68);
-        assert(gep.getOperands()[0][1].size() == 72);
-        assert(gep.getOperands()[0][2].size() == 67);
+	};
+
+    TEST_F(GraphqlExecutionPackageTest, QuerySingleFieldSlicing) {
+        GraphqlExecutionPackage gep{queries_file, schema, "first"};
+		auto sliced_operands = gep.getOperands()[0];
+		assert(sliced_operands.size() == 2);
+		assert(sliced_operands[0].size() == 58);
+        assert(sliced_operands[1].size() == 58);
+    }
+
+    TEST_F(GraphqlExecutionPackageTest, QueryMultipleFieldsSlicing) {
+        GraphqlExecutionPackage gep{queries_file, schema, "second"};
+        auto sliced_operands = gep.getOperands()[0];
+        assert(sliced_operands.size() == 4);
+		assert(sliced_operands[0].size() == 68);
+        assert(sliced_operands[1].size() == 72);
+        assert(sliced_operands[2].size() == 67);
+        assert(sliced_operands[3].size() == 69);
     }
 
 }

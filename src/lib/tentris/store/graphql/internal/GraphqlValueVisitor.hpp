@@ -3,7 +3,7 @@
 
 #include <libgraphqlparser/AstVisitor.h>
 
-namespace tentris::graphql::internal {
+namespace tentris::store::graphql::internal {
 
 	using namespace facebook::graphql::ast::visitor;
 
