@@ -16,7 +16,11 @@
 
 namespace tentris::store::graphql {
 
-	class GraphqlResponse : public facebook::graphql::ast::visitor::AstVisitor {
+	namespace {
+		using namespace facebook::graphql::ast::visitor;
+	}
+
+	class GraphqlResponse : public AstVisitor {
 
 	private:
 
@@ -56,6 +60,8 @@ namespace tentris::store::graphql {
 		std::vector<Label> active_labels{};
 		// for each label stores the position of its array index in all leaf paths
 		std::map<Label, std::pair<std::uint8_t, std::vector<std::uint8_t>>> array_positions{};
+		// stores for each leaf field if it is nullable
+		std::vector<bool> non_null{};
 		std::uint32_t error_count = 0;
 
 	public:
@@ -66,6 +72,9 @@ namespace tentris::store::graphql {
 		}
 
 		[[nodiscard]] std::string_view string_view() {
+			// validate the last added entries before printing
+			for(auto i : iter::range(paths_to_leaves.size()))
+				validate_nullability(i);
 			buffer.Clear();
             response.Accept(writer);
 			buffer.Flush();
@@ -87,31 +96,10 @@ namespace tentris::store::graphql {
 				}
 			}
 			for(const auto &[i, entry_part] : iter::enumerate(entry.key)) {
-				std::string path{"/data"};
-				for(auto token : paths_to_leaves[i]) {
-					if(std::holds_alternative<std::size_t>(token))
-						path += "/"+std::to_string(std::get<1>(token));
-					else
-						path += "/"+std::get<0>(token);
-				}
-				auto pointer = rapidjson::Pointer(path);
-				try {
-					set_functions[i](pointer, entry_part, response);
-				} catch(std::exception const &e) {
-					// TODO: propagate null values to parent fields
-					pointer.Create(response);
-					rapidjson::Pointer("/error/"+std::to_string(error_count)+"/message")
-							.Create(response).Set(std::string(e.what()), response.GetAllocator());
-					for(const auto &[pos, path_part] : iter::enumerate(paths_to_leaves[i])) {
-						if(std::holds_alternative<std::string>(path_part))
-                            rapidjson::Pointer("/error/"+std::to_string(error_count)+"/path/"+std::to_string(pos))
-                                    .Create(response).SetString(std::get<0>(path_part), response.GetAllocator());
-						else
-                            rapidjson::Pointer("/error/"+std::to_string(error_count)+"/path/"+std::to_string(pos))
-                                    .Create(response).SetInt(std::get<1>(path_part));
-					}
-                    error_count++;
-				}
+				if(not entry_part)
+					continue;
+				auto pointer = rapidjson::Pointer(construct_path(paths_to_leaves[i]));
+                set_functions[i](pointer, entry_part, response);
 			}
             last_mapping = std::make_unique<std::map<Label, key_part_type>>(*mapping);
 		}
@@ -119,57 +107,32 @@ namespace tentris::store::graphql {
 	private:
 
 		// set functions -- one for each build-in graphql scalar type
-		template<bool non_null = false>
+
 		static void set_string(rapidjson::Pointer &pointer,
 							   ::tentris::tensor::key_part_type key_part,
                                rapidjson::Document &response) {
-            if constexpr (non_null)
-                if(not key_part)
-                    throw std::runtime_error("Null value in non-null field");
-            if(not key_part)
-                pointer.Create(response);
-			else
-			    pointer.Create(response).SetString(key_part->value().data(), key_part->value().size());
+            pointer.Get(response)->SetString(key_part->value().data(), key_part->value().size());
 		}
-        template<bool non_null = false>
+
 		static void set_int(rapidjson::Pointer &pointer,
                             ::tentris::tensor::key_part_type key_part,
                             rapidjson::Document &response) {
-            if constexpr (non_null)
-                if(not key_part)
-                    throw std::runtime_error("Null value in non-null field");
-            if(not key_part)
-                pointer.Create(response);
-			else
-			    pointer.Create(response).SetInt(std::stoi(key_part->value().data()));
+			pointer.Get(response)->SetInt(std::stoi(key_part->value().data()));
 		}
-        template<bool non_null = false>
+
 		static void set_float(rapidjson::Pointer &pointer,
                               ::tentris::tensor::key_part_type key_part,
                               rapidjson::Document &response) {
-			if constexpr (non_null)
-				if(not key_part)
-                    throw std::runtime_error("Null value in non-null field");
-            if(not key_part)
-                pointer.Create(response);
-			else
-			    pointer.Create(response).SetFloat(std::stof(key_part->value().data()));
+			pointer.Get(response)->SetFloat(std::stof(key_part->value().data()));
 		}
-        template<bool non_null = false>
+
         static void set_bool(rapidjson::Pointer &pointer,
                               ::tentris::tensor::key_part_type key_part,
                               rapidjson::Document &response) {
-            if constexpr (non_null)
-                if(not key_part)
-                    throw std::runtime_error("Null value in non-null field");
-			if(not key_part)
-				pointer.Create(response);
-			else {
-				if(strcmp(key_part->value().data(), "true") == 0)
-					pointer.Create(response).SetBool(false);
-				else
-					pointer.Create(response).SetBool(false);
-			}
+            if(strcmp(key_part->value().data(), "true") == 0)
+                pointer.Get(response)->SetBool(false);
+            else
+                pointer.Get(response)->SetBool(false);
         }
 
         /*
@@ -178,14 +141,16 @@ namespace tentris::store::graphql {
          * @param mapping: the complete generated mapping
          */
         void update_counters(const std::map<Label, key_part_type> *mapping) {
-			Label updated_label;
+			Label updated_label = 0;
             //find the first label that returned a different value
 			for(const auto &[label, value] : *mapping) {
-				if(value != last_mapping->at(label)) {
+				if(last_mapping->contains(label) and value != (*last_mapping)[label]) {
                     updated_label = label;
 					break;
 				}
 			}
+			if(not updated_label)
+				return;
 			std::uint8_t array_pos;
 			try {
 				array_pos = array_positions.at(updated_label).first;
@@ -196,18 +161,55 @@ namespace tentris::store::graphql {
 				throw std::exception();
 			}
 			for(auto &lp_idx : array_positions[updated_label].second) {
-				std::get<1>(paths_to_leaves[lp_idx][array_pos])++; // update the array index
+				// check for null errors before updating
+				validate_nullability(lp_idx);
+                // update the array index
+                std::get<1>(paths_to_leaves[lp_idx][array_pos])++;
 				// reset subsequent array counters
 				for(std::size_t i = array_pos+1; i < paths_to_leaves[lp_idx].size(); i++)
 					if(std::holds_alternative<std::size_t>(paths_to_leaves[lp_idx][i]))
 						std::get<1>(paths_to_leaves[lp_idx][i]) = 0;
+				// create leaf entry for the new array value
+				rapidjson::Pointer(construct_path(paths_to_leaves[lp_idx])).Create(response);
 			}
 
 		}
 
+		static std::string construct_path(const JSONPath &vec_path) {
+			std::string path{"/data"};
+            for(auto token : vec_path) {
+                if(std::holds_alternative<std::size_t>(token))
+                    path += "/"+std::to_string(std::get<1>(token));
+                else
+                    path += "/"+std::get<0>(token);
+            }
+			return path;
+		}
+
+		void validate_nullability(std::uint8_t lp_idx) {
+            if(non_null[lp_idx] and rapidjson::Pointer(construct_path(paths_to_leaves[lp_idx])).Get(response)->IsNull()) {
+                rapidjson::Pointer("/error/" + std::to_string(error_count) + "/message")
+                        .Create(response)
+                        .SetString("Null value in non-null field", response.GetAllocator());
+                for(const auto &[pos, path_part] : iter::enumerate(paths_to_leaves[lp_idx])) {
+                    if(std::holds_alternative<std::string>(path_part))
+                        rapidjson::Pointer("/error/" + std::to_string(error_count) + "/path/" + std::to_string(pos))
+                                .Create(response)
+                                .SetString(std::get<0>(path_part), response.GetAllocator());
+                    else
+                        rapidjson::Pointer("/error/" + std::to_string(error_count) + "/path/" + std::to_string(pos))
+                                .Create(response)
+                                .SetInt(std::get<1>(path_part));
+                }
+                error_count++;
+            }
+		}
+
 	private:
 
-        bool visitSelectionSet([[maybe_unused]] const facebook::graphql::ast::SelectionSet &selectionSet) override {
+		// visit functions
+
+        bool visitSelectionSet([[maybe_unused]] const SelectionSet &selectionSet) override {
             if(not last_field.empty()) {
                 if(active_sets.empty())
                     active_sets.push_back(schema->getFieldType(last_field));
@@ -217,12 +219,12 @@ namespace tentris::store::graphql {
             return true;
         }
 
-        void endVisitSelectionSet([[maybe_unused]] const facebook::graphql::ast::SelectionSet &selectionSet) override {
+        void endVisitSelectionSet([[maybe_unused]] const SelectionSet &selectionSet) override {
 			if(not active_sets.empty())
 			    active_sets.pop_back();
         }
 
-        bool visitField(const facebook::graphql::ast::Field &field) override {
+        bool visitField(const Field &field) override {
 			last_field = field.getName().getValue();
 			active_path.emplace_back(last_field);
 			active_labels.emplace_back(next_label++);
@@ -240,39 +242,27 @@ namespace tentris::store::graphql {
             return true;
         }
 
-        void endVisitField(const facebook::graphql::ast::Field &field) override {
+        void endVisitField(const Field &field) override {
 			// we've reached a leaf field -- save the path we need to follow to reach it and its set function
 			if(not field.getSelectionSet()) {
 				paths_to_leaves.emplace_back(active_path);
 				// assign the appropriate set function
-				if(schema->getFieldType(last_field, active_sets.back()) == "String") {
-					if(schema->fieldIsNonNull(last_field, active_sets.back()))
-						set_functions.emplace_back(GraphqlResponse::set_string<true>);
-					else
-                        set_functions.emplace_back(GraphqlResponse::set_string<false>);
-				}
-				else if(schema->getFieldType(last_field, active_sets.back()) == "Int") {
-                    if(schema->fieldIsNonNull(last_field, active_sets.back()))
-                        set_functions.emplace_back(GraphqlResponse::set_int<true>);
-                    else
-                        set_functions.emplace_back(GraphqlResponse::set_int<false>);
-                }
-                else if(schema->getFieldType(last_field, active_sets.back()) == "Float") {
-                    if(schema->fieldIsNonNull(last_field, active_sets.back()))
-                        set_functions.emplace_back(GraphqlResponse::set_float<true>);
-                    else
-                        set_functions.emplace_back(GraphqlResponse::set_float<false>);
-                }
-                else if(schema->getFieldType(last_field, active_sets.back()) == "Boolean") {
-                    if(schema->fieldIsNonNull(last_field, active_sets.back()))
-                        set_functions.emplace_back(GraphqlResponse::set_bool<true>);
-                    else
-                        set_functions.emplace_back(GraphqlResponse::set_bool<false>);
-                }
+				if(schema->getFieldType(last_field, active_sets.back()) == "String")
+                    set_functions.emplace_back(GraphqlResponse::set_string);
+				else if(schema->getFieldType(last_field, active_sets.back()) == "Int")
+                    set_functions.emplace_back(GraphqlResponse::set_int);
+                else if(schema->getFieldType(last_field, active_sets.back()) == "Float")
+					set_functions.emplace_back(GraphqlResponse::set_float);
+                else if(schema->getFieldType(last_field, active_sets.back()) == "Boolean")
+                    set_functions.emplace_back(GraphqlResponse::set_bool);
+                // check nullability
+                non_null.push_back(schema->fieldIsNonNull(last_field, active_sets.back()));
 				// update array positions of active labels
 				for(auto &[label, array] : array_positions)
 					if(std::find(active_labels.begin(), active_labels.end(), label) != active_labels.end())
 					    array.second.push_back(paths_to_leaves.size()-1);
+				// generate entry in json
+				rapidjson::Pointer(construct_path(active_path)).Create(response);
 			}
 			// remove the last token from the path
 			if(std::holds_alternative<std::size_t>(active_path.back()))
