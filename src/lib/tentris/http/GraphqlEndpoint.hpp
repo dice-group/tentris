@@ -12,7 +12,8 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/QueryResultState.hpp"
-#include "tentris/store/graphql/ParsedGraphql.hpp"
+#include "tentris/store/graphql/GraphqlDocument.hpp"
+#include "tentris/store/graphql/GraphqlResponse.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/util/LogHelper.hpp"
@@ -33,9 +34,8 @@ namespace tentris::http::graphql_endpoint {
     using namespace ::std::chrono;
 
     struct GraphqlEndpoint {
-		using EinsumCounted_t = Einsum<COUNTED_t>;
-		using EinsumEntryCounted_t = EinsumEntry<COUNTED_t>;
-		constexpr static size_t chunk_size = 100'000'000UL;
+		using Einsum_t = Einsum<COUNTED_t>;
+		using EinsumEntry_t = EinsumEntry<COUNTED_t>;
 
         auto operator()(restinio::request_handle_t req,
                         [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
@@ -49,6 +49,7 @@ namespace tentris::http::graphql_endpoint {
             Status status = Status::OK;
             std::string error_message{};
             std::shared_ptr<QueryExecutionPackage> query_package;
+			std::shared_ptr<GraphqlDocument> request_document;
             std::string query_string{};
             try {
                 const auto query_params = restinio::parse_query<restinio::parse_query_traits::javascript_compatible>(
@@ -58,13 +59,14 @@ namespace tentris::http::graphql_endpoint {
                     log("query: {}"_format(query_string));
                     // check if there is actually an query
                     try {
-                        query_package = AtomicQueryExecutionCache::getInstance()[query_string];
+						request_document = std::make_shared<GraphqlDocument>(query_string);
+                        query_package = AtomicQueryExecutionCache::getInstance()[request_document];
                     } catch (const std::invalid_argument &exc) {
                         status = Status::UNPARSABLE;
                         error_message = exc.what();
                     }
                     if (status == Status::OK) {
-                        status = runQuery(req, query_package, timeout);
+                        status = runQuery(req, request_document, query_package, timeout);
                     }
                 } else {
                     status = Status::UNPARSABLE;
@@ -129,28 +131,32 @@ namespace tentris::http::graphql_endpoint {
 
         static void async_cleanup(std::shared_ptr<void> raw_results) {
             std::thread([raw_results{move(raw_results)}]() {
-              auto &results = *static_cast<EinsumCounted_t *>(raw_results.get());
+              auto &results = *static_cast<Einsum_t *>(raw_results.get());
               results.clear();
             }).detach();
         }
 
         static Status
-        runQuery(restinio::request_handle_t &req, std::shared_ptr<QueryExecutionPackage> &query_package,
+        runQuery(restinio::request_handle_t &req,
+				 std::shared_ptr<GraphqlDocument> &request_document,
+				 std::shared_ptr<QueryExecutionPackage> &query_package,
                  const time_point_t timeout) {
             if (steady_clock::now() >= timeout) {
                 return Status::PROCESSING_TIMEOUT;
             }
 
             // create HTTP response object
-            restinio::response_builder_t<restinio::chunked_output_t> resp = req->create_response<restinio::chunked_output_t>();
-            resp.append_header(restinio::http_field::content_type, "application/graphql-results+json");
-
-            std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
-            auto &results = *static_cast<EinsumCounted_t *>(raw_results.get());
-
+            auto resp = req->create_response<restinio::restinio_controlled_output_t>();
+            resp.append_header(restinio::http_field::content_type, "application/json");
+			// execute query package
+			GraphqlResponse json_response{request_document->getQuery(""), AtomicGraphqlSchema::getInstance()};
+            std::shared_ptr<void> raw_results = query_package->generateEinsums(timeout)[0];
+            auto &results = *static_cast<Einsum_t *>(raw_results.get());
             auto timout_check = 0;
-            for (const EinsumEntryCounted_t &result : results) {
-                if (++timout_check == 100) {
+			// iterate over einsum results and populate json response
+            for(const EinsumEntry_t &result : results) {
+                json_response.add(result, &results.getMapping());
+                if(++timout_check == 100) {
                     if (steady_clock::now() >= timeout) {
                         async_cleanup(std::move(raw_results));
                         return Status::PROCESSING_TIMEOUT;
@@ -158,13 +164,13 @@ namespace tentris::http::graphql_endpoint {
                     timout_check = 0;
                 }
             }
-
             if (steady_clock::now() >= timeout) {
                 async_cleanup(std::move(raw_results));
                 return Status::PROCESSING_TIMEOUT;
             }
-
             async_cleanup(std::move(raw_results));
+            resp.set_body(json_response.string_view());
+			resp.done();
             return Status::OK;
         }
 
