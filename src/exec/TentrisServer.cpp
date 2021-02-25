@@ -5,6 +5,7 @@
 #include <restinio/all.hpp>
 #include <tentris/http/GraphqlEndpoint.hpp>
 #include <tentris/http/SPARQLEndpoint.hpp>
+#include <tentris/store/AtomicGraphqlSchema.hpp>
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/TripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
@@ -63,7 +64,6 @@ int main(int argc, char *argv[]) {
 	store_cfg.timeout = cfg.timeout;
 	store_cfg.cache_size = cfg.cache_size;
 	store_cfg.threads = cfg.threads;
-	store_cfg.graphql_schema = cfg.graphql_schema;
 
 	// bulkload file
 	if (not cfg.rdf_file.empty()) {
@@ -73,7 +73,8 @@ int main(int argc, char *argv[]) {
 	}
 	// parse graphql schema if provided
     if (not cfg.graphql_schema.empty()) {
-
+		::tentris::store::graphql::GraphqlDocument schema_document{cfg.graphql_schema, true};
+        ::tentris::store::AtomicGraphqlSchema::getInstance().load(schema_document);
 	}
 
 	// create endpoint
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
 			tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::chunked_output_t>{});
     router->http_get(
             R"(/graphql)",
-            tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::restinio_controlled_output_t>{});
+            tentris::http::graphql_endpoint::GraphqlEndpoint{});
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {

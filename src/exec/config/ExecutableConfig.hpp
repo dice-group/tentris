@@ -121,6 +121,8 @@ protected:
 		if (arguments.count("file"))
 			rdf_file = arguments["file"].as<std::string>();
 
+        if (arguments.count("gql_schema"))
+            graphql_schema = arguments["gql_schema"].as<std::string>();
 
 		auto timeout_ = arguments["timeout"].as<uint>();
 		if (timeout_ == 0)

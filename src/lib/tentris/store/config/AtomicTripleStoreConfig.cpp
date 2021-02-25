@@ -27,10 +27,6 @@ namespace tentris::store::config {
 		 * The relative or absolute path to the RDF file that Tentris loads on startup.
 		 */
 		std::string rdf_file{};
-        /**
-         * The relative or absolute path to the file containing the graphql schema -- optional
-         */
-        mutable std::string graphql_schema{};
 		/**
 		 * The timeout for query processing of single queries.
 		 */
