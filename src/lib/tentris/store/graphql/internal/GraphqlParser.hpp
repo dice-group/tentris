@@ -1,8 +1,8 @@
 #ifndef TENTRIS_GRAPHQLPARSER_HPP
 #define TENTRIS_GRAPHQLPARSER_HPP
 
-#include <libgraphqlparser/GraphQLParser.h>
-#include <libgraphqlparser/AstNode.h>
+#include <GraphQLParser.h>
+#include <AstNode.h>
 
 namespace tentris::store::graphql::internal {
 
@@ -29,14 +29,19 @@ namespace tentris::store::graphql::internal {
 
         static std::unique_ptr<GQLAstNode> parseRequestDocument(const std::string& path_to_request_document) {
             const char* error;
+            std::unique_ptr<GQLAstNode> root;
             FILE* file = std::fopen(path_to_request_document.c_str(), "r");
-            auto root = facebook::graphql::parseFile(file, &error);
+			if(file != nullptr)
+                root = facebook::graphql::parseFile(file, &error);
+			else
+                root = facebook::graphql::parseString(path_to_request_document.c_str(), &error);
             if(root == nullptr) {
                 std::stringstream err_msg {"GraphQL parse error at "};
                 err_msg << error;
                 throw std::runtime_error{err_msg.str()};
             }
-            fclose(file);
+			if(file != nullptr)
+                fclose(file);
             return root;
         }
 
