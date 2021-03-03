@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.13) # since 3.10 gtest_discover_tests is included
-set(CMAKE_CXX_STANDARD 20)
-
 include(FetchContent)
 FetchContent_Declare(
         googletest
@@ -11,7 +8,8 @@ FetchContent_Declare(
 set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-find_package(GTest REQUIRED)
+add_library(GTest::GTest ALIAS gtest)
+add_library(GTest::Main ALIAS gtest_main)
 
 include(GoogleTest)
 # add the executable for all tests

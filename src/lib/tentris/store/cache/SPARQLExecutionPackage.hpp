@@ -24,7 +24,7 @@ namespace tentris::store::cache {
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
 		using SelectModifier = sparql::SelectModifier;
-		using Variable = sparql::Variable;
+		using Variable = Dice::sparql::Variable;
 		using ParsedSPARQL = sparql::ParsedSPARQL;
 		using Subscript = ::tentris::tensor::Subscript;
 

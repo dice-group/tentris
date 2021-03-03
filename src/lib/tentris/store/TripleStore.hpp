@@ -8,15 +8,16 @@
 
 #include <tsl/hopscotch_map.h>
 
+#include <Dice/RDF/ParseTerm.hpp>
+#include <Dice/RDF/Triple.hpp>
+#include <Dice/SPARQL/TriplePattern.hpp>
+
 #include "tentris/store/graphql/GraphqlField.hpp"
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/RDF/SerdParser.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
-#include "tentris/store/SPARQL/TriplePattern.hpp"
-#include <Dice/rdf_parser/TurtleParser.hpp>
-
 
 
 namespace tentris::store {
@@ -25,8 +26,13 @@ namespace tentris::store {
 		using BoolHypertrie = ::tentris::tensor::BoolHypertrie;
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using GraphqlField = ::tentris::store::graphql::GraphqlField;
-		using TriplePattern = ::tentris::store::sparql::TriplePattern;
-		using Variable = ::tentris::store::sparql::Variable;
+		using Term = Dice::rdf::Term;
+		using BNode = Dice::rdf::BNode;
+		using Literal = Dice::rdf::Literal;
+		using URIRef = Dice::rdf::URIRef;
+		using Triple = Dice::rdf::Triple;
+		using TriplePattern = Dice::sparql::TriplePattern;
+		using Variable = Dice::sparql::Variable;
 
 		using TermStore = tentris::store::rdf::TermStore;
 		TermStore termIndex{};
@@ -50,7 +56,6 @@ namespace tentris::store {
 		void bulkloadRDF(const std::string &file_path, size_t bulk_size = 1'000'000) {
 			using namespace ::fmt::literals;
 			using namespace ::tentris::tensor;
-			using namespace rdf_parser::Turtle;
 			using namespace ::tentris::logging;
 
 			try {
@@ -83,9 +88,9 @@ namespace tentris::store {
 		}
 
 		void add(const std::tuple<std::string, std::string, std::string> &triple) {
-			add(Term::make_term(std::get<0>(triple)),
-				Term::make_term(std::get<1>(triple)),
-				Term::make_term(std::get<2>(triple)));
+			add(Dice::rdf::parse_term(std::get<0>(triple)),
+				Dice::rdf::parse_term(std::get<1>(triple)),
+				Dice::rdf::parse_term(std::get<2>(triple)));
 		}
 
 		std::variant<const_BoolHypertrie, bool> resolveTriplePattern(TriplePattern tp) {
@@ -155,9 +160,9 @@ namespace tentris::store {
 
 		bool contains(std::tuple<std::string, std::string, std::string> triple) {
 			using namespace ::tentris::tensor;
-			auto subject = termIndex.find(Term::make_term(std::get<0>(triple)));
-			auto predicate = termIndex.find(Term::make_term(std::get<1>(triple)));
-			auto object = termIndex.find(Term::make_term(std::get<2>(triple)));
+			auto subject = termIndex.find(Dice::rdf::parse_term(std::get<0>(triple)));
+			auto predicate = termIndex.find(Dice::rdf::parse_term(std::get<1>(triple)));
+			auto object = termIndex.find(Dice::rdf::parse_term(std::get<2>(triple)));
 			if (subject and predicate and object) {
 				Key key{subject, predicate, object};
 				return trie[key];
@@ -165,7 +170,7 @@ namespace tentris::store {
 			return false;
 		}
 
-		size_t size() const {
+		[[nodiscard]] size_t size() const {
 			return trie.size();
 		}
 

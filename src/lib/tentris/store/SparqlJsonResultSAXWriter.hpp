@@ -4,8 +4,9 @@
 #include <itertools.hpp>
 #include <utility>
 
+#include <Dice/SPARQL/Variable.hpp>
+
 #include "tentris/store/RDF/TermStore.hpp"
-#include "tentris/store/SPARQL/Variable.hpp"
 #include "tentris/util/LogHelper.hpp"
 
 #define RAPIDJSON_HAS_STDSTRING 1
@@ -22,8 +23,9 @@ namespace tentris::store {
 
 	template<typename result_type>
 	class SparqlJsonResultSAXWriter {
-		using Term = rdf_parser::store::rdf::Term;
-		using Variable = sparql::Variable;
+		using Term = Dice::rdf::Term;
+		using Literal = Dice::rdf::Literal;
+		using Variable = Dice::sparql::Variable;
 		using Entry = ::tentris::tensor::EinsumEntry<result_type>;
 		using Key = typename Entry::Key;
 		using Value = typename Entry::value_type;
@@ -52,7 +54,7 @@ namespace tentris::store {
 				{
 					writer.StartArray();
 					for (const auto &var : this->variables)
-						writer.String(var.name);
+						writer.String(var.getName());
 					writer.EndArray();
 				}
 				writer.EndObject();
@@ -76,7 +78,7 @@ namespace tentris::store {
 				for (const auto &[term, var]: iter::zip(entry.key, variables)) {
 					if (term == nullptr)
 						continue;
-					writer.Key(var.name);
+					writer.Key(var.getName());
 					writer.StartObject();
 					writer.Key("type");
 					switch (term->type()) {

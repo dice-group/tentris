@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
 	auto router = std::make_unique<router::express_router_t<>>();
 	router->http_get(
 			R"(/sparql)",
-			tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::restinio_controlled_output_t>{});
+			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::restinio_controlled_output_t>{});
 	router->http_get(
 			R"(/stream)",
-			tentris::http::sparql_endpoint::SPARQLEndpoint<restinio::chunked_output_t>{});
+			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::chunked_output_t>{});
     router->http_get(
             R"(/graphql)",
             tentris::http::graphql_endpoint::GraphqlEndpoint{});
