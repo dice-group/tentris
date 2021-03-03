@@ -115,9 +115,8 @@ namespace tentris::store {
 
         const_BoolHypertrie resolveGQLRootField(GraphqlField root_field) {
             using namespace ::tentris::tensor;
-            assert(root_field.size() == 1);
             auto rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
-			auto root_field_term = URIRef(root_field[0]);
+			auto root_field_term = URIRef(root_field);
             try {
                 SliceKey slice_key{std::nullopt, termIndex.get(rdf_type_term), termIndex.get(root_field_term)};
                 return std::get<const_BoolHypertrie>(trie[slice_key]);
@@ -130,19 +129,16 @@ namespace tentris::store {
 
         const_BoolHypertrie resolveGQLField(GraphqlField field) {
             using namespace ::tentris::tensor;
-            assert(field.size() == 1 or field.size() == 2);
             SliceKey slice_key(3, std::nullopt);
-			for(auto i : iter::range(field.size())) {
-				auto term = URIRef(field[i]);
-                try {
-                    slice_key[i+1] = termIndex.get(term);
-                }
-                catch ([[maybe_unused]] std::out_of_range &exc) {
-                    // a keypart was not in the index so the result is zero anyways.
-                    return const_BoolHypertrie(field.size());
-                }
-			}
-			return std::get<const_BoolHypertrie>(trie[slice_key]);
+            auto term = URIRef(field);
+            try {
+                SliceKey slice_key{std::nullopt, termIndex.get(term), std::nullopt};
+                return std::get<const_BoolHypertrie>(trie[slice_key]);
+            }
+            catch ([[maybe_unused]] std::out_of_range &exc) {
+                // a keypart was not in the index so the result is zero anyways.
+                return const_BoolHypertrie(1);
+            }
         }
 
 		inline void

@@ -27,6 +27,7 @@ query fourth {
     title
     journal {
       issued
+      number
     }
     creator {
       name
@@ -42,4 +43,12 @@ query fifth {
     title
     pages
   }
+}
+
+query sixth {
+    articles(journal: "http://localhost/publications/journals/Journal1/1941") {
+      title
+      pages
+      homepage
+    }
 }

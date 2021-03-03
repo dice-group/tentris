@@ -49,25 +49,25 @@ target_include_directories(csv-parser INTERFACE
         thirdparty/csv-parser
         )
 
-add_library(libgraphqlparser
-        thirdparty/libgraphqlparser/GraphQLParser.cpp
-        thirdparty/libgraphqlparser/Ast.cpp
-        thirdparty/libgraphqlparser/lexer.cpp
-        thirdparty/libgraphqlparser/parser.tab.cpp
-        )
-target_include_directories(libgraphqlparser INTERFACE
-        thirdparty/
-        )
-
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE
         thirdparty/RapidJSON/include
         )
 
+include(FetchContent)
+FetchContent_Declare(
+        cppitertools
+        GIT_REPOSITORY https://github.com/ryanhaining/cppitertools.git
+        GIT_TAG v2.1
+        GIT_SHALLOW TRUE)
+
+FetchContent_MakeAvailable(cppitertools)
+
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
 find_package(sparql-parser-base REQUIRED)
+find_package(graphql-parser REQUIRED)
 find_package(rdf-parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
@@ -89,6 +89,8 @@ target_link_libraries(tentris
         stdc++fs # for #include <filesystem>
         cxxopts
         rapidjson
+        graphql-parser::graphql-parser
+        graphql-parser-base::graphql-parser-base
         sparql-parser-base::sparql-parser-base
         tsl-hopscotch-map::tsl-hopscotch-map
         fmt::fmt
@@ -96,7 +98,7 @@ target_link_libraries(tentris
         rdf-parser::rdf-parser
         Boost::Boost
         serd-0
-        libgraphqlparser
+        cppitertools::cppitertools
         )
 
 target_include_directories(tentris INTERFACE

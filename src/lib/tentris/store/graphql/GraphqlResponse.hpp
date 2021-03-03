@@ -8,19 +8,12 @@
 #include <rapidjson/pointer.h>
 #include <rapidjson/ostreamwrapper.h>
 
-#include <AstVisitor.h>
-#include <Ast.h>
-
 #include "tentris/store/graphql/GraphqlSchema.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store::graphql {
 
-	namespace {
-		using namespace facebook::graphql::ast::visitor;
-	}
-
-	class GraphqlResponse : public AstVisitor {
+	class GraphqlResponse {
 
 	private:
 
@@ -39,25 +32,13 @@ namespace tentris::store::graphql {
         rapidjson::StringBuffer buffer;
 		// used to serialze the response
         rapidjson::Writer<rapidjson::StringBuffer> writer{buffer};
-		// the provided graphql schema
-		const GraphqlSchema* schema;
-		// a stack keeping track active selection sets -- used by the visit functions
-        std::vector<std::string> active_sets{};
-		// last visited field
-        std::string last_field;
 		// list containing the paths to leaf fields of the response -- used to construct json pointers
 		// one path per einsum result label
 		std::vector<JSONPath> paths_to_leaves{};
 		// list of set functions -- one set function per einsum result label
 		std::vector<SetFuncion> set_functions{};
-		// a stack keeping track of the json path
-		std::vector<std::variant<std::string, std::size_t>> active_path{};
 		// stores the last mapping of the einsum -- used to updated the array counters
 		std::unique_ptr<std::map<Label, key_part_type>> last_mapping = nullptr;
-		// used to associate partial paths with einsum labels
-        Label next_label = 'a';
-		// stack containing the active labels
-		std::vector<Label> active_labels{};
 		// for each label stores the position of its array index in all leaf paths
 		std::map<Label, std::pair<std::uint8_t, std::vector<std::uint8_t>>> array_positions{};
 		// stores for each leaf field if it is nullable
@@ -66,9 +47,52 @@ namespace tentris::store::graphql {
 
 	public:
 
-		GraphqlResponse(const facebook::graphql::ast::OperationDefinition* query,
-						const GraphqlSchema& gql_schema) : schema(&gql_schema) {
-			query->accept(this);
+		explicit GraphqlResponse(const std::vector<std::vector<std::pair<char, std::string>>> &paths,
+								 const GraphqlSchema &schema) {
+			// iterate over the paths that were provided
+			for(const auto &[i, path] : iter::enumerate(paths)) {
+                JSONPath leaf_path{};
+				std::string parent_type{};
+                // iterate over the parts of the path
+				// prepare vector representing the json path
+				// store the positions of the vector in which each label appears
+				for(const auto &path_part : path) {
+					auto label = path_part.first;
+					auto field_name = path_part.second;
+					leaf_path.push_back(field_name);
+					// found list type -- add array counter
+					if(schema.fieldIsList(field_name, parent_type)) {
+						leaf_path.emplace_back(std::size_t{0});
+						if(not array_positions.contains(label))
+							array_positions[label].first = leaf_path.size()-1;
+						array_positions[label].second.emplace_back(i);
+					}
+					// leaf field -- need to assign set function and check nullability
+					bool scalar = false;
+                    if(schema.getFieldType(field_name, parent_type) == "String") {
+						set_functions.emplace_back(GraphqlResponse::set_string);
+						scalar = true;
+					}
+                    else if(schema.getFieldType(field_name, parent_type) == "Int") {
+                        set_functions.emplace_back(GraphqlResponse::set_int);
+                        scalar = true;
+                    }
+                    else if(schema.getFieldType(field_name, parent_type) == "Float") {
+                        set_functions.emplace_back(GraphqlResponse::set_float);
+                        scalar = true;
+                    }
+                    else if(schema.getFieldType(field_name, parent_type) == "Boolean") {
+                        set_functions.emplace_back(GraphqlResponse::set_bool);
+                        scalar = true;
+                    }
+					if(scalar)
+						non_null.emplace_back(schema.fieldIsNonNull(field_name, parent_type));
+					else
+                        parent_type = schema.getFieldType(field_name, parent_type);
+				}
+                rapidjson::Pointer(construct_path(leaf_path)).Create(response);
+                paths_to_leaves.emplace_back(std::move(leaf_path));
+            }
 		}
 
 		[[nodiscard]] std::string_view string_view() {
@@ -142,7 +166,7 @@ namespace tentris::store::graphql {
          */
         void update_counters(const std::map<Label, key_part_type> *mapping) {
 			Label updated_label = 0;
-            //find the first label that returned a different value
+            // find the first label that returned a different value
 			for(const auto &[label, value] : *mapping) {
 				if(last_mapping->contains(label) and value != (*last_mapping)[label]) {
                     updated_label = label;
@@ -204,73 +228,6 @@ namespace tentris::store::graphql {
                 error_count++;
             }
 		}
-
-	private:
-
-		// visit functions
-
-        bool visitSelectionSet([[maybe_unused]] const SelectionSet &selectionSet) override {
-            if(not last_field.empty()) {
-                if(active_sets.empty())
-                    active_sets.push_back(schema->getFieldType(last_field));
-                else
-                    active_sets.push_back(schema->getFieldType(last_field, active_sets.back()));
-            }
-            return true;
-        }
-
-        void endVisitSelectionSet([[maybe_unused]] const SelectionSet &selectionSet) override {
-			if(not active_sets.empty())
-			    active_sets.pop_back();
-        }
-
-        bool visitField(const Field &field) override {
-			last_field = field.getName().getValue();
-			active_path.emplace_back(last_field);
-			active_labels.emplace_back(next_label++);
-			bool is_list;
-			// root field
-            if(active_sets.empty())
-                is_list = schema->fieldIsList(last_field);
-            else
-                is_list = schema->fieldIsList(last_field, active_sets.back());
-			// for arrays
-			if(is_list) {
-				active_path.emplace_back(std::size_t{0});
-				array_positions[active_labels.back()] = std::make_pair(active_path.size()-1, std::vector<std::uint8_t>());
-			}
-            return true;
-        }
-
-        void endVisitField(const Field &field) override {
-			// we've reached a leaf field -- save the path we need to follow to reach it and its set function
-			if(not field.getSelectionSet()) {
-				paths_to_leaves.emplace_back(active_path);
-				// assign the appropriate set function
-				if(schema->getFieldType(last_field, active_sets.back()) == "String")
-                    set_functions.emplace_back(GraphqlResponse::set_string);
-				else if(schema->getFieldType(last_field, active_sets.back()) == "Int")
-                    set_functions.emplace_back(GraphqlResponse::set_int);
-                else if(schema->getFieldType(last_field, active_sets.back()) == "Float")
-					set_functions.emplace_back(GraphqlResponse::set_float);
-                else if(schema->getFieldType(last_field, active_sets.back()) == "Boolean")
-                    set_functions.emplace_back(GraphqlResponse::set_bool);
-                // check nullability
-                non_null.push_back(schema->fieldIsNonNull(last_field, active_sets.back()));
-				// update array positions of active labels
-				for(auto &[label, array] : array_positions)
-					if(std::find(active_labels.begin(), active_labels.end(), label) != active_labels.end())
-					    array.second.push_back(paths_to_leaves.size()-1);
-				// generate entry in json
-				rapidjson::Pointer(construct_path(active_path)).Create(response);
-			}
-			// remove the last token from the path
-			if(std::holds_alternative<std::size_t>(active_path.back()))
-                active_path.pop_back();
-            active_path.pop_back();
-			// remove subscript label
-			active_labels.pop_back();
-        }
 
 	};
 

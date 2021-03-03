@@ -1,20 +1,20 @@
 type Query {
+  people: [Person],
   articles: [Article]
   journals: [Journal]
-  people: [Person]
-}
-
-type Article @uri(value: "http://localhost/vocabulary/bench/Article") {
-  note: String @uri(value: "http://swrc.ontoware.org/ontology#note")
-  pages: Int @uri(value: "http://swrc.ontoware.org/ontology#pages")
-  title: String @uri(value: "http://purl.org/dc/elements/1.1/title")
-  homepage: String @uri(value: "http://xmlns.com/foaf/0.1/homepage")
-  journal: Journal @uri(value: "http://swrc.ontoware.org/ontology#journal")
-  creator: [Person] @uri(value: "http://purl.org/dc/elements/1.1/creator")
 }
 
 type Person @uri(value: "http://xmlns.com/foaf/0.1/Person") {
   name: String @uri(value: "http://xmlns.com/foaf/0.1/name")
+}
+
+type Article @uri(value: "http://localhost/vocabulary/bench/Article") {
+  note: String @uri(value: "http://swrc.ontoware.org/ontology#note")
+  pages: Int! @uri(value: "http://swrc.ontoware.org/ontology#pages")
+  title: String @uri(value: "http://purl.org/dc/elements/1.1/title")
+  homepage: String @uri(value: "http://xmlns.com/foaf/0.1/homepage")
+  journal: Journal @uri(value: "http://swrc.ontoware.org/ontology#journal")
+  creator: [Person] @uri(value: "http://purl.org/dc/elements/1.1/creator")
 }
 
 type Journal @uri(value: "http://localhost/vocabulary/bench/Journal") {

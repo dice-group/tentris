@@ -12,7 +12,6 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/QueryResultState.hpp"
-#include "tentris/store/graphql/GraphqlDocument.hpp"
 #include "tentris/store/graphql/GraphqlResponse.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
@@ -49,7 +48,6 @@ namespace tentris::http::graphql_endpoint {
             Status status = Status::OK;
             std::string error_message{};
             std::shared_ptr<QueryExecutionPackage> query_package;
-			std::shared_ptr<GraphqlDocument> request_document;
             std::string query_string{};
             try {
                 const auto query_params = restinio::parse_query<restinio::parse_query_traits::javascript_compatible>(
@@ -59,14 +57,13 @@ namespace tentris::http::graphql_endpoint {
                     log("query: {}"_format(query_string));
                     // check if there is actually an query
                     try {
-						request_document = std::make_shared<GraphqlDocument>(query_string);
-                        query_package = AtomicQueryExecutionCache::getInstance()[request_document];
+                        query_package = AtomicQueryExecutionCache::getInstance()[query_string];
                     } catch (const std::invalid_argument &exc) {
                         status = Status::UNPARSABLE;
                         error_message = exc.what();
                     }
                     if (status == Status::OK) {
-                        status = runQuery(req, request_document, query_package, timeout);
+                        status = runQuery(req, query_package, timeout);
                     }
                 } else {
                     status = Status::UNPARSABLE;
@@ -138,7 +135,6 @@ namespace tentris::http::graphql_endpoint {
 
         static Status
         runQuery(restinio::request_handle_t &req,
-				 std::shared_ptr<GraphqlDocument> &request_document,
 				 std::shared_ptr<QueryExecutionPackage> &query_package,
                  const time_point_t timeout) {
             if (steady_clock::now() >= timeout) {
@@ -149,7 +145,7 @@ namespace tentris::http::graphql_endpoint {
             auto resp = req->create_response<restinio::restinio_controlled_output_t>();
             resp.append_header(restinio::http_field::content_type, "application/json");
 			// execute query package
-			GraphqlResponse json_response{request_document->getQuery(""), AtomicGraphqlSchema::getInstance()};
+			GraphqlResponse json_response{query_package->getPath(0), AtomicGraphqlSchema::getInstance()};
             std::shared_ptr<void> raw_results = query_package->generateEinsums(timeout)[0];
             auto &results = *static_cast<Einsum_t *>(raw_results.get());
             auto timout_check = 0;

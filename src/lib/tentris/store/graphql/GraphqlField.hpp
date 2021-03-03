@@ -5,7 +5,7 @@
 #include <string>
 
 namespace tentris::store::graphql {
-    using GraphqlField = std::vector<std::string>;
+    using GraphqlField = std::string;
 }
 
 #endif//TENTRIS_GRAPHQLFIELD_HPP

@@ -73,8 +73,12 @@ int main(int argc, char *argv[]) {
 	}
 	// parse graphql schema if provided
     if (not cfg.graphql_schema.empty()) {
-		::tentris::store::graphql::GraphqlDocument schema_document{cfg.graphql_schema, true};
-        ::tentris::store::AtomicGraphqlSchema::getInstance().load(schema_document);
+		// save contents of the document to a string
+		std::ifstream schema_file;
+		schema_file.open(cfg.graphql_schema);
+		std::stringstream schema_str_stream;
+		schema_str_stream << schema_file.rdbuf();
+        ::tentris::store::AtomicGraphqlSchema::getInstance().load(schema_str_stream.str());
 	}
 
 	// create endpoint

@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <fstream>
 
 #include <tentris/store/graphql/GraphqlSchema.hpp>
@@ -17,16 +16,17 @@ namespace tentris::tests::graphql_execution {
 
         void SetUp() override {
             AtomicTripleStore::getInstance().bulkloadRDF("data/test.nt");
+			AtomicGraphqlSchema::getInstance().load(s_document);
+			q_document = std::make_shared<GraphqlDocument>("data/schema.graphql");
         }
 
-        TripleStore trie{};
-        GraphqlSchema schema{"data/schema.graphql"};
-        std::string queries_file = "data/queries.graphql";
+        std::shared_ptr<GraphqlDocument> q_document;
+		GraphqlDocument s_document{"data/schema.graphql", true};
 
 	};
 
     TEST_F(GraphqlExecutionPackageTest, QuerySingleFieldSlicing) {
-        GraphqlExecutionPackage gep{queries_file, schema, "first"};
+        GraphqlExecutionPackage gep{q_document, "first"};
 		auto sliced_operands = gep.getOperands()[0];
 		assert(sliced_operands.size() == 2);
 		assert(sliced_operands[0].size() == 58);
@@ -34,7 +34,7 @@ namespace tentris::tests::graphql_execution {
     }
 
     TEST_F(GraphqlExecutionPackageTest, QueryMultipleFieldsSlicing) {
-        GraphqlExecutionPackage gep{queries_file, schema, "second"};
+        GraphqlExecutionPackage gep{q_document, "second"};
         auto sliced_operands = gep.getOperands()[0];
         assert(sliced_operands.size() == 4);
 		assert(sliced_operands[0].size() == 68);
