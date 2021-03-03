@@ -4,9 +4,10 @@
 namespace tentris::store::graphql::internal {
 
     struct FieldData {
-        bool is_list;
-		bool non_null;
-		bool non_null_list_values;
+        bool is_list = false;
+        bool non_null = false;
+        bool non_null_list_values = false;
+		bool is_inverse = false;
         std::string type_name;
         std::string uri;
     };

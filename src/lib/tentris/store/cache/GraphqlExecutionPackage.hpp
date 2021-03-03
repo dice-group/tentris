@@ -4,6 +4,7 @@
 #include <any>
 #include <exception>
 #include <ostream>
+#include <algorithm>
 
 #include <Dice/graphql-parser/GraphQLParser.hpp>
 
@@ -38,6 +39,8 @@ namespace tentris::store::cache {
         std::vector<std::vector<const_BoolHypertrie>> all_operands{};
 		// a vector containing the paths of the query (one list per root field)
 		std::vector<std::vector<std::vector<std::pair<Subscript::Label, std::string>>>> all_paths{};
+		std::vector<Subscript::Label> opt_begin{'['};
+		std::vector<Subscript::Label> opt_end{']'};
 
 	public:
 
@@ -56,8 +59,7 @@ namespace tentris::store::cache {
             logDebug(fmt::format("Iterating over Einstein Summations"));
             // one einsum for each root field of the query
 			for(auto i : iter::range(parsed_graphql->all_operands_labels.size())) {
-				subscripts.emplace_back(std::make_shared<Subscript>(parsed_graphql->all_operands_labels[i],
-																	parsed_graphql->all_result_labels[i]));
+				std::vector<std::vector<Subscript::Label>> operands_labels{};
 				all_paths.emplace_back(parsed_graphql->all_paths[i]);
 				std::vector<const_BoolHypertrie> operands{};
 				logDebug(fmt::format("Slicing TPs"));
@@ -67,20 +69,34 @@ namespace tentris::store::cache {
                 // resolve the fields -- make use of the operands labels to find the fields in the schema
 				// makes use of the fact that graphql queries form a tree
 				// the first label of an operand label refers to the parent of the current field
-                for(const auto &operand_labels : subscripts.back()->getRawSubscript().operands) {
+                for(auto &operand_labels : parsed_graphql->all_operands_labels[i]) {
+					if(operand_labels == opt_begin or operand_labels == opt_end) {
+						operands_labels.push_back(operand_labels);
+						continue;
+					}
                     const auto &field_name = parsed_graphql->all_fields_names[i][field_pos];
                     // root field
                     if(field_types.empty()) {
-						field_types[operand_labels[0]] = schema.getFieldType(field_name);
-						operands.emplace_back(triple_store.resolveGQLRootField(schema.getFieldUri(field_name)));
+                        operands_labels.push_back(operand_labels);
+                        field_types[operand_labels[0]] = schema.getFieldType(field_name);
+                        operands.emplace_back(triple_store.resolveGQLRootField(schema.getFieldUri(field_name)));
 					}
                     else {
-						auto parent_type = field_types[operand_labels[0]];
-						field_types[operand_labels[1]] = schema.getFieldType(field_name, parent_type);
+                        auto parent_type = field_types[operand_labels[0]];
+                        // check the direction of the edge -- @inverse directive
+                        if(schema.fieldIsInverse(field_name, parent_type)) {
+                            std::swap(operand_labels[0], operand_labels[1]);
+							operands_labels.push_back(operand_labels);
+						}
+						else {
+							operands_labels.push_back(operand_labels);
+						}
+                        field_types[operand_labels[1]] = schema.getFieldType(field_name, parent_type);
                         operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
-					}
+                    }
                     field_pos++;
 				}
+				subscripts.emplace_back(std::make_shared<Subscript>(operands_labels, parsed_graphql->all_result_labels[i]));
                 all_operands.emplace_back(std::move(operands));
 			}
 		}

@@ -40,11 +40,11 @@ namespace tentris::store::graphql {
                     auto &field_data = obj_data.fields_data[field_def->name];
                     // iterate over the directives of the field defintions
                     for(const auto &directive : field_def->directives) {
-                        // we are currently interested only in the @uri directive
-                        if(directive->name != "uri")
-                            continue;
-                        // get the uri of the object
-                        field_data.uri = directive->arguments["value"].substr(1, directive->arguments["value"].size()-2);
+                        // we are currently interested only in the @uri and @inverse directives
+                        if(directive->name == "uri")
+                            field_data.uri = directive->arguments["value"].substr(1, directive->arguments["value"].size()-2);
+						else if(directive->name == "inverse")
+							field_data.is_inverse = true;
                     }
                     field_data.non_null = field_def->non_null;
                     field_data.type_name = field_def->type_name;
@@ -90,6 +90,11 @@ namespace tentris::store::graphql {
                 return objects_data.at(query_type_name).fields_data.at(field_name).non_null;
 			else
                 return objects_data.at(parent_type).fields_data.at(field_name).non_null;
+        }
+
+        [[nodiscard]] bool fieldIsInverse(const std::string& field_name,
+                                          const std::string& parent_type) const {
+			return objects_data.at(parent_type).fields_data.at(field_name).is_inverse;
         }
 
     };
