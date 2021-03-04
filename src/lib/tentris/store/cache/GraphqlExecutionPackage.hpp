@@ -29,7 +29,6 @@ namespace tentris::store::cache {
 		using Subscript = ::tentris::tensor::Subscript;
 		using Einsum = ::tentris::tensor::Einsum<::tentris::tensor::COUNTED_t>;
 
-
 	private:
 
 		std::string query_name;
@@ -64,6 +63,7 @@ namespace tentris::store::cache {
 				all_paths.emplace_back(parsed_graphql->all_paths[i]);
 				std::vector<const_BoolHypertrie> operands{};
 				logDebug(fmt::format("Slicing TPs"));
+				uint32_t field_arg_pos = 0;
 				uint32_t field_pos = 0;
 				// map from subscript labels to type names
                 std::map<Subscript::Label, std::string> field_types{};
@@ -82,33 +82,53 @@ namespace tentris::store::cache {
                             operands_labels.push_back(operand_labels);
 						continue;
 					}
-                    const auto &field_name = parsed_graphql->all_fields_names[i][field_pos];
                     // root field
                     if(field_types.empty()) {
+                        const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
                         operands_labels.push_back(operand_labels);
                         field_types[operand_labels[0]] = schema.getFieldType(field_name);
                         operands.emplace_back(triple_store.resolveGQLRootField(schema.getFieldUri(field_name)));
 					}
                     else {
-                        auto parent_type = field_types[operand_labels[0]];
-                        // field whose type is ID -- change result label and remove operand_labels
-                        // replace result label with the label of the parent -> entity URI
-						if(schema.getFieldType(field_name, parent_type) == "ID")
-							std::replace(result_labels.begin(), result_labels.end(), operand_labels[1], operand_labels[0]);
-                        else {
-                            // check the direction of the edge -- @inverse directive
-                            if(schema.fieldIsInverse(field_name, parent_type)) {
-                                std::swap(operand_labels[0], operand_labels[1]);
-                                operands_labels.push_back(operand_labels);
-                            }
+						// field
+						if(operand_labels.size() == 2) {
+							field_pos = field_arg_pos;
+                            const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
+                            const auto &parent_type = field_types[operand_labels[0]];
+                            // field whose type is ID -- change result label and remove operand_labels
+                            // replace result label with the label of the parent -> entity URI
+                            if(schema.getFieldType(field_name, parent_type) == "ID")
+                                std::replace(result_labels.begin(), result_labels.end(), operand_labels[1], operand_labels[0]);
                             else {
-                                operands_labels.push_back(operand_labels);
+                                // check the direction of the edge -- @inverse directive
+                                if(schema.fieldIsInverse(field_name, parent_type)) {
+                                    std::swap(operand_labels[0], operand_labels[1]);
+                                    operands_labels.push_back(operand_labels);
+                                }
+                                else {
+                                    operands_labels.push_back(operand_labels);
+                                }
+                                operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
                             }
                             field_types[operand_labels[1]] = schema.getFieldType(field_name, parent_type);
-                            operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
-                        }
+						}
+						// argument
+						else {
+                            const auto &arg_name = std::get<1>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]).first;
+							const auto &value = std::get<1>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]).second;
+                            const auto &parent_type = field_types[operand_labels[0]];
+							// filter field operand
+							if(schema.getFieldType(arg_name, parent_type) == "ID")
+								operands[field_pos] = triple_store.resolveGQLArgumentID(std::any_cast<std::string>(value), operands[field_pos]);
+							else {
+								operands.emplace_back(triple_store.resolveGQLArgument(schema.getFieldUri(arg_name, parent_type),
+                                                                                      schema.getFieldType(arg_name, parent_type),
+																					  value));
+								operands_labels.push_back(operand_labels);
+							}
+						}
                     }
-                    field_pos++;
+					field_arg_pos++;
 				}
 				subscripts.emplace_back(std::make_shared<Subscript>(operands_labels, result_labels));
                 all_operands.emplace_back(std::move(operands));
@@ -128,9 +148,6 @@ namespace tentris::store::cache {
 			return all_paths[pos];
 		}
 
-		[[nodiscard]] const std::vector<std::shared_ptr<Subscript>> &getSubscripts() const {
-			return subscripts;
-		}
 
 		[[nodiscard]] const std::vector<std::vector<const_BoolHypertrie>> &getOperands() const {
 			return all_operands;

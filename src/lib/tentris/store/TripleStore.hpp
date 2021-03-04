@@ -12,7 +12,6 @@
 #include <Dice/RDF/Triple.hpp>
 #include <Dice/SPARQL/TriplePattern.hpp>
 
-#include "tentris/store/graphql/GraphqlField.hpp"
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/RDF/SerdParser.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
@@ -25,7 +24,6 @@ namespace tentris::store {
 	class TripleStore {
 		using BoolHypertrie = ::tentris::tensor::BoolHypertrie;
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
-		using GraphqlField = ::tentris::store::graphql::GraphqlField;
 		using Term = Dice::rdf::Term;
 		using BNode = Dice::rdf::BNode;
 		using Literal = Dice::rdf::Literal;
@@ -118,7 +116,7 @@ namespace tentris::store {
 			return trie[slice_key];
 		}
 
-        const_BoolHypertrie resolveGQLRootField(GraphqlField root_field) {
+        const_BoolHypertrie resolveGQLRootField(std::string root_field) {
             using namespace ::tentris::tensor;
             auto rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
 			auto root_field_term = URIRef(root_field);
@@ -132,12 +130,49 @@ namespace tentris::store {
 			}
         }
 
-        const_BoolHypertrie resolveGQLField(GraphqlField field) {
+        const_BoolHypertrie resolveGQLField(std::string field) {
             using namespace ::tentris::tensor;
-            SliceKey slice_key(3, std::nullopt);
             auto term = URIRef(field);
             try {
                 SliceKey slice_key{std::nullopt, termIndex.get(term), std::nullopt};
+                return std::get<const_BoolHypertrie>(trie[slice_key]);
+            }
+            catch ([[maybe_unused]] std::out_of_range &exc) {
+                // a keypart was not in the index so the result is zero anyways.
+                return const_BoolHypertrie(2);
+            }
+        }
+
+		const_BoolHypertrie resolveGQLArgumentID(const std::string &id, const const_BoolHypertrie &field_operand) {
+            using namespace ::tentris::tensor;
+			// create uri from id -- remove quotation marks
+            auto term = URIRef(id.substr(1, id.size()-2));
+            try {
+                SliceKey slice_key{termIndex.get(term)};
+                if(std::get<bool>(field_operand[slice_key])) {
+					BoolHypertrie filtered(1);
+					filtered.set({termIndex.get(term)}, true);
+					return std::move(filtered);
+				}
+				else
+					return const_BoolHypertrie(1);
+            }
+            catch ([[maybe_unused]] std::out_of_range &exc) {
+                // a keypart was not in the index so the result is zero anyways.
+                return const_BoolHypertrie(1);
+            }
+		}
+
+        const_BoolHypertrie resolveGQLArgument(const std::string &argument, const std::string &type, std::any value) {
+            using namespace ::tentris::tensor;
+            auto argument_uri = URIRef(argument);
+            try {
+                SliceKey slice_key{std::nullopt, termIndex.get(argument_uri), std::nullopt};
+				if(type == "String") {
+					auto value_str = std::any_cast<std::string>(value);
+					auto value_literal = Literal(value_str.substr(1, value_str.size()-2), std::nullopt, std::nullopt);
+					slice_key[2] = termIndex.get(value_literal);
+				}
                 return std::get<const_BoolHypertrie>(trie[slice_key]);
             }
             catch ([[maybe_unused]] std::out_of_range &exc) {
@@ -147,11 +182,11 @@ namespace tentris::store {
         }
 
 		inline void
-		add(Term subject, Term predicate, Term object) {
+		add(const Term& subject, const Term& predicate, const Term& object) {
 			if (not subject.isLiteral() and predicate.isURIRef()) {
-				auto subject_id = termIndex[std::move(subject)];
-				auto predicate_id = termIndex[std::move(predicate)];
-				auto object_id = termIndex[std::move(object)];
+				auto subject_id = termIndex[subject];
+				auto predicate_id = termIndex[predicate];
+				auto object_id = termIndex[object];
 				trie.set({subject_id, predicate_id, object_id}, true);
 			} else
 				throw std::invalid_argument{
