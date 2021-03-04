@@ -69,7 +69,7 @@ namespace tentris::store::graphql {
 					}
 					// leaf field -- need to assign set function and check nullability
 					bool scalar = false;
-                    if(schema.getFieldType(field_name, parent_type) == "String") {
+                    if(schema.getFieldType(field_name, parent_type) == "String" or schema.getFieldType(field_name, parent_type) == "ID") {
 						set_functions.emplace_back(GraphqlResponse::set_string);
 						scalar = true;
 					}
