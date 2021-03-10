@@ -85,9 +85,10 @@ namespace tentris::store::cache {
                     // root field
                     if(field_types.empty()) {
                         const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
+						const auto &field_type = schema.getFieldType(field_name);
                         operands_labels.push_back(operand_labels);
                         field_types[operand_labels[0]] = schema.getFieldType(field_name);
-                        operands.emplace_back(triple_store.resolveGQLRootField(schema.getFieldUri(field_name)));
+                        operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
 					}
                     else {
 						// field
@@ -95,11 +96,15 @@ namespace tentris::store::cache {
 							field_pos = field_arg_pos;
                             const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
                             const auto &parent_type = field_types[operand_labels[0]];
-                            // field whose type is ID -- change result label and remove operand_labels
-                            // replace result label with the label of the parent -> entity URI
-                            if(schema.getFieldType(field_name, parent_type) == "ID")
-                                std::replace(result_labels.begin(), result_labels.end(), operand_labels[1], operand_labels[0]);
-                            else {
+                            const auto &field_type = schema.getFieldType(field_name, parent_type);
+                            // inner field
+                            if(not schema.fieldIsScalar(field_name, parent_type)) {
+                                field_types[operand_labels[1]] = field_type;
+                                operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
+								// operand to filter based on type
+								operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
+								// create operand label for the filter operand
+								std::vector<char> filter_labels{operand_labels[1]};
                                 // check the direction of the edge -- @inverse directive
                                 if(schema.fieldIsInverse(field_name, parent_type)) {
                                     std::swap(operand_labels[0], operand_labels[1]);
@@ -108,9 +113,19 @@ namespace tentris::store::cache {
                                 else {
                                     operands_labels.push_back(operand_labels);
                                 }
-                                operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
+								operands_labels.emplace_back(std::move(filter_labels));
                             }
-                            field_types[operand_labels[1]] = schema.getFieldType(field_name, parent_type);
+							// leaf field
+                            else {
+                                // field whose type is ID -- change result label and remove operand_labels
+                                // replace result label with the label of the parent -> entity URI
+                                if(field_type == "ID")
+                                    std::replace(result_labels.begin(), result_labels.end(), operand_labels[1], operand_labels[0]);
+                                else {
+									operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
+                                    operands_labels.push_back(operand_labels);
+								}
+                            }
 						}
 						// argument
 						else {
@@ -134,6 +149,8 @@ namespace tentris::store::cache {
                 all_operands.emplace_back(std::move(operands));
 			}
 		}
+
+	public:
 
 		[[nodiscard]] std::vector<std::shared_ptr<Einsum>> generateEinsums(const time_point_t &timeout) {
             std::vector<std::shared_ptr<Einsum>> einsums{};

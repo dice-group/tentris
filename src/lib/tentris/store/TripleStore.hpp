@@ -116,12 +116,12 @@ namespace tentris::store {
 			return trie[slice_key];
 		}
 
-        const_BoolHypertrie resolveGQLRootField(std::string root_field) {
+        const_BoolHypertrie resolveGQLObjectType(const std::string &object_type) {
             using namespace ::tentris::tensor;
             auto rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
-			auto root_field_term = URIRef(root_field);
+			auto object_type_term = URIRef(object_type);
             try {
-                SliceKey slice_key{std::nullopt, termIndex.get(rdf_type_term), termIndex.get(root_field_term)};
+                SliceKey slice_key{std::nullopt, termIndex.get(rdf_type_term), termIndex.get(object_type_term)};
                 return std::get<const_BoolHypertrie>(trie[slice_key]);
 			}
 			catch ([[maybe_unused]] std::out_of_range &exc) {
