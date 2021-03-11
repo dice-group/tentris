@@ -39,8 +39,8 @@ namespace tentris::store::graphql {
 		std::vector<SetFuncion> set_functions{};
 		// stores the last mapping of the einsum -- used to updated the array counters
 		std::unique_ptr<std::map<Label, key_part_type>> last_mapping = nullptr;
-		// for each label stores the position of its array index in all leaf paths
-		std::map<Label, std::pair<std::uint8_t, std::vector<std::uint8_t>>> array_positions{};
+		// for each label stores its position in all leaf paths
+		std::map<Label, std::pair<std::uint8_t, std::vector<std::uint8_t>>> label_positions{};
 		// stores for each leaf field if it is nullable
 		std::vector<bool> non_null{};
 		std::uint32_t error_count = 0;
@@ -61,12 +61,12 @@ namespace tentris::store::graphql {
 					auto field_name = path_part.second;
 					leaf_path.push_back(field_name);
 					// found list type -- add array counter
-					if(schema.fieldIsList(field_name, parent_type)) {
+					if(schema.fieldIsList(field_name, parent_type))
 						leaf_path.emplace_back(std::size_t{0});
-						if(not array_positions.contains(label))
-							array_positions[label].first = leaf_path.size()-1;
-						array_positions[label].second.emplace_back(i);
-					}
+					// store the position of the label in the path
+                    if(not label_positions.contains(label))
+                        label_positions[label].first = leaf_path.size()-1;
+                    label_positions[label].second.emplace_back(i);
 					// leaf field -- need to assign set function and check nullability
 					bool scalar = false;
                     if(schema.getFieldType(field_name, parent_type) == "String" or schema.getFieldType(field_name, parent_type) == "ID") {
@@ -89,16 +89,14 @@ namespace tentris::store::graphql {
 						non_null.emplace_back(schema.fieldIsNonNull(field_name, parent_type));
 					else
                         parent_type = schema.getFieldType(field_name, parent_type);
-				}
-                rapidjson::Pointer(construct_path(leaf_path)).Create(response);
-                paths_to_leaves.emplace_back(std::move(leaf_path));
+				}paths_to_leaves.emplace_back(std::move(leaf_path));
             }
 		}
 
 		[[nodiscard]] std::string_view string_view() {
 			// validate the last added entries before printing
-			for(auto i : iter::range(paths_to_leaves.size()))
-				validate_nullability(i);
+//			for(auto i : iter::range(paths_to_leaves.size()))
+//				validate_nullability(i);
 			buffer.Clear();
             response.Accept(writer);
 			buffer.Flush();
@@ -121,9 +119,11 @@ namespace tentris::store::graphql {
 			}
 			for(const auto &[i, entry_part] : iter::enumerate(entry.key)) {
 				if(not entry_part)
-					continue;
-				auto pointer = rapidjson::Pointer(construct_path(paths_to_leaves[i]));
-                set_functions[i](pointer, entry_part, response);
+                    explore_inner_fields(i, mapping);
+				else {
+					auto pointer = rapidjson::Pointer(construct_path(paths_to_leaves[i]));
+					set_functions[i](pointer, entry_part, response);
+				}
 			}
             last_mapping = std::make_unique<std::map<Label, key_part_type>>(*mapping);
 		}
@@ -135,28 +135,28 @@ namespace tentris::store::graphql {
 		static void set_string(rapidjson::Pointer &pointer,
 							   ::tentris::tensor::key_part_type key_part,
                                rapidjson::Document &response) {
-            pointer.Get(response)->SetString(key_part->value().data(), key_part->value().size());
+            pointer.Create(response).SetString(key_part->value().data(), key_part->value().size());
 		}
 
 		static void set_int(rapidjson::Pointer &pointer,
                             ::tentris::tensor::key_part_type key_part,
                             rapidjson::Document &response) {
-			pointer.Get(response)->SetInt(std::stoi(key_part->value().data()));
+			pointer.Create(response).SetInt(std::stoi(key_part->value().data()));
 		}
 
 		static void set_float(rapidjson::Pointer &pointer,
                               ::tentris::tensor::key_part_type key_part,
                               rapidjson::Document &response) {
-			pointer.Get(response)->SetFloat(std::stof(key_part->value().data()));
+			pointer.Create(response).SetFloat(std::stof(key_part->value().data()));
 		}
 
         static void set_bool(rapidjson::Pointer &pointer,
                               ::tentris::tensor::key_part_type key_part,
                               rapidjson::Document &response) {
             if(strcmp(key_part->value().data(), "true") == 0)
-                pointer.Get(response)->SetBool(false);
+                pointer.Create(response).SetBool(true);
             else
-                pointer.Get(response)->SetBool(false);
+                pointer.Create(response).SetBool(false);
         }
 
         /*
@@ -175,28 +175,54 @@ namespace tentris::store::graphql {
 			}
 			if(not updated_label)
 				return;
-			std::uint8_t array_pos;
-			try {
-				array_pos = array_positions.at(updated_label).first;
-			} catch(...) {
-				rapidjson::Pointer("/error/"+std::to_string(error_count)+"/message")
-						.Create(response).SetString("Multiple values at non-list field", response.GetAllocator());
-				error_count++;
-				throw std::exception();
-			}
-			for(auto &lp_idx : array_positions[updated_label].second) {
+			std::uint8_t array_pos = label_positions.at(updated_label).first;
+			for(auto &lp_idx : label_positions[updated_label].second) {
 				// check for null errors before updating
-				validate_nullability(lp_idx);
+//				validate_nullability(lp_idx);
                 // update the array index
-                std::get<1>(paths_to_leaves[lp_idx][array_pos])++;
+				try {
+					std::get<1>(paths_to_leaves[lp_idx][array_pos])++;
+				} catch(...) {
+                    rapidjson::Pointer("/error/"+std::to_string(error_count)+"/message")
+                            .Create(response).SetString("Multiple values at non-list field", response.GetAllocator());
+                    error_count++;
+                    throw std::exception();
+				}
 				// reset subsequent array counters
 				for(std::size_t i = array_pos+1; i < paths_to_leaves[lp_idx].size(); i++)
 					if(std::holds_alternative<std::size_t>(paths_to_leaves[lp_idx][i]))
 						std::get<1>(paths_to_leaves[lp_idx][i]) = 0;
-				// create leaf entry for the new array value
-				rapidjson::Pointer(construct_path(paths_to_leaves[lp_idx])).Create(response);
 			}
+		}
 
+		/*
+		 * Looks into the results of the inner fields of the response
+		 * It is called if a leaf field does not yield any resutls
+		 */
+		void explore_inner_fields(std::size_t leaf_path_idx, const std::map<Label, key_part_type> *mapping) {
+			const auto &leaf_path = paths_to_leaves[leaf_path_idx];
+			// find the most deep label whose value changed
+			std::int32_t max_pos = -1;
+			for(const auto &[label, positions] : label_positions) {
+				if(std::find(positions.second.begin(), positions.second.end(), leaf_path_idx) == positions.second.end())
+					continue;
+				if(not mapping->contains(label) or not mapping->at(label))
+					continue;
+				if(last_mapping and mapping->at(label) == (*last_mapping)[label])
+					continue;
+				if(positions.first > max_pos)
+					max_pos = positions.first;
+			}
+			if(max_pos < 0)
+				return;
+			// create default value for the next field in the response (null or empty list)
+			JSONPath inner_path(leaf_path.begin(), leaf_path.begin()+max_pos+2);
+			// check if the next field is list
+			if (leaf_path.begin()+max_pos+2 != leaf_path.end() and not
+				std::holds_alternative<std::string>(leaf_path[max_pos+2]))
+				rapidjson::Pointer(construct_path(inner_path)).Create(response).SetArray();
+			else
+                rapidjson::Pointer(construct_path(inner_path)).Create(response);
 		}
 
 		static std::string construct_path(const JSONPath &vec_path) {
