@@ -101,10 +101,6 @@ namespace tentris::store::cache {
                             if(not schema.fieldIsScalar(field_name, parent_type)) {
                                 field_types[operand_labels[1]] = field_type;
                                 operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
-								// operand to filter based on type
-								operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
-								// create operand label for the filter operand
-								std::vector<char> filter_labels{operand_labels[1]};
                                 // check the direction of the edge -- @inverse directive
                                 if(schema.fieldIsInverse(field_name, parent_type)) {
                                     std::swap(operand_labels[0], operand_labels[1]);
@@ -113,7 +109,15 @@ namespace tentris::store::cache {
                                 else {
                                     operands_labels.push_back(operand_labels);
                                 }
-								operands_labels.emplace_back(std::move(filter_labels));
+                                if(schema.fieldIsList(field_name, parent_type)) {
+                                    // operand to filter based on type
+                                    operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
+                                    // create operand label for the filter operand
+                                    if (schema.fieldIsInverse(field_name, parent_type))
+                                        operands_labels.emplace_back(std::vector<Subscript::Label>({operand_labels[0]}));
+                                    else
+                                        operands_labels.emplace_back(std::vector<Subscript::Label>({operand_labels[1]}));
+                                }
                             }
 							// leaf field
                             else {
