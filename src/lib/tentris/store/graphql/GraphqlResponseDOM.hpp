@@ -37,12 +37,14 @@ namespace tentris::store::graphql {
 		std::vector<std::vector<Label>> labels_in_leaves{};
 
 		rapidjson::Document json_response{};
+		rapidjson::GenericValue<rapidjson::UTF8<char>> *root_field = nullptr;
 
 	public:
 
         explicit GraphqlResponseDOM() {
             json_response.SetObject();
             json_response.AddMember("data", rapidjson::kNullType, json_response.GetAllocator());
+			root_field = &json_response["data"];
         }
 
         void begin_root_field(const std::vector<std::vector<std::pair<char, std::string>>> &paths) {
@@ -77,13 +79,13 @@ namespace tentris::store::graphql {
 				}
             }
             auto root_field_name = label_paths.begin()->second.front();
-            if(json_response["data"].IsNull())
-                json_response["data"].SetObject();
+            if(root_field->IsNull())
+                root_field->SetObject();
             rapidjson::Value root_field_value(root_field_name.c_str(), json_response.GetAllocator());
             if(tentris::store::AtomicGraphqlSchema::getInstance().fieldIsList(root_field_name))
-                json_response["data"].AddMember(root_field_value, rapidjson::kArrayType, json_response.GetAllocator());
+                root_field->AddMember(root_field_value, rapidjson::kArrayType, json_response.GetAllocator());
             else
-                json_response["data"].AddMember(root_field_value, rapidjson::kNullType, json_response.GetAllocator());
+                root_field->AddMember(root_field_value, rapidjson::kNullType, json_response.GetAllocator());
         }
 
 		void end_root_field() {
@@ -125,7 +127,7 @@ namespace tentris::store::graphql {
 		void init_field(const std::vector<std::string> &path,
 						const std::vector<std::string> &fields,
 						const std::vector<bool> &field_list_type) {
-			auto *sub_tree = &json_response["data"];
+            rapidjson::GenericValue<rapidjson::UTF8<char>> *sub_tree = root_field;
 			for(auto &path_part : path) {
                 if(sub_tree->IsArray())
                     sub_tree = &(*sub_tree)[sub_tree->Size()-1];
@@ -147,17 +149,11 @@ namespace tentris::store::graphql {
 
 		void set_value(const std::vector<std::string> &path,
 					   key_part_type value) {
-            auto *sub_tree = &json_response["data"];
+            rapidjson::GenericValue<rapidjson::UTF8<char>> *sub_tree = root_field;
             for(auto &path_part : path) {
                 if(sub_tree->IsArray())
                     sub_tree = &(*sub_tree)[sub_tree->Size()-1];
-				// for ID fields
-				if(sub_tree->IsNull()) {
-                    rapidjson::Value path_part_obj(path_part, json_response.GetAllocator());
-					*sub_tree = path_part_obj;
-				}
-				else
-                    sub_tree = &(*sub_tree)[path_part];
+				sub_tree = &(*sub_tree)[path_part];
             }
             rapidjson::Value new_object(std::string(value->value()), json_response.GetAllocator());
             if(sub_tree->IsArray())

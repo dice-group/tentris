@@ -155,17 +155,6 @@ namespace tentris::http::graphql_endpoint {
 				json_response.begin_root_field(query_package->getPath(i));
 				// iterate over einsum results and populate json response
 				for (const EinsumEntry_t &result : results) {
-//					for(auto key_part : result.key) {
-//						if (key_part)
-//							std::cout << key_part->value() << " ";
-//						else
-//							std::cout << "unbound" << " ";
-//					}
-//					std::cout << " || ";
-//                    for(auto label : results.getMapping()) {
-//						std::cout << label.first << ":" << label.second->value() << " ";
-//                    }
-//					std::cout << std::endl;
 					json_response.add(result, &results.getMapping());
 					if (++timout_check == 100) {
 						if (steady_clock::now() >= timeout) {
