@@ -89,7 +89,8 @@ namespace tentris::store::graphql {
 						non_null.emplace_back(schema.fieldIsNonNull(field_name, parent_type));
 					else
                         parent_type = schema.getFieldType(field_name, parent_type);
-				}paths_to_leaves.emplace_back(std::move(leaf_path));
+				}
+				paths_to_leaves.emplace_back(std::move(leaf_path));
             }
 		}
 
@@ -121,7 +122,7 @@ namespace tentris::store::graphql {
 				if(not entry_part)
                     explore_inner_fields(i, mapping);
 				else {
-					auto pointer = rapidjson::Pointer(construct_path(paths_to_leaves[i]));
+					auto pointer = construct_path(paths_to_leaves[i]);
 					set_functions[i](pointer, entry_part, response);
 				}
 			}
@@ -220,24 +221,24 @@ namespace tentris::store::graphql {
 			// check if the next field is list
 			if (leaf_path.begin()+max_pos+2 != leaf_path.end() and not
 				std::holds_alternative<std::string>(leaf_path[max_pos+2]))
-				rapidjson::Pointer(construct_path(inner_path)).Create(response).SetArray();
+				construct_path(inner_path).Create(response).SetArray();
 			else
-                rapidjson::Pointer(construct_path(inner_path)).Create(response);
+                construct_path(inner_path).Create(response);
 		}
 
-		static std::string construct_path(const JSONPath &vec_path) {
-			std::string path{"/data"};
+		static rapidjson::Pointer construct_path(const JSONPath &vec_path) {
+			rapidjson::Pointer p{"/data"};
             for(auto token : vec_path) {
-                if(std::holds_alternative<std::size_t>(token))
-                    path += "/"+std::to_string(std::get<1>(token));
+                if(std::holds_alternative<std::string>(token))
+                    p = p.Append(std::get<0>(token));
                 else
-                    path += "/"+std::get<0>(token);
+                    p = p.Append(std::get<1>(token));
             }
-			return path;
+			return p;
 		}
 
 		void validate_nullability(std::uint8_t lp_idx) {
-            if(non_null[lp_idx] and rapidjson::Pointer(construct_path(paths_to_leaves[lp_idx])).Get(response)->IsNull()) {
+            if(non_null[lp_idx] and construct_path(paths_to_leaves[lp_idx]).Get(response)->IsNull()) {
                 rapidjson::Pointer("/error/" + std::to_string(error_count) + "/message")
                         .Create(response)
                         .SetString("Null value in non-null field", response.GetAllocator());

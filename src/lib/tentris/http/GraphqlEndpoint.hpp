@@ -13,6 +13,7 @@
 
 #include "tentris/http/QueryResultState.hpp"
 #include "tentris/store/graphql/GraphqlResponse.hpp"
+#include "tentris/store/graphql/GraphqlResponseDOM.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/util/LogHelper.hpp"
@@ -144,28 +145,44 @@ namespace tentris::http::graphql_endpoint {
             // create HTTP response object
             auto resp = req->create_response<restinio::restinio_controlled_output_t>();
             resp.append_header(restinio::http_field::content_type, "application/json");
-			// execute query package
-			GraphqlResponse json_response{query_package->getPath(0), AtomicGraphqlSchema::getInstance()};
-            std::shared_ptr<void> raw_results = query_package->generateEinsums(timeout)[0];
-            auto &results = *static_cast<Einsum_t *>(raw_results.get());
             auto timout_check = 0;
-			// iterate over einsum results and populate json response
-            for(const EinsumEntry_t &result : results) {
-                json_response.add(result, &results.getMapping());
-                if(++timout_check == 100) {
-                    if (steady_clock::now() >= timeout) {
-                        async_cleanup(std::move(raw_results));
-                        return Status::PROCESSING_TIMEOUT;
-                    }
-                    timout_check = 0;
-                }
-            }
-            if (steady_clock::now() >= timeout) {
-                async_cleanup(std::move(raw_results));
-                return Status::PROCESSING_TIMEOUT;
-            }
-            async_cleanup(std::move(raw_results));
-            resp.set_body(json_response.string_view());
+			// execute query package
+			GraphqlResponseDOM json_response{};
+			auto einsums = query_package->generateEinsums(timeout);
+			for(auto i : iter::range(einsums.size())) {
+                std::shared_ptr<void> raw_results = einsums[i];
+				auto &results = *static_cast<Einsum_t *>(raw_results.get());
+				json_response.begin_root_field(query_package->getPath(i));
+				// iterate over einsum results and populate json response
+				for (const EinsumEntry_t &result : results) {
+//					for(auto key_part : result.key) {
+//						if (key_part)
+//							std::cout << key_part->value() << " ";
+//						else
+//							std::cout << "unbound" << " ";
+//					}
+//					std::cout << " || ";
+//                    for(auto label : results.getMapping()) {
+//						std::cout << label.first << ":" << label.second->value() << " ";
+//                    }
+//					std::cout << std::endl;
+					json_response.add(result, &results.getMapping());
+					if (++timout_check == 100) {
+						if (steady_clock::now() >= timeout) {
+							async_cleanup(std::move(raw_results));
+							return Status::PROCESSING_TIMEOUT;
+						}
+						timout_check = 0;
+					}
+				}
+				json_response.end_root_field();
+				if (steady_clock::now() >= timeout) {
+					async_cleanup(std::move(raw_results));
+					return Status::PROCESSING_TIMEOUT;
+				}
+				async_cleanup(std::move(raw_results));
+			}
+            resp.set_body(json_response.to_string());
 			resp.done();
             return Status::OK;
         }
