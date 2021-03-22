@@ -95,7 +95,7 @@ Most required dependencies are installed via conan. Therefore, Add the respectiv
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add tsl https://api.bintray.com/conan/tessil/tsl
 conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public 
-conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
+conan remote add dice-group https://conan.dice-research.org/artifactory/api/conan/tentris
 ```
 Additionally, a statically linked version of the [Serd](https://drobilla.net/software/serd) library is required. As the packages in the deb/rpm repositories include only a dynamic library, we need to compile it manually:
 ```shell script
