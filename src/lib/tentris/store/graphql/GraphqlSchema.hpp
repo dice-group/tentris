@@ -130,6 +130,22 @@ namespace tentris::store::graphql {
 			return objects_data.at(parent_type).fields_data.at(field_name).is_inverse;
         }
 
+		[[nodiscard]] bool typeFilter(const std::string& uri,
+									  const std::string& type,
+									  bool inverse) const {
+			for(const auto &obj : objects_data) {
+				for(const auto &field : obj.second.fields_data) {
+					if(uri != field.second.uri)
+						continue;
+					else if(inverse != field.second.is_inverse)
+						continue;
+					if(type != field.second.type_name)
+						return true;
+				}
+			}
+			return false;
+		}
+
     };
 
 }

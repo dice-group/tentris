@@ -97,23 +97,26 @@ namespace tentris::store::cache {
                             const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
                             const auto &parent_type = field_types[operand_labels[0]];
                             const auto &field_type = schema.getFieldType(field_name, parent_type);
+                            const auto &field_uri = schema.getFieldUri(field_name, parent_type);
+							auto is_inverse = schema.fieldIsInverse(field_name, parent_type);
                             // inner field
-                            if(not schema.fieldIsScalar(field_name, parent_type)) {
+                            if (not schema.fieldIsScalar(field_name, parent_type)) {
                                 field_types[operand_labels[1]] = field_type;
-                                operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
+                                operands.emplace_back(triple_store.resolveGQLField(field_uri));
                                 // check the direction of the edge -- @inverse directive
-                                if(schema.fieldIsInverse(field_name, parent_type)) {
+                                if (is_inverse) {
                                     std::swap(operand_labels[0], operand_labels[1]);
                                     operands_labels.push_back(operand_labels);
                                 }
                                 else {
                                     operands_labels.push_back(operand_labels);
                                 }
-                                if(schema.fieldIsList(field_name, parent_type)) {
+                                if (schema.fieldIsList(field_name, parent_type) and
+									schema.typeFilter(field_uri, field_type, is_inverse)) {
                                     // operand to filter based on type
                                     operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
                                     // create operand label for the filter operand
-                                    if (schema.fieldIsInverse(field_name, parent_type))
+                                    if (is_inverse)
                                         operands_labels.emplace_back(std::vector<Subscript::Label>({operand_labels[0]}));
                                     else
                                         operands_labels.emplace_back(std::vector<Subscript::Label>({operand_labels[1]}));
@@ -126,7 +129,7 @@ namespace tentris::store::cache {
                                 if(field_type == "ID")
                                     std::replace(result_labels.begin(), result_labels.end(), operand_labels[1], operand_labels[0]);
                                 else {
-									operands.emplace_back(triple_store.resolveGQLField(schema.getFieldUri(field_name, parent_type)));
+									operands.emplace_back(triple_store.resolveGQLField(field_uri));
                                     operands_labels.push_back(operand_labels);
 								}
                             }
