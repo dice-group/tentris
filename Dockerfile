@@ -45,9 +45,6 @@ RUN pip3 install conan && \
     conan profile update options.boost:extra_b2_flags="cxxflags=\\\"${CXXFLAGS}\\\"" default
 
 # add conan repositories
-RUN conan remote add tsl https://api.bintray.com/conan/tessil/tsl
-RUN conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-RUN conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
 RUN conan remote add dice-group https://conan.dice-research.org/artifactory/api/conan/tentris
 
 # build and cache dependencies via conan
@@ -59,6 +56,7 @@ RUN conan install . --build=missing --profile default > conan_build.log
 WORKDIR /tentris
 COPY thirdparty thirdparty
 COPY src src
+COPY cmake cmake
 COPY CMakeLists.txt CMakeLists.txt
 COPY conanfile.txt conanfile.txt
 
