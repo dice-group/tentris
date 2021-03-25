@@ -2,7 +2,6 @@
 #include <csignal>
 
 #include <tentris/store/TripleStore.hpp>
-#include "config/ServerConfig.hpp"
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
 #include <tentris/http/SparqlEndpoint.hpp>
@@ -10,6 +9,8 @@
 
 #include <fmt/format.h>
 
+#include "config/ServerConfig.hpp"
+#include "VersionStrings.hpp"
 
 
 void bulkload(const std::string &triple_file, size_t bulksize) {
@@ -56,6 +57,8 @@ int main(int argc, char *argv[]) {
 	ServerConfig cfg{argc, argv};
 
 	init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
+
+	log("Running {} with {}"_format(tentris_version_string, hypertrie_version_string));
 
 	auto &store_cfg = AtomicTripleStoreConfig::getInstance();
 	store_cfg.rdf_file = cfg.rdf_file;

@@ -19,7 +19,10 @@ struct ServerConfig : public ExecutableConfig {
 	mutable uint threads;
 
 	ServerConfig() {
-		options = cxxopts::Options{"tentris_server", "Tentris SPARQL endpoint queryable via HTTP. "};
+		options = cxxopts::Options{
+				"tentris_server",
+				"Tentris HTTP SPARQL endpoint"
+	"\n  {}\n  {}\n"_format(tentris_version_string, hypertrie_version_string)};
 		addOptions();
 
 		options.add_options()

@@ -1,4 +1,5 @@
 ## project specific
+/src/lib/tentris/tentris_version.hpp
 # log files
 tentris_*
 
