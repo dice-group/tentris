@@ -52,18 +52,18 @@ Tᴇɴᴛʀɪs provides two ways of running it. Either as a HTTP endpoint or as 
 #### Start
 To start Tᴇɴᴛʀɪs as a HTTP endpoint run
 ```
-tentris_server -p 8090 -f my_nt_file.nt
+tentris_server -p 9080 -f my_nt_file.nt
 ```
-to load the data from the provided `.nt` file and serve SPARQL endpoint at port 8090. 
+to load the data from the provided `.nt` file and serve SPARQL endpoint at port 9080. 
 For more options commandline options see ` tentris_server --help`. 
 
 #### Query
-The endpoint may now be queried locally at: `127.0.0.1:8090/sparql?query=*your query*`. 
+The endpoint may now be queried locally at: `127.0.0.1:9080/sparql?query=*your query*`. 
 
 *Notice*: the query string `*your query*` must be URL encoded. 
 You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
 
-*currently deactivated*: ~~An additional endpoint is provided at `127.0.0.1:8090/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).~~ 
+*currently deactivated*: ~~An additional endpoint is provided at `127.0.0.1:9080/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).~~ 
 
 
 #### Usage Example
@@ -124,7 +124,7 @@ Using the Tᴇɴᴛʀɪs docker image is really easy. Find necessary steps below
     ```shell script
     docker run --rm dicegroup/tentris_server --help
     ```
-* Tᴇɴᴛʀɪs uses by default the port 8090, so make sure you forward it, e.g. 
+* Tᴇɴᴛʀɪs uses by default the port 9080, so make sure you forward it, e.g. 
     ```shell script
     docker run --publish=9080:9080 dicegroup/tentris_server
     ```
