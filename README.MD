@@ -63,7 +63,7 @@ The endpoint may now be queried locally at: `127.0.0.1:9080/sparql?query=*your q
 *Notice*: the query string `*your query*` must be URL encoded. 
 You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
 
-*currently deactivated*: ~~An additional endpoint is provided at `127.0.0.1:9080/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).~~ 
+An additional endpoint is provided at `127.0.0.1:9080/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results). 
 
 
 #### Usage Example
@@ -166,10 +166,7 @@ pip3 install --user conan
 ### Dependencies
 Most required dependencies are installed via conan. Therefore, Add the respective remotes:
 ```shell script
-conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-conan remote add tsl https://api.bintray.com/conan/tessil/tsl
-conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public 
-conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
+conan remote add dice-group https://conan.dice-research.org/artifactory/api/conan/tentris
 ```
 Additionally, a statically linked version of the [Serd](https://drobilla.net/software/serd) library is required. As the packages in the deb/rpm repositories include only a dynamic library, we need to compile it manually:
 ```shell script

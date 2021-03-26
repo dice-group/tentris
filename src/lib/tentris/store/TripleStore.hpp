@@ -8,24 +8,30 @@
 
 #include <tsl/hopscotch_map.h>
 
+#include <Dice/RDF/ParseTerm.hpp>
+#include <Dice/RDF/Triple.hpp>
+#include <Dice/SPARQL/TriplePattern.hpp>
+
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/RDF/SerdParser.hpp"
 #include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
-#include "tentris/store/SPARQL/TriplePattern.hpp"
-#include <Dice/rdf_parser/TurtleParser.hpp>
 
-
-namespace {
-	using namespace tentris::store::sparql;
-	using namespace ::tentris::logging;
-	using namespace tentris::tensor;
-}
 
 namespace tentris::store {
 
 	class TripleStore {
+		using BoolHypertrie = ::tentris::tensor::BoolHypertrie;
+		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
+		using Term = Dice::rdf::Term;
+		using BNode = Dice::rdf::BNode;
+		using Literal = Dice::rdf::Literal;
+		using URIRef = Dice::rdf::URIRef;
+		using Triple = Dice::rdf::Triple;
+		using TriplePattern = Dice::sparql::TriplePattern;
+		using Variable = Dice::sparql::Variable;
+
 		using TermStore = tentris::store::rdf::TermStore;
 		TermStore termIndex{};
 
@@ -45,34 +51,49 @@ namespace tentris::store {
 			return trie;
 		}
 
-		void loadRDF(const std::string &file_path) {
-			using namespace rdf_parser::Turtle;
+		void bulkloadRDF(const std::string &file_path, size_t bulk_size = 1'000'000) {
+			using namespace ::fmt::literals;
+			using namespace ::tentris::tensor;
+			using namespace ::tentris::logging;
 
 			try {
+				hypertrie::BulkInserter<tr> bulk_inserter{trie, 0};
 				// TurtleParser<FileParser> parser{file_path};
-				unsigned int count = 0;
-				unsigned int _1mios = 0;
+				unsigned long count = 0;
 				for (const Triple &triple : rdf::SerdParser{file_path}) {
-					add(triple.subject(), triple.predicate(), triple.object());
+					if (not triple.subject().isLiteral() and triple.predicate().isURIRef()) {
+						auto subject_id = termIndex[triple.subject()];
+						auto predicate_id = termIndex[triple.predicate()];
+						auto object_id = termIndex[triple.object()];
+						bulk_inserter.add({subject_id, predicate_id, object_id});
+					} else
+						throw std::invalid_argument{
+								"Subject or predicate of the triple have a term type that is not allowed there."};
 					++count;
-					if (count == 1000000) {
-						count = 0;
-						++_1mios;
-						logDebug("{:d} mio triples loaded."_format(_1mios));
+
+					if (trie.size() % bulk_size == 0) {
+						bulk_inserter.flush();
+						logDebug("{:>10.3} mio triples processed."_format(double(count)/1'000'000));
+						logDebug("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
 					}
 				}
+				bulk_inserter.flush(true);
+				log("{:>10.3} mio triples processed."_format(double(count)/1'000'000));
+				log("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
 			} catch (...) {
 				throw std::invalid_argument{"A parsing error occurred while parsing {}"_format(file_path)};
 			}
 		}
 
 		void add(const std::tuple<std::string, std::string, std::string> &triple) {
-			add(Term::make_term(std::get<0>(triple)),
-				Term::make_term(std::get<1>(triple)),
-				Term::make_term(std::get<2>(triple)));
+			add(Dice::rdf::parse_term(std::get<0>(triple)),
+				Dice::rdf::parse_term(std::get<1>(triple)),
+				Dice::rdf::parse_term(std::get<2>(triple)));
 		}
 
-		std::variant<std::optional<const_BoolHypertrie>, bool> resolveTriplePattern(TriplePattern tp) {
+		std::variant<const_BoolHypertrie, bool> resolveTriplePattern(TriplePattern tp) {
+			using namespace ::tentris::tensor;
+
 			auto slice_count = 0;
 			for (const auto &entry: tp)
 				if (std::holds_alternative<Variable>(entry))
@@ -87,9 +108,9 @@ namespace tentris::store {
 					} catch ([[maybe_unused]] std::out_of_range &exc) {
 						// a keypart was not in the index so the result is zero anyways.
 						return (slice_count > 0)
-							   ? std::variant<std::optional<const_BoolHypertrie>, bool>{
-										std::optional<const_BoolHypertrie>()}
-							   : std::variant<std::optional<const_BoolHypertrie>, bool>{false};
+							   ? std::variant<const_BoolHypertrie, bool>{
+										const_BoolHypertrie()}
+							   : std::variant<const_BoolHypertrie, bool>{false};
 					}
 			}
 			return trie[slice_key];
@@ -108,9 +129,10 @@ namespace tentris::store {
 		}
 
 		bool contains(std::tuple<std::string, std::string, std::string> triple) {
-			auto subject = termIndex.find(Term::make_term(std::get<0>(triple)));
-			auto predicate = termIndex.find(Term::make_term(std::get<1>(triple)));
-			auto object = termIndex.find(Term::make_term(std::get<2>(triple)));
+			using namespace ::tentris::tensor;
+			auto subject = termIndex.find(Dice::rdf::parse_term(std::get<0>(triple)));
+			auto predicate = termIndex.find(Dice::rdf::parse_term(std::get<1>(triple)));
+			auto object = termIndex.find(Dice::rdf::parse_term(std::get<2>(triple)));
 			if (subject and predicate and object) {
 				Key key{subject, predicate, object};
 				return trie[key];
@@ -118,7 +140,7 @@ namespace tentris::store {
 			return false;
 		}
 
-		size_t size() const {
+		[[nodiscard]] size_t size() const {
 			return trie.size();
 		}
 

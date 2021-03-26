@@ -35,6 +35,10 @@ namespace tentris::store::config {
 		 * Max number queries that may be cached.
 		 */
 		size_t cache_size = 500;
+		/**
+		 * number of concurrently available threads.
+		 */
+		 size_t threads = 1;
 	};
 
 

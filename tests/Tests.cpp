@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "TestRDFNode.cpp"
 #include "TestSPARQLParser.cpp"
 #include "TestTermStore.cpp"
-#include "TestTripleStore.cpp"
 
 
 int main(int argc, char **argv) {

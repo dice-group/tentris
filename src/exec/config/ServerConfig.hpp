@@ -19,7 +19,10 @@ struct ServerConfig : public ExecutableConfig {
 	mutable uint threads;
 
 	ServerConfig() {
-		options = {"tentris_server", "Tentris SPARQL endpoint queryable via HTTP. "};
+		options = cxxopts::Options{
+				"tentris_server",
+				"Tentris HTTP SPARQL endpoint"
+	"\n  {}\n  {}\n"_format(tentris_version_string, hypertrie_version_string)};
 		addOptions();
 
 		options.add_options()
@@ -28,7 +31,7 @@ struct ServerConfig : public ExecutableConfig {
 				 cxxopts::value<uint>()->default_value("{}"_format(std::thread::hardware_concurrency())));
 	}
 
-	ServerConfig(int argc, char **argv) : ServerConfig{} {
+	ServerConfig(int argc, char **&argv) : ServerConfig{} {
 		initConfig(argc, argv);
 	}
 

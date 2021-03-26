@@ -16,16 +16,18 @@ namespace tentris::store {
 
 namespace tentris::store::cache {
 
-	namespace {
-		using namespace tentris::store::sparql;
-		using namespace tentris::tensor;
-	}; // namespace
-
 	/**
 	 * A QueryExecutionPackage contains everything that is necessary to execute a given sparql query for a state of the
 	 * RDF graph.
 	 */
 	struct QueryExecutionPackage {
+		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
+		using time_point_t = logging::time_point_t;
+		using SelectModifier = sparql::SelectModifier;
+		using Variable = Dice::sparql::Variable;
+		using ParsedSPARQL = sparql::ParsedSPARQL;
+		using Subscript = ::tentris::tensor::Subscript;
+
 	private:
 		std::string sparql_string;
 		std::shared_ptr<Subscript> subscript;
@@ -55,27 +57,39 @@ namespace tentris::store::cache {
 		 * @throw std::invalid_argument the sparql query was not parsable
 		 */
 		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
+			using namespace logging;
+			logDebug(fmt::format("Parsing query: {}", sparql_string));
 			ParsedSPARQL parsed_sparql{sparql_string};
 			subscript = parsed_sparql.getSubscript();
 			select_modifier = parsed_sparql.getSelectModifier();
+			logDebug(fmt::format("Parsed subscript: {} [distinct = {}]",
+								 subscript,
+								 select_modifier == SelectModifier::DISTINCT));
 			query_variables = parsed_sparql.getQueryVariables();
 
 			auto &triple_store = AtomicTripleStore::getInstance();
 
-			for (const auto &tp: parsed_sparql.getBgps()) {
-				std::variant<std::optional<const_BoolHypertrie>, bool> op = triple_store.resolveTriplePattern(tp);
+			logDebug(fmt::format("Slicing TPs"));
+			for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(parsed_sparql.getBgps())) {
+				logDebug(fmt::format("Slice key {}: ⟨{}⟩", op_pos, fmt::join(tp, ", ")));
+				std::variant<const_BoolHypertrie, bool> op = triple_store.resolveTriplePattern(tp);
 				if (std::holds_alternative<bool>(op)) {
 					is_trivial_empty = not std::get<bool>(op);
+					logTrace(fmt::format("Operand {} is {}", op_pos, is_trivial_empty));
 				} else {
-					auto opt_bht = std::get<std::optional<const_BoolHypertrie>>(op);
-					if (opt_bht) {
-						operands.emplace_back(*opt_bht);
+					auto bht = std::get<const_BoolHypertrie>(op);
+					if (not bht.empty()) {
+						logTrace(fmt::format("Operand {} size {}", op_pos, bht.size()));
+						operands.emplace_back(bht);
 					} else {
 						is_trivial_empty = true;
 						operands.clear();
 					}
 				}
-				if (is_trivial_empty) break;
+				if (is_trivial_empty) {
+					logDebug(fmt::format("Query is trivially empty, i.e. the lastly sliced operand {} is emtpy.", op_pos));
+					break;
+				}
 			}
 		}
 
@@ -94,11 +108,13 @@ namespace tentris::store::cache {
 		static std::shared_ptr<void> generateEinsum(const std::shared_ptr<Subscript> &subscript,
 													const std::vector<const_BoolHypertrie> &hypertries,
 													const time_point_t &timeout) {
+			using namespace tensor;
 			return std::make_shared<Einsum<RESULT_TYPE>>(subscript, hypertries, timeout);
 		}
 
 	public:
 		std::shared_ptr<void> getEinsum(const time_point_t &timeout = time_point_t::max()) const {
+			using namespace tensor;
 			if (select_modifier == SelectModifier::NONE)
 				return generateEinsum<COUNTED_t>(subscript, operands, timeout);
 			else
@@ -132,6 +148,7 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
+		using SelectModifier = tentris::store::sparql::SelectModifier;
 		return format_to(ctx.begin(),
 						 " SPARQL:     {}\n"
 						 " subscript:  {}\n"

@@ -1,61 +1,81 @@
-FROM ubuntu:focal AS builder
+FROM ubuntu:groovy AS builder
 ARG DEBIAN_FRONTEND=noninteractive
+ARG TENTRIS_MARCH="x86-64"
 
 RUN apt-get -qq update && \
-    apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-9-dev clang-9 gcc-9 pkg-config
+    apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-10-dev clang-11 g++-10 pkg-config lld autoconf libtool
+RUN rm /usr/bin/ld && ln -s /usr/bin/lld-11 /usr/bin/ld
+ARG CXX="clang++-11"
+ARG CC="clang-11"
+ENV CXXFLAGS="${CXXFLAGS} -march=${TENTRIS_MARCH}"
+ENV CMAKE_EXE_LINKER_FLAGS="-L/usr/local/lib/x86_64-linux-gnu -L/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu -L/usr/local/lib"
+
+# Compile more recent tcmalloc-minimal with clang-11 + -march
+RUN git clone --quiet --branch gperftools-2.8.1 https://github.com/gperftools/gperftools
+WORKDIR /gperftools
+RUN ./autogen.sh
+RUN export LDFLAGS="${CMAKE_EXE_LINKER_FLAGS}" && ./configure \
+    --enable-minimal \
+    --disable-debugalloc \
+    --enable-sized-delete \
+    --enable-dynamic-sized-delete-support && \
+    make -j && \
+    make install
+WORKDIR /
+
 # we need serd as static library. Not available from ubuntu repos
-RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    git clone --quiet --branch v0.30.2 https://gitlab.com/drobilla/serd.git && \
-    cd serd && \
-    git submodule update --quiet --init --recursive && \
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN git clone --quiet --branch v0.30.2 https://gitlab.com/drobilla/serd.git
+WORKDIR serd
+RUN git submodule update --quiet --init --recursive && \
     ./waf configure --static && \
-    ./waf install &&\
-    rm /usr/bin/python
+    ./waf install
+RUN rm /usr/bin/python
+WORKDIR /
+
 # install and configure conan
 RUN pip3 install conan && \
     conan user && \
     conan profile new --detect default && \
-    conan profile update settings.sparql-parser-base:compiler.version=9 default && \
-    conan profile update settings.sparql-parser-base:compiler.libcxx=libstdc++11  default  && \
-    conan profile update settings.sparql-parser-base:compiler=gcc default &&\
-    conan profile update env.sparql-parser-base:CXX=/usr/bin/g++ default && \
-    conan profile update env.sparql-parser-base:CC=/usr/bin/gcc default && \
-    conan profile update settings.compiler=clang default &&\
-    conan profile update settings.compiler.version=9 default && \
     conan profile update settings.compiler.libcxx=libstdc++11 default && \
-    conan profile update env.CXX=/usr/bin/clang++-9 default && \
-    conan profile update env.CC=/usr/bin/clang-9 default
+    conan profile update env.CXXFLAGS="${CXXFLAGS}" default && \
+    conan profile update env.CMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS}" default && \
+    conan profile update env.CXX="${CXX}" default && \
+    conan profile update env.CC="${CC}" default && \
+    conan profile update options.boost:extra_b2_flags="cxxflags=\\\"${CXXFLAGS}\\\"" default
 
 # add conan repositories
-RUN conan remote add tsl https://api.bintray.com/conan/tessil/tsl
-RUN conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-RUN conan remote add stiffstream https://api.bintray.com/conan/stiffstream/public
-RUN conan remote add dice-group https://api.bintray.com/conan/dice-group/tentris
+RUN conan remote add dice-group https://conan.dice-research.org/artifactory/api/conan/tentris
 
 # build and cache dependencies via conan
-COPY conanfile.txt /conan_cache/conanfile.txt
-RUN cd /conan_cache && conan install . --build=missing --profile default > conan_build.log
+WORKDIR /conan_cache
+COPY conanfile.txt conanfile.txt
+RUN conan install . --build=missing --profile default > conan_build.log
 
 # import project files
-COPY thirdparty /tentris/thirdparty/
-COPY src /tentris/src/
-COPY CMakeLists.txt /tentris/CMakeLists.txt
-COPY conanfile.txt /tentris/conanfile.txt
+WORKDIR /tentris
+COPY thirdparty thirdparty
+COPY src src
+COPY cmake cmake
+COPY CMakeLists.txt CMakeLists.txt
+COPY conanfile.txt conanfile.txt
 
 ##build
-# import and build depenedencies via conan
-RUN mkdir /tentris/build && cd /tentris/build && \
-    conan install .. --build=missing
-# build tentris_server with clang++-9 again
-RUN cd /tentris/build && \
-    export CXX="clang++-9" && export CC="clang-9" && \
-    cmake -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j $(nproc)
-
+WORKDIR /tentris/build
+RUN conan install .. --build=missing
+# todo: should be replaced with toolchain file like https://github.com/ruslo/polly/blob/master/clang-libcxx17-static.cmake
+RUN cmake \
+    -DCMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DTENTRIS_BUILD_WITH_TCMALLOC=true \
+    -DTENTRIS_STATIC=true \
+    ..
+RUN make -j $(nproc)
 FROM scratch
-WORKDIR /tentris
 COPY --from=builder /tentris/build/tentris_server /tentris_server
 COPY --from=builder /tentris/build/tentris_terminal /tentris_terminal
 COPY --from=builder /tentris/build/ids2hypertrie /ids2hypertrie
 COPY --from=builder /tentris/build/rdf2ids /rdf2ids
+COPY LICENSE LICENSE
+COPY README.MD README.MD
 ENTRYPOINT ["/tentris_server"]

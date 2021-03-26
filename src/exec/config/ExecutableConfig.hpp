@@ -12,6 +12,9 @@
 
 #include <cxxopts.hpp>
 
+#include <Dice/hypertrie/hypertrie_version.hpp>
+#include <tentris/tentris_version.hpp>
+#include "../VersionStrings.hpp"
 
 namespace {
 	using namespace fmt::literals;
@@ -42,6 +45,9 @@ public:
 	mutable logging::trivial::severity_level loglevel;
 
 	mutable bool logfile;
+
+	mutable size_t bulksize;
+
 	mutable bool logstdout;
 
 	mutable std::string logfiledir;
@@ -66,6 +72,9 @@ protected:
 				("logfile",
 				 "If log is written to file.",
 				 cxxopts::value<bool>()->default_value("true"))
+				("b,bulksize",
+				 "Number of triples that are inserted at once. A larger value results in a higher memory consumption during loading RDF data but may result in shorter loading times.",
+				 cxxopts::value<size_t>()->default_value("1000000"))
 				("logstdout",
 				 "If log is written to stdout.",
 				 cxxopts::value<bool>()->default_value("false"))
@@ -76,7 +85,7 @@ protected:
 
 public:
 
-	ExecutableConfig(int argc, char **argv) : ExecutableConfig{} {
+	ExecutableConfig(int argc, char ** &argv) : ExecutableConfig{} {
 		initConfig(argc, argv);
 	}
 
@@ -86,7 +95,7 @@ public:
 	 * @param argv array of char arrays with arguments
 	 */
 
-	void initConfig(int argc, char **argv) {
+	void initConfig(int argc, char **&argv) {
 		try {
 			cxxopts::ParseResult arguments = options.parse(argc, argv);
 			parseArguments(arguments);
@@ -141,6 +150,8 @@ protected:
 
 
 		logstdout = arguments["logstdout"].as<bool>();
+
+		bulksize = arguments["bulksize"].as<size_t>();
 
 
 		logfiledir = arguments["logfiledir"].as<std::string>();

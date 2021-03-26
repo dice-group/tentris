@@ -67,18 +67,4 @@ struct fmt::formatter<std::variant<X,Y>> {
     }
 };
 
-//template<typename X>
-//struct fmt::formatter<std::shared_ptr<const std::decay<X>>> {
-//    template<typename ParseContext>
-//    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
-//
-//    template<typename FormatContext>
-//    auto format(const std::shared_ptr<const std::decay<X>> &p, FormatContext &ctx) {
-//        if (p)
-//            return format_to(ctx.begin(), "<{}>_shd", *p);
-//        else
-//            return format_to(ctx.begin(), "<>_shd");
-//    }
-//};
-
 #endif //TENTRIS_FMTHELPER_HPP

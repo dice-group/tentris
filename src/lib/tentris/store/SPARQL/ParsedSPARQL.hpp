@@ -15,22 +15,25 @@
 #include <Sparql/SparqlLexer.h>
 #include <Sparql/SparqlBaseListener.h>
 
+#include <robin_hood.h>
+
 #include <boost/algorithm/string.hpp>
 
 #include <Dice/einsum/internal/Subscript.hpp>
 #include <utility>
 
-#include "tentris/util/All.hpp"
-#include <Dice/rdf_parser/RDF/Term.hpp>
-#include "tentris/store/SPARQL/Variable.hpp"
-#include "tentris/store/SPARQL/TriplePattern.hpp"
+#include <Dice/RDF/Term.hpp>
+#include <Dice/RDF/ParseTerm.hpp>
+#include <Dice/RDF/Triple.hpp>
+#include <Dice/SPARQL/TriplePattern.hpp>
 
 
 namespace tentris::store::sparql {
 
 	namespace {
 		using Subscript =  einsum::internal::Subscript;
-		using SparqlParser =Dice::tentris::sparql::parser::SparqlParser;
+		namespace parser = Dice::sparql_parser::base;
+		using SparqlParser = parser::SparqlParser;
 		using namespace fmt::literals;
 	}
 
@@ -42,10 +45,7 @@ namespace tentris::store::sparql {
 	};
 
 	class LexerErrorListener : public antlr4::BaseErrorListener {
-		using Term = rdf_parser::store::rdf::Term;
-		using BNode = rdf_parser::store::rdf::BNode;
-		using Literal = rdf_parser::store::rdf::Literal;
-		using URIRef = rdf_parser::store::rdf::URIRef;
+		using Variable = Dice::sparql::Variable;
 	public:
 		LexerErrorListener() = default;
 
@@ -71,7 +71,15 @@ namespace tentris::store::sparql {
 
 
 	class ParsedSPARQL {
-		using SparqlLexer = Dice::tentris::sparql::parser::SparqlLexer;
+		using Term = Dice::rdf::Term;
+		using BNode = Dice::rdf::BNode;
+		using Literal = Dice::rdf::Literal;
+		using URIRef = Dice::rdf::URIRef;
+		using TriplePattern = Dice::sparql::TriplePattern;
+		using VarOrTerm = Dice::sparql::VarOrTerm;
+		using Variable = Dice::sparql::Variable;
+
+		using SparqlLexer = parser::SparqlLexer;
 		using ANTLRInputStream =antlr4::ANTLRInputStream;
 		using CommonTokenStream = antlr4::CommonTokenStream;
 		using QueryContext = SparqlParser::QueryContext;
@@ -79,11 +87,11 @@ namespace tentris::store::sparql {
 
 		SelectModifier select_modifier = NONE;
 
-		std::map<std::string, std::string> prefixes{};
+		robin_hood::unordered_map<std::string, std::string> prefixes{};
 		std::vector<Variable> query_variables{};
-		std::set<Variable> variables{};
-		std::set<Variable> anonym_variables{};
-		std::set<TriplePattern> bgps;
+		robin_hood::unordered_set<Variable> variables{};
+		robin_hood::unordered_set<Variable> anonym_variables{};
+		std::vector<TriplePattern> bgps;
 		uint next_anon_var_id = 0;
 		std::shared_ptr<Subscript> subscript;
 
@@ -94,6 +102,8 @@ namespace tentris::store::sparql {
 
 		explicit ParsedSPARQL(std::string sparqlstr) :
 				sparql_str{std::move(sparqlstr)} {
+			namespace ranges = std::ranges;
+
 			std::istringstream str_stream{sparql_str};
 			ANTLRInputStream input{str_stream};
 			SparqlLexer lexer{&input};
@@ -148,8 +158,8 @@ namespace tentris::store::sparql {
 						for (auto &obj_node : obj_nodes->object()) {
 							VarOrTerm obj = parseObject(obj_node);
 							registerVariable(obj);
-
-							bgps.insert(TriplePattern{subj, pred, obj});
+							if(ranges::find(bgps, TriplePattern{subj, pred, obj}) == bgps.end())
+								bgps.push_back(TriplePattern{subj, pred, obj});
 						}
 					}
 					if (auto *next_block = block->triplesBlock(); next_block)
@@ -159,16 +169,14 @@ namespace tentris::store::sparql {
 					variables.insert(variable);
 				if (all_vars)
 					for (const auto &variable : variables)
-						query_variables.push_back(variable);
-
-				if (query_variables.empty())
-					throw std::invalid_argument{"Empty query variables is not allowed."};
+						if (not anonym_variables.contains(variable))
+							query_variables.push_back(variable);
 
 
 
 				using Label = Subscript::Label;
 				// generate subscript
-				std::map<Variable, Label> var_to_label{};
+				robin_hood::unordered_map<Variable, Label> var_to_label{};
 				Label next_label = 'a';
 				for (const auto &var : variables) {
 					var_to_label[var] = next_label++;
@@ -195,31 +203,31 @@ namespace tentris::store::sparql {
 			}
 		}
 
-		SelectModifier getSelectModifier() const {
+		[[nodiscard]] SelectModifier getSelectModifier() const {
 			return select_modifier;
 		}
 
-		const std::vector<Variable> &getQueryVariables() const {
+		[[nodiscard]] const std::vector<Variable> &getQueryVariables() const {
 			return query_variables;
 		}
 
-		const std::set<Variable> &getVariables() const {
+		[[nodiscard]] const robin_hood::unordered_set<Variable> &getVariables() const {
 			return variables;
 		}
 
-		const std::set<Variable> &getAnonymVariables() const {
+		[[nodiscard]] const robin_hood::unordered_set<Variable> &getAnonymVariables() const {
 			return anonym_variables;
 		}
 
-		const std::string &getSparqlStr() const {
+		[[nodiscard]] const std::string &getSparqlStr() const {
 			return sparql_str;
 		}
 
-		const std::shared_ptr<Subscript> &getSubscript() const {
+		[[nodiscard]] const std::shared_ptr<Subscript> &getSubscript() const {
 			return subscript;
 		}
 
-		const std::set<TriplePattern> &getBgps() const {
+		[[nodiscard]] const std::vector<TriplePattern> &getBgps() const {
 			return bgps;
 		}
 
@@ -228,9 +236,8 @@ namespace tentris::store::sparql {
 		void registerVariable(VarOrTerm &variant) {
 			if (std::holds_alternative<Variable>(variant)) {
 				auto &var = std::get<Variable>(variant);
-				if (not var.is_anonym)
-					variables.insert(var);
-				else
+				variables.insert(var);
+				if (var.isAnon())
 					anonym_variables.insert(var);
 			}
 		}
@@ -302,11 +309,11 @@ namespace tentris::store::sparql {
 				return Literal{termContext->getText(), std::nullopt, "http://www.w3.org/2001/XMLSchema#boolean"};
 			} else if (SparqlParser::BlankNodeContext *blankNode = termContext->blankNode();blankNode) {
 				if (blankNode->BLANK_NODE_LABEL())
-					return Variable{termContext->getText()};
+					return Variable{termContext->getText(), true};
 				else
-					return Variable{"__:" + std::to_string(next_anon_var_id++)};
+					return Variable{"__:" + std::to_string(next_anon_var_id++), true};
 			} else if (not termContext->NIL()) {
-				return Literal::make_term(termContext->getText());
+				return Dice::rdf::parse_term(termContext->getText());
 			} else {
 				throw std::logic_error{"Handling NIL not yet implemented."};
 				// TODO: handle NIL value "( )"
@@ -413,7 +420,13 @@ struct fmt::formatter<tentris::store::sparql::ParsedSPARQL> {
 						 " variables:        {}\n"
 						 " anonym_variables: {}\n"
 						 " bgps:             {}\n",
-						 p.prefixes, p.select_modifier, p.query_variables, p.variables, p.anonym_variables, p.bgps);
+						 fmt::join(p.prefixes, ","),
+						 p.select_modifier,
+						 fmt::join(p.query_variables, ","),
+						 fmt::join(p.variables, ","),
+						 fmt::join(p.anonym_variables, ","),
+						 fmt::join(p.bgps, ",")
+						 );
 	}
 };
 

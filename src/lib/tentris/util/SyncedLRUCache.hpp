@@ -37,7 +37,8 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <unordered_map>
+
+#include <Dice/hash/DiceHash.hpp>
 
 namespace tentris::util::sync {
 
@@ -52,14 +53,14 @@ namespace tentris::util::sync {
 	template<class Key, class Value>
 	class SyncedLRUCache {
 	public:
-		using map_type = tsl::hopscotch_map<Key, typename std::list<KeyValuePair<Key, Value>>::iterator, absl::Hash<Key>>;
+		using map_type = tsl::hopscotch_map<Key, typename std::list<KeyValuePair<Key, Value>>::iterator, Dice::hash::DiceHash<Key>>;
 		using node_type =  KeyValuePair<Key, Value>;
 		using list_type = std::list<KeyValuePair<Key, Value>>;
 		using Lock  = std::mutex;
 		using Guard = std::lock_guard<Lock>;
 		using value_ptr = std::shared_ptr<Value>;
 
-		// Dissallow copying.
+		// Disallow copying.
 		SyncedLRUCache(const SyncedLRUCache &) = delete;
 
 		SyncedLRUCache &operator=(const SyncedLRUCache &) = delete;
@@ -103,7 +104,7 @@ namespace tentris::util::sync {
 		[[nodiscard]] value_ptr &operator[](const Key &key) {
 			Guard g(lock_);
 			const auto iter = cache_.find(key);
-			logTrace("cache size: {} lru size: {}"_format(cache_.size(), keys_.size()));
+			logging::logTrace(fmt::format("cache size: {} lru size: {}", cache_.size(), keys_.size()));
 			if (iter == cache_.end()) {
 				auto &key_value = keys_.emplace_front(key);
 				cache_[key] = keys_.begin();

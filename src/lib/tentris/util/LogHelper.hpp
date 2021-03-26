@@ -76,7 +76,7 @@ namespace tentris::logging {
 		if (not logfile and not logstdout)
 			logging::core::get()->set_logging_enabled(false);
 		if (logfile)
-			auto file_log = logging::add_file_log(
+			logging::add_file_log(
 					keywords::file_name = fs::path(logfiledir).append("tentris_%N.log"),
 					keywords::rotation_size = 5 * 512 * 1024,
 					keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),
@@ -105,13 +105,15 @@ namespace tentris::logging {
 	inline void log_duration(std::chrono::time_point<std::chrono::steady_clock> start_time,
 							 std::chrono::time_point<std::chrono::steady_clock> end_time) {
 		using namespace std::chrono;
-		auto duration = end_time - start_time;
+		const auto duration = end_time - start_time;
 
 		// xx h xx min xx s
-		log("duration: {} h {} min {} s"_format(
-				(duration_cast<hours>(duration) % 24).count(),
-				(duration_cast<minutes>(duration) % 60).count(),
-				(duration_cast<seconds>(duration) % 60).count()));
+		log("duration: {} h {} min {}.{:03d} s = {} ms\n"_format(
+				(std::chrono::duration_cast<std::chrono::hours>(duration)).count(),
+				(std::chrono::duration_cast<std::chrono::minutes>(duration) % 60).count(),
+				(std::chrono::duration_cast<std::chrono::seconds>(duration) % 60).count(),
+				(std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()));
 	}
 
 	/**
