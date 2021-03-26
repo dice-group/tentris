@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.13)
-project(tentris CXX)
+project(tentris
+        LANGUAGES CXX
+        VERSION 1.0.7)
 set(CMAKE_CXX_STANDARD 20)
-set(tentris_VERSION_MAJOR 1)
-set(tentris_VERSION_MINOR 0)
-set(tentris_VERSION_PATCH 7)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/tentris/tentris_version.hpp)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
@@ -103,7 +104,7 @@ target_link_libraries(tentris
         cxxopts
         rapidjson
         sparql-parser-base::sparql-parser-base
-        tsl-hopscotch-map::tsl-hopscotch-map
+        tsl::hopscotch_map
         fmt::fmt
         hypertrie::hypertrie
         rdf-parser::rdf-parser
