@@ -149,11 +149,10 @@ namespace tentris::store::graphql {
 									  bool inverse) const {
 			for(const auto &obj : objects_data) {
 				for(const auto &field : obj.second.fields_data) {
-					if(uri != field.second.uri)
+					if (uri != field.second.uri)
 						continue;
-					else if(inverse != field.second.is_inverse)
-						continue;
-					if(type != field.second.type_name)
+					if ((inverse and type != obj.first) or
+                        (not inverse and type != field.second.type_name))
 						return true;
 				}
 			}
