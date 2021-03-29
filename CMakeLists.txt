@@ -114,7 +114,7 @@ target_link_libraries(tentris
         graphql-parser::graphql-parser
         graphql-parser-base::graphql-parser-base
         sparql-parser-base::sparql-parser-base
-        tsl-hopscotch-map::tsl-hopscotch-map
+        tsl::hopscotch_map
         fmt::fmt
         hypertrie::hypertrie
         rdf-parser::rdf-parser
