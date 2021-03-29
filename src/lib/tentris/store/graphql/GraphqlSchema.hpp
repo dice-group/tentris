@@ -3,10 +3,12 @@
 
 #include <Dice/graphql-parser/GraphQLParser.hpp>
 
+#include "tentris/store/graphql/exception/SchemaException.hpp"
 #include "tentris/store/graphql/internal/GraphqlDataStructures.hpp"
 
 namespace tentris::store::graphql {
 
+	using namespace tentris::store::graphql::exception;
     using ObjectData = ::tentris::store::graphql::internal::ObjectData;
 
     class GraphqlSchema {
@@ -92,13 +94,25 @@ namespace tentris::store::graphql {
         [[nodiscard]] const std::string& getFieldType(const std::string& field_name,
 													  const std::string& parent_type = "") const {
             if(parent_type.empty())
-                return objects_data.at(query_type_name).fields_data.at(field_name).type_name;
+				try {
+					return objects_data.at(query_type_name).fields_data.at(field_name).type_name;
+				} catch (std::out_of_range &e) {
+					throw FieldNotFoundException(field_name, query_type_name);
+				}
             else
-                return objects_data.at(parent_type).fields_data.at(field_name).type_name;
+				try {
+					return objects_data.at(parent_type).fields_data.at(field_name).type_name;
+				} catch (std::out_of_range &e) {
+                    throw FieldNotFoundException(field_name, parent_type);
+				}
         }
 
 		[[nodiscard]] const std::string& getObjectUri(const std::string& field_name) {
-			return objects_data.at(field_name).uri;
+			try {
+				return objects_data.at(field_name).uri;
+			} catch (std::out_of_range &e) {
+                throw TypeNotFoundException(field_name);
+			}
 		}
 
         [[nodiscard]] bool fieldIsList(const std::string& field_name,
@@ -112,9 +126,9 @@ namespace tentris::store::graphql {
 		[[nodiscard]] bool fieldIsScalar(const std::string& field_name,
                                          const std::string& parent_type) const {
             auto type_name = objects_data.at(parent_type).fields_data.at(field_name).type_name;
-			if(type_name == "ID" or type_name == "String" or type_name == "Int" or type_name == "Float" or type_name == "Boolean")
-				return true;
-			return false;
+            if(type_name == "ID" or type_name == "String" or type_name == "Int" or type_name == "Float" or type_name == "Boolean")
+                return true;
+            return false;
 		}
 
         [[nodiscard]] bool fieldIsNonNull(const std::string& field_name,

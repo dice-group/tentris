@@ -25,6 +25,7 @@ namespace tentris::tensor {
 	using DISTINCT_t = bool;
 	using COUNTED_t = std::size_t;
 	using Subscript = hypertrie::Subscript ;
+	using EinsumMapping_t = hypertrie::EinsumMapping_t<key_part_type>;
 }
 
 #endif //TENTRIS_BOOLHYPERTRIE_HPP

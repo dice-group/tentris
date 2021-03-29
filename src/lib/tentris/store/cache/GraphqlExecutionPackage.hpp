@@ -87,7 +87,7 @@ namespace tentris::store::cache {
                         const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
 						const auto &field_type = schema.getFieldType(field_name);
                         operands_labels.push_back(operand_labels);
-                        field_types[operand_labels[0]] = schema.getFieldType(field_name);
+                        field_types[operand_labels[0]] = field_type;
                         operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
 					}
                     else {

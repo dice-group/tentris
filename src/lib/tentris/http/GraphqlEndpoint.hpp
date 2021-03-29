@@ -12,8 +12,7 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/QueryResultState.hpp"
-#include "tentris/store/graphql/GraphqlResponse.hpp"
-#include "tentris/store/graphql/GraphqlResponseDOM.hpp"
+#include "tentris/store/graphql/GraphqlResponseSAX.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/util/LogHelper.hpp"
@@ -36,6 +35,7 @@ namespace tentris::http::graphql_endpoint {
     struct GraphqlEndpoint {
 		using Einsum_t = Einsum<COUNTED_t>;
 		using EinsumEntry_t = EinsumEntry<COUNTED_t>;
+        constexpr static size_t chunk_size = 100'000'000UL;
 
         auto operator()(restinio::request_handle_t req,
                         [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
@@ -45,7 +45,6 @@ namespace tentris::http::graphql_endpoint {
             auto start_memory = get_memory_usage();
             logDebug("ram: {:d} kB"_format(start_memory));
             auto timeout = start_time + AtomicTripleStoreConfig::getInstance().timeout;
-            restinio::request_handling_status_t handled = restinio::request_rejected();
             Status status = Status::OK;
             std::string error_message{};
             std::shared_ptr<QueryExecutionPackage> query_package;
@@ -68,6 +67,7 @@ namespace tentris::http::graphql_endpoint {
                     }
                 } else {
                     status = Status::UNPARSABLE;
+					error_message = "No query document was provided";
                 }
             } catch (const std::exception &exc) {
                 // if the execution of the query should fail return an internal server error
@@ -78,53 +78,41 @@ namespace tentris::http::graphql_endpoint {
                 // if the execution of the query should fail return an internal server error
                 status = Status::SEVERE_UNEXPECTED;
             }
-
             switch (status) {
-                case OK:
-                    handled = restinio::request_accepted();
-                    break;
+				case OK:
+					break;
                 case UNPARSABLE:
-                    logError(" ## unparsable query\n"
-                             "    query_string: {}"_format(query_string)
-                    );
-                    handled = req->create_response(restinio::http_status_line_t{restinio::status_code::bad_request,
-                                                                                "Could not parse the requested query."s}).done();
+                    logError(" ## unparsable query \n query_string: {}"_format(query_string));
                     break;
                 case UNKNOWN_REQUEST:
                     logError("unknown HTTP command. Only HTTP GET and POST are supported.");
-                    handled = req->create_response(restinio::status_not_implemented()).done();
                     break;
                 case PROCESSING_TIMEOUT:
                     logError("timeout during request processing");
-                    handled = req->create_response(restinio::status_request_time_out()).done();
                     break;
                 case SERIALIZATION_TIMEOUT:
-                    // no REQUEST TIMEOUT response can be sent here because we stream results directly to the client.
-                    // Thus, the code was already written to the header.
                     logError("timeout during writing the result");
-                    handled = restinio::request_accepted();
+					error_message = "reached timeout";
                     break;
                 case UNEXPECTED:
-                    logError(" ## unexpected internal error, exception_message: {}"_format(error_message)
-                    );
-                    handled = req->create_response(
-                            restinio::status_internal_server_error()).connection_close().done();
+                    logError(" ## unexpected internal error, exception_message: {}"_format(error_message));
                     break;
                 case SEVERE_UNEXPECTED:
-                    logError(" ## severe unexpected internal error,  exception_message: {}"_format(error_message)
-                    );
-                    handled = req->create_response(
-                            restinio::status_internal_server_error()).connection_close().done();
-                    break;
+                    logError(" ## severe unexpected internal error,  exception_message: {}"_format(error_message));
+					break;
             }
-            if (handled == restinio::request_rejected())
-                logError(fmt::format("Handling the request was rejected."));
+			if (status != Status::OK) {
+                auto resp = req->create_response();
+                resp.append_header(restinio::http_field::content_type, "application/json");
+				resp.append_body(fmt::format(R"({{"error":"{}"}})", error_message));
+                resp.done();
+			}
             auto end_memory = get_memory_usage();
             logDebug("ram: {:d} kB"_format(end_memory));
             logDebug("ram diff: {:+3d} kB"_format(long(end_memory) - long(start_memory)));
             logDebug("request duration: {}"_format(toDurationStr(start_time, steady_clock::now())));
             log("request ended.");
-            return handled;
+            return restinio::request_accepted();
         };
 
         static void async_cleanup(std::shared_ptr<void> raw_results) {
@@ -134,20 +122,17 @@ namespace tentris::http::graphql_endpoint {
             }).detach();
         }
 
-        static Status
-        runQuery(restinio::request_handle_t &req,
+		Status runQuery(restinio::request_handle_t &req,
 				 std::shared_ptr<QueryExecutionPackage> &query_package,
                  const time_point_t timeout) {
             if (steady_clock::now() >= timeout) {
                 return Status::PROCESSING_TIMEOUT;
             }
-
             // create HTTP response object
-            auto resp = req->create_response<restinio::restinio_controlled_output_t>();
+            GraphqlResponseSAX json_response{chunk_size};
+            auto resp = req->create_response<restinio::chunked_output_t>();
             resp.append_header(restinio::http_field::content_type, "application/json");
             auto timout_check = 0;
-			// execute query package
-			GraphqlResponseDOM json_response{};
 			auto einsums = query_package->generateEinsums(timeout);
 			for(auto i : iter::range(einsums.size())) {
                 std::shared_ptr<void> raw_results = einsums[i];
@@ -163,6 +148,11 @@ namespace tentris::http::graphql_endpoint {
 						}
 						timout_check = 0;
 					}
+                    if (json_response.full()) {
+                        resp.append_chunk(std::string{json_response.string_view()});
+                        resp.flush();
+                        json_response.clear();
+                    }
 				}
 				json_response.end_root_field();
 				if (steady_clock::now() >= timeout) {
@@ -171,7 +161,8 @@ namespace tentris::http::graphql_endpoint {
 				}
 				async_cleanup(std::move(raw_results));
 			}
-            resp.set_body(json_response.to_string());
+			json_response.close();
+            resp.append_chunk(std::string{json_response.string_view()});
 			resp.done();
             return Status::OK;
         }
