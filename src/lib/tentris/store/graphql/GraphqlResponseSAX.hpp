@@ -41,10 +41,12 @@ namespace tentris::store::graphql {
 
     public:
 
-        explicit GraphqlResponseSAX(size_t buffer_size = 100'000'000UL)
+        explicit GraphqlResponseSAX(size_t buffer_size)
             : buffer_size(buffer_size),
               buffer(nullptr, size_t(buffer_size * 1.3)),
-              writer(buffer) {}
+              writer(buffer) {
+			writer.StartObject();
+		}
 
         void add(const Entry& entry, const EinsumMapping_t *mapping) {
             if (last_mapping) {
@@ -89,7 +91,6 @@ namespace tentris::store::graphql {
             // first root field -> create data object
             if (not has_data) {
                 has_data = true;
-                writer.StartObject();
                 writer.Key("data");
 				writer.StartObject();
             }

@@ -18,13 +18,14 @@ namespace tentris::store::graphql {
 	private:
 
 		using AtomicGraphqlSchema = tentris::store::AtomicGraphqlSchema;
+		using EinsumMapping_t = tentris::tensor::EinsumMapping_t;
 		using Entry = ::tentris::tensor::EinsumEntry<::tentris::tensor::COUNTED_t>;
 		using Key = typename Entry::Key;
 		using Label = ::tentris::tensor::Subscript::Label;
 		using key_part_type = ::tentris::tensor::key_part_type;
 
 		// stores the last mapping of the einsum -- used to updated the array counters
-		std::unique_ptr<std::map<Label, key_part_type>> last_mapping = nullptr;
+		std::unique_ptr<EinsumMapping_t> last_mapping = nullptr;
 		// stores for each inner field its children fields
 		std::map<Label, std::vector<std::string>> label_children{};
 		// stores for each inner field the type of its children fields
@@ -103,7 +104,7 @@ namespace tentris::store::graphql {
             return std::string(buffer.GetString(), buffer.GetSize());
         }
 
-        void add(const Entry& entry, const std::map<Label, key_part_type> *mapping) {
+        void add(const Entry& entry, const EinsumMapping_t *mapping) {
 			// update inner fields
 			for(auto iter = mapping->cbegin(); iter != mapping->cend(); iter++) {
 				if(not last_mapping or iter->second != (*last_mapping)[iter->first]) {
@@ -119,7 +120,7 @@ namespace tentris::store::graphql {
 					set_value(leaf_paths[pos], key_part);
 				}
 			}
-            last_mapping = std::make_unique<std::map<Label, key_part_type>>(*mapping);
+            last_mapping = std::make_unique<EinsumMapping_t>(*mapping);
 		}
 
 	private:

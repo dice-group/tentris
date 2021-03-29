@@ -23,6 +23,7 @@ namespace tentris::store::graphql {
 		using key_part_type = ::tentris::tensor::key_part_type;
 		using SetFuncion = std::function<void(rapidjson::Pointer&, key_part_type, rapidjson::Document&)>;
 		using JSONPath = std::vector<std::variant<std::string, std::size_t>>;
+		using Mapping_t = ::tentris::tensor::Einsum::Mapping_t;
 
 		// the json response
         rapidjson::Document response{};
@@ -38,7 +39,7 @@ namespace tentris::store::graphql {
 		// list of set functions -- one set function per einsum result label
 		std::vector<SetFuncion> set_functions{};
 		// stores the last mapping of the einsum -- used to updated the array counters
-		std::unique_ptr<std::map<Label, key_part_type>> last_mapping = nullptr;
+		std::unique_ptr<> last_mapping = nullptr;
 		// for each label stores its position in all leaf paths
 		std::map<Label, std::pair<std::uint8_t, std::vector<std::uint8_t>>> label_positions{};
 		// stores for each leaf field if it is nullable
