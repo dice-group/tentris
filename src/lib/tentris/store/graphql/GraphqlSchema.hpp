@@ -125,6 +125,8 @@ namespace tentris::store::graphql {
 
 		[[nodiscard]] bool fieldIsScalar(const std::string& field_name,
                                          const std::string& parent_type) const {
+			if (parent_type.empty())
+				return false;
             auto type_name = objects_data.at(parent_type).fields_data.at(field_name).type_name;
             if(type_name == "ID" or type_name == "String" or type_name == "Int" or type_name == "Float" or type_name == "Boolean")
                 return true;

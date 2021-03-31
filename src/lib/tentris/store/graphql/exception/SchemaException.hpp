@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <utility>
+#include <fmt/format.h>
 
 namespace tentris::store::graphql::exception {
 
@@ -37,7 +38,7 @@ namespace tentris::store::graphql::exception {
     public:
 
         explicit TypeNotFoundException(const std::string &field_name)
-                : SchemaException(fmt::format("Type `@{}` is not part of the schema", field_name)) {}
+                : SchemaException(fmt::format("Type `{}` is not part of the schema", field_name)) {}
 
     };
 

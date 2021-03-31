@@ -140,7 +140,7 @@ namespace tentris::http::graphql_endpoint {
 				json_response.begin_root_field(query_package->getPath(i));
 				// iterate over einsum results and populate json response
 				for (const EinsumEntry_t &result : results) {
-					json_response.add(result, &results.getMapping());
+					json_response.add(result);
 					if (++timout_check == 100) {
 						if (steady_clock::now() >= timeout) {
 							async_cleanup(std::move(raw_results));

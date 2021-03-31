@@ -17,7 +17,6 @@ namespace tentris::store::graphql {
     class GraphqlResponseSAX {
 
         using AtomicGraphqlSchema = tentris::store::AtomicGraphqlSchema;
-        using EinsumMapping_t = tentris::tensor::EinsumMapping_t;
         using Entry = ::tentris::tensor::EinsumEntry<::tentris::tensor::COUNTED_t>;
         using Key = typename Entry::Key;
         using Label = ::tentris::tensor::Subscript::Label;
@@ -32,10 +31,11 @@ namespace tentris::store::graphql {
         boost::container::flat_map<Label, Label> label_last_child{}; // for each label stores its last child
         boost::container::flat_map<Label, Label> label_last_neighbor{}; // for each label stores the last label in the same level
         boost::container::flat_map<Label, bool> resolved{};
-        std::unique_ptr<EinsumMapping_t> last_mapping = nullptr;
-        std::vector<Label> leaf_labels{};
         boost::container::flat_map<Label, Label> label_parent{};
         std::set<Label> end_labels{};
+        std::vector<std::vector<Label>> labels_in_entry{};
+		std::vector<std::size_t> leaf_positions{};
+        std::unique_ptr<Entry> last_entry = nullptr;
 
         bool has_data = false;
 
@@ -48,12 +48,13 @@ namespace tentris::store::graphql {
 			writer.StartObject();
 		}
 
-        void add(const Entry& entry, const EinsumMapping_t *mapping) {
-            if (last_mapping) {
+        void add(const Entry& entry) {
+            if (last_entry) {
                 Label updated_label;
-                for (const auto &iter : *mapping) {
-                    if (iter.second != (*last_mapping)[iter.first]) {
-                        updated_label =  iter.first;
+                for (const auto &[pos, key_part] : iter::enumerate(entry.key)) {
+                    if (key_part != last_entry->key[pos]) {
+                        // in case there are two labels for a position, take the first
+                        updated_label =  labels_in_entry[pos].front();
                         break;
                     }
                 }
@@ -68,23 +69,23 @@ namespace tentris::store::graphql {
                 }
             }
             bool empty_entry = true;
-            for (const auto &[pos, key_part] : iter::enumerate(entry.key)) {
-                if (not key_part)
+            for (auto leaf_pos : leaf_positions) {
+                if (not entry.key[leaf_pos])
                     continue;
                 empty_entry = false;
-                write_leaf(leaf_labels[pos], key_part);
+                write_leaf(labels_in_entry[leaf_pos].back(), entry.key[leaf_pos]);
             }
             // no results at leaf fields but we still have new values in the inner fields
             if (empty_entry) {
                 // find the last label that was assigned a value in the mapping
                 char last_label{};
-                for (const auto & iter : *mapping)
-                    if(iter.second)
-                        last_label = iter.first;
+                for (const auto &[pos, key_part] : iter::enumerate(entry.key))
+                    if(key_part)
+                        last_label = labels_in_entry[pos].front();
 				if (not resolved[last_label])
                     open_field(last_label);
             }
-            last_mapping = std::make_unique<EinsumMapping_t>(*mapping);
+            last_entry = std::make_unique<Entry>(entry);
         }
 
         void begin_root_field(const std::vector<std::vector<std::pair<char, std::string>>> &paths) {
@@ -94,6 +95,7 @@ namespace tentris::store::graphql {
                 writer.Key("data");
 				writer.StartObject();
             }
+			std::size_t pos = 0;
             // iterate over the paths that were provided and gather info
             for (const auto &path : paths) {
                 std::string parent_type{};
@@ -114,14 +116,26 @@ namespace tentris::store::graphql {
                                 label_parent[label] = parent_label;
                             label_last_child[parent_label] = label;
                         }
+                        if (AtomicGraphqlSchema::getInstance().fieldIsScalar(field_name, parent_type)) {
+                            if (AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type) == "ID") {
+								labels_in_entry.back().push_back(label);
+								leaf_positions.push_back(pos-1);
+							}
+							else {
+								labels_in_entry.emplace_back(std::vector<Label>{label});
+                                leaf_positions.push_back(pos);
+								pos++;
+							}
+                        }
+						else {
+							labels_in_entry.emplace_back(std::vector<Label>{label});
+							pos++;
+						}
                         end_labels.insert(label);
+                        resolved[label] = false;
                     }
                     parent_type = AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type);
                     parent_label = label;
-                    resolved[label] = false;
-                    // store leaf labels
-                    if(iter+1 == path.end())
-                        leaf_labels.push_back(label);
                 }
             }
         }
@@ -227,7 +241,7 @@ namespace tentris::store::graphql {
         }
 
         [[nodiscard]] bool is_leaf(Label label) {
-            return std::find(leaf_labels.begin(), leaf_labels.end(), label) != leaf_labels.end();
+            return (not label_last_child.contains(label));
         }
 
     };

@@ -127,7 +127,9 @@ namespace tentris::store::cache {
                                 // field whose type is ID -- change result label and remove operand_labels
                                 // replace result label with the label of the parent -> entity URI
                                 if(field_type == "ID")
-                                    std::replace(result_labels.begin(), result_labels.end(), operand_labels[1], operand_labels[0]);
+                                    result_labels.erase(
+                                            std::remove(result_labels.begin(), result_labels.end(), operand_labels[1]), result_labels.end()
+											);
                                 else {
 									operands.emplace_back(triple_store.resolveGQLField(field_uri));
                                     operands_labels.push_back(operand_labels);
