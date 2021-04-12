@@ -38,6 +38,8 @@ namespace tentris::store::cache {
         std::vector<std::vector<const_BoolHypertrie>> all_operands{};
 		// a vector containing the paths of the query (one list per root field)
 		std::vector<std::vector<std::vector<std::pair<Subscript::Label, std::string>>>> all_paths{};
+		// a vector containing the fragment labels (one set per root field)
+		std::vector<std::set<Subscript::Label>> all_fragment_labels{};
 		std::vector<Subscript::Label> opt_begin{'['};
 		std::vector<Subscript::Label> opt_end{']'};
 
@@ -60,13 +62,14 @@ namespace tentris::store::cache {
 			for(auto i : iter::range(parsed_graphql->all_operands_labels.size())) {
 				std::vector<std::vector<Subscript::Label>> operands_labels{};
 				std::vector<Subscript::Label> result_labels = parsed_graphql->all_result_labels[i];
-				all_paths.emplace_back(parsed_graphql->all_paths[i]);
+				all_paths.push_back(parsed_graphql->all_paths[i]);
+				all_fragment_labels.push_back(parsed_graphql->all_fragment_labels[i]);
 				std::vector<const_BoolHypertrie> operands{};
 				logDebug(fmt::format("Slicing TPs"));
 				uint32_t field_arg_pos = 0;
 				uint32_t field_pos = 0;
-				// map from subscript labels to type names
-                std::map<Subscript::Label, std::string> field_types{};
+				// stack that keeps track of the  parent types
+                std::deque<std::string> parent_types{};
                 // resolve the fields -- make use of the operands labels to find the fields in the schema
 				// makes use of the fact that graphql queries form a tree
 				// the first label of an operand label refers to the parent of the current field
@@ -79,15 +82,16 @@ namespace tentris::store::cache {
 						if(operands_labels.back() == opt_begin) // remove [ ] patterns created by ID fields
 							operands_labels.pop_back();
 						else
-                            operands_labels.push_back(operand_labels);
+							operands_labels.push_back(operand_labels);
+                        parent_types.pop_back();
 						continue;
 					}
                     // root field
-                    if(field_types.empty()) {
+                    if(parent_types.empty()) {
                         const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
 						const auto &field_type = schema.getFieldType(field_name);
                         operands_labels.push_back(operand_labels);
-                        field_types[operand_labels[0]] = field_type;
+                        parent_types.push_back(field_type);
                         operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(field_type)));
 					}
                     else {
@@ -95,13 +99,13 @@ namespace tentris::store::cache {
 						if(operand_labels.size() == 2) {
 							field_pos = field_arg_pos;
                             const auto &field_name = std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]);
-                            const auto &parent_type = field_types[operand_labels[0]];
+                            const auto &parent_type = parent_types.back();
                             const auto &field_type = schema.getFieldType(field_name, parent_type);
                             const auto &field_uri = schema.getFieldUri(field_name, parent_type);
 							auto is_inverse = schema.fieldIsInverse(field_name, parent_type);
+                            parent_types.push_back(field_type);
                             // inner field
                             if (not schema.fieldIsScalar(field_name, parent_type)) {
-                                field_types[operand_labels[1]] = field_type;
                                 operands.emplace_back(triple_store.resolveGQLField(field_uri));
                                 // check the direction of the edge -- @inverse directive
                                 if (is_inverse) {
@@ -136,19 +140,28 @@ namespace tentris::store::cache {
 								}
                             }
 						}
-						// argument
+						// argument or inline fragment
 						else {
-                            const auto &arg_name = std::get<1>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]).first;
-							const auto &value = std::get<1>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]).second;
-                            const auto &parent_type = field_types[operand_labels[0]];
-							// filter field operand
-							if(schema.getFieldType(arg_name, parent_type) == "ID")
-								operands[field_pos] = triple_store.resolveGQLArgumentID(std::any_cast<std::string>(value), operands[field_pos]);
+							// inline fragment
+							if (operands_labels.back() == opt_begin) {
+								parent_types.push_back(std::get<0>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]));
+                                operands.emplace_back(triple_store.resolveGQLObjectType(schema.getObjectUri(parent_types.back())));
+                                operands_labels.push_back(operand_labels);
+							}
+							// argument
 							else {
-								operands.emplace_back(triple_store.resolveGQLArgument(schema.getFieldUri(arg_name, parent_type),
-                                                                                      schema.getFieldType(arg_name, parent_type),
-																					  value));
-								operands_labels.push_back(operand_labels);
+								const auto &arg_name = std::get<1>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]).first;
+								const auto &value = std::get<1>(parsed_graphql->all_fields_name_arguments[i][field_arg_pos]).second;
+								const auto &parent_type = parent_types.back();
+								// filter field operand
+								if (schema.getFieldType(arg_name, parent_type) == "ID")
+									operands[field_pos] = triple_store.resolveGQLArgumentID(std::any_cast<std::string>(value), operands[field_pos]);
+								else {
+									operands.emplace_back(triple_store.resolveGQLArgument(schema.getFieldUri(arg_name, parent_type),
+																						  schema.getFieldType(arg_name, parent_type),
+																						  value));
+									operands_labels.push_back(operand_labels);
+								}
 							}
 						}
                     }
@@ -174,6 +187,9 @@ namespace tentris::store::cache {
 			return all_paths[pos];
 		}
 
+        [[nodiscard]] const std::set<Subscript::Label> &getFragmentLabels(std::size_t pos) {
+            return all_fragment_labels[pos];
+        }
 
 		[[nodiscard]] const std::vector<std::vector<const_BoolHypertrie>> &getOperands() const {
 			return all_operands;

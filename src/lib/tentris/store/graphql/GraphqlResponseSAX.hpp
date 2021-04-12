@@ -36,6 +36,7 @@ namespace tentris::store::graphql {
         std::vector<std::vector<Label>> labels_in_entry{};
 		std::vector<std::size_t> leaf_positions{};
         std::unique_ptr<Entry> last_entry = nullptr;
+		std::set<Label> fragment_labels{};
 
         bool has_data = false;
 
@@ -51,17 +52,19 @@ namespace tentris::store::graphql {
         void add(const Entry& entry) {
             if (last_entry) {
                 Label updated_label;
+				key_part_type updated_key_part;
                 for (const auto &[pos, key_part] : iter::enumerate(entry.key)) {
                     if (key_part != last_entry->key[pos]) {
                         // in case there are two labels for a position, take the first
                         updated_label =  labels_in_entry[pos].front();
+                        updated_key_part = key_part;
                         break;
                     }
                 }
-                if (not is_leaf(updated_label)) {
+                if (not is_leaf(updated_label) and updated_key_part) {
                     // close the children of the field corresponding to the first updated label
                     close_field(label_last_child[updated_label]);
-                    // update the resolved map
+                    // update the resolved map the updated_key part is not null
                     auto resolved_iter = resolved.find(updated_label);
                     resolved_iter++;
                     for (; resolved_iter != resolved.end(); resolved_iter++)
@@ -88,13 +91,15 @@ namespace tentris::store::graphql {
             last_entry = std::make_unique<Entry>(entry);
         }
 
-        void begin_root_field(const std::vector<std::vector<std::pair<char, std::string>>> &paths) {
+        void begin_root_field(const std::vector<std::vector<std::pair<char, std::string>>> &paths,
+							  const std::set<char> &frag_labels) {
             // first root field -> create data object
             if (not has_data) {
                 has_data = true;
                 writer.Key("data");
 				writer.StartObject();
             }
+			fragment_labels = frag_labels;
 			std::size_t pos = 0;
             // iterate over the paths that were provided and gather info
             for (const auto &path : paths) {
@@ -146,6 +151,7 @@ namespace tentris::store::graphql {
             label_is_list.clear();
             label_last_neighbor.clear();
             label_last_child.clear();
+			fragment_labels.clear();
         }
 
         // closes data object and writes errors if there are any
@@ -184,23 +190,28 @@ namespace tentris::store::graphql {
                 if(label_is_list[label])
                     writer.EndArray();
             }
-                // the label is not resolved
+            // the label is not resolved
             else {
                 resolved[label] = true;
-				// if is the first child start the parent object
-				if (label_parent.contains(label))
+				// if it is the first child start the parent object
+				if (label_parent.contains(label)) {
+					if (not resolved[label_parent[label]])
+						open_field(label_parent[label]);
 					writer.StartObject();
+				}
                 // close its neighbor, if there is one
                 else if (label_last_neighbor.contains(label))
                     close_field(label_last_neighbor[label]);
-                // create default value (empty list / null)
-                writer.Key(label_to_field[label]);
-                if (label_is_list[label]) {
-                    writer.StartArray();
-                    writer.EndArray();
-                }
-                else // todo: nullability check
-                    writer.Null();
+                // if the field corresponding to the label does not appear in a fragment create default value (empty list / null)
+				if (not fragment_labels.contains(label)) {
+					writer.Key(label_to_field[label]);
+					if (label_is_list[label]) {
+						writer.StartArray();
+						writer.EndArray();
+					}
+					else// todo: nullability check
+						writer.Null();
+				}
             }
             // if it the last inner field of a parent field, close the object of the parent field
             if(end_labels.contains(label))

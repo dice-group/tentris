@@ -13,6 +13,7 @@ namespace tentris::store::graphql::internal {
     };
 
     struct ObjectData {
+		bool is_interface = false;
         std::string uri;
         std::map<std::string, FieldData> fields_data{};
     };

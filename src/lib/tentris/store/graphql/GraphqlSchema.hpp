@@ -57,6 +57,7 @@ namespace tentris::store::graphql {
 			// iterate over interface definitions
             for(const auto &obj_def : type_definitions->interface_definitions) {
                 auto &obj_data = objects_data[obj_def->name];
+				obj_data.is_interface = true;
                 // iterate over the directives of the object definition
                 for(const auto &directive : obj_def->directives) {
                     // we are currently interested only in the @uri directive
@@ -149,6 +150,8 @@ namespace tentris::store::graphql {
 		[[nodiscard]] bool typeFilter(const std::string& uri,
 									  const std::string& type,
 									  bool inverse) const {
+			if (objects_data.at(type).is_interface)
+				return false;
 			for(const auto &obj : objects_data) {
 				for(const auto &field : obj.second.fields_data) {
 					if (uri != field.second.uri)

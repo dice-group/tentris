@@ -137,7 +137,7 @@ namespace tentris::http::graphql_endpoint {
 			for(auto i : iter::range(einsums.size())) {
                 std::shared_ptr<void> raw_results = einsums[i];
 				auto &results = *static_cast<Einsum_t *>(raw_results.get());
-				json_response.begin_root_field(query_package->getPath(i));
+				json_response.begin_root_field(query_package->getPath(i), query_package->getFragmentLabels(i));
 				// iterate over einsum results and populate json response
 				for (const EinsumEntry_t &result : results) {
 					json_response.add(result);
