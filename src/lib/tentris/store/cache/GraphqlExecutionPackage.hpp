@@ -24,6 +24,8 @@ namespace tentris::store::cache {
      */
 	struct GraphqlExecutionPackage {
 
+	private:
+
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
 		using Subscript = ::tentris::tensor::Subscript;
@@ -55,17 +57,16 @@ namespace tentris::store::cache {
             using namespace logging;
             logDebug(fmt::format("Parsing document {}", document));
             auto parsed_graphql = Dice::graphql_parser::GraphQLParser::parseQuery(document, query_name);
+			all_paths = std::move(parsed_graphql->all_paths);
+            all_fragment_labels = std::move(parsed_graphql->all_fragment_labels);
             auto &triple_store = AtomicTripleStore::getInstance();
 			auto &schema = AtomicGraphqlSchema::getInstance();
-            logDebug(fmt::format("Iterating over Einstein Summations"));
-            // one einsum for each root field of the query
+            logDebug(fmt::format("Preparing Subscripts"));
+            // one subscript for each root field of the query
 			for(auto i : iter::range(parsed_graphql->all_operands_labels.size())) {
 				std::vector<std::vector<Subscript::Label>> operands_labels{};
 				std::vector<Subscript::Label> result_labels = parsed_graphql->all_result_labels[i];
-				all_paths.push_back(parsed_graphql->all_paths[i]);
-				all_fragment_labels.push_back(parsed_graphql->all_fragment_labels[i]);
 				std::vector<const_BoolHypertrie> operands{};
-				logDebug(fmt::format("Slicing TPs"));
 				uint32_t field_arg_pos = 0;
 				uint32_t field_pos = 0;
 				// stack that keeps track of the  parent types

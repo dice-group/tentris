@@ -52,10 +52,10 @@ namespace tentris::http::graphql_endpoint {
             try {
                 const auto query_params = restinio::parse_query<restinio::parse_query_traits::javascript_compatible>(
                         req->header().query());
+                // check if there is actually an query
                 if (query_params.has("query")) {
                     query_string = std::string(query_params["query"]);
                     log("query: {}"_format(query_string));
-                    // check if there is actually an query
                     try {
                         query_package = AtomicQueryExecutionCache::getInstance()[query_string];
                     } catch (const std::invalid_argument &exc) {
