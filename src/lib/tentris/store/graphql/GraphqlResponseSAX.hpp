@@ -22,21 +22,29 @@ namespace tentris::store::graphql {
         using Label = ::tentris::tensor::Subscript::Label;
         using key_part_type = ::tentris::tensor::key_part_type;
 
+		struct ErrorMessage {
+			std::string message{};
+			std::vector<std::variant<std::string, std::uint32_t>> path{};
+		};
+
         size_t buffer_size;
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer;
 
         boost::container::flat_map<Label, std::string> label_to_field{};
         boost::container::flat_map<Label, bool> label_is_list{};
+        boost::container::flat_map<Label, bool> label_is_non_null{};
         boost::container::flat_map<Label, Label> label_last_child{}; // for each label stores its last child
         boost::container::flat_map<Label, Label> label_last_neighbor{}; // for each label stores the last label in the same level
         boost::container::flat_map<Label, bool> resolved{};
         boost::container::flat_map<Label, Label> label_parent{};
+		boost::container::flat_map<Label, std::uint32_t> array_counters{};
         std::set<Label> end_labels{};
         std::vector<std::vector<Label>> labels_in_entry{};
 		std::vector<std::size_t> leaf_positions{};
         std::unique_ptr<Entry> last_entry = nullptr;
 		std::set<Label> fragment_labels{};
+		std::vector<ErrorMessage> errors{};
 
         bool has_data = false;
 
@@ -68,7 +76,7 @@ namespace tentris::store::graphql {
                     auto resolved_iter = resolved.find(updated_label);
                     resolved_iter++;
                     for (; resolved_iter != resolved.end(); resolved_iter++)
-                        resolved_iter->second = false;
+						resolved_iter->second = false;
                 }
             }
             bool empty_entry = true;
@@ -111,6 +119,7 @@ namespace tentris::store::graphql {
                     if (not label_to_field.contains(label)) {
                         label_to_field[label] = field_name;
                         label_is_list[label] = AtomicGraphqlSchema::getInstance().fieldIsList(field_name, parent_type);
+                        label_is_non_null[label] = AtomicGraphqlSchema::getInstance().fieldIsNonNull(field_name, parent_type);
                         // set dependencies - if a label has already a dependency push it to the next label
                         if (parent_label) {
                             if (label_last_child.contains(parent_label)) {
@@ -156,6 +165,26 @@ namespace tentris::store::graphql {
 
         // closes data object and writes errors if there are any
         void close() {
+			if (not errors.empty()) {
+				writer.Key("errors");
+				writer.StartArray();
+				for (const auto &error : errors) {
+					writer.StartObject();
+					writer.Key("message");
+					writer.String(error.message);
+					writer.Key("path");
+					writer.StartArray();
+					for (const auto &part : error.path) {
+						if (std::holds_alternative<std::string>(part))
+							writer.String(std::get<0>(part));
+						else
+							writer.Int(std::get<1>(part));
+					}
+					writer.EndArray();
+					writer.EndObject();
+				}
+				writer.EndArray();
+            }
             writer.EndObject();
         }
 
@@ -209,8 +238,11 @@ namespace tentris::store::graphql {
 						writer.StartArray();
 						writer.EndArray();
 					}
-					else// todo: nullability check
+					else {
+						if (label_is_non_null[label])
+							non_null_error(label);
 						writer.Null();
+					}
 				}
             }
             // if it the last inner field of a parent field, close the object of the parent field
@@ -227,6 +259,8 @@ namespace tentris::store::graphql {
 				// create object for parent if it is not resolved
 				if (not resolved[label_parent[label]])
 					open_field(label_parent[label]);
+				else
+					array_counters[label_parent[label]]++;
 				// start parent object
                 writer.StartObject();
 			}
@@ -234,8 +268,10 @@ namespace tentris::store::graphql {
                 close_field(label_last_neighbor[label]);
             resolved[label] = true;
             writer.Key(label_to_field[label]);
-            if(label_is_list[label])
-                writer.StartArray();
+            if(label_is_list[label]) {
+				writer.StartArray();
+				array_counters[label] = 0;
+			}
         }
 
         void write_leaf(Label leaf_label, key_part_type key_part) {
@@ -254,6 +290,35 @@ namespace tentris::store::graphql {
         [[nodiscard]] bool is_leaf(Label label) {
             return (not label_last_child.contains(label));
         }
+
+		inline void non_null_error(Label label) {
+            ErrorMessage error{};
+            error.message = fmt::format("Null value in non-nullable field: {}", label_to_field[label]);
+            error.path.emplace_back(label_to_field[label]);
+            if (array_counters.contains(label))
+                error.path.emplace_back(array_counters[label]);
+            auto parent_label = get_parent_label(label);
+            while (parent_label) {
+                error.path.insert(error.path.begin(), label_to_field[parent_label]);
+                if (array_counters.contains(parent_label))
+                    error.path.insert(error.path.begin()+1, array_counters[parent_label]);
+                parent_label = get_parent_label(parent_label);
+            }
+            errors.push_back(std::move(error));
+		}
+
+		[[nodiscard]] inline Label get_parent_label(Label label) {
+			if (label_parent.contains(label))
+				return label_parent[label];
+			else if(label_last_neighbor.contains(label)) {
+				auto neighbor = label_last_neighbor[label];
+				while (not label_parent.contains(neighbor))
+					neighbor = label_last_neighbor[neighbor];
+				return label_parent[neighbor];
+			}
+			else
+			    return 0;
+		}
 
     };
 
