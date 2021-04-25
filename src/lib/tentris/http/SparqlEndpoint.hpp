@@ -190,6 +190,7 @@ namespace tentris::http {
 					resp.append_header(restinio::http_field::content_type, "application/sparql-results+json");
 
 					SparqlJsonResultSAXWriter<RESULT_TYPE> json_result(vars, 1'000UL);
+					json_result.close();
 					resp.set_body(std::string{json_result.string_view()});
 					resp.done();
 					return Status::OK;
