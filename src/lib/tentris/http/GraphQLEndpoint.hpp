@@ -12,15 +12,15 @@
 #include <restinio/all.hpp>
 
 #include "tentris/http/QueryResultState.hpp"
-#include "tentris/store/graphql/GraphqlResponseSAX.hpp"
 #include "tentris/store/AtomicQueryExecutionPackageCache.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
+#include "tentris/store/graphql/GraphQLResponseSAX.hpp"
 #include "tentris/util/LogHelper.hpp"
 
 namespace tentris::http::graphql_endpoint {
 
     using AtomicTripleStoreConfig = ::tentris::store::config::AtomicTripleStoreConfig;
-    using AtomicQueryExecutionCache = ::tentris::store::AtomicGraphqlExecutionCache;
+    using AtomicQueryExecutionCache = ::tentris::store::AtomicGraphQLExecutionCache;
     using QueryExecutionPackage = ::tentris::store::cache::GraphqlExecutionPackage;
     using Status = ResultState;
 
@@ -32,7 +32,7 @@ namespace tentris::http::graphql_endpoint {
     using namespace std::string_literals;
     using namespace ::std::chrono;
 
-    struct GraphqlEndpoint {
+    struct GraphQLEndpoint {
 		using Einsum_t = Einsum<COUNTED_t>;
 		using EinsumEntry_t = EinsumEntry<COUNTED_t>;
         constexpr static size_t chunk_size = 100'000'000UL;
@@ -129,7 +129,7 @@ namespace tentris::http::graphql_endpoint {
                 return Status::PROCESSING_TIMEOUT;
             }
             // create HTTP response object
-            GraphqlResponseSAX json_response{chunk_size};
+			GraphQLResponseSAX json_response{chunk_size};
             auto resp = req->create_response<restinio::chunked_output_t>();
             resp.append_header(restinio::http_field::content_type, "application/json");
             auto timout_check = 0;
