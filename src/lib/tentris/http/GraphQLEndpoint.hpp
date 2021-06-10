@@ -21,7 +21,7 @@ namespace tentris::http::graphql_endpoint {
 
     using AtomicTripleStoreConfig = ::tentris::store::config::AtomicTripleStoreConfig;
     using AtomicQueryExecutionCache = ::tentris::store::AtomicGraphQLExecutionCache;
-    using QueryExecutionPackage = ::tentris::store::cache::GraphqlExecutionPackage;
+    using QueryExecutionPackage = ::tentris::store::cache::GraphQLExecutionPackage;
     using Status = ResultState;
 
     using namespace ::tentris::logging;

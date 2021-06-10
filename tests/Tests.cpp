@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "TestGraphqlExecutionPackage.cpp"
-#include "TestGraphqlResponse.cpp"
+//#include "TestGraphqlExecutionPackage.cpp"
+#include "TestGraphQLSchema.cpp"
 //#include "TestSPARQLParser.cpp"
 //#include "TestTermStore.cpp"
 

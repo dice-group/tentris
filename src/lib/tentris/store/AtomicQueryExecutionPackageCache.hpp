@@ -15,10 +15,10 @@ namespace tentris::util::sync {
 	}
 
     template<>
-    inline ::tentris::store::cache::GraphqlExecutionPackage_cache *
-    SingletonFactory<::tentris::store::cache::GraphqlExecutionPackage_cache>::make_instance() {
+    inline ::tentris::store::cache::GraphQLExecutionPackage_cache *
+    SingletonFactory<::tentris::store::cache::GraphQLExecutionPackage_cache>::make_instance() {
         const auto &config = ::tentris::store::config::AtomicTripleStoreConfig::getInstance();
-        return new ::tentris::store::cache::GraphqlExecutionPackage_cache{config.cache_size};
+        return new ::tentris::store::cache::GraphQLExecutionPackage_cache{config.cache_size};
     }
 };
 
@@ -28,6 +28,6 @@ namespace tentris::store {
 	 * A SingletonFactory that allows to share a single TripleStore instance between multiple threads.
 	 */
 	using AtomicSPARQLExecutionCache = ::tentris::util::sync::SingletonFactory<::tentris::store::cache::SPARQLExecutionPackage_cache>;
-    using AtomicGraphqlExecutionCache = ::tentris::util::sync::SingletonFactory<::tentris::store::cache::GraphqlExecutionPackage_cache>;
+    using AtomicGraphQLExecutionCache = ::tentris::util::sync::SingletonFactory<::tentris::store::cache::GraphQLExecutionPackage_cache>;
 };
 #endif //TENTRIS_ATOMIC_QUERY_EXECUTION_CACHE_STORE

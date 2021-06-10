@@ -1,17 +1,17 @@
-#include <filesystem>
 #include <csignal>
+#include <filesystem>
 
 #include "config/ServerConfig.hpp"
 #include <restinio/all.hpp>
-#include <tentris/http/GraphqlEndpoint.hpp>
+#include <tentris/http/GraphQLEndpoint.hpp>
 #include <tentris/http/SPARQLEndpoint.hpp>
 #include <tentris/store/AtomicGraphqlSchema.hpp>
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/TripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
+#include <tentris/store/graphql/GraphQLParser.hpp>
 
 #include <fmt/format.h>
-
 
 
 void bulkload(const std::string &triple_file, size_t bulksize) {
@@ -36,15 +36,14 @@ void bulkload(const std::string &triple_file, size_t bulksize) {
 	log_duration(loading_start_time, loading_end_time);
 }
 
-struct tentris_restinio_traits : public	restinio::traits_t<
-		restinio::null_timer_manager_t,
+struct tentris_restinio_traits : public restinio::traits_t<
+										 restinio::null_timer_manager_t,
 #ifdef DEBUG
-		restinio::shared_ostream_logger_t,
+										 restinio::shared_ostream_logger_t,
 #else
-		restinio::null_logger_t,
+										 restinio::null_logger_t,
 #endif
-		restinio::router::express_router_t<>
->{
+										 restinio::router::express_router_t<>> {
 	static constexpr bool use_connection_count_limiter = true;
 };
 
@@ -72,13 +71,14 @@ int main(int argc, char *argv[]) {
 		log("No file loaded.");
 	}
 	// parse graphql schema if provided
-    if (not cfg.graphql_schema.empty()) {
+	if (not cfg.graphql_schema.empty()) {
 		// save contents of the document to a string
 		std::ifstream schema_file;
 		schema_file.open(cfg.graphql_schema);
 		std::stringstream schema_str_stream;
 		schema_str_stream << schema_file.rdbuf();
-        ::tentris::store::AtomicGraphqlSchema::getInstance().load(schema_str_stream.str());
+		tentris::store::graphql::GraphQLParser::parseSchema(schema_str_stream.str(),
+															::tentris::store::AtomicGraphqlSchema::getInstance());
 	}
 
 	// create endpoint
@@ -90,9 +90,9 @@ int main(int argc, char *argv[]) {
 	router->http_get(
 			R"(/stream)",
 			tentris::http::sparql_endpoint::SparqlEndpoint<restinio::chunked_output_t>{});
-    router->http_get(
-            R"(/graphql)",
-            tentris::http::graphql_endpoint::GraphqlEndpoint{});
+	router->http_get(
+			R"(/graphql)",
+			tentris::http::graphql_endpoint::GraphQLEndpoint{});
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
 
 	restinio::run(
 			restinio::on_thread_pool<tentris_restinio_traits>(cfg.threads)
-          .max_parallel_connections(cfg.threads)
+					.max_parallel_connections(cfg.threads)
 					.address("0.0.0.0")
 					.port(cfg.port)
 					.request_handler(std::move(router))
