@@ -3,7 +3,7 @@ boost/1.75.0
 fmt/7.1.3
 restinio/0.6.12
 hypertrie/left-join@dice-group/testing
-graphql-parser/0.1.0@dice-group/rc1
+graphql-parser-base/0.1.0@dice-group/rc1
 rdf-parser/0.13.0@dice-group/stable
 sparql-parser-base/0.2.2@dice-group/stable
 

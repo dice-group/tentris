@@ -80,7 +80,7 @@ find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
 find_package(sparql-parser-base REQUIRED)
-find_package(graphql-parser REQUIRED)
+find_package(graphql-parser-base REQUIRED)
 find_package(rdf-parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
@@ -111,7 +111,6 @@ target_link_libraries(tentris
         stdc++fs # for #include <filesystem>
         cxxopts
         rapidjson
-        graphql-parser::graphql-parser
         graphql-parser-base::graphql-parser-base
         sparql-parser-base::sparql-parser-base
         tsl::hopscotch_map

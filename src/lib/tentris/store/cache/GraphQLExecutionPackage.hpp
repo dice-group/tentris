@@ -6,10 +6,9 @@
 #include <exception>
 #include <ostream>
 
-#include <Dice/graphql-parser/GraphQLParser.hpp>
-
 #include "tentris/store/AtomicGraphqlSchema.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
+#include "tentris/store/graphql/GraphQLParser.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store {
@@ -53,7 +52,7 @@ namespace tentris::store::cache {
 										 const std::string &query_name = "") : query_name(query_name) {
 			using namespace logging;
 			logDebug(fmt::format("Parsing document {}", document));
-			auto parsed_graphql = Dice::graphql_parser::GraphQLParser::parseQuery(document, query_name);
+			auto parsed_graphql = graphql::GraphQLParser::parseQuery(document, query_name);
 			all_paths = std::move(parsed_graphql->all_paths);
 			all_fragment_labels = std::move(parsed_graphql->all_fragment_labels);
 			auto &triple_store = AtomicTripleStore::getInstance();

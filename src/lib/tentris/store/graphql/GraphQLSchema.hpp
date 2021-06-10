@@ -1,8 +1,6 @@
 #ifndef TENTRIS_GRAPHQLSCHEMA_HPP
 #define TENTRIS_GRAPHQLSCHEMA_HPP
 
-#include <Dice/graphql-parser/GraphQLParser.hpp>
-
 #include "tentris/store/graphql/exception/SchemaException.hpp"
 #include "tentris/store/graphql/internal/GraphQLDataStructures.hpp"
 
