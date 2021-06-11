@@ -13,9 +13,8 @@ namespace tentris::store::graphql {
 	public:
 		static void parseSchema(const std::string &document, GraphQLSchema &schema);
 
-		static std::shared_ptr<QueryVisitor::ParsedGraphQL> parseQuery(const std::string &document,
-																	   const std::string &query_name);
-
+		static std::shared_ptr<GraphQLQueryVisitor::ParsedGraphQL> parseQuery(const std::string &document,
+																			  const std::string &query_name);
 	};
 }// namespace tentris::store::graphql
 
