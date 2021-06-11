@@ -19,11 +19,19 @@ target_link_libraries(tests
         GTest::Main
         tentris
         )
+add_executable(tests_graphql TestGraphQL.cpp)
+target_link_libraries(tests_graphql
+        GTest::GTest
+        GTest::Main
+        tentris
+        )
 
 set_property(TARGET tests PROPERTY CXX_STANDARD 20)
+set_property(TARGET tests_graphql PROPERTY CXX_STANDARD 20)
 
 # detect the tests
 gtest_discover_tests(tests)
+gtest_discover_tests(tests_graphql)
 
 # copy files for testing to the binary folder
 file(COPY queries DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

@@ -1,8 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "TestSPARQLParser.cpp"
-#include "TestTermStore.cpp"
-
+//#include "TestGraphqlExecutionPackage.cpp"
+#include "graphql/TestGraphQLSchema.cpp"
 
 int main(int argc, char **argv) {
 	testing::InitGoogleTest(&argc, argv);
