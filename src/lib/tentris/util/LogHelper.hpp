@@ -61,7 +61,7 @@ namespace tentris::logging {
 		}
 	}
 
-	void init_logging(bool logstdout, bool logfile, std::string logfiledir,
+	inline void init_logging(bool logstdout, bool logfile, std::string logfiledir,
 					  boost::log::trivial::severity_level severity = boost::log::trivial::info) {
 		namespace logging = boost::log;
 		namespace src = boost::log::sources;

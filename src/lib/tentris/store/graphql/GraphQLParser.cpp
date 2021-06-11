@@ -13,8 +13,8 @@ namespace tentris::store::graphql {
 		schema_visitor.visitDocument(root);
 	}
 
-	std::shared_ptr<GraphQLQueryVisitor::ParsedGraphQL> GraphQLParser::parseQuery(const std::string &document,
-																				  const std::string &query_name = "") {
+	std::shared_ptr<ParsedGraphQL> GraphQLParser::parseQuery(const std::string &document,
+															 const std::string &query_name = "") {
 		antlr4::ANTLRInputStream input(document);
 		Dice::graphql_parser::base::GraphQLLexer lexer(&input);
 		antlr4::CommonTokenStream tokens(&lexer);
@@ -45,8 +45,10 @@ namespace tentris::store::graphql {
 				}
 			}
 		}
-		GraphQLQueryVisitor query_visitor{};
-		return query_visitor.visitOperationDefinition(query).as<std::shared_ptr<GraphQLQueryVisitor::ParsedGraphQL>>();
+        auto parsed_query = std::make_shared<ParsedGraphQL>();
+        GraphQLQueryVisitor query_visitor{parsed_query};
+		query_visitor.visitOperationDefinition(query);
+		return parsed_query;
 	}
 
 

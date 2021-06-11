@@ -1,7 +1,6 @@
 #ifndef TENTRIS_STORE_TRIPLESTORE
 #define TENTRIS_STORE_TRIPLESTORE
 
-
 #include <string>
 #include <optional>
 #include <vector>
@@ -146,7 +145,7 @@ namespace tentris::store {
 		const_BoolHypertrie resolveGQLArgumentID(const std::string &id, const const_BoolHypertrie &field_operand) {
             using namespace ::tentris::tensor;
 			// create uri from id -- remove quotation marks
-            auto term = URIRef(id.substr(1, id.size()-2));
+            auto term = URIRef(id);
             try {
                 SliceKey slice_key{termIndex.get(term)};
                 if(std::get<bool>(field_operand[slice_key])) {
@@ -163,14 +162,15 @@ namespace tentris::store {
             }
 		}
 
-        const_BoolHypertrie resolveGQLArgument(const std::string &argument, const std::string &type, std::any value) {
+        const_BoolHypertrie resolveGQLArgument(const std::string &argument,
+											   const std::string &type,
+                                               const std::string &value) {
             using namespace ::tentris::tensor;
             auto argument_uri = URIRef(argument);
             try {
                 SliceKey slice_key{std::nullopt, termIndex.get(argument_uri), std::nullopt};
 				if(type == "String") {
-					auto value_str = std::any_cast<std::string>(value);
-					auto value_literal = Literal(value_str.substr(1, value_str.size()-2), std::nullopt, std::nullopt);
+					auto value_literal = Literal(value, std::nullopt, std::nullopt);
 					slice_key[2] = termIndex.get(value_literal);
 				}
                 return std::get<const_BoolHypertrie>(trie[slice_key]);

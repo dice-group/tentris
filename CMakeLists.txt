@@ -128,6 +128,15 @@ target_include_directories(tentris INTERFACE
         ${Boost_INCLUDE_DIRS}
         )
 
+target_sources(tentris INTERFACE
+        src/lib/tentris/store/cache/GraphQLExecutionPackage.cpp
+        src/lib/tentris/store/graphql/GraphQLParser.cpp
+        src/lib/tentris/store/graphql/GraphQLResponseSAX.cpp
+        src/lib/tentris/store/graphql/GraphQLSchema.cpp
+        src/lib/tentris/store/graphql/internal/GraphQLQueryVisitor.cpp
+        src/lib/tentris/store/graphql/internal/GraphQLSchemaVisitor.cpp
+        )
+
 # for rt and pthread linkage see:
 # * https://stackoverflow.com/questions/58848694/gcc-whole-archive-recipe-for-static-linking-to-pthread-stopped-working-in-rec
 # * https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why
