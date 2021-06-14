@@ -87,7 +87,8 @@ namespace tentris::store::graphql {
 						labels_in_entry.emplace_back(std::vector<Label>{label});
 						pos++;
 					}
-					end_labels.insert(label);
+					if(not AtomicGraphqlSchema::getInstance().isRootField(field_name))
+					    end_labels.insert(label);
 					resolved[label] = false;
 				}
 				parent_type = AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type);
@@ -103,10 +104,14 @@ namespace tentris::store::graphql {
 		label_last_neighbor.clear();
 		label_last_child.clear();
 		fragment_labels.clear();
+		resolved.clear();
+		last_entry = nullptr;
 	}
 
 	// closes data object and writes errors if there are any
 	void GraphQLResponseSAX::close() {
+		// close data object
+		writer.EndObject();
 		if (not errors.empty()) {
 			writer.Key("errors");
 			writer.StartArray();

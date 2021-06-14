@@ -57,6 +57,8 @@ namespace tentris::store::graphql {
 
 		[[nodiscard]] const std::string &getObjectUri(const std::string &type_name) const;
 
+		[[nodiscard]] bool isRootField(const std::string &field_name) const;
+
 		[[nodiscard]] bool fieldIsList(const std::string &field_name,
 									   const std::string &parent_type = "") const;
 

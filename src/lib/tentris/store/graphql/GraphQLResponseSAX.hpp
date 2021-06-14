@@ -66,15 +66,15 @@ namespace tentris::store::graphql {
 		// closes data object and writes errors if there are any
 		void close();
 
-		[[nodiscard]] bool full() const {
+		[[nodiscard]] inline bool full() const {
 			return buffer.GetSize() > this->buffer_size;
 		};
 
-		void clear() {
+		inline void clear() {
 			this->buffer.Clear();
 		}
 
-		std::string_view string_view() {
+		inline std::string_view string_view() {
 			writer.Flush();
 			return std::string_view(buffer.GetString(), buffer.GetSize());
 		}
