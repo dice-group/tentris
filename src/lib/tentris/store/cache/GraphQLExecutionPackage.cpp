@@ -1,11 +1,10 @@
 #include "GraphQLExecutionPackage.hpp"
 
 namespace tentris::store::cache {
-	GraphQLExecutionPackage::GraphQLExecutionPackage(const std::string &document,
-													 const std::string &query_name) : query_name(query_name) {
+	GraphQLExecutionPackage::GraphQLExecutionPackage(const std::pair<std::string, std::string> &request) {
 		using namespace logging;
-		logDebug(fmt::format("Parsing document {}", document));
-		auto parsed_graphql = graphql::GraphQLParser::parseQuery(document, query_name);
+		logDebug(fmt::format("Parsing document {}", std::get<0>(request)));
+		auto parsed_graphql = graphql::GraphQLParser::parseQuery(std::get<0>(request), std::get<1>(request));
 		auto &triple_store = AtomicTripleStore::getInstance();
 		auto &schema = AtomicGraphqlSchema::getInstance();
 		logDebug(fmt::format("Preparing Subscripts"));

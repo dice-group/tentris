@@ -48,16 +48,21 @@ namespace tentris::http::graphql_endpoint {
             Status status = Status::OK;
             std::string error_message{};
             std::shared_ptr<QueryExecutionPackage> query_package;
-            std::string query_string{};
+            std::string request_str{};
+            std::string op_name{};
             try {
                 const auto query_params = restinio::parse_query<restinio::parse_query_traits::javascript_compatible>(
                         req->header().query());
                 // check if there is actually an query
                 if (query_params.has("query")) {
-                    query_string = std::string(query_params["query"]);
-                    log("query: {}"_format(query_string));
+					request_str = std::string(query_params["query"]);
+					if (query_params.has("operation"))
+						op_name = std::string(query_params["operation"]);
+                    log("request: {}"_format(request_str));
+					if (not op_name.empty())
+                        log("operation: {}"_format(op_name));
                     try {
-                        query_package = AtomicQueryExecutionCache::getInstance()[query_string];
+                        query_package = AtomicQueryExecutionCache::getInstance()[std::make_pair(request_str, op_name)];
                     } catch (const std::invalid_argument &exc) {
                         status = Status::UNPARSABLE;
                         error_message = exc.what();
@@ -82,7 +87,7 @@ namespace tentris::http::graphql_endpoint {
 				case OK:
 					break;
                 case UNPARSABLE:
-                    logError(" ## unparsable query \n query_string: {}"_format(query_string));
+                    logError(" ## unparsable query \n query_string: {}"_format(request_str));
                     break;
                 case UNKNOWN_REQUEST:
                     logError("unknown HTTP command. Only HTTP GET and POST are supported.");

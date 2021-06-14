@@ -35,18 +35,26 @@ namespace tentris::store::graphql {
 			query = root->definition()[0]->executableDefinition()->operationDefinition();
 		} else {
 			// make sure that the are no type definitions and no type system extensions in the document
+			// and that all operations have been assgined a name
+			std::set<std::string> operation_names{};
 			for (const auto &definition : root->definition()) {
 				if (definition->typeSystemDefinition() or definition->typeSystemExtension())
 					throw std::runtime_error("Executable request contains type system definition");
-				if (definition->executableDefinition()->operationDefinition()->name()->getText() == query_name) {
+				if (not definition->executableDefinition()->operationDefinition()->name())
+					throw std::runtime_error("Request contains operation without a name");
+				auto op_name = definition->executableDefinition()->operationDefinition()->name()->getText();
+				if (operation_names.contains(op_name))
+					throw std::runtime_error(fmt::format("Duplicate operation name `{}`", op_name));
+				operation_names.insert(op_name);
+				if (op_name == query_name) {
 					if (definition->executableDefinition()->operationDefinition()->operationType()->getText() != "query")
 						throw std::runtime_error("Only queries are currently supported");
 					query = definition->executableDefinition()->operationDefinition();
 				}
 			}
 		}
-        auto parsed_query = std::make_shared<ParsedGraphQL>();
-        GraphQLQueryVisitor query_visitor{parsed_query};
+		auto parsed_query = std::make_shared<ParsedGraphQL>();
+		GraphQLQueryVisitor query_visitor{parsed_query};
 		query_visitor.visitOperationDefinition(query);
 		return parsed_query;
 	}

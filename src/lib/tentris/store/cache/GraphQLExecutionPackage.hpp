@@ -45,10 +45,9 @@ namespace tentris::store::cache {
 		GraphQLExecutionPackage() = delete;
 
 		/**
-         * @param graphql_string graphql query to be parsed
+         * @param request a graphql request consting of the request document and the operation name to be executed
          */
-		explicit GraphQLExecutionPackage(const std::string &document,
-										 const std::string &query_name = "");
+		explicit GraphQLExecutionPackage(const std::pair<std::string, std::string> &request);
 
 	public:
 		[[nodiscard]] std::vector<std::shared_ptr<Einsum>> generateEinsums(const time_point_t &timeout) {
