@@ -88,7 +88,8 @@ namespace tentris::store::graphql {
 						labels_in_entry.emplace_back(std::vector<Label>{label});
 						pos++;
 					}
-					if (not AtomicGraphqlSchema::getInstance().isRootField(field_name))
+					// do not add the label of the root field to the end labels
+					if (not parent_type.empty())
 						end_labels.insert(label);
 					resolved[label] = false;
 				}

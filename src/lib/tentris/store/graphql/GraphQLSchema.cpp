@@ -48,10 +48,6 @@ namespace tentris::store::graphql {
 		}
 	}
 
-    [[nodiscard]] bool GraphQLSchema::isRootField(const std::string &field_name) const {
-		return object_type_defs.at(query_type_name).fields_data.contains(field_name);
-	}
-
 	[[nodiscard]] bool GraphQLSchema::fieldIsList(const std::string &field_name,
 												  const std::string &parent_type) const {
 		if (parent_type.empty())

@@ -41,6 +41,10 @@ namespace tentris::store::graphql {
 
 		// getters
 
+        [[nodiscard]] inline const std::string &getQueryType() {
+            return query_type_name;
+        }
+
 		[[nodiscard]] inline const ObjectTypeDefinitions &getObjectTypeDefinitions() {
 			return object_type_defs;
 		}
@@ -56,8 +60,6 @@ namespace tentris::store::graphql {
 													  const std::string &parent_type = "") const;
 
 		[[nodiscard]] const std::string &getObjectUri(const std::string &type_name) const;
-
-		[[nodiscard]] bool isRootField(const std::string &field_name) const;
 
 		[[nodiscard]] bool fieldIsList(const std::string &field_name,
 									   const std::string &parent_type = "") const;
