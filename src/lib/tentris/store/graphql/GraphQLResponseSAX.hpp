@@ -24,7 +24,7 @@ namespace tentris::store::graphql {
 
 		struct ErrorMessage {
 			std::string message{};
-			std::vector<std::variant<std::string, std::size_t>> path{};
+			std::vector<std::variant<std::string, uint32_t>> path{};
 		};
 
 		size_t buffer_size;

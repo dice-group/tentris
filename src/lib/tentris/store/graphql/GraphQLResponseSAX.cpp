@@ -127,7 +127,7 @@ namespace tentris::store::graphql {
 					if (std::holds_alternative<std::string>(part))
 						writer.String(std::get<0>(part));
 					else
-						writer.Int(std::get<1>(part));
+						writer.Uint(std::get<1>(part));
 				}
 				writer.EndArray();
 				writer.EndObject();
