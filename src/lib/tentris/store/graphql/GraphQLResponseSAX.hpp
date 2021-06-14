@@ -32,6 +32,7 @@ namespace tentris::store::graphql {
 		rapidjson::Writer<rapidjson::StringBuffer> writer;
 
 		boost::container::flat_map<Label, std::string> label_to_field{};
+		boost::container::flat_map<Label, std::string> leaf_label_type{};
 		boost::container::flat_map<Label, bool> label_is_list{};
 		boost::container::flat_map<Label, bool> label_is_non_null{};
 		boost::container::flat_map<Label, Label> label_last_child{};   // for each label stores its last child

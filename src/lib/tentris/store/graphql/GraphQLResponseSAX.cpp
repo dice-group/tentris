@@ -75,7 +75,8 @@ namespace tentris::store::graphql {
 						label_last_child[parent_label] = label;
 					}
 					if (AtomicGraphqlSchema::getInstance().fieldIsScalar(field_name, parent_type)) {
-						if (AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type) == "ID") {
+						leaf_label_type[label] = AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type);
+						if (leaf_label_type[label] == "ID") {
 							labels_in_entry.back().push_back(label);
 							leaf_positions.push_back(pos - 1);
 						} else {
@@ -87,8 +88,8 @@ namespace tentris::store::graphql {
 						labels_in_entry.emplace_back(std::vector<Label>{label});
 						pos++;
 					}
-					if(not AtomicGraphqlSchema::getInstance().isRootField(field_name))
-					    end_labels.insert(label);
+					if (not AtomicGraphqlSchema::getInstance().isRootField(field_name))
+						end_labels.insert(label);
 					resolved[label] = false;
 				}
 				parent_type = AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type);
@@ -204,7 +205,14 @@ namespace tentris::store::graphql {
 		}
 		open_field(leaf_label);
 		// todo: add cases for other scalars -- need to keep track of label type in the graphql schema
-		writer.String(key_part->value().data(), key_part->value().size());
+		if (leaf_label_type[leaf_label] == "String" or leaf_label_type[leaf_label] == "ID")
+			writer.String(key_part->value().data(), key_part->value().size());
+		else if (leaf_label_type[leaf_label] == "Int")
+			writer.Int(std::stoi(key_part->value().data()));
+		else if (leaf_label_type[leaf_label] == "Float")
+			writer.Double(std::stof(key_part->value().data()));
+		else if (leaf_label_type[leaf_label] == "Boolean")
+			writer.Bool(strncmp(key_part->value().data(), "true", key_part->value().size()) == 0);
 	}
 
 }// namespace tentris::store::graphql
