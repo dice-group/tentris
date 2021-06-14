@@ -17,7 +17,7 @@ namespace tentris::store::graphql::internal {
 				parsed_query->push_back(std::move(sub_query));
 			} else {
 				sub_query.operands_labels.emplace_back(OperandLabels{field_label});
-                parsed_query->push_back(std::move(sub_query));
+				parsed_query->push_back(std::move(sub_query));
 				// parse arguments of root field
 				if (root_field->field()->arguments())
 					visitArguments(root_field->field()->arguments());
@@ -37,10 +37,36 @@ namespace tentris::store::graphql::internal {
 
 	antlrcpp::Any
 	GraphQLQueryVisitor::visitSelectionSet(base::GraphQLParser::SelectionSetContext *ctx) {
+		std::map<std::string, base::GraphQLParser::FieldContext *> field_selections{};
+		std::map<std::string, base::GraphQLParser::InlineFragmentContext *> inline_fragment_selections{};
+		// collect fields
 		for (const auto &selection : ctx->selection()) {
-			if (selection->field())
-				visitField(selection->field());
-			else if (selection->inlineFragment())
+			if (selection->field()) {
+				auto field_name = selection->field()->name()->getText();
+				if (not field_selections.contains(field_name))
+					field_selections[field_name] = selection->field();
+				else if (selection->field()->selectionSet())
+					for (auto &sel : selection->field()->selectionSet()->selection())
+						field_selections[field_name]->selectionSet()->addChild(sel);
+			} else if (selection->inlineFragment()) {
+			    auto type_name = selection->inlineFragment()->typeCondition()->namedType()->name()->getText();
+				if (not inline_fragment_selections.contains(type_name))
+					inline_fragment_selections[type_name] = selection->inlineFragment();
+				else
+                    for (auto &sel : selection->inlineFragment()->selectionSet()->selection())
+                        inline_fragment_selections[type_name]->selectionSet()->addChild(sel);
+			}
+		}
+		for (const auto &selection : ctx->selection()) {
+			if (selection->field()) {
+				auto field_name = selection->field()->name()->getText();
+				if (not field_selections.contains(field_name))
+					continue;
+				if (selection->field()->selectionSet())
+					std::cout << field_selections[field_name]->selectionSet()->selection().size() << std::endl;
+				visitField(field_selections[field_name]);
+				field_selections.erase(field_name);
+			} else if (selection->inlineFragment())
 				visitInlineFragment(selection->inlineFragment());
 		}
 		return nullptr;
