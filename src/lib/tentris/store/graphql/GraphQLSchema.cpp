@@ -114,6 +114,20 @@ namespace tentris::store::graphql {
 		}
 	}
 
+	[[nodiscard]] const std::string &GraphQLSchema::getArguemntType(const std::string &argument_name,
+																	const std::string &field_name,
+																	const std::string &parent_type) const {
+        try {
+            return object_type_defs.at(parent_type).fields_data.at(field_name).arguments.at(argument_name);
+        } catch (std::out_of_range &e) {
+            try {
+                return interface_type_defs.at(parent_type).fields_data.at(field_name).arguments.at(argument_name);
+            } catch (std::out_of_range &e) {
+                throw ArgumentNotFoundException(argument_name, field_name, parent_type);
+            }
+        }
+	}
+
 	[[nodiscard]] bool GraphQLSchema::typeFilter(const std::string &uri,
 												 const std::string &type,
 												 bool inverse) const {
@@ -129,6 +143,13 @@ namespace tentris::store::graphql {
 			}
 		}
 		return false;
+	}
+
+	[[nodiscard]] bool GraphQLSchema::implementsInterface(const std::string &object_type,
+														  const std::string &parent_type) const {
+		if (object_type == parent_type)
+			return true;
+		return object_type_defs.at(object_type).implementations.contains(parent_type);
 	}
 
 }// namespace tentris::store::graphql

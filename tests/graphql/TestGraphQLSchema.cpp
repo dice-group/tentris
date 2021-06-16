@@ -92,8 +92,33 @@ TEST(TestGraphQLSchema, InterfaceTypeDefinitions) {
 	assert(schema.getFieldType("name", "Animal") == "String");
 	assert(schema.getFieldType("name", "Dog") == "String");
 	assert(schema.getFieldType("name", "Cat") == "String");
-	assert(schema.getObjectTypeDefinitions().at("Dog").implementations == std::vector<std::string>{"Animal"});
-	assert(schema.getObjectTypeDefinitions().at("Cat").implementations == std::vector<std::string>{"Animal"});
+	assert(schema.getObjectTypeDefinitions().at("Dog").implementations == std::set<std::string>{"Animal"});
+	assert(schema.getObjectTypeDefinitions().at("Cat").implementations == std::set<std::string>{"Animal"});
+}
+
+TEST(TestGraphQLSchema, FieldArguments) {
+	const std::string schema_str = R"(type Query {
+                                       animal: Animal
+								       dog(furColor: String): Dog
+                                       cat(eyeColor: String): Cat
+                                   }
+                                   interface Animal @uri(value: "dummy") {
+                                       name: String
+                                   }
+								   type Dog implements Animal  {
+								      name: String
+                                      furColor: String
+								   }
+                                   type Cat implements Animal @uri(value: "dummy2") {
+								       name: String
+								       eyeColor: String
+								   })";
+	GraphQLSchema schema{};
+	tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
+	assert(schema.getArguemntType("furColor", "dog", "Query") == "String");
+	assert(schema.getArguemntType("eyeColor", "cat", "Query") == "String");
+    ASSERT_THROW(schema.getArguemntType("eyeColor", "dog", "Query"), SchemaException);
+    ASSERT_THROW(schema.getArguemntType("name", "animal", "Query"), SchemaException);
 }
 
 TEST(TestGraphQLSchema, WrappingTypesAndSchemaException) {

@@ -41,15 +41,15 @@ namespace tentris::store::graphql {
 
 		// getters
 
-        [[nodiscard]] inline const std::string &getQueryType() {
-            return query_type_name;
-        }
+		[[nodiscard]] inline const std::string &getQueryType() const {
+			return query_type_name;
+		}
 
-		[[nodiscard]] inline const ObjectTypeDefinitions &getObjectTypeDefinitions() {
+		[[nodiscard]] inline const ObjectTypeDefinitions &getObjectTypeDefinitions() const {
 			return object_type_defs;
 		}
 
-		[[nodiscard]] inline const InterfaceTypeDefinitions &getInterfaceTypeDefinitions() {
+		[[nodiscard]] inline const InterfaceTypeDefinitions &getInterfaceTypeDefinitions() const {
 			return interface_type_defs;
 		}
 
@@ -73,9 +73,16 @@ namespace tentris::store::graphql {
 		[[nodiscard]] bool fieldIsInverse(const std::string &field_name,
 										  const std::string &parent_type = "") const;
 
+		[[nodiscard]] const std::string &getArguemntType(const std::string &argument_name,
+														 const std::string &field_name,
+														 const std::string &parent_type = "") const;
+
 		[[nodiscard]] bool typeFilter(const std::string &uri,
 									  const std::string &type,
 									  bool inverse) const;
+
+		[[nodiscard]] bool implementsInterface(const std::string &object_type,
+											   const std::string &parent_type) const;
 	};
 
 }// namespace tentris::store::graphql
