@@ -9,14 +9,16 @@
 
 namespace tentris::store::graphql::internal {
 
-    using OperandLabels = std::vector<char>;
-    using OperandsLabels = std::vector<OperandLabels>;
-    using ResultsLabels = std::vector<char>;
-    using FieldName = std::string;
-    using Argument = std::pair<FieldName, std::string>;
-    using FieldsNameArguments = std::vector<std::variant<FieldName, Argument>>;
-    using Path = std::vector<std::pair<char, std::string>>;
-    using Paths = std::vector<Path>;
+	using OperandLabels = std::vector<char>;
+	using OperandsLabels = std::vector<OperandLabels>;
+	using ResultsLabels = std::vector<char>;
+	using Feature = std::vector<std::string>;
+	using Features = std::vector<Feature>;
+	using FieldNames = std::map<char, std::string>;
+	using LeafTypes = std::map<char, std::string>;
+	using Path = std::vector<char>;
+	using Paths = std::vector<Path>;
+	using FragmentDependencies = std::map<char, std::pair<char, std::string>>;
 
 	struct FieldData {
 		bool is_list = false;
@@ -25,10 +27,11 @@ namespace tentris::store::graphql::internal {
 		bool is_inverse = false;
 		std::string type_name;
 		std::string uri;
+		std::map<std::string, std::string> arguments{};
 	};
 
 	struct ObjectData {
-		std::vector<std::string> implementations{};
+		std::set<std::string> implementations{};
 		std::string uri;
 		std::map<std::string, FieldData> fields_data{};
 	};
@@ -45,11 +48,19 @@ namespace tentris::store::graphql::internal {
 		// result's subscript
 		ResultsLabels result_labels{};
 		// list of fields names
-		FieldsNameArguments fields_name_arguments{};
-		// list of paths
+		Features features{};
+		// map from label to field names
+		FieldNames field_names{};
+		// inline framgent dependencies
+		FragmentDependencies fragment_dependencies{};
+		// the types of leaf fields
+		LeafTypes leaf_types{};
+		// the paths from the root to the leaves
 		Paths paths{};
-		// the labels that appear in inline fragments
-		std::set<char> fragment_labels{};
+		// stores the labels whose fields are lists
+		std::set<char> list_labels{};
+		// stores the labeles whose fields are non-null
+		std::set<char> non_null_labels{};
 	};
 
 	using ParsedGraphQL = std::vector<ParsedSubGraphQL>;

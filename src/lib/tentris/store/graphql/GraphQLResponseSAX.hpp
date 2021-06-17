@@ -9,14 +9,14 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include "tentris/store/AtomicGraphqlSchema.hpp"
+#include "tentris/store/AtomicTripleStore.hpp"
+#include "tentris/store/graphql/internal/GraphQLDataStructures.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store::graphql {
 
 	class GraphQLResponseSAX {
 
-		using AtomicGraphqlSchema = tentris::store::AtomicGraphqlSchema;
 		using Entry = ::tentris::tensor::EinsumEntry<::tentris::tensor::COUNTED_t>;
 		using Key = typename Entry::Key;
 		using Label = ::tentris::tensor::Subscript::Label;
@@ -31,21 +31,19 @@ namespace tentris::store::graphql {
 		rapidjson::StringBuffer buffer;
 		rapidjson::Writer<rapidjson::StringBuffer> writer;
 
-		boost::container::flat_map<Label, std::string> label_to_field{};
-		boost::container::flat_map<Label, std::string> leaf_label_type{};
-		boost::container::flat_map<Label, bool> label_is_list{};
-		boost::container::flat_map<Label, bool> label_is_non_null{};
-		boost::container::flat_map<Label, Label> label_last_child{};   // for each label stores its last child
-		boost::container::flat_map<Label, Label> label_last_neighbor{};// for each label stores the last label in the same level
-		boost::container::flat_map<Label, bool> resolved{};
-		boost::container::flat_map<Label, Label> label_parent{};
-		boost::container::flat_map<Label, std::uint32_t> array_counters{};
+		std::map<Label, Label> label_last_child{};   // for each label stores its last child
+		std::map<Label, Label> label_last_neighbor{};// for each label stores the last label in the same level
+		std::map<Label, bool> resolved{};
+		std::map<Label, Label> label_parent{};
+		std::map<Label, std::uint32_t> array_counters{};
 		std::set<Label> end_labels{};
-		std::vector<std::vector<Label>> labels_in_entry{};
 		std::vector<std::size_t> leaf_positions{};
+		std::map<Label, std::size_t> label_positions{};
 		std::unique_ptr<Entry> last_entry = nullptr;
-		std::set<Label> fragment_labels{};
+		const Entry *current_entry = nullptr;
 		std::vector<ErrorMessage> errors{};
+
+		const graphql::internal::ParsedSubGraphQL *sub_query = nullptr;
 
 		bool has_data = false;
 
@@ -59,8 +57,7 @@ namespace tentris::store::graphql {
 
 		void add(const Entry &entry);
 
-		void begin_root_field(const std::vector<std::vector<std::pair<char, std::string>>> &paths,
-							  const std::set<char> &frag_labels);
+		void begin_root_field(const graphql::internal::ParsedSubGraphQL *sub_query);
 
 		void end_root_field();
 
@@ -81,7 +78,7 @@ namespace tentris::store::graphql {
 		}
 
 	private:
-        /*
+		/*
          * Closes the object corresponding to the field of the provided label
          * If the field is resolved, it makes sure its children field are closed
          * If the field is not resolved, it it makes sure that the previous fields of the level are closed
@@ -89,7 +86,7 @@ namespace tentris::store::graphql {
          */
 		void close_field(Label label);
 
-        /*
+		/*
         * Opens the object corresponding to the field of the provided label
         * Constructs the object of the parent field, if it is not resolved
         */
@@ -103,13 +100,13 @@ namespace tentris::store::graphql {
 
 		inline void non_null_error(Label label) {
 			ErrorMessage error{};
-			error.message = fmt::format("Null value in non-nullable field: {}", label_to_field[label]);
-			error.path.emplace_back(label_to_field[label]);
+			error.message = fmt::format("Null value in non-nullable field: {}", sub_query->field_names.at(label));
+			error.path.emplace_back(sub_query->field_names.at(label));
 			if (array_counters.contains(label))
 				error.path.emplace_back(array_counters[label]);
 			auto parent_label = get_parent_label(label);
 			while (parent_label) {
-				error.path.insert(error.path.begin(), label_to_field[parent_label]);
+				error.path.insert(error.path.begin(), sub_query->field_names.at(parent_label));
 				if (array_counters.contains(parent_label))
 					error.path.insert(error.path.begin() + 1, array_counters[parent_label]);
 				parent_label = get_parent_label(parent_label);

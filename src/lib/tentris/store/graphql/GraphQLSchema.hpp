@@ -73,7 +73,7 @@ namespace tentris::store::graphql {
 		[[nodiscard]] bool fieldIsInverse(const std::string &field_name,
 										  const std::string &parent_type = "") const;
 
-		[[nodiscard]] const std::string &getArguemntType(const std::string &argument_name,
+		[[nodiscard]] const std::string &getArgumentType(const std::string &argument_name,
 														 const std::string &field_name,
 														 const std::string &parent_type = "") const;
 

@@ -36,6 +36,8 @@ namespace tentris::store {
 
 		BoolHypertrie trie{3};
 
+        Term rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+
 	public:
 
 		TermStore &getTermIndex() {
@@ -117,7 +119,6 @@ namespace tentris::store {
 
         const_BoolHypertrie resolveGQLObjectType(const std::string &object_type) {
             using namespace ::tentris::tensor;
-            auto rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
 			auto object_type_term = URIRef(object_type);
             try {
                 SliceKey slice_key{std::nullopt, termIndex.get(rdf_type_term), termIndex.get(object_type_term)};
@@ -163,8 +164,8 @@ namespace tentris::store {
 		}
 
         const_BoolHypertrie resolveGQLArgument(const std::string &argument,
-											   const std::string &type,
-                                               const std::string &value) {
+											   const std::string &value,
+                                               const std::string &type) {
             using namespace ::tentris::tensor;
             auto argument_uri = URIRef(argument);
             try {
@@ -173,6 +174,7 @@ namespace tentris::store {
 					auto value_literal = Literal(value, std::nullopt, std::nullopt);
 					slice_key[2] = termIndex.get(value_literal);
 				}
+				// todo: other scalar values
                 return std::get<const_BoolHypertrie>(trie[slice_key]);
             }
             catch ([[maybe_unused]] std::out_of_range &exc) {
@@ -180,6 +182,12 @@ namespace tentris::store {
                 return const_BoolHypertrie(1);
             }
         }
+
+		bool typeCondition(const tensor::key_part_type value, const std::string &type) {
+			Term type_term = URIRef(type);
+			tensor::Key key{value, termIndex.get(rdf_type_term), termIndex.get(type_term)};
+			return trie[key];
+		}
 
 		inline void
 		add(const Term& subject, const Term& predicate, const Term& object) {

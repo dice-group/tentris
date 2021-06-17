@@ -3,13 +3,14 @@
 namespace tentris::store::graphql {
 
 	void GraphQLResponseSAX::add(const Entry &entry) {
+		current_entry = &entry;
 		if (last_entry) {
 			Label updated_label;
 			key_part_type updated_key_part;
 			for (const auto &[pos, key_part] : iter::enumerate(entry.key)) {
 				if (key_part != last_entry->key[pos]) {
 					// in case there are two labels for a position, take the first
-					updated_label = labels_in_entry[pos].front();
+					updated_label = sub_query->result_labels[pos];
 					updated_key_part = key_part;
 					break;
 				}
@@ -29,7 +30,7 @@ namespace tentris::store::graphql {
 			if (not entry.key[leaf_pos])
 				continue;
 			empty_entry = false;
-			write_leaf(labels_in_entry[leaf_pos].back(), entry.key[leaf_pos]);
+			write_leaf(sub_query->result_labels[leaf_pos], entry.key[leaf_pos]);
 		}
 		// no results at leaf fields but we still have new values in the inner fields
 		if (empty_entry) {
@@ -37,34 +38,28 @@ namespace tentris::store::graphql {
 			char last_label{};
 			for (const auto &[pos, key_part] : iter::enumerate(entry.key))
 				if (key_part)
-					last_label = labels_in_entry[pos].front();
+					last_label = sub_query->result_labels[pos];
 			if (not resolved[last_label])
 				open_field(last_label);
 		}
 		last_entry = std::make_unique<Entry>(entry);
 	}
 
-	void GraphQLResponseSAX::begin_root_field(const std::vector<std::vector<std::pair<char, std::string>>> &paths,
-											  const std::set<char> &frag_labels) {
+	void GraphQLResponseSAX::begin_root_field(const graphql::internal::ParsedSubGraphQL *sq) {
 		// first root field -> create data object
+		sub_query = sq;
 		if (not has_data) {
 			has_data = true;
 			writer.Key("data");
 			writer.StartObject();
 		}
-		fragment_labels = frag_labels;
 		std::size_t pos = 0;
 		// iterate over the paths that were provided and gather info
-		for (const auto &path : paths) {
-			std::string parent_type{};
+		for (const auto &path : sub_query->paths) {
 			Label parent_label{};
-			for (auto iter = path.begin(); iter != path.end(); iter++) {
-				auto &label = iter->first;
-				auto &field_name = iter->second;
-				if (not label_to_field.contains(label)) {
-					label_to_field[label] = field_name;
-					label_is_list[label] = AtomicGraphqlSchema::getInstance().fieldIsList(field_name, parent_type);
-					label_is_non_null[label] = AtomicGraphqlSchema::getInstance().fieldIsNonNull(field_name, parent_type);
+			for (const auto &label : path) {
+				if (not resolved.contains(label)) {
+					label_positions[label] = pos;
 					// set dependencies - if a label has already a dependency push it to the next label
 					if (parent_label) {
 						if (label_last_child.contains(parent_label)) {
@@ -74,40 +69,31 @@ namespace tentris::store::graphql {
 							label_parent[label] = parent_label;
 						label_last_child[parent_label] = label;
 					}
-					if (AtomicGraphqlSchema::getInstance().fieldIsScalar(field_name, parent_type)) {
-						leaf_label_type[label] = AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type);
-						if (leaf_label_type[label] == "ID") {
-							labels_in_entry.back().push_back(label);
-							leaf_positions.push_back(pos - 1);
-						} else {
-							labels_in_entry.emplace_back(std::vector<Label>{label});
-							leaf_positions.push_back(pos);
-							pos++;
-						}
-					} else {
-						labels_in_entry.emplace_back(std::vector<Label>{label});
-						pos++;
-					}
+					if (sub_query->leaf_types.contains(label))
+						leaf_positions.emplace_back(pos);
+					pos++;
 					// do not add the label of the root field to the end labels
-					if (not parent_type.empty())
+					if (parent_label)
 						end_labels.insert(label);
 					resolved[label] = false;
 				}
-				parent_type = AtomicGraphqlSchema::getInstance().getFieldType(field_name, parent_type);
 				parent_label = label;
 			}
 		}
 	}
 
 	void GraphQLResponseSAX::end_root_field() {
-		close_field(label_to_field.begin()->first);
-		label_to_field.clear();
-		label_is_list.clear();
+		// close root field
+		close_field(sub_query->paths.begin()->front());
 		label_last_neighbor.clear();
 		label_last_child.clear();
-		fragment_labels.clear();
+		end_labels.clear();
+		label_parent.clear();
+		leaf_positions.clear();
+		array_counters.clear();
 		resolved.clear();
 		last_entry = nullptr;
+		sub_query = nullptr;
 	}
 
 	// closes data object and writes errors if there are any
@@ -144,7 +130,7 @@ namespace tentris::store::graphql {
 			if (label_last_child.contains(label))
 				close_field(label_last_child[label]);
 			// if the field is an array, close it
-			if (label_is_list[label])
+			if (sub_query->list_labels.contains(label))
 				writer.EndArray();
 		}
 		// the label is not resolved
@@ -159,14 +145,16 @@ namespace tentris::store::graphql {
 			// close its neighbor, if there is one
 			else if (label_last_neighbor.contains(label))
 				close_field(label_last_neighbor[label]);
-			// if the field corresponding to the label does not appear in a fragment create default value (empty list / null)
-			if (not fragment_labels.contains(label)) {
-				writer.Key(label_to_field[label]);
-				if (label_is_list[label]) {
+			// if the field corresponding to the label is in an inline framgent do not print the field
+			if (not sub_query->fragment_dependencies.contains(label) or
+				AtomicTripleStore::getInstance().typeCondition(current_entry->key[sub_query->fragment_dependencies.at(label).first],
+															   sub_query->fragment_dependencies.at(label).second)) {
+				writer.Key(sub_query->field_names.at(label));
+				if (sub_query->list_labels.contains(label)) {
 					writer.StartArray();
 					writer.EndArray();
 				} else {
-					if (label_is_non_null[label])
+					if (sub_query->non_null_labels.contains(label))
 						non_null_error(label);
 					writer.Null();
 				}
@@ -189,8 +177,8 @@ namespace tentris::store::graphql {
 		} else if (label_last_neighbor.contains(label))
 			close_field(label_last_neighbor[label]);
 		resolved[label] = true;
-		writer.Key(label_to_field[label]);
-		if (label_is_list[label]) {
+		writer.Key(sub_query->field_names.at(label));
+		if (sub_query->list_labels.contains(label)) {
 			writer.StartArray();
 			array_counters[label] = 0;
 		}
@@ -200,19 +188,19 @@ namespace tentris::store::graphql {
 		// if the leaf is already resolved then it should be a list type
 		if (resolved[leaf_label]) {
 			// todo: need to take care of IDs and error handling for actual lists
-			if (label_is_list[leaf_label])
+			if (sub_query->list_labels.contains(leaf_label))
 				writer.String(key_part->value().data(), key_part->value().size());
 			return;
 		}
 		open_field(leaf_label);
 		// todo: add cases for other scalars -- need to keep track of label type in the graphql schema
-		if (leaf_label_type[leaf_label] == "String" or leaf_label_type[leaf_label] == "ID")
+		if (sub_query->leaf_types.at(leaf_label) == "String" or sub_query->leaf_types.at(leaf_label) == "ID")
 			writer.String(key_part->value().data(), key_part->value().size());
-		else if (leaf_label_type[leaf_label] == "Int")
+		else if (sub_query->leaf_types.at(leaf_label) == "Int")
 			writer.Int(std::stoi(key_part->value().data()));
-		else if (leaf_label_type[leaf_label] == "Float")
+		else if (sub_query->leaf_types.at(leaf_label) == "Float")
 			writer.Double(std::stof(key_part->value().data()));
-		else if (leaf_label_type[leaf_label] == "Boolean")
+		else if (sub_query->leaf_types.at(leaf_label) == "Boolean")
 			writer.Bool(strncmp(key_part->value().data(), "true", key_part->value().size()) == 0);
 	}
 

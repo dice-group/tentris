@@ -30,10 +30,12 @@ namespace tentris::store::cache {
 
 	private:
 		std::string query_name;
-		// a graphql query can generate multiple subscripts (multiple root fields)
+		// a graphql query can generate multiple subscripts (one per root field)
 		std::vector<std::shared_ptr<Subscript>> subscripts;
 		// a vector containing the operands of each subscript
 		std::vector<std::vector<const_BoolHypertrie>> all_operands{};
+		// the parsed graphql query
+		graphql::internal::ParsedGraphQL parsed_graphql;
 		// a vector containing the paths of the query (one list per root field)
 		std::vector<std::vector<std::vector<std::pair<Subscript::Label, std::string>>>> all_paths{};
 		// a vector containing the fragment labels (one set per root field)
@@ -59,12 +61,8 @@ namespace tentris::store::cache {
 			return einsums;
 		}
 
-		[[nodiscard]] const std::vector<std::vector<std::pair<Subscript::Label, std::string>>> &getPath(std::size_t pos) {
-			return all_paths[pos];
-		}
-
-		[[nodiscard]] const std::set<Subscript::Label> &getFragmentLabels(std::size_t pos) {
-			return all_fragment_labels[pos];
+		[[nodiscard]] const graphql::internal::ParsedSubGraphQL &getParsedSubGraphQL(uint32_t pos) const {
+			return parsed_graphql[pos];
 		}
 
 		[[nodiscard]] const std::vector<std::vector<const_BoolHypertrie>> &getOperands() const {

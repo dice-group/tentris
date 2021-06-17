@@ -1,6 +1,7 @@
 #ifndef TENTRIS_GRAPHQLQUERYVISITOR_HPP
 #define TENTRIS_GRAPHQLQUERYVISITOR_HPP
 
+#include "tentris/store/graphql/GraphQLSchema.hpp"
 #include "tentris/store/graphql/internal/GraphQLDataStructures.hpp"
 #include <GraphQL/GraphQLBaseVisitor.h>
 
@@ -13,22 +14,29 @@ namespace tentris::store::graphql::internal {
 	class GraphQLQueryVisitor : public Dice::graphql_parser::base::GraphQLBaseVisitor {
 
 	private:
-		std::shared_ptr<ParsedGraphQL> parsed_query;
-		// active path
-		Path active_path{};
+		ParsedGraphQL* parsed_query;
+		const GraphQLSchema *schema;
 		// active subscript label
 		char next_label = 'a';
 		// subscript label of last visited field
 		char field_label = 'a';
 		// stack - subscript label of last visited selection set
 		std::vector<char> selection_set_label{};
-		// used to store fragment labels
-		bool in_fragment = false;
+		// stack - type of parent field
+		std::vector<std::string> parent_type{};
+		// active field name
+		std::string field_name{};
+		// stack - keeps track of type conditions
+		std::vector<std::string> type_conditions{};
+		// the active path
+		std::vector<char> active_path{};
 
 	public:
 		GraphQLQueryVisitor() = delete;
 
-		explicit GraphQLQueryVisitor(std::shared_ptr<ParsedGraphQL> pq) : parsed_query(std::move(pq)) {}
+		explicit GraphQLQueryVisitor(ParsedGraphQL* pq,
+									 const GraphQLSchema *schema) : parsed_query(pq),
+																	schema(schema) {}
 
 		antlrcpp::Any visitOperationDefinition(base::GraphQLParser::OperationDefinitionContext *ctx) override;
 

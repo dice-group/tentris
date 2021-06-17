@@ -38,11 +38,20 @@ namespace tentris::store::graphql::exception {
 
 	public:
 		explicit ArgumentNotFoundException(const std::string &argument_name,
-										   const std::string &type,
-										   const std::string &name)
-			: SchemaException(fmt::format("Argument `{}` was not provided at {}: {}",
-										  argument_name, type, name)) {}
+										   const std::string &field_name,
+										   const std::string &parent_type)
+			: SchemaException(fmt::format("Argument `{}` is not defined at field `{}` of type `{}`",
+										  argument_name, field_name, parent_type)) {}
 	};
+
+	class InterfaceNotImpementedExecption : public SchemaException {
+
+	public:
+		explicit InterfaceNotImpementedExecption(const std::string &object_type,
+												 const std::string &interface)
+			: SchemaException(fmt::format("Type `{}` does not implement interface {}",
+										  object_type, interface)) {}
+};
 
 }// namespace tentris::store::graphql::exception
 
