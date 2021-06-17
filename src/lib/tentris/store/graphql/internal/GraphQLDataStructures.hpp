@@ -61,6 +61,8 @@ namespace tentris::store::graphql::internal {
 		std::set<char> list_labels{};
 		// stores the labeles whose fields are non-null
 		std::set<char> non_null_labels{};
+		// stores the positions of operands that need to be filtered by id
+		std::map<uint32_t, std::string> id_arguments{};
 	};
 
 	using ParsedGraphQL = std::vector<ParsedSubGraphQL>;

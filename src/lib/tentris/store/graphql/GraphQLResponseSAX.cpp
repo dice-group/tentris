@@ -147,8 +147,9 @@ namespace tentris::store::graphql {
 				close_field(label_last_neighbor[label]);
 			// if the field corresponding to the label is in an inline framgent do not print the field
 			if (not sub_query->fragment_dependencies.contains(label) or
-				AtomicTripleStore::getInstance().typeCondition(current_entry->key[sub_query->fragment_dependencies.at(label).first],
-															   sub_query->fragment_dependencies.at(label).second)) {
+				AtomicTripleStore::getInstance().
+				typeCondition(current_entry->key[label_positions[sub_query->fragment_dependencies.at(label).first]],
+							  sub_query->fragment_dependencies.at(label).second)) {
 				writer.Key(sub_query->field_names.at(label));
 				if (sub_query->list_labels.contains(label)) {
 					writer.StartArray();

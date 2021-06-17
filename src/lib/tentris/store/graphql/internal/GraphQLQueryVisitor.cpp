@@ -30,8 +30,10 @@ namespace tentris::store::graphql::internal {
 				sub_query.operands_labels.emplace_back(OperandLabels{field_label});
 				parsed_query->push_back(std::move(sub_query));
 				// parse arguments of root field
-				if (root_field->field()->arguments())
+				if (root_field->field()->arguments()) {
+					operand_pos = 0;
 					visitArguments(root_field->field()->arguments());
+				}
 				selection_set_label.push_back(field_label);
 				parent_type.push_back(field_type);
 				active_path.push_back(field_label);
@@ -153,7 +155,7 @@ namespace tentris::store::graphql::internal {
 			parent_type.push_back(type_condition);
 			visitSelectionSet(ctx->selectionSet());
 			parent_type.pop_back();
-            type_conditions.pop_back();
+			type_conditions.pop_back();
 			// close the optional layer of the inline fragment
 			parsed_query->back().operands_labels.emplace_back(OperandLabels{']'});
 		}
@@ -163,8 +165,6 @@ namespace tentris::store::graphql::internal {
 	antlrcpp::Any
 	GraphQLQueryVisitor::visitArguments(base::GraphQLParser::ArgumentsContext *ctx) {
 		for (const auto &arg : ctx->argument()) {
-			// add operand labels
-			parsed_query->back().operands_labels.emplace_back(OperandLabels{field_label});
 			const auto &name = arg->name()->getText();
 			// if the argument is not part of the field -> exception
 			const auto &type = schema->getArgumentType(name, field_name, parent_type.back());
@@ -178,8 +178,13 @@ namespace tentris::store::graphql::internal {
 				value = arg->value()->floatValue()->getText();
 			else if (arg->value()->booleanValue())
 				value = (arg->value()->booleanValue()->getText() == "true" ? "true" : "false");
-			parsed_query->back().features.emplace_back(
-					Feature{schema->getFieldUri(name, schema->getFieldType(field_name, parent_type.back())), value, type});
+			if (type == "ID")
+				parsed_query->back().id_arguments[operand_pos] = value;
+			else {
+				parsed_query->back().operands_labels.emplace_back(OperandLabels{field_label});
+				parsed_query->back().features.emplace_back(
+						Feature{schema->getFieldUri(name, schema->getFieldType(field_name, parent_type.back())), value, type});
+			}
 		}
 		return nullptr;
 	}

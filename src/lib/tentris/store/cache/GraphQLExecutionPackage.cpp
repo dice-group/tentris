@@ -41,6 +41,9 @@ namespace tentris::store::cache {
 			}
 			subscripts.push_back(std::make_shared<Subscript>(sub_query.operands_labels, sub_query.result_labels));
 			logDebug(fmt::format("Subscript #{}: {}", subscripts.size(), subscripts.back()->to_string()));
+			// filter id arguments
+			for (const auto &[op_pos, value] : sub_query.id_arguments)
+				operands[op_pos] = triple_store.resolveGQLArgumentID(value, operands[op_pos]);
 			all_operands.push_back(std::move(operands));
 		}
 	}

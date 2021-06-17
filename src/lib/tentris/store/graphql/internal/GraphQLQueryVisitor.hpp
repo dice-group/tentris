@@ -26,6 +26,8 @@ namespace tentris::store::graphql::internal {
 		std::vector<std::string> parent_type{};
 		// active field name
 		std::string field_name{};
+		// position of last field operand - used for argument ids
+		uint32_t operand_pos;
 		// stack - keeps track of type conditions
 		std::vector<std::string> type_conditions{};
 		// the active path
