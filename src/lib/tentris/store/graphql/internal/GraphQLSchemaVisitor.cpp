@@ -50,7 +50,7 @@ namespace tentris::store::graphql::internal {
 		// iterate over the implemented interfaces
 		auto current_ctx = ctx->implementsInterfaces();
 		while (current_ctx) {
-			obj_def.implementations.push_back(current_ctx->namedType()->name()->getText());
+			obj_def.implementations.insert(current_ctx->namedType()->name()->getText());
 			current_ctx = (current_ctx->implementsInterfaces());
 		}
 		schema->addObjectType(name, std::move(obj_def));
@@ -91,6 +91,14 @@ namespace tentris::store::graphql::internal {
 		FieldData field_def{};
 		// store the name of the field
 		std::string name = ctx->name()->getText();
+		// iterate over the arguments
+		if (ctx->argumentsDefinition()) {
+			for (const auto &input_ctx : ctx->argumentsDefinition()->inputValueDefinition()) {
+				const auto &arg_name = input_ctx->name()->getText();
+				const auto &arg_type = input_ctx->type_()->namedType()->name()->getText();
+				field_def.arguments[arg_name] = arg_type;
+			}
+		}
 		// iterate over the directives of the field definition
 		if (ctx->directives()) {
 			for (const auto &dir_ctx : ctx->directives()->directive()) {
