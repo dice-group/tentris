@@ -93,29 +93,32 @@ namespace tentris::store::graphql::internal {
 		field_label = ++next_label;
 		active_path.push_back(field_label);
 		parsed_query->back().field_names[field_label] = field_name;
+		const auto &uri = schema->getFieldUri(field_name, parent_type.back());
+		const auto &type = schema->getFieldType(field_name, parent_type.back());
+		bool is_inverse = schema->fieldIsInverse(field_name, parent_type.back());
 		if (schema->fieldIsList(field_name, parent_type.back()))
 			parsed_query->back().list_labels.insert(field_label);
 		if (schema->fieldIsNonNull(field_name, parent_type.back()))
 			parsed_query->back().non_null_labels.insert(field_label);
-		const auto &uri = schema->getFieldUri(field_name, parent_type.back());
-		const auto &type = schema->getFieldType(field_name, parent_type.back());
-		bool is_inverse = schema->fieldIsInverse(field_name, parent_type.back());
 		if (not type_conditions.back().empty())
 			parsed_query->back().fragment_dependencies[field_label] = std::make_pair(selection_set_label.back(),
 																					 type_conditions.back());
-		parsed_query->back().operands_labels.emplace_back(OperandLabels{'['});
-		if (not is_inverse)
-			parsed_query->back().operands_labels.emplace_back(OperandLabels{selection_set_label.back(), field_label});
-		else
-			parsed_query->back().operands_labels.emplace_back(OperandLabels{field_label, selection_set_label.back()});
-		// the labels of all fields will go into the result labels
-		parsed_query->back().result_labels.push_back(field_label);
-		// the uri of the field -- empty if a uri was not provided
-		parsed_query->back().features.emplace_back(Feature{uri});
+		if (type != "ID") {
+			parsed_query->back().operands_labels.emplace_back(OperandLabels{'['});
+			if (not is_inverse)
+				parsed_query->back().operands_labels.emplace_back(OperandLabels{selection_set_label.back(), field_label});
+			else
+				parsed_query->back().operands_labels.emplace_back(OperandLabels{field_label, selection_set_label.back()});
+			// the labels of all fields will go into the result labels
+			parsed_query->back().result_labels.push_back(field_label);
+			// the uri of the field -- empty if a uri was not provided
+			parsed_query->back().features.emplace_back(Feature{uri});
+		}
 		// leaf field - we reached the end of the path
 		if (not ctx->selectionSet()) {
 			parsed_query->back().leaf_types[field_label] = type;
 			parsed_query->back().paths.emplace_back(active_path);
+			// the label of ID fields do not go into the result -- map it to the original label
 		} else {
 			// not in fragment -- empty type condition
 			type_conditions.emplace_back("");
@@ -134,7 +137,8 @@ namespace tentris::store::graphql::internal {
 			selection_set_label.pop_back();
 			parent_type.pop_back();
 		}
-		parsed_query->back().operands_labels.emplace_back(OperandLabels{']'});
+		if (type != "ID")
+		    parsed_query->back().operands_labels.emplace_back(OperandLabels{']'});
 		// remove field name from path
 		active_path.pop_back();
 		return nullptr;

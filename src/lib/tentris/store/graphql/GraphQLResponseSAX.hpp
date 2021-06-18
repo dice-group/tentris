@@ -33,6 +33,7 @@ namespace tentris::store::graphql {
 
 		std::map<Label, Label> label_last_child{};   // for each label stores its last child
 		std::map<Label, Label> label_last_neighbor{};// for each label stores the last label in the same level
+		std::map<Label, Label> id_labels{};
 		std::map<Label, bool> resolved{};
 		std::map<Label, Label> label_parent{};
 		std::map<Label, std::uint32_t> array_counters{};
@@ -113,6 +114,20 @@ namespace tentris::store::graphql {
 			}
 			errors.push_back(std::move(error));
 		}
+
+        inline void list_error(Label label) {
+            ErrorMessage error{};
+            error.message = fmt::format("Multiple values in non-list field: {}", sub_query->field_names.at(label));
+            error.path.emplace_back(sub_query->field_names.at(label));
+            auto parent_label = get_parent_label(label);
+            while (parent_label) {
+                error.path.insert(error.path.begin(), sub_query->field_names.at(parent_label));
+                if (array_counters.contains(parent_label))
+                    error.path.insert(error.path.begin() + 1, array_counters[parent_label]);
+                parent_label = get_parent_label(parent_label);
+            }
+            errors.push_back(std::move(error));
+        }
 
 		[[nodiscard]] inline Label get_parent_label(Label label) {
 			if (label_parent.contains(label))

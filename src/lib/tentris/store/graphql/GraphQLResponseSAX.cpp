@@ -69,9 +69,17 @@ namespace tentris::store::graphql {
 							label_parent[label] = parent_label;
 						label_last_child[parent_label] = label;
 					}
-					if (sub_query->leaf_types.contains(label))
-						leaf_positions.emplace_back(pos);
-					pos++;
+					if (sub_query->leaf_types.contains(label)) {
+						if (sub_query->leaf_types.at(label) != "ID") {
+							leaf_positions.emplace_back(pos);
+							pos++;
+						} else {
+							auto id_label = get_parent_label(label);
+							leaf_positions.emplace_back(label_positions[id_label]);
+							id_labels[id_label] = label;
+						}
+					} else
+						pos++;
 					// do not add the label of the root field to the end labels
 					if (parent_label)
 						end_labels.insert(label);
@@ -83,6 +91,8 @@ namespace tentris::store::graphql {
 	}
 
 	void GraphQLResponseSAX::end_root_field() {
+		// for ID fields -- need to have access to last_entry's values
+		current_entry = last_entry.get();
 		// close root field
 		close_field(sub_query->paths.begin()->front());
 		label_last_neighbor.clear();
@@ -147,9 +157,8 @@ namespace tentris::store::graphql {
 				close_field(label_last_neighbor[label]);
 			// if the field corresponding to the label is in an inline framgent do not print the field
 			if (not sub_query->fragment_dependencies.contains(label) or
-				AtomicTripleStore::getInstance().
-				typeCondition(current_entry->key[label_positions[sub_query->fragment_dependencies.at(label).first]],
-							  sub_query->fragment_dependencies.at(label).second)) {
+				AtomicTripleStore::getInstance().typeCondition(current_entry->key[label_positions[sub_query->fragment_dependencies.at(label).first]],
+															   sub_query->fragment_dependencies.at(label).second)) {
 				writer.Key(sub_query->field_names.at(label));
 				if (sub_query->list_labels.contains(label)) {
 					writer.StartArray();
@@ -186,15 +195,17 @@ namespace tentris::store::graphql {
 	}
 
 	void GraphQLResponseSAX::write_leaf(Label leaf_label, key_part_type key_part) {
-		// if the leaf is already resolved then it should be a list type
-		if (resolved[leaf_label]) {
-			// todo: need to take care of IDs and error handling for actual lists
-			if (sub_query->list_labels.contains(leaf_label))
-				writer.String(key_part->value().data(), key_part->value().size());
+		// check for id_label
+		if (id_labels.contains(leaf_label))
+			leaf_label = id_labels[leaf_label];
+		// if a leaf field is already resolved, it should be list (except for IDs)
+		if (not resolved[leaf_label])
+			open_field(leaf_label);
+		else if (not sub_query->list_labels.contains(leaf_label)) {
+			if (sub_query->leaf_types.at(leaf_label) != "ID")
+			    list_error(leaf_label);
 			return;
 		}
-		open_field(leaf_label);
-		// todo: add cases for other scalars -- need to keep track of label type in the graphql schema
 		if (sub_query->leaf_types.at(leaf_label) == "String" or sub_query->leaf_types.at(leaf_label) == "ID")
 			writer.String(key_part->value().data(), key_part->value().size());
 		else if (sub_query->leaf_types.at(leaf_label) == "Int")
