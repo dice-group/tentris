@@ -2,6 +2,7 @@
 
 //#include "TestGraphqlExecutionPackage.cpp"
 #include "graphql/TestGraphQLSchema.cpp"
+#include "graphql/TestGraphQLQueryParsing.cpp"
 
 int main(int argc, char **argv) {
 	testing::InitGoogleTest(&argc, argv);

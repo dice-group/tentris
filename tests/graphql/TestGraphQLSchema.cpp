@@ -115,10 +115,10 @@ TEST(TestGraphQLSchema, FieldArguments) {
 								   })";
 	GraphQLSchema schema{};
 	tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
-	assert(schema.getArguemntType("furColor", "dog", "Query") == "String");
-	assert(schema.getArguemntType("eyeColor", "cat", "Query") == "String");
-    ASSERT_THROW(schema.getArguemntType("eyeColor", "dog", "Query"), SchemaException);
-    ASSERT_THROW(schema.getArguemntType("name", "animal", "Query"), SchemaException);
+	assert(schema.getArgumentType("furColor", "dog", "Query") == "String");
+	assert(schema.getArgumentType("eyeColor", "cat", "Query") == "String");
+    ASSERT_THROW(schema.getArgumentType("eyeColor", "dog", "Query"), SchemaException);
+    ASSERT_THROW(schema.getArgumentType("name", "animal", "Query"), SchemaException);
 }
 
 TEST(TestGraphQLSchema, WrappingTypesAndSchemaException) {
