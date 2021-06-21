@@ -74,8 +74,7 @@ TEST_F(TestGraphQLQueryParsing, FragmentDependencies) {
     assert(parsed_query.back().operands_labels.size() == 10);
     assert(parsed_query.back().result_labels.size() == 3);
     assert(parsed_query.back().fragment_dependencies.size() == 1);
-	assert(parsed_query.back().fragment_dependencies['b'].first == 'a');
-	assert(parsed_query.back().fragment_dependencies['b'].second == "http://localhost/vocabulary/bench/Dog");
+	assert(parsed_query.back().fragment_dependencies['a']["http://localhost/vocabulary/bench/Dog"] == std::vector{'b'});
     assert(parsed_query.back().field_names['a'] == "pets");
     assert(parsed_query.back().field_names['b'] == "furColor");
     assert(parsed_query.back().field_names['c'] == "name");

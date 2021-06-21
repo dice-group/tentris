@@ -11,7 +11,6 @@
 
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/store/graphql/internal/GraphQLDataStructures.hpp"
-#include "tentris/tensor/BoolHypertrie.hpp"
 
 namespace tentris::store::graphql {
 
@@ -33,15 +32,15 @@ namespace tentris::store::graphql {
 
 		std::map<Label, Label> label_last_child{};   // for each label stores its last child
 		std::map<Label, Label> label_last_neighbor{};// for each label stores the last label in the same level
-		std::map<Label, Label> id_labels{};
 		std::map<Label, bool> resolved{};
+		std::map<Label, bool> fragment_skip{};
 		std::map<Label, Label> label_parent{};
+		std::map<Label, Label> id_labels{};
 		std::map<Label, std::uint32_t> array_counters{};
 		std::set<Label> end_labels{};
 		std::vector<std::size_t> leaf_positions{};
 		std::map<Label, std::size_t> label_positions{};
 		std::unique_ptr<Entry> last_entry = nullptr;
-		const Entry *current_entry = nullptr;
 		std::vector<ErrorMessage> errors{};
 
 		const graphql::internal::ParsedSubGraphQL *sub_query = nullptr;
@@ -94,6 +93,8 @@ namespace tentris::store::graphql {
 		void open_field(Label label);
 
 		void write_leaf(Label leaf_label, key_part_type key_part);
+
+		void check_fragments(Label label, key_part_type key_part);
 
 		[[nodiscard]] inline bool is_leaf(Label label) {
 			return (not label_last_child.contains(label));

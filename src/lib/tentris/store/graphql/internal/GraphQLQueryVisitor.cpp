@@ -101,8 +101,7 @@ namespace tentris::store::graphql::internal {
 		if (schema->fieldIsNonNull(field_name, parent_type.back()))
 			parsed_query->back().non_null_labels.insert(field_label);
 		if (not type_conditions.back().empty())
-			parsed_query->back().fragment_dependencies[field_label] = std::make_pair(selection_set_label.back(),
-																					 type_conditions.back());
+			parsed_query->back().fragment_dependencies[selection_set_label.back()][type_conditions.back()].push_back(field_label);
 		if (type != "ID") {
 			parsed_query->back().operands_labels.emplace_back(OperandLabels{'['});
 			if (not is_inverse)
@@ -136,6 +135,7 @@ namespace tentris::store::graphql::internal {
 			visitSelectionSet(ctx->selectionSet());
 			selection_set_label.pop_back();
 			parent_type.pop_back();
+			type_conditions.pop_back();
 		}
 		if (type != "ID")
 		    parsed_query->back().operands_labels.emplace_back(OperandLabels{']'});

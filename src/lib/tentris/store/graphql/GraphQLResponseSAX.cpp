@@ -3,13 +3,11 @@
 namespace tentris::store::graphql {
 
 	void GraphQLResponseSAX::add(const Entry &entry) {
-		current_entry = &entry;
 		if (last_entry) {
 			Label updated_label;
 			key_part_type updated_key_part;
 			for (const auto &[pos, key_part] : iter::enumerate(entry.key)) {
 				if (key_part != last_entry->key[pos]) {
-					// in case there are two labels for a position, take the first
 					updated_label = sub_query->result_labels[pos];
 					updated_key_part = key_part;
 					break;
@@ -18,11 +16,28 @@ namespace tentris::store::graphql {
 			if (not is_leaf(updated_label) and updated_key_part) {
 				// close the children of the field corresponding to the first updated label
 				close_field(label_last_child[updated_label]);
+				// check for fragment dependencies
+				if (sub_query->fragment_dependencies.contains(updated_label))
+					check_fragments(updated_label, updated_key_part);
 				// update the resolved map the updated_key part is not null
 				auto resolved_iter = resolved.find(updated_label);
 				resolved_iter++;
-				for (; resolved_iter != resolved.end(); resolved_iter++)
+				for (; resolved_iter != resolved.end(); resolved_iter++) {
 					resolved_iter->second = false;
+					// check for fragment dependencies -- only labels that were updated
+					if (sub_query->fragment_dependencies.contains(resolved_iter->first))
+						check_fragments(resolved_iter->first, entry.key[label_positions[resolved_iter->first]]);
+				}
+			}
+		}
+		// first entry -- check all labels for fragment dependencies
+		else {
+			for (const auto &[pos, key_part] : iter::enumerate(entry.key)) {
+				if (not key_part)
+					continue;
+				auto label = sub_query->result_labels[pos];
+				if (sub_query->fragment_dependencies.contains(label))
+					check_fragments(label, key_part);
 			}
 		}
 		bool empty_entry = true;
@@ -91,8 +106,6 @@ namespace tentris::store::graphql {
 	}
 
 	void GraphQLResponseSAX::end_root_field() {
-		// for ID fields -- need to have access to last_entry's values
-		current_entry = last_entry.get();
 		// close root field
 		close_field(sub_query->paths.begin()->front());
 		label_last_neighbor.clear();
@@ -155,10 +168,8 @@ namespace tentris::store::graphql {
 			// close its neighbor, if there is one
 			else if (label_last_neighbor.contains(label))
 				close_field(label_last_neighbor[label]);
-			// if the field corresponding to the label is in an inline framgent do not print the field
-			if (not sub_query->fragment_dependencies.contains(label) or
-				AtomicTripleStore::getInstance().typeCondition(current_entry->key[label_positions[sub_query->fragment_dependencies.at(label).first]],
-															   sub_query->fragment_dependencies.at(label).second)) {
+			// skip labels whose inline fragment was not resolved
+			if (not fragment_skip.contains(label) or not fragment_skip[label]) {
 				writer.Key(sub_query->field_names.at(label));
 				if (sub_query->list_labels.contains(label)) {
 					writer.StartArray();
@@ -198,12 +209,14 @@ namespace tentris::store::graphql {
 		// check for id_label
 		if (id_labels.contains(leaf_label))
 			leaf_label = id_labels[leaf_label];
+		if (fragment_skip.contains(leaf_label) and fragment_skip[leaf_label])
+			return;
 		// if a leaf field is already resolved, it should be list (except for IDs)
 		if (not resolved[leaf_label])
 			open_field(leaf_label);
 		else if (not sub_query->list_labels.contains(leaf_label)) {
 			if (sub_query->leaf_types.at(leaf_label) != "ID")
-			    list_error(leaf_label);
+				list_error(leaf_label);
 			return;
 		}
 		if (sub_query->leaf_types.at(leaf_label) == "String" or sub_query->leaf_types.at(leaf_label) == "ID")
@@ -214,6 +227,20 @@ namespace tentris::store::graphql {
 			writer.Double(std::stof(key_part->value().data()));
 		else if (sub_query->leaf_types.at(leaf_label) == "Boolean")
 			writer.Bool(strncmp(key_part->value().data(), "true", key_part->value().size()) == 0);
+	}
+
+	void GraphQLResponseSAX::check_fragments(Label label, key_part_type key_part) {
+		bool found = false;
+		for (const auto &type_cond : sub_query->fragment_dependencies.at(label)) {
+			if (found or not AtomicTripleStore::getInstance().typeCondition(key_part, type_cond.first))
+				for (auto dep_label : type_cond.second)
+					fragment_skip[dep_label] = true;
+			else {
+				found = true;// only one type condition can be satisfied
+				for (auto dep_label : type_cond.second)
+					fragment_skip[dep_label] = false;
+			}
+		}
 	}
 
 }// namespace tentris::store::graphql

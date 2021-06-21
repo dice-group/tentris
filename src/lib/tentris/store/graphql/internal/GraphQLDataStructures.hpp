@@ -18,7 +18,7 @@ namespace tentris::store::graphql::internal {
 	using LeafTypes = std::map<char, std::string>;
 	using Path = std::vector<char>;
 	using Paths = std::vector<Path>;
-	using FragmentDependencies = std::map<char, std::pair<char, std::string>>;
+	using FragmentDependencies = std::map<char, std::map<std::string, std::vector<char>>>;
 
 	struct FieldData {
 		bool is_list = false;
@@ -51,7 +51,7 @@ namespace tentris::store::graphql::internal {
 		Features features{};
 		// map from label to field names
 		FieldNames field_names{};
-		// inline framgent dependencies
+		// inline framgent dependencies - label to type condition (uri) to dependent labels
 		FragmentDependencies fragment_dependencies{};
 		// the types of leaf fields
 		LeafTypes leaf_types{};
@@ -59,7 +59,7 @@ namespace tentris::store::graphql::internal {
 		Paths paths{};
 		// stores the labels whose fields are lists
 		std::set<char> list_labels{};
-		// stores the labeles whose fields are non-null
+		// stores the labels whose fields are non-null
 		std::set<char> non_null_labels{};
 		// stores the positions of operands that need to be filtered by id
 		std::map<uint32_t, std::string> id_arguments{};
