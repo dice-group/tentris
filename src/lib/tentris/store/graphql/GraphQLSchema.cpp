@@ -128,22 +128,26 @@ namespace tentris::store::graphql {
 		}
 	}
 
-	[[nodiscard]] bool GraphQLSchema::typeFilter(const std::string &uri,
-												 const std::string &type,
-												 bool inverse) const {
-		if (interface_type_defs.contains(type))
-			return false;
-		for (const auto &obj : object_type_defs) {
-			for (const auto &field : obj.second.fields_data) {
-				if (uri != field.second.uri)
-					continue;
-				if ((inverse and type != obj.first) or
-					(not inverse and type != field.second.type_name))
-					return true;
-			}
-		}
-		return false;
-	}
+    [[nodiscard]] bool GraphQLSchema::typeFilter(const std::string &uri,
+                                                 const std::string &type,
+                                                 bool inverse) const {
+        for (const auto &obj_def : object_type_defs) {
+            for (const auto &field_def : obj_def.second.fields_data) {
+                if (uri != field_def.second.uri)
+                    continue;
+                if (not inverse and field_def.second.is_inverse)
+                    continue;
+                const auto &field_type = field_def.second.type_name;
+                if (type == field_type)
+                    continue;
+                if (object_type_defs.contains(field_type) and
+                    object_type_defs.at(field_type).implementations.contains(type))
+                    continue;
+                return true;
+            }
+        }
+        return false;
+    }
 
 	[[nodiscard]] bool GraphQLSchema::implementsInterface(const std::string &object_type,
 														  const std::string &parent_type) const {
