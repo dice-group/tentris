@@ -14,7 +14,6 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/RDF/SerdParser.hpp"
-#include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/util/LogHelper.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
 

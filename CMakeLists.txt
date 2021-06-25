@@ -72,7 +72,7 @@ target_include_directories(rapidjson INTERFACE
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
-find_package(sparql-parser-base REQUIRED)
+find_package(sparql-parser REQUIRED)
 find_package(rdf-parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
@@ -103,8 +103,8 @@ target_link_libraries(tentris
         stdc++fs # for #include <filesystem>
         cxxopts
         rapidjson
-        sparql-parser-base::sparql-parser-base
         tsl::hopscotch_map
+        sparql-parser::sparql-parser
         fmt::fmt
         hypertrie::hypertrie
         rdf-parser::rdf-parser

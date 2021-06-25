@@ -23,13 +23,13 @@
 using namespace tentris::store;
 using namespace tentris::logging;
 using namespace tentris::store::cache;
-using namespace tentris::store::sparql;
 using namespace std::filesystem;
 using namespace iter;
 using namespace tentris::tensor;
 using namespace std::chrono;
 
 using Variable = Dice::sparql::Variable;
+using SelectModifier = Dice::sparql::Nodes::QueryNodes::SelectNodes::SelectModifier;
 
 TerminalConfig cfg;
 
