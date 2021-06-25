@@ -36,7 +36,11 @@ namespace tentris::store {
 
 		BoolHypertrie trie{3};
 
-        Term rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+		// for graphql
+
+		Term rdf_type_term = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+		// cache for hypertries -- used for checking the type conditions of inline fragments
+		std::map<std::string, const_BoolHypertrie> type_tries_cache{};
 
 	public:
 
@@ -184,9 +188,22 @@ namespace tentris::store {
         }
 
 		bool typeCondition(const tensor::key_part_type value, const std::string &type) {
-			Term type_term = URIRef(type);
-			tensor::Key key{value, termIndex.get(rdf_type_term), termIndex.get(type_term)};
-			return trie[key];
+			tensor::Key key{value};
+			try {
+				return type_tries_cache.at(type)[key];
+			} catch (...) {
+                Term type_term = URIRef(type);
+                tensor::SliceKey skey{std::nullopt, termIndex.get(rdf_type_term), termIndex.get(type_term)};
+                try {
+					auto type_trie = std::get<0>(trie[skey]);
+					bool result = type_trie[key];
+					type_tries_cache[type] = type_trie;
+					return result;
+				} catch (...) {
+                    type_tries_cache[type] = const_BoolHypertrie{1};
+					return false;
+				}
+			}
 		}
 
 		inline void

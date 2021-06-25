@@ -30,16 +30,16 @@ namespace tentris::store::graphql {
 		rapidjson::StringBuffer buffer;
 		rapidjson::Writer<rapidjson::StringBuffer> writer;
 
-		std::map<Label, Label> label_last_child{};   // for each label stores its last child
-		std::map<Label, Label> label_last_neighbor{};// for each label stores the last label in the same level
-		std::map<Label, bool> resolved{};
-		std::map<Label, bool> fragment_skip{};
-		std::map<Label, Label> label_parent{};
-		std::map<Label, Label> id_labels{};
-		std::map<Label, std::uint32_t> array_counters{};
-		std::set<Label> end_labels{};
-		std::vector<std::size_t> leaf_positions{};
-		std::map<Label, std::size_t> label_positions{};
+		boost::container::flat_map<Label, Label> label_last_child{};    // for each label stores its last child
+		boost::container::flat_map<Label, Label> label_last_neighbor{}; // for each label stores the last label in the same level
+		boost::container::flat_map<Label, bool> resolved{};
+		boost::container::flat_map<Label, bool> fragment_skip{};
+		boost::container::flat_map<Label, Label> label_parent{};
+		boost::container::flat_map<Label, Label> id_labels{};
+		boost::container::flat_map<Label, std::uint32_t> array_counters{};
+        boost::container::flat_map<Label, std::size_t> label_positions{};
+        std::set<Label> end_labels{};
+        std::vector<std::size_t> leaf_positions{};
 		std::unique_ptr<Entry> last_entry = nullptr;
 		std::vector<ErrorMessage> errors{};
 
