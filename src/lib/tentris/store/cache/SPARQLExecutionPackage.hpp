@@ -42,8 +42,6 @@ namespace tentris::store::cache {
 		 * the methods with distinct in their names. Otherwise use only the methods with regular in their names
 		 */
 
-		bool is_trivial_empty = false;
-
 	private:
 
 		std::vector<const_BoolHypertrie> operands{};
@@ -76,21 +74,18 @@ namespace tentris::store::cache {
 				logDebug(fmt::format("Slice key {}: ⟨{}⟩", op_pos, fmt::join(tp, ", ")));
 				std::variant<const_BoolHypertrie, bool> op = triple_store.resolveTriplePattern(tp);
 				if (std::holds_alternative<bool>(op)) {
-					is_trivial_empty = not std::get<bool>(op);
+					auto is_trivial_empty =  not std::get<bool>(op);
 					logTrace(fmt::format("Operand {} is {}", op_pos, is_trivial_empty));
+					// add a rank-0 tensor operand whose value is false
+					if (is_trivial_empty) {
+						tensor::BoolHypertrie false_op{0};
+                        false_op.set({}, false);
+						operands.emplace_back(std::move(false_op));
+					}
 				} else {
 					auto bht = std::get<const_BoolHypertrie>(op);
-					if (not bht.empty()) {
-						logTrace(fmt::format("Operand {} size {}", op_pos, bht.size()));
-						operands.emplace_back(bht);
-					} else {
-						is_trivial_empty = true;
-						operands.clear();
-					}
-				}
-				if (is_trivial_empty) {
-					logDebug(fmt::format("Query is trivially empty, i.e. the lastly sliced operand {} is emtpy.", op_pos));
-					break;
+					logTrace(fmt::format("Operand {} size {}", op_pos, bht.size()));
+					operands.emplace_back(bht);
 				}
 			}
 		}
@@ -154,10 +149,8 @@ struct fmt::formatter<tentris::store::cache::SPARQLExecutionPackage> {
 		return format_to(ctx.begin(),
 						 " SPARQL:     {}\n"
 						 " subscript:  {}\n"
-						 " is_distinct:      {}\n"
-						 " is_trivial_empty: {}\n",
-						 p.sparql_string, p.subscript, p.select_modifier == SelectModifier::DISTINCT,
-						 p.is_trivial_empty);
+						 " is_distinct:      {}\n",
+						 p.sparql_string, p.subscript, p.select_modifier == SelectModifier::DISTINCT);
 	}
 };
 
