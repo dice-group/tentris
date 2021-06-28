@@ -7,12 +7,13 @@
 #include <tentris/http/SPARQLEndpoint.hpp>
 #include <tentris/store/AtomicGraphqlSchema.hpp>
 #include <tentris/store/AtomicTripleStore.hpp>
-#include <tentris/store/TripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
 #include <tentris/store/graphql/GraphQLParser.hpp>
 
 #include <fmt/format.h>
 
+#include "VersionStrings.hpp"
+#include "config/ServerConfig.hpp"
 
 void bulkload(const std::string &triple_file, size_t bulksize) {
 	namespace fs = std::filesystem;
@@ -57,6 +58,8 @@ int main(int argc, char *argv[]) {
 	ServerConfig cfg{argc, argv};
 
 	init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
+
+	log("Running {} with {}"_format(tentris_version_string, hypertrie_version_string));
 
 	auto &store_cfg = AtomicTripleStoreConfig::getInstance();
 	store_cfg.rdf_file = cfg.rdf_file;

@@ -12,6 +12,9 @@
 
 #include <cxxopts.hpp>
 
+#include <Dice/hypertrie/hypertrie_version.hpp>
+#include <tentris/tentris_version.hpp>
+#include "../VersionStrings.hpp"
 
 namespace {
 	using namespace fmt::literals;

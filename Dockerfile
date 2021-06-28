@@ -56,6 +56,7 @@ RUN conan install . --build=missing --profile default > conan_build.log
 WORKDIR /tentris
 COPY thirdparty thirdparty
 COPY src src
+COPY cmake cmake
 COPY CMakeLists.txt CMakeLists.txt
 COPY conanfile.txt conanfile.txt
 

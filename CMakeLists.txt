@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.13)
-project(tentris CXX)
+project(tentris
+        LANGUAGES CXX
+        VERSION 1.1.0)
 set(CMAKE_CXX_STANDARD 20)
-set(tentris_VERSION_MAJOR 1)
-set(tentris_VERSION_MINOR 1)
-set(tentris_VERSION_PATCH 0)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/tentris/tentris_version.hpp)
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
@@ -79,8 +80,8 @@ FetchContent_MakeAvailable(cppitertools)
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
-find_package(sparql-parser-base REQUIRED)
 find_package(graphql-parser-base REQUIRED)
+find_package(sparql-parser REQUIRED)
 find_package(rdf-parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
@@ -112,8 +113,8 @@ target_link_libraries(tentris
         cxxopts
         rapidjson
         graphql-parser-base::graphql-parser-base
-        sparql-parser-base::sparql-parser-base
         tsl::hopscotch_map
+        sparql-parser::sparql-parser
         fmt::fmt
         hypertrie::hypertrie
         rdf-parser::rdf-parser

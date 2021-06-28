@@ -2,34 +2,33 @@
 #include <csignal>
 #include <filesystem>
 #include <fstream>
-#include <cstdint>
 #include <chrono>
 #include <thread>
-
-#include "config/TerminalConfig.hpp"
 
 #include <tentris/store/QueryExecutionPackageCache.hpp>
 #include <tentris/store/TripleStore.hpp>
 #include <tentris/store/cache/SPARQLExecutionPackage.hpp>
 #include <tentris/tensor/BoolHypertrie.hpp>
-#include <tentris/util/LogHelper.hpp>
+#include <tentris/http/QueryResultState.hpp>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
-#include <fmt/ranges.h>
 #include <itertools.hpp>
-#include "tentris/http/QueryResultState.hpp"
+
+
+#include "config/TerminalConfig.hpp"
+#include "VersionStrings.hpp"
 
 using namespace tentris::store;
 using namespace tentris::logging;
 using namespace tentris::store::cache;
-using namespace tentris::store::sparql;
 using namespace std::filesystem;
 using namespace iter;
 using namespace tentris::tensor;
 using namespace std::chrono;
 
 using Variable = Dice::sparql::Variable;
+using SelectModifier = Dice::sparql::Nodes::QueryNodes::SelectNodes::SelectModifier;
 
 TerminalConfig cfg;
 
@@ -241,6 +240,8 @@ void commandlineInterface(SPARQLExecutionPackage_cache &querypackage_cache) {
 int main(int argc, char *argv[]) {
 	cfg = TerminalConfig{argc, argv};
 	tentris::logging::init_logging(cfg.logstdout, cfg.logfile, cfg.logfiledir, cfg.loglevel);
+
+	logsink() << fmt::format("Running {} with {}", tentris_version_string, hypertrie_version_string) << std::endl;
 
 	TripleStore triplestore{};
 
