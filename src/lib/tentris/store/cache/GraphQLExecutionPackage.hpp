@@ -55,7 +55,7 @@ namespace tentris::store::cache {
 		[[nodiscard]] std::vector<std::shared_ptr<Einsum>> generateEinsums(const time_point_t &timeout) {
 			std::vector<std::shared_ptr<Einsum>> einsums{};
 			for (auto i : iter::range(subscripts.size())) {
-				auto einsum = std::make_shared<Einsum>(subscripts[i], all_operands[i], timeout);
+				auto einsum = std::make_shared<Einsum>(subscripts[i], all_operands[i], timeout, true);
 				einsums.push_back(std::move(einsum));
 			}
 			return einsums;
