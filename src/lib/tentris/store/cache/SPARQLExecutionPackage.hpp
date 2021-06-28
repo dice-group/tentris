@@ -76,12 +76,10 @@ namespace tentris::store::cache {
 				if (std::holds_alternative<bool>(op)) {
 					auto is_trivial_empty =  not std::get<bool>(op);
 					logTrace(fmt::format("Operand {} is {}", op_pos, is_trivial_empty));
-					// add a rank-0 tensor operand whose value is false
-					if (is_trivial_empty) {
-						tensor::BoolHypertrie false_op{0};
-                        false_op.set({}, false);
-						operands.emplace_back(std::move(false_op));
-					}
+					tensor::BoolHypertrie rank0_operand{0};
+					if (not is_trivial_empty)
+						rank0_operand.set({}, true);
+					operands.push_back(std::move(rank0_operand));
 				} else {
 					auto bht = std::get<const_BoolHypertrie>(op);
 					logTrace(fmt::format("Operand {} size {}", op_pos, bht.size()));
