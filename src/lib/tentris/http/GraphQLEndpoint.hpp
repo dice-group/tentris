@@ -33,8 +33,8 @@ namespace tentris::http::graphql_endpoint {
     using namespace ::std::chrono;
 
     struct GraphQLEndpoint {
-		using Einsum_t = Einsum<COUNTED_t>;
-		using EinsumEntry_t = EinsumEntry<COUNTED_t>;
+		using Einsum_t = Einsum<DISTINCT_t>;
+		using EinsumEntry_t = EinsumEntry<DISTINCT_t>;
         constexpr static size_t chunk_size = 100'000'000UL;
 
         auto operator()(restinio::request_handle_t req,
