@@ -16,7 +16,7 @@ namespace tentris::store::graphql {
 
 	class GraphQLResponseSAX {
 
-		using Entry = ::tentris::tensor::EinsumEntry<::tentris::tensor::DISTINCT_t>;
+		using Entry = ::tentris::tensor::EinsumEntry<::tentris::tensor::COUNTED_t>;
 		using Key = typename Entry::Key;
 		using Label = ::tentris::tensor::Subscript::Label;
 		using key_part_type = ::tentris::tensor::key_part_type;

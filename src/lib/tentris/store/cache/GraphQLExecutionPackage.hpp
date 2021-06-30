@@ -26,7 +26,7 @@ namespace tentris::store::cache {
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
 		using Subscript = ::tentris::tensor::Subscript;
-		using Einsum = ::tentris::tensor::Einsum<::tentris::tensor::DISTINCT_t>;
+		using Einsum = ::tentris::tensor::Einsum<::tentris::tensor::COUNTED_t>;
 
 	private:
 		std::string query_name;
