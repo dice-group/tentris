@@ -76,44 +76,42 @@ writeNTriple(std::ostream &stream, const std::shared_ptr<SPARQLExecutionPackage>
 
 	bool first = true;
 
-	if (not query_package->is_trivial_empty) {
-		std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
-		auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
-		for (const auto &result : results) {
-			if (first) {
-				first = false;
-				execute_end = steady_clock::now();
-			}
+    std::shared_ptr<void> raw_results = query_package->getEinsum(timeout);
+    auto &results = *static_cast<Einsum<RESULT_TYPE> *>(raw_results.get());
+    for (const auto &result : results) {
+        if (first) {
+            first = false;
+            execute_end = steady_clock::now();
+        }
 
-			std::stringstream ss;
-			bool inner_first = true;
-			for (auto binding : result.key) {
-				if (inner_first)
-					inner_first = false;
-				else
-					ss << ",";
-				if (binding != nullptr)
-					ss << binding->getIdentifier();
-			}
-			ss << "\n";
+        std::stringstream ss;
+        bool inner_first = true;
+        for (auto binding : result.key) {
+            if (inner_first)
+                inner_first = false;
+            else
+                ss << ",";
+            if (binding != nullptr)
+                ss << binding->getIdentifier();
+        }
+        ss << "\n";
 
-			std::string binding_string = ss.str();
+        std::string binding_string = ss.str();
 
-			for ([[maybe_unused]] const auto c : iter::range(result.value)) {
-				stream << binding_string;
-				++result_count;
-				if (++timeout_check == 500) {
-					timeout_check = 0;
-					stream.flush();
-					if (auto current_time = steady_clock::now(); current_time > timeout) {
-						::error = Errors::SERIALIZATION_TIMEOUT;
-						actual_timeout = current_time;
-						number_of_bindings = result_count;
-						return;
-					}
-				}
-			}
-		}
+        for ([[maybe_unused]] const auto c : iter::range(result.value)) {
+            stream << binding_string;
+            ++result_count;
+            if (++timeout_check == 500) {
+                timeout_check = 0;
+                stream.flush();
+                if (auto current_time = steady_clock::now(); current_time > timeout) {
+                    ::error = Errors::SERIALIZATION_TIMEOUT;
+                    actual_timeout = current_time;
+                    number_of_bindings = result_count;
+                    return;
+                }
+            }
+        }
 	}
 	if (first) { // if no bindings are returned
 		execute_end = steady_clock::now();
