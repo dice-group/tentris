@@ -80,8 +80,9 @@ namespace tentris::store::graphql::internal {
 				field_name = selection->field()->name()->getText();
 				if (not field_selections.contains(field_name))
 					continue;
+                auto f_name = field_name;
 				visitField(field_selections[field_name]);
-				field_selections.erase(field_name);
+				field_selections.erase(f_name);
 			} else if (selection->inlineFragment())
 				visitInlineFragment(selection->inlineFragment());
 		}

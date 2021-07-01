@@ -13,6 +13,7 @@ protected:
                                 }
                                 type Person @uri(value: "http://xmlns.com/foaf/0.1/Person") {
                                     name: String @uri(value: "http://xmlns.com/foaf/0.1/name")
+                                    age: Int
                                 }
                                 type Article @uri(value: "http://localhost/vocabulary/bench/Article") {
                                     note: String @uri(value: "http://swrc.ontoware.org/ontology#note")
@@ -81,4 +82,66 @@ TEST_F(TestGraphQLQueryParsing, FragmentDependencies) {
     assert(parsed_query.back().paths.size() == 2);
     assert(parsed_query.back().paths[0] == (Path{'a', 'b'}));
     assert(parsed_query.back().paths[1] == (Path{'a', 'c'}));
+}
+
+TEST_F(TestGraphQLQueryParsing, FieldCollectionSameSelectionSet) {
+    std::string base_query = "{ articles { title pages } } ";
+	std::vector<std::string> test_queries {
+            "{ articles { title pages title } } ",
+            "{ articles { title title pages title title } } ",
+            "{ articles { title pages pages title } } ",
+            "{ articles { title pages title pages title pages } } "
+	};
+    auto parsed_base = GraphQLParser::parseQuery(&schema, base_query, "");
+    for (const auto& test_query : test_queries) {
+        auto parsed_test = GraphQLParser::parseQuery(&schema, test_query, "");
+		assert(parsed_base.back().paths == parsed_test.back().paths);
+		assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+		assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+		assert(parsed_base.back().result_labels == parsed_test.back().result_labels);
+        assert(parsed_base.back().features == parsed_test.back().features);
+    }
+	std::string test_query = "{ articles { pages title pages } } ";
+    auto parsed_test = GraphQLParser::parseQuery(&schema, test_query, "");
+    assert(parsed_base.back().paths == parsed_test.back().paths);
+    assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+    assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+    assert(parsed_base.back().result_labels == parsed_test.back().result_labels);
+    ASSERT_FALSE(parsed_base.back().features == parsed_test.back().features);
+}
+
+TEST_F(TestGraphQLQueryParsing, FieldCollectionDifferentSelectionSet) {
+    std::string base_query = "{ articles { pages journal { number volume issued } } } ";
+    std::vector<std::string> test_queries {
+            "{ articles { pages journal { number } journal { volume } journal { issued } } } ",
+            "{ articles { pages journal { number } journal { volume issued } } } ",
+            "{ articles { pages journal { number volume issued } journal { issued volume } } } ",
+            "{ articles { pages journal { number volume issued } journal { issued } } } "
+    };
+    auto parsed_base = GraphQLParser::parseQuery(&schema, base_query, "");
+    for (const auto& test_query : test_queries) {
+        auto parsed_test = GraphQLParser::parseQuery(&schema, test_query, "");
+        assert(parsed_base.back().paths == parsed_test.back().paths);
+        assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+        assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+        assert(parsed_base.back().result_labels == parsed_test.back().result_labels);
+        assert(parsed_base.back().features == parsed_test.back().features);
+    }
+}
+
+TEST_F(TestGraphQLQueryParsing, FieldCollectionDifferentSelectionSetNested) {
+    std::string base_query = "{ articles { pages journal { number editor { name age } volume } } } ";
+    std::vector<std::string> test_queries {
+            "{ articles { pages journal { number editor { name } } journal { volume editor { age } } } } ",
+            "{ articles { pages journal { number editor { name } volume } journal { volume editor { name age } } } } "
+    };
+    auto parsed_base = GraphQLParser::parseQuery(&schema, base_query, "");
+    for (const auto& test_query : test_queries) {
+        auto parsed_test = GraphQLParser::parseQuery(&schema, test_query, "");
+        assert(parsed_base.back().paths == parsed_test.back().paths);
+        assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+        assert(parsed_base.back().operands_labels == parsed_test.back().operands_labels);
+        assert(parsed_base.back().result_labels == parsed_test.back().result_labels);
+        assert(parsed_base.back().features == parsed_test.back().features);
+    }
 }

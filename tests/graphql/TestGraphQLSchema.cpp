@@ -81,12 +81,12 @@ TEST(TestGraphQLSchema, InterfaceTypeDefinitions) {
 								   })";
 	GraphQLSchema schema{};
 	tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
-    assert(schema.getInterfaceTypeDefinitions().size() == 1);
-    assert(schema.getObjectTypeDefinitions().size() == 3);
-    assert(schema.getObjectTypeDefinitions().at("Query").fields_data.size() == 3);
-    assert(schema.getObjectTypeDefinitions().at("Dog").fields_data.size() == 2);
-    assert(schema.getObjectTypeDefinitions().at("Cat").fields_data.size() == 2);
-    assert(schema.getInterfaceTypeDefinitions().at("Animal").fields_data.size() == 1);
+	assert(schema.getInterfaceTypeDefinitions().size() == 1);
+	assert(schema.getObjectTypeDefinitions().size() == 3);
+	assert(schema.getObjectTypeDefinitions().at("Query").fields_data.size() == 3);
+	assert(schema.getObjectTypeDefinitions().at("Dog").fields_data.size() == 2);
+	assert(schema.getObjectTypeDefinitions().at("Cat").fields_data.size() == 2);
+	assert(schema.getInterfaceTypeDefinitions().at("Animal").fields_data.size() == 1);
 	assert(schema.getObjectUri("Animal") == "dummy");
 	assert(schema.getObjectUri("Cat") == "dummy2");
 	assert(schema.getFieldType("name", "Animal") == "String");
@@ -98,43 +98,43 @@ TEST(TestGraphQLSchema, InterfaceTypeDefinitions) {
 
 TEST(TestGraphQLSchema, FieldArguments) {
 	const std::string schema_str = R"(type Query {
-                                       animal: Animal
-								       dog(furColor: String): Dog
-                                       cat(eyeColor: String): Cat
-                                   }
-                                   interface Animal @uri(value: "dummy") {
-                                       name: String
-                                   }
-								   type Dog implements Animal  {
-								      name: String
-                                      furColor: String
-								   }
-                                   type Cat implements Animal @uri(value: "dummy2") {
-								       name: String
-								       eyeColor: String
-								   })";
+                                            animal: Animal
+                                            dog(furColor: String): Dog
+                                            cat(eyeColor: String): Cat
+                                       }
+                                       interface Animal @uri(value: "dummy") {
+                                            name: String
+                                       }
+                                       type Dog implements Animal  {
+                                            name: String
+                                            furColor: String
+                                       }
+                                       type Cat implements Animal @uri(value: "dummy2") {
+                                            name: String
+                                            eyeColor: String
+                                       })";
 	GraphQLSchema schema{};
 	tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
 	assert(schema.getArgumentType("furColor", "dog", "Query") == "String");
 	assert(schema.getArgumentType("eyeColor", "cat", "Query") == "String");
-    ASSERT_THROW(schema.getArgumentType("eyeColor", "dog", "Query"), SchemaException);
-    ASSERT_THROW(schema.getArgumentType("name", "animal", "Query"), SchemaException);
+	ASSERT_THROW(schema.getArgumentType("eyeColor", "dog", "Query"), SchemaException);
+	ASSERT_THROW(schema.getArgumentType("name", "animal", "Query"), SchemaException);
 }
 
 TEST(TestGraphQLSchema, WrappingTypesAndSchemaException) {
-    const std::string schema_str = R"(type Query {
+	const std::string schema_str = R"(type Query {
                                        people: [Person]!
 								       companies: [Company]
-                                   }
-                                   type Person {
-                                       name: ID!
-								       worksAt: Company @inverse @uri(value: "dummy")
-                                   }
-								   type Company @uri(value: "dummy2") {
-								       city: String @uri(value: "dummy3")
-								   })";
-    GraphQLSchema schema{};
-    tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
+                                       }
+                                       type Person {
+                                           name: ID!
+                                           worksAt: Company @inverse @uri(value: "dummy")
+                                       }
+                                       type Company @uri(value: "dummy2") {
+                                           city: String @uri(value: "dummy3")
+                                       })";
+	GraphQLSchema schema{};
+	tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
 	assert(schema.fieldIsList("people"));
 	assert(schema.fieldIsList("companies"));
 	assert(schema.fieldIsNonNull("people"));
@@ -142,9 +142,9 @@ TEST(TestGraphQLSchema, WrappingTypesAndSchemaException) {
 	assert(schema.fieldIsNonNull("name", "Person"));
 	assert(schema.fieldIsScalar("name", "Person"));
 	assert(not schema.fieldIsScalar("worksAt", "Person"));
-    ASSERT_THROW(schema.fieldIsInverse("nam", "Person"), SchemaException);
-    ASSERT_THROW(schema.getFieldUri("nam", "Person"), SchemaException);
-    ASSERT_THROW(schema.getObjectUri("Compny"), SchemaException);
-    ASSERT_THROW(schema.getFieldUri("cty", "Compny"), SchemaException);
-    ASSERT_THROW(schema.fieldIsNonNull("wors", "Person"), SchemaException);
+	ASSERT_THROW(schema.fieldIsInverse("nam", "Person"), SchemaException);
+	ASSERT_THROW(schema.getFieldUri("nam", "Person"), SchemaException);
+	ASSERT_THROW(schema.getObjectUri("Compny"), SchemaException);
+	ASSERT_THROW(schema.getFieldUri("cty", "Compny"), SchemaException);
+	ASSERT_THROW(schema.fieldIsNonNull("wors", "Person"), SchemaException);
 }
