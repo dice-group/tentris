@@ -133,18 +133,15 @@ namespace tentris::store::graphql {
                                                  bool inverse) const {
         for (const auto &obj_def : object_type_defs) {
             for (const auto &field_def : obj_def.second.fields_data) {
-                if (uri != field_def.second.uri)
-                    continue;
-                if (not inverse and field_def.second.is_inverse)
-                    continue;
-                const auto &field_type = field_def.second.type_name;
-                if (type == field_type)
-                    continue;
-                if (object_type_defs.contains(field_type) and
-                    object_type_defs.at(field_type).implementations.contains(type))
-                    continue;
-                return true;
-            }
+				if (uri != field_def.second.uri or inverse != field_def.second.is_inverse)
+					continue;
+				const auto &field_type = field_def.second.type_name;
+				if (object_type_defs.contains(field_type) and
+					object_type_defs.at(field_type).implementations.contains(type))
+					continue;
+				if (type != field_type)
+					return true;
+			}
         }
         return false;
     }
