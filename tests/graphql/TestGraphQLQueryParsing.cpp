@@ -145,3 +145,53 @@ TEST_F(TestGraphQLQueryParsing, FieldCollectionDifferentSelectionSetNested) {
         assert(parsed_base.back().features == parsed_test.back().features);
     }
 }
+
+TEST_F(TestGraphQLQueryParsing, RootFieldAlias) {
+	std::string query = "{ alias:people { name } }";
+	auto parsed_query = GraphQLParser::parseQuery(&schema, query, "");
+	assert(parsed_query.back().field_names.size() == 2);
+	assert(parsed_query.back().field_names['a'] == "alias");
+	assert(parsed_query.back().field_names['b'] == "name");
+	assert(parsed_query.back().paths.size() == 1);
+	assert(parsed_query.back().operands_labels.size() == 4);
+}
+
+TEST_F(TestGraphQLQueryParsing, InnerAndLeafFieldAlias) {
+    std::string query = "{ people { name alias2:age } }";
+    auto parsed_query = GraphQLParser::parseQuery(&schema, query, "");
+    assert(parsed_query.back().field_names.size() == 3);
+    assert(parsed_query.back().field_names['a'] == "people");
+    assert(parsed_query.back().field_names['b'] == "name");
+    assert(parsed_query.back().field_names['c'] == "alias2");
+    assert(parsed_query.back().paths.size() == 2);
+    assert(parsed_query.back().operands_labels.size() == 7);
+}
+
+TEST_F(TestGraphQLQueryParsing, AliasAndFieldCollection) {
+    std::string query = "{ people { name name:age } }";
+    auto parsed_query = GraphQLParser::parseQuery(&schema, query, "");
+    assert(parsed_query.back().field_names.size() == 2);
+    assert(parsed_query.back().field_names['a'] == "people");
+    assert(parsed_query.back().field_names['b'] == "name");
+    assert(parsed_query.back().paths.size() == 1);
+    assert(parsed_query.back().operands_labels.size() == 4);
+    std::string query1 = "{ people { n:name name:age } }";
+    auto parsed_query1 = GraphQLParser::parseQuery(&schema, query1, "");
+    assert(parsed_query1.back().field_names.size() == 3);
+    assert(parsed_query1.back().field_names['a'] == "people");
+    assert(parsed_query1.back().field_names['b'] == "n");
+    assert(parsed_query1.back().field_names['c'] == "name");
+    assert(parsed_query1.back().paths.size() == 2);
+    assert(parsed_query1.back().operands_labels.size() == 7);
+    std::string query2 = "{ articles { p:pages people:creator { name } } }";
+    auto parsed_query2 = GraphQLParser::parseQuery(&schema, query2, "");
+    assert(parsed_query2.back().field_names.size() == 4);
+    assert(parsed_query2.back().field_names['a'] == "articles");
+    assert(parsed_query2.back().field_names['b'] == "p");
+    assert(parsed_query2.back().field_names['c'] == "people");
+    assert(parsed_query2.back().field_names['d'] == "name");
+    assert(parsed_query2.back().paths.size() == 2);
+    assert(parsed_query2.back().operands_labels.size() == 10);
+    std::string query3 = "{ articles { p:pages p:creator { name } } }";
+    ASSERT_THROW(GraphQLParser::parseQuery(&schema, query3, ""), SchemaException);
+}
