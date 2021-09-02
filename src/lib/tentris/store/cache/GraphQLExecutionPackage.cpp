@@ -4,7 +4,7 @@ namespace tentris::store::cache {
 	GraphQLExecutionPackage::GraphQLExecutionPackage(const std::pair<std::string, std::string> &request) {
 		using namespace logging;
 		logDebug(fmt::format("Parsing document {}", std::get<0>(request)));
-		parsed_graphql = graphql::GraphQLParser::parseQuery(&AtomicGraphqlSchema::getInstance(),
+		parsed_graphql = graphql::GraphQLParser::parseQuery(&AtomicGraphQLSchema::getInstance(),
 															std::get<0>(request),
 															std::get<1>(request));
 		auto &triple_store = AtomicTripleStore::getInstance();

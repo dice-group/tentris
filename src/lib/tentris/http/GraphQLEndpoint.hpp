@@ -40,6 +40,13 @@ namespace tentris::http::graphql_endpoint {
         auto operator()(restinio::request_handle_t req,
                         [[maybe_unused]] auto params) -> restinio::request_handling_status_t {
             using namespace std::string_literals;
+            // check if there is a schema available
+            if (AtomicGraphQLSchema::getInstance().empty()) {
+                auto resp = req->create_response();
+                resp.append_header(restinio::http_field::content_type, "application/json");
+                resp.append_body(fmt::format(R"({{"error":"Schema was not provided or schema does not contain the query root type"}})"));
+                resp.done();
+            }
             auto start_time = steady_clock::now();
             log("request started.");
             auto start_memory = get_memory_usage();

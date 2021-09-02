@@ -6,7 +6,7 @@
 #include <exception>
 #include <ostream>
 
-#include "tentris/store/AtomicGraphqlSchema.hpp"
+#include "tentris/store/AtomicGraphQLSchema.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
 #include "tentris/store/graphql/GraphQLParser.hpp"
 

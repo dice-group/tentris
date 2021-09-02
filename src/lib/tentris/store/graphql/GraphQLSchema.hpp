@@ -25,6 +25,16 @@ namespace tentris::store::graphql {
 	public:
 		GraphQLSchema() = default;
 
+        inline bool empty() {
+            return not object_type_defs.contains(query_type_name) or
+				   (object_type_defs.empty() and interface_type_defs.empty());
+        }
+
+		inline void clear() {
+			interface_type_defs.clear();
+			object_type_defs.clear();
+		}
+
 		// setters
 
 		inline void addObjectType(const std::string &name, ObjectData object_data) {

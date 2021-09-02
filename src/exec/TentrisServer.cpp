@@ -4,11 +4,11 @@
 #include "config/ServerConfig.hpp"
 #include <restinio/all.hpp>
 #include <tentris/http/GraphQLEndpoint.hpp>
+#include <tentris/http/GraphQLSchemaEndpoint.hpp>
 #include <tentris/http/SPARQLEndpoint.hpp>
-#include <tentris/store/AtomicGraphqlSchema.hpp>
+#include <tentris/store/AtomicGraphQLSchema.hpp>
 #include <tentris/store/AtomicTripleStore.hpp>
 #include <tentris/store/config/AtomicTripleStoreConfig.cpp>
-#include <tentris/store/graphql/GraphQLParser.hpp>
 
 #include <fmt/format.h>
 
@@ -73,16 +73,6 @@ int main(int argc, char *argv[]) {
 	} else {
 		log("No file loaded.");
 	}
-	// parse graphql schema if provided
-	if (not cfg.graphql_schema.empty()) {
-		// save contents of the document to a string
-		std::ifstream schema_file;
-		schema_file.open(cfg.graphql_schema);
-		std::stringstream schema_str_stream;
-		schema_str_stream << schema_file.rdbuf();
-		tentris::store::graphql::GraphQLParser::parseSchema(schema_str_stream.str(),
-															::tentris::store::AtomicGraphqlSchema::getInstance());
-	}
 
 	// create endpoint
 	using namespace restinio;
@@ -96,6 +86,9 @@ int main(int argc, char *argv[]) {
 	router->http_get(
 			R"(/graphql)",
 			tentris::http::graphql_endpoint::GraphQLEndpoint{});
+	router->http_post(
+			R"(/graphqlschema/)",
+			tentris::http::graphql_schema_endpoint::GraphQLSchemaEndpoint{});
 
 	router->non_matched_request_handler(
 			[](auto req) -> restinio::request_handling_status_t {
@@ -105,6 +98,8 @@ int main(int argc, char *argv[]) {
 	// Launching a server with custom traits.
 
 	log("SPARQL endpoint serving sparkling linked data treasures on {} threads at http://0.0.0.0:{}/sparql?query="_format(cfg.threads, cfg.port));
+	log("Provide a GraphQL schema at http://0.0.0.0:{}/graphqlschema/"_format(cfg.port));
+	log("GraphQL endpoint available at http://0.0.0.0:{}/graphql?query="_format(cfg.port));
 
 	restinio::run(
 			restinio::on_thread_pool<tentris_restinio_traits>(cfg.threads)

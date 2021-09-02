@@ -17,7 +17,7 @@ namespace tentris::store {
     /**
      * A SingletonFactory that allows to share a single GraphqlSchema instance between multiple threads.
      */
-    using AtomicGraphqlSchema = ::tentris::util::sync::SingletonFactory<graphql::GraphQLSchema>;
+    using AtomicGraphQLSchema = ::tentris::util::sync::SingletonFactory<graphql::GraphQLSchema>;
 };
 
 #endif//TENTRIS_ATOMICGRAPHQLSCHEMA_HPP

@@ -9,6 +9,7 @@ namespace tentris::store::graphql {
 		antlr4::CommonTokenStream tokens(&lexer);
 		Dice::graphql_parser::base::GraphQLParser parser(&tokens);
 		auto root = parser.document();
+		schema.clear(); // if another schema already exists, remove it
 		GraphQLSchemaVisitor schema_visitor{&schema};
 		schema_visitor.visitDocument(root);
 	}
