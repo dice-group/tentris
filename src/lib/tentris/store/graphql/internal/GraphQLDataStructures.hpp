@@ -49,7 +49,7 @@ namespace tentris::store::graphql::internal {
 		ResultsLabels result_labels{};
 		// list of fields names
 		Features features{};
-		// map from label to field names
+		// map from label to field names or aliases
 		FieldNames field_names{};
 		// inline framgent dependencies - label to type condition (uri) to dependent labels
 		FragmentDependencies fragment_dependencies{};

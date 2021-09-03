@@ -7,13 +7,13 @@
 
 namespace tentris::store::graphql::exception {
 
-	class SchemaException : public std::invalid_argument {
+	class SchemaException : public std::logic_error {
 
 	private:
 		std::string msg;
 
 	protected:
-		explicit SchemaException(const std::string &msg) : invalid_argument("GraphQL SchemaException: " + msg) {}
+		explicit SchemaException(const std::string &msg) : std::logic_error("GraphQL SchemaException: " + msg) {}
 
 	public:
 		~SchemaException() noexcept override = default;
@@ -44,15 +44,26 @@ namespace tentris::store::graphql::exception {
 										  argument_name, field_name, parent_type)) {}
 	};
 
-	class InterfaceNotImpementedExecption : public SchemaException {
+	class InterfaceNotImplementedExecption : public SchemaException {
 
 	public:
-		explicit InterfaceNotImpementedExecption(const std::string &object_type,
+		explicit InterfaceNotImplementedExecption(const std::string &object_type,
 												 const std::string &interface)
 			: SchemaException(fmt::format("Type `{}` does not implement interface {}",
 										  object_type, interface)) {}
-};
+
+    };
+
+    class NotCompatibleFieldAliasesException : public SchemaException {
+
+    public:
+        explicit NotCompatibleFieldAliasesException(const std::string &alias)
+                : SchemaException(fmt::format("Field alias `{}` applied on different types", alias)) {}
+
+    };
+
+
 
 }// namespace tentris::store::graphql::exception
 
-#endif//TENTRIS_TENTRIS_SCHEMAEXCEPTION_HPP_HPP
+#endif //TENTRIS_SCHEMAEXCEPTION_HPP

@@ -11,7 +11,8 @@ namespace tentris::store::graphql::internal {
 												   schema->getQueryType()));
 			ParsedSubGraphQL sub_query{};
 			field_name = root_field->field()->name()->getText();
-			sub_query.field_names[field_label] = field_name;
+			sub_query.field_names[field_label] = (not root_field->field()->alias()) ? field_name
+																					: root_field->field()->alias()->name()->getText();
 			if (schema->fieldIsList(field_name))
 				sub_query.list_labels.insert(field_label);
 			if (schema->fieldIsNonNull(field_name))
@@ -60,12 +61,19 @@ namespace tentris::store::graphql::internal {
 		// collect fields
 		for (const auto &selection : ctx->selection()) {
 			if (selection->field()) {
-				const auto &f_name = selection->field()->name()->getText();
-				if (not field_selections.contains(f_name))
+				auto f_name = (not selection->field()->alias()) ? selection->field()->name()->getText()
+																: selection->field()->alias()->name()->getText();
+				if (not field_selections.contains(f_name)) {
 					field_selections[f_name] = selection->field();
-				else if (selection->field()->selectionSet())
+				}
+				else if (selection->field()->selectionSet()) {
+					// ensure that in case of field aliases the type of the fields are equal
+					if (schema->getFieldType(selection->field()->name()->getText(), parent_type.back()) !=
+						schema->getFieldType(f_name, parent_type.back()))
+						throw NotCompatibleFieldAliasesException(f_name);
 					for (auto &sel : selection->field()->selectionSet()->selection())
 						field_selections[f_name]->selectionSet()->addChild(sel);
+				}
 			} else if (selection->inlineFragment()) {
 				auto type_name = selection->inlineFragment()->typeCondition()->namedType()->name()->getText();
 				if (not inline_fragment_selections.contains(type_name))
@@ -77,11 +85,12 @@ namespace tentris::store::graphql::internal {
 		}
 		for (const auto &selection : ctx->selection()) {
 			if (selection->field()) {
-				field_name = selection->field()->name()->getText();
-				if (not field_selections.contains(field_name))
+				auto f_name = (not selection->field()->alias()) ? selection->field()->name()->getText()
+																: selection->field()->alias()->name()->getText();
+				if (not field_selections.contains(f_name))
 					continue;
-                auto f_name = field_name;
-				visitField(field_selections[field_name]);
+				field_name = selection->field()->name()->getText();
+				visitField(field_selections[f_name]);
 				field_selections.erase(f_name);
 			} else if (selection->inlineFragment())
 				visitInlineFragment(selection->inlineFragment());
@@ -93,7 +102,8 @@ namespace tentris::store::graphql::internal {
 	GraphQLQueryVisitor::visitField(base::GraphQLParser::FieldContext *ctx) {
 		field_label = ++next_label;
 		active_path.push_back(field_label);
-		parsed_query->back().field_names[field_label] = field_name;
+		parsed_query->back().field_names[field_label] = (not ctx->alias()) ? field_name
+																		   : ctx->alias()->name()->getText();
 		const auto &uri = schema->getFieldUri(field_name, parent_type.back());
 		const auto &type = schema->getFieldType(field_name, parent_type.back());
 		bool is_inverse = schema->fieldIsInverse(field_name, parent_type.back());
@@ -139,7 +149,7 @@ namespace tentris::store::graphql::internal {
 			type_conditions.pop_back();
 		}
 		if (type != "ID")
-		    parsed_query->back().operands_labels.emplace_back(OperandLabels{']'});
+			parsed_query->back().operands_labels.emplace_back(OperandLabels{']'});
 		// remove field name from path
 		active_path.pop_back();
 		return nullptr;
@@ -151,7 +161,7 @@ namespace tentris::store::graphql::internal {
 			const auto &type_condition = ctx->typeCondition()->namedType()->name()->getText();
 			// check if the type is an implementation of the parent type
 			if (not schema->implementsInterface(type_condition, parent_type.back()))
-				throw InterfaceNotImpementedExecption(type_condition, parent_type.back());
+				throw InterfaceNotImplementedExecption(type_condition, parent_type.back());
 			parsed_query->back().features.emplace_back(Feature{schema->getObjectUri(type_condition)});
 			// the inline fragment adds an additional optional layer
 			parsed_query->back().operands_labels.emplace_back(OperandLabels{'['});
