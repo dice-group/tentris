@@ -71,7 +71,7 @@ namespace tentris::store {
 								"Subject or predicate of the triple have a term type that is not allowed there."};
 					++count;
 
-					if (trie.size() % bulk_size == 0) {
+					if (bulk_inserter.size() == bulk_size) {
 						bulk_inserter.flush();
 						logDebug("{:>10.3} mio triples processed."_format(double(count)/1'000'000));
 						logDebug("{:>10.3} mio triples loaded."_format(double(trie.size())/1'000'000));
