@@ -34,6 +34,8 @@ namespace tentris::store::graphql::internal {
 		antlrcpp::Any visitDirective(base::GraphQLParser::DirectiveContext *ctx) override;
 
 		antlrcpp::Any visitValue(base::GraphQLParser::ValueContext *ctx) override;
+
+        antlrcpp::Any visitSchemaDefinition(base::GraphQLParser::SchemaDefinitionContext *ctx) override;
 	};
 
 }// namespace tentris::store::graphql::internal

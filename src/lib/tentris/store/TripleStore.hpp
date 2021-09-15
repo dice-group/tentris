@@ -133,7 +133,7 @@ namespace tentris::store {
 			}
         }
 
-        const_BoolHypertrie resolveGQLField(std::string field) {
+        const_BoolHypertrie resolveGQLField(const std::string& field) {
             using namespace ::tentris::tensor;
             auto term = URIRef(field);
             try {

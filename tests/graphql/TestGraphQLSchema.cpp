@@ -148,3 +148,31 @@ TEST(TestGraphQLSchema, WrappingTypesAndSchemaException) {
 	ASSERT_THROW(schema.getFieldUri("cty", "Compny"), SchemaException);
 	ASSERT_THROW(schema.fieldIsNonNull("wors", "Person"), SchemaException);
 }
+
+TEST(TestGraphQLSchema, SchemaType) {
+    const std::string schema_str = R"(schema @filter {
+                                       query: Query
+                                   }
+                                   type Query {
+								       person: Person
+								   }
+								   type Person {
+								       name: String
+								   })";
+    const std::string schema_str2 = R"(schema {
+                                       query: QueryTest
+                                   }
+                                   type QueryTest {
+								       person: Person
+								   }
+								   type Person {
+								       name: String
+								   })";
+    GraphQLSchema schema{};
+    tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
+	assert(schema.typeFilter("", "Person", false));
+	assert(schema.typeFilter("", "Person", true));
+    GraphQLSchema schema2{};
+    tentris::store::graphql::GraphQLParser::parseSchema(schema_str2, schema2);
+	assert(schema2.getQueryType() == "QueryTest");
+}

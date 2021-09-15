@@ -48,22 +48,33 @@ namespace tentris::store::graphql::exception {
 
 	public:
 		explicit InterfaceNotImplementedExecption(const std::string &object_type,
-												 const std::string &interface)
+												  const std::string &interface)
 			: SchemaException(fmt::format("Type `{}` does not implement interface {}",
 										  object_type, interface)) {}
+	};
 
-    };
+	class NotCompatibleFieldAliasesException : public SchemaException {
 
-    class NotCompatibleFieldAliasesException : public SchemaException {
+	public:
+		explicit NotCompatibleFieldAliasesException(const std::string &alias)
+			: SchemaException(fmt::format("Field alias `{}` applied on different types", alias)) {}
+	};
 
-    public:
-        explicit NotCompatibleFieldAliasesException(const std::string &alias)
-                : SchemaException(fmt::format("Field alias `{}` applied on different types", alias)) {}
+	class UnsupportedTypeDirective : public SchemaException {
 
-    };
+	public:
+		UnsupportedTypeDirective(const std::string &directive,
+								 const std::string &type)
+			: SchemaException(fmt::format("Directive `{}` is not supported on type `{}`.", directive, type)) {}
+	};
 
+	class NotImplemented : public SchemaException {
+
+	public:
+		explicit NotImplemented(const std::string &msg) : SchemaException(msg) {}
+	};
 
 
 }// namespace tentris::store::graphql::exception
 
-#endif //TENTRIS_SCHEMAEXCEPTION_HPP
+#endif//TENTRIS_SCHEMAEXCEPTION_HPP

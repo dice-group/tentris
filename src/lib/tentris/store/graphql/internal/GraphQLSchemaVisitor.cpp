@@ -9,6 +9,8 @@ namespace tentris::store::graphql::internal {
 	}
 
 	antlrcpp::Any GraphQLSchemaVisitor::visitTypeSystemDefinition(base::GraphQLParser::TypeSystemDefinitionContext *ctx) {
+		if (ctx->schemaDefinition())
+			visitSchemaDefinition(ctx->schemaDefinition());
 		if (ctx->typeDefinition())
 			visitTypeDefinition(ctx->typeDefinition());
 		return nullptr;
@@ -163,4 +165,24 @@ namespace tentris::store::graphql::internal {
 			return ctx->booleanValue()->getText();
 		return nullptr;
 	}
+
+	antlrcpp::Any GraphQLSchemaVisitor::visitSchemaDefinition(base::GraphQLParser::SchemaDefinitionContext *ctx) {
+		// check for @filter directive and assign the query type name
+		if (ctx->directives()) {
+			auto [name, args] = visitDirective(ctx->directives()->directive(0)).as<std::pair<std::string, std::map<std::string, std::string>>>();
+			if (name == "filter") {
+				schema->setFilterDirective();
+			} else {
+				throw UnsupportedTypeDirective(name, "schema");
+			}
+		}
+        const auto &op_type = ctx->rootOperationTypeDefinition(0)->operationType()->getText();
+        if (op_type == "query") {
+            schema->setQueryRoot(ctx->rootOperationTypeDefinition(0)->namedType()->name()->getText());
+        } else {
+            throw NotImplemented("Only the field `query` is currently supported in the type `schema`.");
+        }
+		return nullptr;
+	}
+
 }// namespace tentris::store::graphql::internal

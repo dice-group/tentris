@@ -21,6 +21,7 @@ namespace tentris::store::graphql {
 		std::string query_type_name = "Query";
 		InterfaceTypeDefinitions interface_type_defs{};
 		ObjectTypeDefinitions object_type_defs{};
+		bool filter_directive = false;
 
 	public:
 		GraphQLSchema() = default;
@@ -43,6 +44,10 @@ namespace tentris::store::graphql {
 
 		inline void addInterfaceType(const std::string &name, InterfaceData interface_data) {
 			interface_type_defs[name] = std::move(interface_data);
+		}
+
+		inline void setFilterDirective() {
+			filter_directive = true;
 		}
 
 		inline void setQueryRoot(const std::string &query_name) {

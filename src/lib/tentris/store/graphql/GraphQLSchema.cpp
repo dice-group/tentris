@@ -131,6 +131,8 @@ namespace tentris::store::graphql {
     [[nodiscard]] bool GraphQLSchema::typeFilter(const std::string &uri,
                                                  const std::string &type,
                                                  bool inverse) const {
+		if (filter_directive)
+			return true;
         for (const auto &obj_def : object_type_defs) {
             for (const auto &field_def : obj_def.second.fields_data) {
 				if (uri != field_def.second.uri or inverse != field_def.second.is_inverse)
