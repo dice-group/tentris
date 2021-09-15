@@ -132,8 +132,8 @@ namespace tentris::store::graphql::internal {
 		} else {
 			// not in fragment -- empty type condition
 			type_conditions.emplace_back("");
-			// perform type filter
-			if (schema->typeFilter(uri, type, is_inverse)) {
+			// check if type filter is required
+			if (schema->typeFilter(field_name, parent_type.back())) {
 				parsed_query->back().operands_labels.emplace_back(OperandLabels{field_label});
 				parsed_query->back().features.emplace_back(Feature{schema->getObjectUri(type)});
 			}

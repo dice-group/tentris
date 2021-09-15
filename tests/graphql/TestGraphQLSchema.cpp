@@ -150,7 +150,7 @@ TEST(TestGraphQLSchema, WrappingTypesAndSchemaException) {
 }
 
 TEST(TestGraphQLSchema, SchemaType) {
-    const std::string schema_str = R"(schema @filter {
+    const std::string schema_str = R"(schema {
                                        query: Query
                                    }
                                    type Query {
@@ -170,9 +170,26 @@ TEST(TestGraphQLSchema, SchemaType) {
 								   })";
     GraphQLSchema schema{};
     tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
-	assert(schema.typeFilter("", "Person", false));
-	assert(schema.typeFilter("", "Person", true));
     GraphQLSchema schema2{};
     tentris::store::graphql::GraphQLParser::parseSchema(schema_str2, schema2);
 	assert(schema2.getQueryType() == "QueryTest");
+}
+
+TEST(TestGraphQLSchema, TypeFilter) {
+	const std::string schema_str = R"(type Query {
+                                       people: [Person]!
+								       companies: [Company]
+                                       }
+                                       type Person {
+                                           name: ID!
+                                           worksAt: Company @inverse @uri(value: "dummy") @filter
+                                           workedAt: Company
+                                       }
+                                       type Company @uri(value: "dummy2") {
+                                           city: String @uri(value: "dummy3")
+                                       })";
+	GraphQLSchema schema{};
+	tentris::store::graphql::GraphQLParser::parseSchema(schema_str, schema);
+	assert(schema.typeFilter("worksAt", "Person"));
+	assert(not schema.typeFilter("workedAt", "Person"));
 }

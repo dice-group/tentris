@@ -25,6 +25,7 @@ namespace tentris::store::graphql::internal {
 		bool non_null = false;
 		bool non_null_list_values = false;
 		bool is_inverse = false;
+		bool filter = false;
 		std::string type_name;
 		std::string uri;
 		std::map<std::string, std::string> arguments{};

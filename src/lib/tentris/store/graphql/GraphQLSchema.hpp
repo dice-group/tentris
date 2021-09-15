@@ -26,10 +26,10 @@ namespace tentris::store::graphql {
 	public:
 		GraphQLSchema() = default;
 
-        inline bool empty() {
-            return not object_type_defs.contains(query_type_name) or
+		inline bool empty() {
+			return not object_type_defs.contains(query_type_name) or
 				   (object_type_defs.empty() and interface_type_defs.empty());
-        }
+		}
 
 		inline void clear() {
 			interface_type_defs.clear();
@@ -92,9 +92,8 @@ namespace tentris::store::graphql {
 														 const std::string &field_name,
 														 const std::string &parent_type = "") const;
 
-		[[nodiscard]] bool typeFilter(const std::string &uri,
-									  const std::string &type,
-									  bool inverse) const;
+		[[nodiscard]] bool typeFilter(const std::string &field_name,
+									  const std::string &object_type) const;
 
 		[[nodiscard]] bool implementsInterface(const std::string &object_type,
 											   const std::string &parent_type) const;
