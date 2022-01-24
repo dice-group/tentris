@@ -58,6 +58,14 @@ set(CXXOPTS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 set(CXXOPTS_ENABLE_WARNINGS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(cxxopts)
 
+FetchContent_Declare(
+        hypertrie
+        GIT_REPOSITORY https://github.com/dice-group/hypertrie
+        GIT_TAG        left-join
+        GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(hypertrie)
+
 add_library(csv-parser INTERFACE)
 target_include_directories(csv-parser INTERFACE
         thirdparty/csv-parser

@@ -1,9 +1,9 @@
-FROM ubuntu:groovy AS builder
+FROM ubuntu:impish AS builder
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TENTRIS_MARCH="x86-64"
 
 RUN apt-get -qq update && \
-    apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-10-dev clang-11 g++-10 pkg-config lld autoconf libtool
+    apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-10-dev clang-11 g++-10 pkg-config lld-11 autoconf libtool
 RUN rm /usr/bin/ld && ln -s /usr/bin/lld-11 /usr/bin/ld
 ARG CXX="clang++-11"
 ARG CC="clang-11"
