@@ -10,7 +10,7 @@ ARG CC="clang-14"
 ENV CXXFLAGS="${CXXFLAGS} -march=${TENTRIS_MARCH}"
 ENV CMAKE_EXE_LINKER_FLAGS="-L/usr/local/lib/x86_64-linux-gnu -L/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu -L/usr/local/lib"
 
-# Compile more recent tcmalloc-minimal with clang-14 + -march
+# Compile more recent tcmalloc-minimal with clang-14 + -march 
 RUN git clone --quiet --branch gperftools-2.8.1 https://github.com/gperftools/gperftools
 WORKDIR /gperftools
 RUN ./autogen.sh
