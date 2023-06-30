@@ -470,7 +470,6 @@ _:genid41 <http://xmlns.com/foaf/0.1/name> "Vasilista Hamic"^^<http://www.w3.org
 <http://localhost/publications/articles/Journal1/1942/Article1> <http://purl.org/dc/elements/1.1/title> "transcribed redigesting ostinato"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://localhost/publications/articles/Journal1/1942/Article1> <http://xmlns.com/foaf/0.1/homepage> "http://www.swifters.tld/ostinato/recalculation.html"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://localhost/publications/articles/Journal1/1942/Article1> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1942> .
-<http://localhost/publications/articles/Journal1/1942/Article1> <http://swrc.ontoware.org/ontology#journal> <http://localhost/publications/journals/Journal1/1941> .
 <http://localhost/publications/articles/Journal1/1942/Article1> <http://purl.org/dc/elements/1.1/creator> _:genid33 .
 <http://localhost/publications/articles/Journal1/1942/Article1> <http://purl.org/dc/elements/1.1/creator> <http://localhost/persons/Paul_Erdoes> .
 <http://localhost/publications/articles/Journal1/1942/Article2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://localhost/vocabulary/bench/Article> .

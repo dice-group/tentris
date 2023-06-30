@@ -28,6 +28,7 @@ https://tentris.dice-research.org/iswc2020/
 * fast tensor-based in-memory storage and query processing
 * SPARQL Protocol conform HTTP interface
 * supports at the moment SPARQL queries with SELECT + opt. DISTINCT + basic graph pattern
+* GraphQL queries (see GraphQL_doc.md for more details)
 * available for Linux x86-64 
 
 <details><summary>Current limitations: </summary>
@@ -40,7 +41,7 @@ https://tentris.dice-research.org/iswc2020/
 
 ## Get It
 * download [static prebuilt binaries](https://github.com/dice-group/tentris/releases) and [try them out](#running-tentris)
-* pull a [docker image](https://hub.docker.com/repository/docker/dicegroup/tentris_server) and [try them out](#docker)
+* <s>pull a [docker image](https://hub.docker.com/repository/docker/dicegroup/tentris_server) and [try them out](#docker)</s> a docker image will be made available soon
 * [build it yourself](#build-it-yourself)
 
 ## running Tᴇɴᴛʀɪs 
@@ -63,10 +64,13 @@ The endpoint may now be queried locally at: `127.0.0.1:9080/sparql?query=*your q
 *Notice*: the query string `*your query*` must be URL encoded. 
 You can use any online URL encoder like <https://meyerweb.com/eric/tools/dencoder>.   
 
-An additional endpoint is provided at `127.0.0.1:9080/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results). 
+An additional endpoint is provided at `127.0.0.1:9080/stream` using chunk encoded HTTP response. This endpoint should be used for very large responses (>1mio results).
 
+For GraphQL, we provide two additional endpoints:
+  - 127.0.0.1:9080/graphqlschema, which accepts POST requests is used to define the GraphQL schema
+  - 127.0.0.1:9080/graphql?query=*your query", which accepts GraphQL queries (GET requests).
 
-#### Usage Example
+#### Usage Example (SPARQL)
 
 Consider the query below against a [SP²Bench](http://dbis.informatik.uni-freiburg.de/forschung/projekte/SP2B/) data set:
 ``` 
@@ -84,14 +88,45 @@ To run the query start Tᴇɴᴛʀɪs with:
 ```
 tentris_server -p 3030 -f sp2b.nt 
 ```
-You can find a populated sp2b.nt file in [tests/dataset/sp2b.nt](tests/dataset/sp2b.nt).
 
-now, visit the follwing IRI in a browser to send the query to your Tᴇɴᴛʀɪs endpoint:
+Now, visit the following IRI in a browser to send the query to your Tᴇɴᴛʀɪs endpoint:
 
 <http://127.0.0.1:3030/sparql?query=PREFIX%20rdf%3A%20%20%20%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23%3E%0APREFIX%20bench%3A%20%3Chttp%3A%2F%2Flocalhost%2Fvocabulary%2Fbench%2F%3E%0A%0ASELECT%20DISTINCT%20%3Farticle%0AWHERE%20%7B%0A%20%20%3Farticle%20rdf%3Atype%20bench%3AArticle%20.%0A%20%20%3Farticle%20%3Fproperty%20%3Fvalue%20%0A%7D>
 </details>
 
-### CLI Endpoint
+#### Usage Example (GraphQL)
+For this example, we use an excerpt from the [SP²Bench](http://dbis.informatik.uni-freiburg.de/forschung/projekte/SP2B/) dataset (i.e., the file ./tests/data/test.nt).
+
+We first start Tᴇɴᴛʀɪs with:
+
+```
+tentris_server -p 9080 -f ./tests/data/test.nt
+```
+
+Then, we upload a GraphQL schema capturing the data via a POST request:
+```
+curl -F "schema=@./tests/data/schema.graphql" 127.0.0.1:9080/graphqlschema
+```
+
+We can now issue the GraphQL query
+```
+{
+  articles {
+    title
+    journal {
+        number
+        volume
+    }
+  }
+}
+```
+as follows:
+```
+curl -G --data-urlencode 'query={ articles { title journal { number volume } } }' '127.0.0.1:9080/graphql'
+```
+
+
+### CLI Endpoint (SPARQL)
 
 <details><summary> </summary>
 
@@ -110,37 +145,64 @@ For more commandline options see `tentris_terminal --help`.
 </details>
 
 
-## Docker
+[//]: # (## Docker)
 
-Using the Tᴇɴᴛʀɪs docker image is really easy. Find necessary steps below.
+[//]: # ()
+[//]: # (Using the Tᴇɴᴛʀɪs docker image is really easy. Find necessary steps below.)
 
-<details><summary> </summary>
+[//]: # ()
+[//]: # (<details><summary> </summary>)
 
-* A docker image is available on [docker hub](https://hub.docker.com/r/dicegroup/tentris_server). Get it with 
-    ```shell script
-    docker pull dicegroup/tentris_server
-    ```
-* To show the available commandline options, run
-    ```shell script
-    docker run --rm dicegroup/tentris_server --help
-    ```
-* Tᴇɴᴛʀɪs uses by default the port 9080, so make sure you forward it, e.g. 
-    ```shell script
-    docker run --publish=9080:9080 dicegroup/tentris_server
-    ```
-* To load data, mount its enclosing directory to the container and tell Tᴇɴᴛʀɪs, to load it:
-    ```shell script
-    docker run -v /localfolder:/datasets --publish=9080:9080 dicegroup/tentris_server -f /datasets/yourRDFfile.nt
-    ```
-* By default, Tᴇɴᴛʀɪs writes logs to the `/tentris` in the container. To make logs available outside the container, you can mount them as well:
-    ```shell script
-    docker run -v /local-log-dir:/tentris --publish=9080:9080 dicegroup/tentris_server
-    ```
-* The other command-line tools `tentris_terminal`, `ids2hypertrie` and `ids2hypertrie` are also available in the container. Run them like:
-    ```shell script
-    docker run -it  dicegroup/tentris_server tentris_terminal
-    ```
-</details>    
+[//]: # ()
+[//]: # (* A docker image is available on [docker hub]&#40;https://hub.docker.com/r/dicegroup/tentris_server&#41;. Get it with )
+
+[//]: # (    ```shell script)
+
+[//]: # (    docker pull dicegroup/tentris_server)
+
+[//]: # (    ```)
+
+[//]: # (* To show the available commandline options, run)
+
+[//]: # (    ```shell script)
+
+[//]: # (    docker run --rm dicegroup/tentris_server --help)
+
+[//]: # (    ```)
+
+[//]: # (* Tᴇɴᴛʀɪs uses by default the port 9080, so make sure you forward it, e.g. )
+
+[//]: # (    ```shell script)
+
+[//]: # (    docker run --publish=9080:9080 dicegroup/tentris_server)
+
+[//]: # (    ```)
+
+[//]: # (* To load data, mount its enclosing directory to the container and tell Tᴇɴᴛʀɪs, to load it:)
+
+[//]: # (    ```shell script)
+
+[//]: # (    docker run -v /localfolder:/datasets --publish=9080:9080 dicegroup/tentris_server -f /datasets/yourRDFfile.nt)
+
+[//]: # (    ```)
+
+[//]: # (* By default, Tᴇɴᴛʀɪs writes logs to the `/tentris` in the container. To make logs available outside the container, you can mount them as well:)
+
+[//]: # (    ```shell script)
+
+[//]: # (    docker run -v /local-log-dir:/tentris --publish=9080:9080 dicegroup/tentris_server)
+
+[//]: # (    ```)
+
+[//]: # (* The other command-line tools `tentris_terminal`, `ids2hypertrie` and `ids2hypertrie` are also available in the container. Run them like:)
+
+[//]: # (    ```shell script)
+
+[//]: # (    docker run -it  dicegroup/tentris_server tentris_terminal)
+
+[//]: # (    ```)
+
+[//]: # (</details>    )
 
 ## Build It Yourself
 
