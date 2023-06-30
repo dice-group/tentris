@@ -92,7 +92,7 @@ tentris_server -p 3030 -f sp2b.nt
 Now, visit the following IRI in a browser to send the query to your Tᴇɴᴛʀɪs endpoint:
 
 <http://127.0.0.1:3030/sparql?query=PREFIX%20rdf%3A%20%20%20%3Chttp%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23%3E%0APREFIX%20bench%3A%20%3Chttp%3A%2F%2Flocalhost%2Fvocabulary%2Fbench%2F%3E%0A%0ASELECT%20DISTINCT%20%3Farticle%0AWHERE%20%7B%0A%20%20%3Farticle%20rdf%3Atype%20bench%3AArticle%20.%0A%20%20%3Farticle%20%3Fproperty%20%3Fvalue%20%0A%7D>
-</details>
+
 
 #### Usage Example (GraphQL)
 For this example, we use an excerpt from the [SP²Bench](http://dbis.informatik.uni-freiburg.de/forschung/projekte/SP2B/) dataset (i.e., the file ./tests/data/test.nt).
@@ -124,7 +124,7 @@ as follows:
 ```
 curl -G --data-urlencode 'query={ articles { title journal { number volume } } }' '127.0.0.1:9080/graphql'
 ```
-
+</details>
 
 ### CLI Endpoint (SPARQL)
 
