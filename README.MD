@@ -40,7 +40,7 @@ https://tentris.dice-research.org/iswc2020/
 </details>
 
 ## Get It
-* download [static prebuilt binaries](https://github.com/dice-group/tentris/releases) and [try them out](#running-tentris)
+* download [static prebuilt binaries](https://hobbitdata.informatik.uni-leipzig.de/tentris-graphql/tentris_server) and [try them out](#running-tentris)
 * <s>pull a [docker image](https://hub.docker.com/repository/docker/dicegroup/tentris_server) and [try them out](#docker)</s> a docker image will be made available soon
 * [build it yourself](#build-it-yourself)
 
