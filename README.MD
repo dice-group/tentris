@@ -1,5 +1,3 @@
-[![Website](https://img.shields.io/website?up_message=tentris&url=https%3A%2F%2Ftentris.dice-research.org%2F)](https://tentris.dice-research.org/) [![Build Status](https://travis-ci.com/dice-group/tentris.svg)](https://travis-ci.com/dice-group/tentris) [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/dicegroup/tentris_server)](https://hub.docker.com/repository/docker/dicegroup/tentris_server) ![GitHub](https://img.shields.io/github/license/dice-group/tentris)  
-
 # Tᴇɴᴛʀɪs: A Tensor-based Triple Store 
 
 <p><img src = "https://tentris.dice-research.org/iswc2020/assets/img/Tentris_logo.svg" alt = "Tᴇɴᴛʀɪs Logo" width = "30%" align = "center"></p>
@@ -20,6 +18,24 @@ https://tentris.dice-research.org/iswc2020/
   year = 2020,
   isbn = {978-3-030-62419-4}
 }
+```
+
+and
+
+> Alexander Bigerl, Lixi Conrads, Charlotte Behning, Muhammad Saleem and Axel-Cyrille Ngonga Ngomo (2022) Hashing the Hypertrie: Space- and Time-Efficient Indexing for SPARQL in Tensors. In: The Semantic Web – ISWC 2022 Hashing the Hypertrie: Space- and Time-Efficient Indexing for SPARQL in Tensors
+
+https://tentris.dice-research.org/iswc2022/
+
+```
+@InProceedings{bigerl2022hashing-the-hypertrie,
+  author = {Bigerl, Alexander and Conrads, Lixi and Behning, Charlotte and Sherif, Mohamed Ahmed and Saleem, Muhammad and Ngonga Ngomo, Axel-Cyrille},
+  booktitle = {The Semantic Web -- ISWC 2022},
+  publisher = {Springer International Publishing},
+  title = { {H}ashing the {H}ypertrie: {S}pace- and {T}ime-{E}fficient {I}ndexing for {SPARQL} in {T}ensors},
+  url = {https://papers.dice-research.org/2022/ISWC_Hashing_the_Hypertrie/iswc2022_hashing_the_hypertrie_public.pdf},
+  year = 2022
+}
+
 ```
 
 </details>
@@ -152,30 +168,26 @@ To build Tᴇɴᴛʀɪs yourself, you need some experience with building C++ pro
 ### Build Tools
 
 Tᴇɴᴛʀɪs is known to build successfully on Ubuntu 20.04 and newer. 
-Building was tested with GCC 10 and clang 10. 
+Building was tested with clang 14 and libstdc++-11-dev (gcc's standard library).
 
 The following packages are required to build Tᴇɴᴛʀɪs:
 ```
-sudo apt install build-essential uuid-dev g++-10 git openjdk-8-jdk python3-pip python3-setuptools python3-wheel
+sudo apt install make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-11-dev clang-14 g++-11 pkg-config lld autoconf libtoolmake cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-11-dev clang-14 g++-11 pkg-config lld autoconf libtool
 ```
-Additionally, a recent version of conan is required: 
+and set the compilers to be used in your current shell:
+```bash
+export CXX="clang++-14"
+export CC="clang-14"
 ```
-pip3 install --user conan
+Additionally, a conan v1.x is required: 
+```
+pip3 install --user "conan<2"
 ```
 
 ### Dependencies
 Most required dependencies are installed via conan. Therefore, Add the respective remotes:
 ```shell script
 conan remote add dice-group https://conan.dice-research.org/artifactory/api/conan/tentris
-```
-Additionally, a statically linked version of the [Serd](https://drobilla.net/software/serd) library is required. As the packages in the deb/rpm repositories include only a dynamic library, we need to compile it manually:
-```shell script
-git clone --branch v0.30.2 https://gitlab.com/drobilla/serd.git
-cd serd
-git submodule update --init --recursive
-./waf configure --static
-sudo ./waf install
-cd -
 ```
 ### Pull & Build
 After you installed all dependencies, you are ready to build Tᴇɴᴛʀɪs. 
