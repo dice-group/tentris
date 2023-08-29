@@ -18,3 +18,5 @@ sparql-parser-base:sparql_version=1.0
 [generators]
 cmake_find_package
 cmake_paths
+CMakeDeps
+CMakeToolchain

@@ -6,13 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/tentris/tentris_version.hpp)
 
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-
-if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
-    if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
-    endif ()
-endif ()
+include(cmake/boilerplate_init.cmake)
+boilerplate_init()
+include(cmake/conan_cmake.cmake)
+install_packages_via_conan("${CMAKE_SOURCE_DIR}/conanfile.txt" "${CONAN_OPTIONS}")
 
 if(DEFINED ${TENTRIS_MARCH})
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=${TENTRIS_MARCH}")
