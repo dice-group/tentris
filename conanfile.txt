@@ -5,6 +5,7 @@ restinio/0.6.12
 hypertrie/0.6.1@dice-group/stable
 rdf-parser/0.13.0@dice-group/stable
 sparql-parser-base/0.2.2@dice-group/stable
+serd/0.30.16
 
 [options]
 restinio:asio=boost

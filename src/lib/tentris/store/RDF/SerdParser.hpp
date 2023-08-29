@@ -7,7 +7,7 @@
 #include <Dice/RDF/Term.hpp>
 #include <Dice/hash/DiceHash.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
-#include <serd-0/serd/serd.h>
+#include <serd/serd.h>
 #include <boost/algorithm/string.hpp>
 #include <tsl/hopscotch_map.h>
 #include <atomic>

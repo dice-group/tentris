@@ -85,6 +85,7 @@ endif ()
 find_package(restinio REQUIRED)
 find_package(string-view-lite REQUIRED)
 find_package(optional-lite REQUIRED)
+find_package(serd REQUIRED)
 
 # make a library of the code
 add_library(tentris INTERFACE)
@@ -109,7 +110,7 @@ target_link_libraries(tentris
         hypertrie::hypertrie
         rdf-parser::rdf-parser
         Boost::Boost
-        serd-0
+        serd::serd
         cppitertools::cppitertools
         )
 
