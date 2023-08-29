@@ -1,18 +1,15 @@
 cmake_minimum_required(VERSION 3.13)
 project(tentris
         LANGUAGES CXX
-        VERSION 1.1.2)
+        VERSION 1.1.3)
 set(CMAKE_CXX_STANDARD 20)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/tentris/tentris_version.hpp)
 
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-
-if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
-    if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
-    endif ()
-endif ()
+include(cmake/boilerplate_init.cmake)
+boilerplate_init()
+include(cmake/conan_cmake.cmake)
+install_packages_via_conan("${CMAKE_SOURCE_DIR}/conanfile.txt" "${CONAN_OPTIONS}")
 
 if(DEFINED ${TENTRIS_MARCH})
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=${TENTRIS_MARCH}")
@@ -85,6 +82,7 @@ endif ()
 find_package(restinio REQUIRED)
 find_package(string-view-lite REQUIRED)
 find_package(optional-lite REQUIRED)
+find_package(serd REQUIRED)
 
 # make a library of the code
 add_library(tentris INTERFACE)
@@ -109,7 +107,7 @@ target_link_libraries(tentris
         hypertrie::hypertrie
         rdf-parser::rdf-parser
         Boost::Boost
-        serd-0
+        serd::serd
         cppitertools::cppitertools
         )
 
