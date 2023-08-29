@@ -2,15 +2,16 @@
 boost/1.75.0
 fmt/7.1.3
 restinio/0.6.12
-hypertrie/0.6.0@dice-group/rc15
-rdf-parser/0.13.1@dice-group/stable
-sparql-parser/0.3.0@dice-group/rc2
+hypertrie/0.6.1@dice-group/stable
+rdf-parser/0.13.0@dice-group/stable
+sparql-parser-base/0.2.2@dice-group/stable
 
 [options]
 restinio:asio=boost
 restinio:with_zlib=True
 boost:shared=False
 *:shared=False
+sparql-parser-base:sparql_version=1.0
 
 
 [generators]

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(tentris
         LANGUAGES CXX
-        VERSION 1.1.0)
+        VERSION 1.1.2)
 set(CMAKE_CXX_STANDARD 20)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/tentris/tentris_version.hpp)
@@ -72,7 +72,7 @@ target_include_directories(rapidjson INTERFACE
 find_package(tsl-hopscotch-map REQUIRED)
 find_package(fmt REQUIRED)
 find_package(hypertrie REQUIRED)
-find_package(sparql-parser REQUIRED)
+find_package(sparql-parser-base REQUIRED)
 find_package(rdf-parser REQUIRED)
 if (TENTRIS_STATIC)
     SET(Boost_USE_STATIC_LIBS ON)
@@ -103,8 +103,8 @@ target_link_libraries(tentris
         stdc++fs # for #include <filesystem>
         cxxopts
         rapidjson
+        sparql-parser-base::sparql-parser-base
         tsl::hopscotch_map
-        sparql-parser::sparql-parser
         fmt::fmt
         hypertrie::hypertrie
         rdf-parser::rdf-parser

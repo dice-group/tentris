@@ -7,10 +7,8 @@
 
 #include "tentris/store/RDF/TermStore.hpp"
 #include "tentris/store/AtomicTripleStore.hpp"
+#include "tentris/store/SPARQL/ParsedSPARQL.hpp"
 #include "tentris/tensor/BoolHypertrie.hpp"
-
-#include <Dice/sparql-parser/Parser.hpp>
-#include <Dice/sparql-query/Nodes/QueryNodes/SelectNodes/SelectNode.hpp>
 
 namespace tentris::store {
 	class TripleStore;
@@ -25,10 +23,10 @@ namespace tentris::store::cache {
 	struct QueryExecutionPackage {
 		using const_BoolHypertrie = ::tentris::tensor::const_BoolHypertrie;
 		using time_point_t = logging::time_point_t;
-		using SelectModifier = Dice::sparql::Nodes::QueryNodes::SelectNodes::SelectModifier;
+		using SelectModifier = sparql::SelectModifier;
 		using Variable = Dice::sparql::Variable;
+		using ParsedSPARQL = sparql::ParsedSPARQL;
 		using Subscript = ::tentris::tensor::Subscript;
-        using SelectNode= Dice::sparql::Nodes::QueryNodes::SelectNodes::SelectNode;
 
 	private:
 		std::string sparql_string;
@@ -61,18 +59,18 @@ namespace tentris::store::cache {
 		explicit QueryExecutionPackage(const std::string &sparql_string) : sparql_string{sparql_string} {
 			using namespace logging;
 			logDebug(fmt::format("Parsing query: {}", sparql_string));
-            std::shared_ptr<SelectNode> selectNode= Dice::sparql_parser::parseSelectQuery(sparql_string);
-            subscript = std::make_shared<Subscript>( selectNode->getOperands(), selectNode->getSubscriptResult());
-            select_modifier =selectNode->getSelectModifier();
+			ParsedSPARQL parsed_sparql{sparql_string};
+			subscript = parsed_sparql.getSubscript();
+			select_modifier = parsed_sparql.getSelectModifier();
 			logDebug(fmt::format("Parsed subscript: {} [distinct = {}]",
 								 subscript,
 								 select_modifier == SelectModifier::DISTINCT));
-            query_variables = selectNode->getSelectVariables();
+			query_variables = parsed_sparql.getQueryVariables();
 
 			auto &triple_store = AtomicTripleStore::getInstance();
 
 			logDebug(fmt::format("Slicing TPs"));
-            for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(selectNode->getBgps())) {
+			for ([[maybe_unused]] const auto &[op_pos, tp]: iter::enumerate(parsed_sparql.getBgps())) {
 				logDebug(fmt::format("Slice key {}: ⟨{}⟩", op_pos, fmt::join(tp, ", ")));
 				std::variant<const_BoolHypertrie, bool> op = triple_store.resolveTriplePattern(tp);
 				if (std::holds_alternative<bool>(op)) {
@@ -150,7 +148,7 @@ struct fmt::formatter<tentris::store::cache::QueryExecutionPackage> {
 
 	template<typename FormatContext>
 	auto format(const tentris::store::cache::QueryExecutionPackage &p, FormatContext &ctx) {
-        using SelectModifier = Dice::sparql::Nodes::QueryNodes::SelectNodes::SelectModifier;
+		using SelectModifier = tentris::store::sparql::SelectModifier;
 		return format_to(ctx.begin(),
 						 " SPARQL:     {}\n"
 						 " subscript:  {}\n"
