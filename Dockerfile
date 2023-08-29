@@ -23,18 +23,8 @@ RUN export LDFLAGS="${CMAKE_EXE_LINKER_FLAGS}" && ./configure \
     make install
 WORKDIR /
 
-# we need serd as static library. Not available from ubuntu repos
-RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN git clone --quiet --branch v0.30.2 https://gitlab.com/drobilla/serd.git
-WORKDIR serd
-RUN git submodule update --quiet --init --recursive && \
-    ./waf configure --static && \
-    ./waf install
-RUN rm /usr/bin/python
-WORKDIR /
-
 # install and configure conan
-RUN pip3 install conan && \
+RUN pip3 install "conan<2" && \
     conan user && \
     conan profile new --detect default && \
     conan profile update settings.compiler.libcxx=libstdc++11 default && \
@@ -50,6 +40,7 @@ RUN conan remote add dice-group https://conan.dice-research.org/artifactory/api/
 # build and cache dependencies via conan
 WORKDIR /conan_cache
 COPY conanfile.txt conanfile.txt
+RUN ln -s /usr/bin/clang-14 /usr/bin/clang # required by meson for building serd
 RUN conan install . --build=missing --profile default > conan_build.log
 
 # import project files
