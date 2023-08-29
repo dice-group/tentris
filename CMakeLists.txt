@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(tentris
         LANGUAGES CXX
-        VERSION 1.1.2)
+        VERSION 1.1.3)
 set(CMAKE_CXX_STANDARD 20)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/tentris/tentris_version.hpp)
