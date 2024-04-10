@@ -1,72 +1,80 @@
-FROM ubuntu:22.04 AS builder
-ARG DEBIAN_FRONTEND=noninteractive
-ARG TENTRIS_MARCH="x86-64"
+FROM alpine:3.17 AS builder
+ARG MARCH="x86-64-v3"
 
-RUN apt-get -qq update && \
-    apt-get -qq install -y make cmake uuid-dev git openjdk-11-jdk python3-pip python3-setuptools python3-wheel libstdc++-11-dev clang-14 g++-11 pkg-config lld autoconf libtool
-RUN rm /usr/bin/ld && ln -s /usr/bin/lld-14 /usr/bin/ld
-ARG CXX="clang++-14"
-ARG CC="clang-14"
-ENV CXXFLAGS="${CXXFLAGS} -march=${TENTRIS_MARCH}"
-ENV CMAKE_EXE_LINKER_FLAGS="-L/usr/local/lib/x86_64-linux-gnu -L/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu -L/usr/local/lib"
+RUN apk update && \
+    apk add \
+    make cmake autoconf automake pkgconfig \
+    gcc g++ gdb \
+    clang15 clang15-dev clang15-libs clang15-extra-tools clang15-static lldb llvm15 llvm15-dev lld \
+    openjdk11-jdk \
+    pythonispython3 py3-pip \
+    bash git libtool util-linux-dev linux-headers
 
-# Compile more recent tcmalloc-minimal with clang-14 + -march 
-RUN git clone --quiet --branch gperftools-2.8.1 https://github.com/gperftools/gperftools
+ARG CC="clang"
+ARG CXX="clang++"
+ENV CXXFLAGS="${CXXFLAGS} -march=${MARCH}"
+RUN rm /usr/bin/ld && ln -s /usr/bin/lld /usr/bin/ld # use lld as default linker
+
+
+# Compile more recent tcmalloc-minimal with clang-14 + -march
+RUN git clone --quiet --branch gperftools-2.9.1 --depth 1 https://github.com/gperftools/gperftools
 WORKDIR /gperftools
 RUN ./autogen.sh
-RUN export LDFLAGS="${CMAKE_EXE_LINKER_FLAGS}" && ./configure \
+RUN ./configure \
     --enable-minimal \
     --disable-debugalloc \
     --enable-sized-delete \
     --enable-dynamic-sized-delete-support && \
-    make -j && \
+    make -j$(nproc) && \
     make install
 WORKDIR /
 
+ENV CONAN_DISABLE_STRICT_MODE=1
+
 # install and configure conan
-RUN pip3 install "conan<2" && \
+RUN pip3 install conan==1.62.0 && \
     conan user && \
     conan profile new --detect default && \
+    conan profile update settings.compiler=clang default && \
     conan profile update settings.compiler.libcxx=libstdc++11 default && \
+    conan profile update settings.compiler.cppstd=20 default && \
     conan profile update env.CXXFLAGS="${CXXFLAGS}" default && \
-    conan profile update env.CMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS}" default && \
     conan profile update env.CXX="${CXX}" default && \
     conan profile update env.CC="${CC}" default && \
-    conan profile update options.boost:extra_b2_flags="cxxflags=\\\"${CXXFLAGS}\\\"" default
+    conan profile update options.boost:extra_b2_flags="cxxflags=\\\"${CXXFLAGS}\\\"" default && \
+    conan profile update options.boost:header_only=True default && \
+    conan profile update options.restinio:asio=boost default
 
 # add conan repositories
 RUN conan remote add dice-group https://conan.dice-research.org/artifactory/api/conan/tentris
 
 # build and cache dependencies via conan
 WORKDIR /conan_cache
-COPY conanfile.txt conanfile.txt
-RUN ln -s /usr/bin/clang-14 /usr/bin/clang # required by meson for building serd
-RUN conan install . --build=missing --profile default > conan_build.log
-
+COPY conanfile.py .
+COPY CMakeLists.txt .
+RUN conan install . --build=* --profile default
 # import project files
 WORKDIR /tentris
-COPY thirdparty thirdparty
-COPY src src
+COPY libs libs
+COPY execs execs
 COPY cmake cmake
-COPY CMakeLists.txt CMakeLists.txt
-COPY conanfile.txt conanfile.txt
+COPY CMakeLists.txt .
+COPY conanfile.py .
 
 ##build
-WORKDIR /tentris/build
-RUN conan install .. --build=missing
-# todo: should be replaced with toolchain file like https://github.com/ruslo/polly/blob/master/clang-libcxx17-static.cmake
+WORKDIR /tentris/execs/build
 RUN cmake \
-    -DCMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS}" \
     -DCMAKE_BUILD_TYPE=Release \
-    -DTENTRIS_BUILD_WITH_TCMALLOC=true \
-    -DTENTRIS_STATIC=true \
+    -DWITH_TCMALLOC=true \
+    -DSTATIC=true \
+    -DMARCH=${MARCH} \
     ..
 RUN make -j $(nproc)
+
 FROM scratch
-COPY --from=builder /tentris/build/tentris_server /tentris_server
-COPY --from=builder /tentris/build/tentris_terminal /tentris_terminal
-COPY --from=builder /tentris/build/ids2hypertrie /ids2hypertrie
-COPY --from=builder /tentris/build/rdf2ids /rdf2ids
-COPY LICENSE LICENSE
+COPY --from=builder /tentris/execs/build/tentris-server/tentris_server /tentris_server
+COPY --from=builder /tentris/execs/build/tentris-loader/tentris_loader /tentris_loader
+COPY --from=builder /tentris/execs/build/tools/deduplicated-nt/deduplicated_nt /deduplicated_nt
+COPY --from=builder /tentris/execs/build/tools/rdf2ids/rdf2ids /rdf2ids
 COPY README.MD README.MD
 ENTRYPOINT ["/tentris_server"]

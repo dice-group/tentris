@@ -1,0 +1,7 @@
+add_subdirectory(rdf-tensor)
+add_subdirectory(node-store)
+add_subdirectory(sparql2tensor)
+add_subdirectory(triple-store)
+add_subdirectory(endpoint)
+add_subdirectory(tentris)
+install_package()

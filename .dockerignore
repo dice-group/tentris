@@ -1,7 +1,11 @@
+
 ## project specific
-/src/lib/tentris/tentris_version.hpp
+**/tentris_version.hpp
+**/build*/**
+**/cmake-*/**
+tests
 # log files
-tentris_*
+tentris.log
 
 # Created by https://www.toptal.com/developers/gitignore/api/c++,conan,jetbrains+all,cmake
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,conan,jetbrains+all,cmake
