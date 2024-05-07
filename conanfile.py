@@ -26,18 +26,19 @@ class Recipe(ConanFile):
         public_reqs = [
            "boost/1.84.0",
            "fmt/8.1.1",
-           "restinio/0.6.17",
+           "restinio/0.7.2",
            "expected-lite/0.6.3",  # overrides restinio dependency
-           "hypertrie/0.9.4",
+           "hypertrie/0.9.5",
            "metall/0.21",
-           "rdf4cpp/0.0.8.1",
+           "rdf4cpp/0.0.27",
            "dice-hash/0.4.0",
            "robin-hood-hashing/3.11.5",
+           "dice-sparse-map/0.2.5",
            "cxxopts/2.2.1",
            "sparql-parser-base/0.3.0",
            "taskflow/3.4.0",
            "cppitertools/2.1",
-           "spdlog/1.10.0",
+           "spdlog/1.14.1",
            "rapidjson/cci.20220822",
         ]
 

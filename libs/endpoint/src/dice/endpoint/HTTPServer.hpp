@@ -1,6 +1,7 @@
 #ifndef TENTRIS_HTTPSERVER_HPP
 #define TENTRIS_HTTPSERVER_HPP
 
+#define _LARGEFILE64_SOURCE
 #include <restinio/all.hpp>
 #include <taskflow/taskflow.hpp>
 

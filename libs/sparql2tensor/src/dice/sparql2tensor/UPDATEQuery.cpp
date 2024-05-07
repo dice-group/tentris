@@ -155,10 +155,9 @@ namespace dice::sparql2tensor {
 				auto update_ctx = parser.updateCommand();
 
 				{ // visit prologue and store prefixes
-					parser::visitors::PrologueVisitor p_visitor{};
+					parser::visitors::PrologueVisitor p_visitor{update_query.prefixes};
 					for (auto prefix_ctx : update_ctx->prologue()) {
-						auto cur_prefixes = std::any_cast<IStreamQuadIterator::prefix_storage_type>(p_visitor.visitPrologue(prefix_ctx));
-						update_query.prefixes.insert(cur_prefixes.begin(), cur_prefixes.end());
+						p_visitor.visitPrologue(prefix_ctx);
 					}
 				}
 			}
@@ -167,7 +166,8 @@ namespace dice::sparql2tensor {
 
 			{ // try to parse all triples between '{' and '}' with rdf4cpp and then store them in 'entries'
 				std::istringstream iss{std::string{rest_mut}};
-				for (IStreamQuadIterator qit{iss, ParsingFlag::NoParsePrefix, update_query.prefixes}; qit != IStreamQuadIterator{}; ++qit) {
+				IStreamQuadIterator::state_type st{.iri_factory = std::move(update_query.prefixes)};
+				for (IStreamQuadIterator qit{iss, ParsingFlag::NoParsePrefix, &st}; qit != std::default_sentinel; ++qit) {
 					if (qit->has_value()) {
 						auto const &quad = **qit;
 						entries.push_back(rdf_tensor::NonZeroEntry{{quad.subject(), quad.predicate(), quad.object()}});
