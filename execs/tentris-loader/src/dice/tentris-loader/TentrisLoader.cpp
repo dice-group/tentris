@@ -87,65 +87,70 @@ int main(int argc, char *argv[]) {
 	spdlog::info(version);
 	spdlog::flush_every(std::chrono::seconds{5});
 
-	// init storage
-	{
-		metall_manager{metall::create_only, storage_path.c_str()};
-	}
-	metall_manager storage_manager{metall::open_only, storage_path.c_str()};
-	// set up node store
-	{
-		using namespace rdf4cpp::rdf::storage::node;
-		using namespace dice::node_store;
-		auto *nodestore_backend = storage_manager.find_or_construct<PersistentNodeStorageBackendImpl>("node-store")(storage_manager.get_allocator());
-		NodeStorage::set_default_instance(
-				NodeStorage::new_instance<PersistentNodeStorageBackend>(nodestore_backend));
-	}
-	// setup triple store
-	auto &ht_context = *storage_manager.find_or_construct<rdf_tensor::HypertrieContext>("hypertrie-context")(storage_manager.get_allocator());
-	auto &rdf_tensor = *storage_manager.find_or_construct<rdf_tensor::BoolHypertrie>("rdf-tensor")(3, rdf_tensor::HypertrieContext_ptr{&ht_context});
-	triple_store::TripleStore triplestore{rdf_tensor};
 	fs::path ttl_file(parsed_args["file"].as<std::string>());
 
-	{// load data
-		spdlog::info("Loading triples from file {}.", fs::absolute(ttl_file).string());
-		spdlog::stopwatch loading_time;
-		spdlog::stopwatch batch_loading_time;
-		size_t total_processed_entries = 0;
-		size_t total_inserted_entries = 0;
-		size_t final_hypertrie_size_after = 0;
-
-		triplestore.load_ttl(
-				parsed_args["file"].as<std::string>(),
-				parsed_args["bulksize"].as<uint32_t>(),
-				[&](size_t processed_entries,
-					size_t inserted_entries,
-					size_t hypertrie_size_after) noexcept {
-					std::chrono::duration<double> batch_duration = batch_loading_time.elapsed();
-					spdlog::info("batch: {:>10.3} mio triples processed, {:>10.3} mio triples added, {} elapsed, {:>10.3} mio triples in storage.",
-								 (double(processed_entries) / 1'000'000),
-								 (double(inserted_entries) / 1'000'000),
-								 (batch_duration.count()),
-								 (double(hypertrie_size_after) / 1'000'000));
-					total_processed_entries = processed_entries;
-					total_inserted_entries = inserted_entries;
-					final_hypertrie_size_after = hypertrie_size_after;
-					batch_loading_time.reset();
-				},
-				[](rdf_tensor::parser::ParsingError const &error) noexcept {
-					std::ostringstream oss;
-					oss << error;
-					spdlog::warn(oss.str());// spdlog does not want to use the ostream operator for ParsingError
-				});
-		spdlog::info("loading finished: {} triples processed, {} triples added, {} elapsed, {} triples in storage.",
-					 total_processed_entries, total_inserted_entries, std::chrono::duration<double>(loading_time.elapsed()).count(), final_hypertrie_size_after);
-		const auto cards = triplestore.get_hypertrie().get_cards({0, 1, 2});
-		spdlog::info("Storage stats: {} triples ({} distinct subjects, {} distinct predicates, {} distinct objects)",
-					 triplestore.size(), cards[0], cards[1], cards[2]);
+	{ // init storage
+		metall_manager{metall::create_only, storage_path.c_str()};
 	}
 
-	// create snapshot
-	spdlog::info("Creating snapshot: {}_snapshot", storage_path.string());
-	auto snapshot_path = fs::absolute(storage_path.string().append("_snapshot"));
-	storage_manager.snapshot(snapshot_path.c_str());
-	spdlog::info("Finished loading: {}.", ttl_file.string());
+	{ // load
+		metall_manager storage_manager{metall::open_only, storage_path.c_str()};
+		// set up node store
+		{
+			using namespace rdf4cpp::rdf::storage::node;
+			using namespace dice::node_store;
+			auto *nodestore_backend = storage_manager.find_or_construct<PersistentNodeStorageBackendImpl>("node-store")(storage_manager.get_allocator());
+			NodeStorage::set_default_instance(
+					NodeStorage::new_instance<PersistentNodeStorageBackend>(nodestore_backend));
+		}
+		// setup triple store
+		auto &ht_context = *storage_manager.find_or_construct<rdf_tensor::HypertrieContext>("hypertrie-context")(storage_manager.get_allocator());
+		auto &rdf_tensor = *storage_manager.find_or_construct<rdf_tensor::BoolHypertrie>("rdf-tensor")(3, rdf_tensor::HypertrieContext_ptr{&ht_context});
+		triple_store::TripleStore triplestore{rdf_tensor};
+
+		{// load data
+			spdlog::info("Loading triples from file {}.", fs::absolute(ttl_file).string());
+			spdlog::stopwatch loading_time;
+			spdlog::stopwatch batch_loading_time;
+			size_t total_processed_entries = 0;
+			size_t total_inserted_entries = 0;
+			size_t final_hypertrie_size_after = 0;
+
+			triplestore.load_ttl(
+					parsed_args["file"].as<std::string>(),
+					parsed_args["bulksize"].as<uint32_t>(),
+					[&](size_t processed_entries,
+						size_t inserted_entries,
+						size_t hypertrie_size_after) noexcept {
+						std::chrono::duration<double> batch_duration = batch_loading_time.elapsed();
+						spdlog::info("batch: {:>10.3} mio triples processed, {:>10.3} mio triples added, {} elapsed, {:>10.3} mio triples in storage.",
+									 (double(processed_entries) / 1'000'000),
+									 (double(inserted_entries) / 1'000'000),
+									 (batch_duration.count()),
+									 (double(hypertrie_size_after) / 1'000'000));
+						total_processed_entries = processed_entries;
+						total_inserted_entries = inserted_entries;
+						final_hypertrie_size_after = hypertrie_size_after;
+						batch_loading_time.reset();
+					},
+					[](rdf_tensor::parser::ParsingError const &error) noexcept {
+						std::ostringstream oss;
+						oss << error;
+						spdlog::warn(oss.str());// spdlog does not want to use the ostream operator for ParsingError
+					});
+			spdlog::info("loading finished: {} triples processed, {} triples added, {} elapsed, {} triples in storage.",
+						 total_processed_entries, total_inserted_entries, std::chrono::duration<double>(loading_time.elapsed()).count(), final_hypertrie_size_after);
+			const auto cards = triplestore.get_hypertrie().get_cards({0, 1, 2});
+			spdlog::info("Storage stats: {} triples ({} distinct subjects, {} distinct predicates, {} distinct objects)",
+						 triplestore.size(), cards[0], cards[1], cards[2]);
+		}
+	}
+
+	{ // create snapshot
+		metall_manager storage_manager{metall::open_read_only, storage_path.c_str()};
+		spdlog::info("Creating snapshot: {}_snapshot", storage_path.string());
+		auto snapshot_path = fs::absolute(storage_path.string().append("_snapshot"));
+		storage_manager.snapshot(snapshot_path.c_str());
+		spdlog::info("Finished loading: {}.", ttl_file.string());
+	}
 }
