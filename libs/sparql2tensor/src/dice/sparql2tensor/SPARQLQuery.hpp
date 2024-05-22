@@ -21,7 +21,7 @@ namespace dice::sparql2tensor {
 
 		std::vector<rdf4cpp::rdf::query::TriplePattern> triple_patterns_;
 
-		rdf4cpp::rdf::parser::IStreamQuadIterator::prefix_storage_type prefixes_;
+		rdf4cpp::rdf::IRIFactory prefixes_;
 
 		bool distinct_ = false;
 

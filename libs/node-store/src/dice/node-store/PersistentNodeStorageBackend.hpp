@@ -13,6 +13,9 @@ namespace dice::node_store {
 
 		~PersistentNodeStorageBackend() override = default;
 
+		[[nodiscard]] size_t size() const noexcept override;
+		[[nodiscard]] bool has_specialized_storage_for(rdf4cpp::rdf::storage::node::identifier::LiteralType datatype) const noexcept override;
+
 		rdf4cpp::rdf::storage::node::identifier::NodeID find_or_make_id(const rdf4cpp::rdf::storage::node::view::BNodeBackendView &view) noexcept override;
 		rdf4cpp::rdf::storage::node::identifier::NodeID find_or_make_id(const rdf4cpp::rdf::storage::node::view::IRIBackendView &view) noexcept override;
 		rdf4cpp::rdf::storage::node::identifier::NodeID find_or_make_id(const rdf4cpp::rdf::storage::node::view::LiteralBackendView &view) noexcept override;
@@ -25,10 +28,10 @@ namespace dice::node_store {
 		rdf4cpp::rdf::storage::node::view::LiteralBackendView find_literal_backend_view(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
 		rdf4cpp::rdf::storage::node::view::BNodeBackendView find_bnode_backend_view(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
 		rdf4cpp::rdf::storage::node::view::VariableBackendView find_variable_backend_view(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
-		bool erase_iri(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
-		bool erase_literal(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
-		bool erase_bnode(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
-		bool erase_variable(rdf4cpp::rdf::storage::node::identifier::NodeID id) const override;
+		bool erase_iri(rdf4cpp::rdf::storage::node::identifier::NodeID id) override;
+		bool erase_literal(rdf4cpp::rdf::storage::node::identifier::NodeID id) override;
+		bool erase_bnode(rdf4cpp::rdf::storage::node::identifier::NodeID id) override;
+		bool erase_variable(rdf4cpp::rdf::storage::node::identifier::NodeID id) override;
 	};
 }// namespace dice::node_store
 

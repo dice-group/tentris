@@ -1,6 +1,7 @@
 #ifndef TENTRIS_SPARQLSTREAMINGENDPOINT_HPP
 #define TENTRIS_SPARQLSTREAMINGENDPOINT_HPP
 
+#define _LARGEFILE64_SOURCE
 #include <restinio/all.hpp>
 #include <taskflow/taskflow.hpp>
 

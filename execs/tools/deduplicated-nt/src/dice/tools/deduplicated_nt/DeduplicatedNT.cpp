@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		dice::sparse_map::sparse_set<uint64_t> deduplication;
-		for (rdf4cpp::rdf::parser::IStreamQuadIterator qit{ifs}; qit != rdf4cpp::rdf::parser::IStreamQuadIterator{}; ++qit) {
+		for (rdf4cpp::rdf::parser::IStreamQuadIterator qit{ifs}; qit != std::default_sentinel; ++qit) {
 			if (qit->has_value()) {
 				auto const &quad = qit->value();
 				auto const hash = hash::dice_hash_templates<hash::Policies::xxh3>::dice_hash(std::array<uint64_t, 3>{

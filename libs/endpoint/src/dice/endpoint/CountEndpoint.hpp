@@ -1,6 +1,7 @@
 #ifndef TENTRIS_COUNTENDPOINT_HPP
 #define TENTRIS_COUNTENDPOINT_HPP
 
+#define _LARGEFILE64_SOURCE
 #include <restinio/all.hpp>
 #include <taskflow/taskflow.hpp>
 

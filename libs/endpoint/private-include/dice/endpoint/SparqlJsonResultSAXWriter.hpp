@@ -84,12 +84,12 @@ namespace dice::endpoint {
 					if (term.is_iri()) {
 						writer.String("uri");
 						writer.Key("value");
-						auto const &identifier = ((IRI) term).identifier();
+						auto const &identifier = term.as_iri().identifier();
 						writer.String(identifier.data(), identifier.size());
 					} else if (term.is_literal()) {
 						writer.String("literal");
 
-						auto literal = (Literal) term;
+						auto literal = term.as_literal();
 
 						static const IRI xsd_str{"http://www.w3.org/2001/XMLSchema#string"};
 						auto datatype = literal.datatype();
@@ -109,7 +109,7 @@ namespace dice::endpoint {
 					} else if (term.is_blank_node()) {
 						writer.String("bnode");
 						writer.Key("value");
-						auto const &identifier = ((BlankNode) term).identifier();
+						auto const &identifier = term.as_blank_node().identifier();
 						writer.String(identifier.data(), identifier.size());
 					} else {
 						throw std::runtime_error("Node with incorrect type (none of Literal, BNode, URI) detected.");

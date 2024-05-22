@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
 		dice::sparse_map::sparse_set<uint64_t> deduplication;
 		bool const deduplicate = parsed_args["distinct"].as<bool>();
-		for (rdf4cpp::rdf::parser::IStreamQuadIterator qit{ifs}; qit != rdf4cpp::rdf::parser::IStreamQuadIterator{}; ++qit) {
+		for (rdf4cpp::rdf::parser::IStreamQuadIterator qit{ifs}; qit != std::default_sentinel; ++qit) {
 			if (qit->has_value()) {
 				auto const &quad = qit->value();
 				std::array<uint64_t, 3> const id_triple{

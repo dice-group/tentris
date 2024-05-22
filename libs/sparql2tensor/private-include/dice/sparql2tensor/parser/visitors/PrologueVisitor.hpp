@@ -13,9 +13,11 @@ namespace dice::sparql2tensor::parser::visitors {
 	using namespace dice::sparql_parser::base;
 
 	class PrologueVisitor : public SparqlParserBaseVisitor {
-		rdf4cpp::rdf::parser::IStreamQuadIterator::prefix_storage_type prefixes_;
+		rdf4cpp::rdf::IRIFactory *prefixes_;
 
 	public:
+		PrologueVisitor(rdf4cpp::rdf::IRIFactory &prefixes) noexcept;
+
 		std::any visitPrologue(SparqlParser::PrologueContext *) override;
 
 		std::any visitBaseDecl(SparqlParser::BaseDeclContext *) override;

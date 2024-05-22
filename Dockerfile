@@ -1,14 +1,14 @@
-FROM alpine:3.17 AS builder
+FROM alpine:3.19 AS builder
 ARG MARCH="x86-64-v3"
 
 RUN apk update && \
     apk add \
     make cmake autoconf automake pkgconfig \
     gcc g++ gdb \
-    clang15 clang15-dev clang15-libs clang15-extra-tools clang15-static lldb llvm15 llvm15-dev lld \
+    clang17 clang17-dev clang17-libs clang17-extra-tools clang17-static lldb llvm17 llvm17-dev lld \
     openjdk11-jdk \
     pythonispython3 py3-pip \
-    bash git libtool util-linux-dev linux-headers
+    bash git libtool util-linux-dev linux-headers patch pipx
 
 ARG CC="clang"
 ARG CXX="clang++"
@@ -17,7 +17,7 @@ RUN rm /usr/bin/ld && ln -s /usr/bin/lld /usr/bin/ld # use lld as default linker
 
 
 # Compile more recent tcmalloc-minimal with clang-14 + -march
-RUN git clone --quiet --branch gperftools-2.9.1 --depth 1 https://github.com/gperftools/gperftools
+RUN git clone --quiet --branch gperftools-2.15 --depth 1 https://github.com/gperftools/gperftools
 WORKDIR /gperftools
 RUN ./autogen.sh
 RUN ./configure \
@@ -30,9 +30,10 @@ RUN ./configure \
 WORKDIR /
 
 ENV CONAN_DISABLE_STRICT_MODE=1
+ENV PIPX_BIN_DIR="/usr/local/bin"
 
 # install and configure conan
-RUN pip3 install conan==1.62.0 && \
+RUN pipx install conan==1.62.0 && \
     conan user && \
     conan profile new --detect default && \
     conan profile update settings.compiler=clang default && \

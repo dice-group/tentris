@@ -8,7 +8,7 @@ namespace dice::node_store {
 		  lexical(lexical, allocator),
 		  lang_tag(lang_tag, allocator),
 		  hash_(View(*this).hash()) {}
-	MetallLiteralBackend::MetallLiteralBackend(rdf4cpp::rdf::storage::node::view::LiteralBackendView view, metall_manager::allocator_type<std::byte> const &allocator) noexcept
+	MetallLiteralBackend::MetallLiteralBackend(rdf4cpp::rdf::storage::node::view::LexicalFormLiteralBackendView view, metall_manager::allocator_type<std::byte> const &allocator) noexcept
 		: datatype_id_(view.datatype_id),
 		  lexical(view.lexical_form, allocator),
 		  lang_tag(view.language_tag, allocator),
@@ -22,10 +22,14 @@ namespace dice::node_store {
 	std::string_view MetallLiteralBackend::lexical_form() const noexcept {
 		return lexical;
 	}
-	MetallLiteralBackend::operator rdf4cpp::rdf::storage::node::view::LiteralBackendView() const noexcept {
+	bool MetallLiteralBackend::needs_escape() const noexcept {
+		return needs_escape_;
+	}
+	MetallLiteralBackend::operator rdf4cpp::rdf::storage::node::view::LexicalFormLiteralBackendView() const noexcept {
 		return {.datatype_id = datatype_id(),
 				.lexical_form = lexical_form(),
-				.language_tag = language_tag()};
+				.language_tag = language_tag(),
+				.needs_escape = needs_escape()};
 	}
 
 }// namespace dice::node_store

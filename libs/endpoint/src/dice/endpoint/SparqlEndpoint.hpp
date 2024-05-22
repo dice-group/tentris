@@ -1,6 +1,7 @@
 #ifndef TENTRIS_SPARQLENDPOINT_HPP
 #define TENTRIS_SPARQLENDPOINT_HPP
 
+#define _LARGEFILE64_SOURCE
 #include <restinio/all.hpp>
 #include <taskflow/taskflow.hpp>
 

@@ -48,6 +48,8 @@ namespace dice::node_store {
 	public:
 		explicit PersistentNodeStorageBackendImpl(metall_manager::allocator_type<std::byte> const &allocator);
 
+		size_t size() const noexcept;
+		bool has_specialized_storage_for(rdf4cpp::rdf::storage::node::identifier::LiteralType type);
 
 		[[nodiscard]] NodeID find_or_make_id(BNodeBackendView const &) noexcept;
 		[[nodiscard]] NodeID find_or_make_id(IRIBackendView const &) noexcept;

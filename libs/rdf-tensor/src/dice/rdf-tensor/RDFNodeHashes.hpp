@@ -6,13 +6,6 @@
 
 namespace dice::hash {
 	template<typename Policy>
-	struct dice_hash_overload<Policy, rdf4cpp::rdf::Node> {
-		inline static std::size_t dice_hash(rdf4cpp::rdf::Node const &x) noexcept {
-			return Policy::hash_fundamental(x.backend_handle().raw());
-		}
-	};
-
-	template<typename Policy>
 	struct dice_hash_overload<Policy, rdf4cpp::rdf::query::Variable> {
 		inline static std::size_t dice_hash(rdf4cpp::rdf::query::Variable const &x) noexcept {
 			return Policy::hash_fundamental(x.backend_handle().raw());

@@ -1,3 +1,5 @@
+#define _LARGEFILE64_SOURCE
+
 #include <chrono>
 #include <filesystem>
 
@@ -122,7 +124,7 @@ int main(int argc, char *argv[]) {
 		using namespace rdf4cpp::rdf::storage::node;
 		using namespace dice::node_store;
 		auto *nodestore_backend = storage_manager.find_or_construct<PersistentNodeStorageBackendImpl>("node-store")(storage_manager.get_allocator());
-		NodeStorage::default_instance(
+		NodeStorage::set_default_instance(
 				NodeStorage::new_instance<PersistentNodeStorageBackend>(nodestore_backend));
 	}
 

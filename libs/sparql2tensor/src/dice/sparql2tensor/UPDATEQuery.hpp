@@ -7,7 +7,7 @@
 namespace dice::sparql2tensor {
 
 	struct UPDATEDATAQueryData {
-		rdf_tensor::parser::IStreamQuadIterator::prefix_storage_type prefixes;
+		rdf_tensor::IRIFactory prefixes;
 		bool is_delete; // is this query DELETE DATA? (otherwise is INSERT DATA)
 		std::vector<rdf_tensor::NonZeroEntry> entries;
 
