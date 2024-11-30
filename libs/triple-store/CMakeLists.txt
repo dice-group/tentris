@@ -1,31 +1,25 @@
+cmake_minimum_required(VERSION 3.21)
+set(lib_suffix "triple-store")
+set(lib "${PROJECT_NAME}-${lib_suffix}")
+
 # Find cmake packages
 find_package(dice-hash REQUIRED)
 
 # Define the library
-add_library(triple-store
+add_library(${lib}
         src/dice/triple-store/TripleStore.cpp
         )
 
-add_library(tentris::triple-store ALIAS triple-store)
+add_library(${PROJECT_NAME}::${lib_suffix} ALIAS ${lib})
 
-target_include_directories(triple-store PUBLIC
+target_include_directories(${lib} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         )
 
-target_link_libraries(triple-store PUBLIC
-        tentris::sparql2tensor
-        tentris::rdf-tensor
+target_link_libraries(${lib} PUBLIC
+        ${PROJECT_NAME}::sparql2tensor
+        ${PROJECT_NAME}::rdf-tensor
         )
 
-## Packaging and exporting the target
-
-set_target_properties(triple-store PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-        )
-
-include(${PROJECT_SOURCE_DIR}/cmake/install_library.cmake)
-install_component(triple-store src)
+include(${CMAKE_SOURCE_DIR}/cmake/install_components.cmake)
+install_component(PUBLIC ${lib_suffix} src)

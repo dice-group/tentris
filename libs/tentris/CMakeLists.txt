@@ -1,15 +1,17 @@
-# Find cmake packages
+cmake_minimum_required(VERSION 3.21)
+set(lib_suffix "tentris")
+set(lib "${PROJECT_NAME}-${lib_suffix}")
 
 # Define the library
-add_library(tentris INTERFACE)
-add_library(tentris::tentris ALIAS tentris)
-target_link_libraries(tentris INTERFACE
-        tentris::endpoint
+add_library(${lib} INTERFACE)
+add_library(${PROJECT_NAME}::${lib_suffix} ALIAS ${lib})
+target_link_libraries(${lib} INTERFACE
+        ${PROJECT_NAME}::endpoint
         )
 
-target_include_directories(tentris INTERFACE
+target_include_directories(${lib} INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         )
 
-include(${PROJECT_SOURCE_DIR}/cmake/install_library.cmake)
-install_interface_component(tentris src)
+include(${CMAKE_SOURCE_DIR}/cmake/install_components.cmake)
+install_component(INTERFACE ${lib_suffix} src)

@@ -12,6 +12,6 @@ namespace dice::node_store {
 		return identifier_;
 	}
 	MetallBNodeBackend::operator View() const noexcept {
-		return {.identifier = identifier()};
+		return {.identifier = identifier(), .scope = nullptr};
 	}
 }// namespace dice::node_store

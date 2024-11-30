@@ -1,12 +1,16 @@
+cmake_minimum_required(VERSION 3.21)
+set(lib_suffix "node-store")
+set(lib "${PROJECT_NAME}-${lib_suffix}")
 
 # Find cmake packages
 find_package(hypertrie REQUIRED)
 find_package(robin_hood REQUIRED)
 find_package(dice-hash REQUIRED)
 find_package(Boost REQUIRED)
+find_package(rdf4cpp REQUIRED)
 
 # Define the library
-add_library(node-store
+add_library(${lib}
         src/dice/node-store/PersistentNodeStorageBackendImpl.cpp
         src/dice/node-store/PersistentNodeStorageBackend.cpp
         src/dice/node-store/MetallBNodeBackend.cpp
@@ -14,23 +18,16 @@ add_library(node-store
         src/dice/node-store/MetallLiteralBackend.cpp
         src/dice/node-store/MetallVariableBackend.cpp
         )
-add_library(tentris::node-store ALIAS node-store)
+add_library(${PROJECT_NAME}::${lib_suffix} ALIAS ${lib})
 
-target_link_libraries(node-store PUBLIC
-        tentris::rdf-tensor
+target_link_libraries(${lib} PUBLIC
+        ${PROJECT_NAME}::rdf-tensor
+        rdf4cpp::rdf4cpp
         )
 
-target_include_directories(node-store PUBLIC
+target_include_directories(${lib} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         )
 
-set_target_properties(node-store PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-        )
-
-include(${PROJECT_SOURCE_DIR}/cmake/install_library.cmake)
-install_component(node-store src)
+include(${CMAKE_SOURCE_DIR}/cmake/install_components.cmake)
+install_component(PUBLIC ${lib_suffix} src)

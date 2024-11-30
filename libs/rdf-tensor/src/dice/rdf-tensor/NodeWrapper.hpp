@@ -30,7 +30,7 @@ namespace dice::rdf_tensor {
 		};
 
 		operator std::optional<Node>() const noexcept {
-			return (Node) * this;
+			return static_cast<Node>(*this);
 		};
 	};
 };// namespace dice::rdf-tensor
