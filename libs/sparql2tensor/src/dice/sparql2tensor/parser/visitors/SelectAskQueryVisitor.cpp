@@ -36,7 +36,7 @@ namespace dice::sparql2tensor::parser::visitors {
 			for (auto const &tp : query->triple_patterns_) {
 				for (auto const &node : tp) {
 					if (node.is_variable()) {
-						auto var = (rdf4cpp::rdf::query::Variable) node;
+						auto var = node.as_variable();
 						if (not var.is_anonymous()) {
 							auto [_, was_new] = seen_vars.insert(var);
 							if (was_new)
@@ -183,7 +183,7 @@ namespace dice::sparql2tensor::parser::visitors {
 		if (ctx->varOrTerm() and ctx->propertyListPathNotEmpty()) {
 			active_subject = std::any_cast<rdf4cpp::rdf::Node>(visitVarOrTerm(ctx->varOrTerm()));
 			if (active_subject.is_variable())
-				register_var(rdf4cpp::rdf::query::Variable(active_subject));
+				register_var(active_subject.as_variable());
 			visitPropertyListPathNotEmpty(ctx->propertyListPathNotEmpty());
 		} else if (ctx->triplesNodePath() and ctx->propertyListPath()) {
 			return nullptr;
@@ -247,11 +247,12 @@ namespace dice::sparql2tensor::parser::visitors {
 		}
 		std::string predicate = ctx->prefixedName()->PNAME_LN()->getText();
 		std::size_t split = predicate.find(':');
-		try {
-			return rdf4cpp::rdf::IRI(query->prefixes_.at(predicate.substr(0, split)) + predicate.substr(split + 1));
-		} catch (...) {
-			throw std::out_of_range("Prefix " + predicate.substr(0, split) + " not declared.");
-		}
+		auto maybe_iri = query->prefixes_.from_prefix(predicate.substr(0, split), predicate.substr(split + 1));
+	    if (maybe_iri.has_value()) {
+	        return *maybe_iri;
+	    } else {
+	        throw std::runtime_error("Invalid prefixed IRI");
+	    }
 	}
 
 	std::any SelectAskQueryVisitor::visitBlankNode(SparqlParser::BlankNodeContext *ctx) {
@@ -281,7 +282,7 @@ namespace dice::sparql2tensor::parser::visitors {
 		if (auto var_or_term_ctx = ctx->graphNodePath()->varOrTerm(); var_or_term_ctx) {
 			auto obj = std::any_cast<rdf4cpp::rdf::Node>(visitVarOrTerm(var_or_term_ctx));
 			if (obj.is_variable())
-				register_var(rdf4cpp::rdf::query::Variable(obj));
+				register_var(obj.as_variable());
 			query->triple_patterns_.emplace_back(active_subject, active_predicate, obj);
 			add_tp(query->triple_patterns_.back());
 		} else {
@@ -294,7 +295,7 @@ namespace dice::sparql2tensor::parser::visitors {
 		if (auto var_or_term_ctx = ctx->graphNode()->varOrTerm(); var_or_term_ctx) {
 			auto obj = std::any_cast<rdf4cpp::rdf::Node>(visitVarOrTerm(var_or_term_ctx));
 			if (obj.is_variable())
-				register_var(rdf4cpp::rdf::query::Variable(obj));
+				register_var(obj.as_variable());
 			query->triple_patterns_.emplace_back(active_subject, active_predicate, obj);
 			add_tp(query->triple_patterns_.back());
 		} else {
@@ -343,45 +344,45 @@ namespace dice::sparql2tensor::parser::visitors {
 	std::any SelectAskQueryVisitor::visitRdfLiteral(SparqlParser::RdfLiteralContext *ctx) {
 		auto value = std::any_cast<std::string>(visitString(ctx->string()));
 		if (auto iri_ctx = ctx->iri(); iri_ctx)
-			return rdf4cpp::rdf::Literal(value, std::any_cast<rdf4cpp::rdf::IRI>(visitIri(iri_ctx)));
+			return rdf4cpp::rdf::Literal::make_typed(value, std::any_cast<rdf4cpp::rdf::IRI>(visitIri(iri_ctx)));
 		else if (auto langtag_ctx = ctx->LANGTAG(); langtag_ctx)
-			return rdf4cpp::rdf::Literal(value, langtag_ctx->getText().substr(1));
+			return rdf4cpp::rdf::Literal::make_lang_tagged(value, langtag_ctx->getText().substr(1));
 		else
-			return rdf4cpp::rdf::Literal(value);
+			return rdf4cpp::rdf::Literal::make_simple(value);
 	}
 
 	std::any SelectAskQueryVisitor::visitNumericLiteral(SparqlParser::NumericLiteralContext *ctx) {
 		auto number = ctx->getText();
 		if (auto pos_literal_ctx = ctx->numericLiteralPositive(); pos_literal_ctx) {
 			if (pos_literal_ctx->DECIMAL_POSITIVE())
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#decimal"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#decimal"));
 			else if (pos_literal_ctx->DOUBLE_POSITIVE())
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#double"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#double"));
 			else
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#integer"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#integer"));
 		} else if (auto neg_literal_ctx = ctx->numericLiteralNegative(); neg_literal_ctx) {
 			if (neg_literal_ctx->DECIMAL_NEGATIVE())
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#decimal"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#decimal"));
 			else if (neg_literal_ctx->DOUBLE_NEGATIVE())
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#double"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#double"));
 			else
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#integer"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#integer"));
 		} else {
 			auto unsigned_literal_ctx = ctx->numericLiteralUnsigned();
 			if (unsigned_literal_ctx->DECIMAL())
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#decimal"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#decimal"));
 			else if (unsigned_literal_ctx->DOUBLE())
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#double"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#double"));
 			else
-				return rdf4cpp::rdf::Literal(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#integer"));
+				return rdf4cpp::rdf::Literal::make_typed(number, rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#integer"));
 		}
 	}
 
 	std::any SelectAskQueryVisitor::visitBooleanLiteral(SparqlParser::BooleanLiteralContext *ctx) {
 		if (ctx->TRUE())
-			return rdf4cpp::rdf::Literal("true", rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#boolean"));
+			return rdf4cpp::rdf::Literal::make_boolean(true);
 		else
-			return rdf4cpp::rdf::Literal("false", rdf4cpp::rdf::IRI("http://www.w3.org/2001/XMLSchema#boolean"));
+			return rdf4cpp::rdf::Literal::make_boolean(false);
 	}
 
 	std::any SelectAskQueryVisitor::visitString(SparqlParser::StringContext *ctx) {
@@ -404,7 +405,7 @@ namespace dice::sparql2tensor::parser::visitors {
 		for (auto const &node : tp) {
 			if (not node.is_variable())
 				continue;
-			var_ids.push_back(query->var_to_id_[rdf4cpp::rdf::query::Variable(node)]);
+			var_ids.push_back(query->var_to_id_[node.as_variable()]);
 		}
 		// create new node in the operand dependency graph
 		auto v_id = query->odg_.add_operand(var_ids);

@@ -1,0 +1,32 @@
+name: Build Dockerfile
+on: push
+
+jobs:
+  build_dockerfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v4
+
+      - name: Build Dockerfile
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: "tentris:${{ github.sha }}"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: shrink/actions-docker-extract@v3
+        id: extract
+        name: Extracting executables from docker image
+        with:
+          image: "tentris:${{ github.sha }}"
+          path: /.
+
+      - uses: actions/upload-artifact@v4
+        name: Uploading executables as artifacts
+        with:
+          name: tentris-frontend
+          path: ${{ steps.extract.outputs.destination }}/tentris_*

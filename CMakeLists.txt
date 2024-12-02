@@ -1,23 +1,33 @@
-cmake_minimum_required(VERSION 3.18)
-project(tentris
-        VERSION 1.3.1
-        DESCRIPTION "tensor-based triplestore")
+cmake_minimum_required(VERSION 3.24)
+project(tentris VERSION 1.4.0
+        DESCRIPTION "Tentris - A tensor-based Triplestore.")
 
 include(cmake/boilerplate_init.cmake)
 boilerplate_init()
 
-option(CONAN_CMAKE "If this should use conan cmake to fetch dependencies" On)
-if (IS_TOP_LEVEL AND CONAN_CMAKE)
-    include(cmake/conan_cmake.cmake)
-    install_packages_via_conan("${CMAKE_CURRENT_SOURCE_DIR}/conanfile.py" "")
-endif ()
+if (PROJECT_IS_TOP_LEVEL)
+    set(CONAN_INSTALL_ARGS "${CONAN_INSTALL_ARGS};-o=boost/*:header_only=True")
 
-if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/CMakeCache.txt)
-    if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+    if (BUILD_TESTING)
+        set(CONAN_INSTALL_ARGS "${CONAN_INSTALL_ARGS};-o=&:with_test_deps=True")
     endif ()
 endif ()
 
+set(style_files
+        .clang-format
+        .clang-tidy
+)
+foreach(style_file ${style_files})
+    file(DOWNLOAD "https://raw.githubusercontent.com/dice-group/tentris-cpp-coding-guidelines/main/${style_file}"
+            "${CMAKE_SOURCE_DIR}/${style_file}"
+            TLS_VERIFY ON)
+endforeach()
 
+if (PROJECT_IS_TOP_LEVEL AND USE_CLANG_TIDY)
+    include(cmake/ClangTidy.cmake)
+endif ()
+
+add_compile_definitions(Dnsel_CONFIG_SELECT_EXPECTED=nsel_EXPECTED_NONSTD)
 
 add_subdirectory(libs)
+add_subdirectory(execs)

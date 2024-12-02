@@ -7,7 +7,7 @@
 #pragma GCC diagnostic pop
 
 namespace dice::rdf_tensor {
-	using metall_manager = metall::basic_manager<uint32_t, (1ULL << 28ULL)>;
+	using metall_manager = metall::basic_manager<>;
 	using allocator_type = metall_manager::allocator_type<std::byte>;
 }// namespace dice::rdf-tensor
 

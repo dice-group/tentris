@@ -3,10 +3,14 @@
 # each component's config should be in a equally named subdirectory, i.e.: ${CMAKE_INSTALL_DATAROOTDIR}/cmake/@PROJECT_NAME@/${component}/${component}-config.cmake
 
 
-file(GLOB @PROJECT_NAME@_available_components LIST_DIRECTORIES true ${CMAKE_CURRENT_LIST_DIR}/*)
+file(GLOB query_available_components LIST_DIRECTORIES true ${CMAKE_CURRENT_LIST_DIR}/*)
+list(FILTER query_available_components EXCLUDE REGEX ".*\\..*")
+# todo: test with fetch_content
+message("actual: ${query_available_components}")
 
 # available components are listed here
-set(@PROJECT_NAME@_available_components endpoint node-store rdf-tensor sparql2tensor tentris triple-store)
+set(@PROJECT_NAME@_available_components query sparql node-wrapper)
+message("expected: ${@PROJECT_NAME@_available_components}")
 
 # check if the user provided components are actually available
 foreach(component ${@PROJECT_NAME@_FIND_COMPONENTS})
@@ -15,26 +19,13 @@ foreach(component ${@PROJECT_NAME@_FIND_COMPONENTS})
     endif()
 endforeach()
 
-# default component @PROJECT_NAME@::@PROJECT_NAME@ is always included
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@/@PROJECT_NAME@-config.cmake)
+# set(@PROJECT_NAME@_default_component @PROJECT_NAME@)
+set(@PROJECT_NAME@_default_component endpoint)
 
-# add transitive dependencies among components
-set(transitive_components "")
-foreach(component ${@PROJECT_NAME@_FIND_COMPONENTS})
-    if(${component} STREQUAL "tentris")
-        list(APPEND transtive_components ${@PROJECT_NAME@_available_components})
-    elseif(${component} STREQUAL "endpoint")
-        list(APPEND transtive_components node-store rdf-tensor sparql2tensor triple-store)
-    elseif(${component} STREQUAL "triple-store")
-        list(APPEND transtive_components node-store rdf-tensor sparql2tensor triple-store)
-    elseif(${component} STREQUAL "node-store" OR ${component} STREQUAL "sparql2tensor")
-        list(APPEND transtive_components rdf-tensor)
-    endif()
-endforeach()
-list(APPEND @PROJECT_NAME@_FIND_COMPONENTS ${transitive_components})
-list(REMOVE_DUPLICATES @PROJECT_NAME@_FIND_COMPONENTS)
+# default component @PROJECT_NAME@::${@PROJECT_NAME@_default_component} is always included
+include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@/${@PROJECT_NAME@_default_component}-config.cmake)
 
 # include all listed components
 foreach(component ${@PROJECT_NAME@_FIND_COMPONENTS})
-    include(${CMAKE_CURRENT_LIST_DIR}/${component}/${component}-config.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@/${component}-config.cmake)
 endforeach()

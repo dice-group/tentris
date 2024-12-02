@@ -17,7 +17,7 @@ namespace dice::triple_store {
 		}
 
 		HypertrieBulkInserter bulk_inserter{hypertrie_, bulk_size, call_back};
-		for (rdf4cpp::rdf::parser::IStreamQuadIterator qit{ifs}; qit != rdf4cpp::rdf::parser::IStreamQuadIterator{}; ++qit) {
+		for (rdf4cpp::rdf::parser::IStreamQuadIterator qit{ifs}; qit != std::default_sentinel; ++qit) {
 			if (qit->has_value()) {
 				auto const &quad = qit->value();
 				bulk_inserter.add(
@@ -138,7 +138,7 @@ namespace dice::triple_store {
 		if (query.triple_patterns_.size() == 1) {// O(1)
 			auto slice_key = query.get_slice_keys()[0];
 			if (slice_key.get_fixed_depth() == 3)
-				return (size_t) std::get<bool>(get_hypertrie()[slice_key]);
+				return static_cast<size_t>(std::get<bool>(get_hypertrie()[slice_key]));
 			else
 				return std::get<const_BoolHypertrie>(get_hypertrie()[slice_key]).size();
 		} else {
