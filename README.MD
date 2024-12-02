@@ -13,7 +13,7 @@ and
 
 ## Get It
 
-* download [static prebuilt binaries](https://github.com/dice-group/tentris-private/releases)
+* download [static prebuilt binaries](https://github.com/dice-group/tentris/releases)
   and [try them out](#running-tentris)
 * [build it with docker](#docker)
 
